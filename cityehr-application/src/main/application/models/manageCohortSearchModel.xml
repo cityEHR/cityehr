@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    manageCohortSearchModel.xml
+    
+    Load, save and delete cohort searches and cohorts for a user.
+    Searches/cohorts are stored by user and by role in the xmlstore cohortSearches collection.
+    They can be retrieved for a user, role or list of roles (i.e. all the roles for a user)
+    
+    Searches and cohorts have the same xml structure, defined by the cohortSearch element in manageCohortSearchControl-instance
+    Searches have the cohortPatientString set to '' and cohortPatientCount=0
+    Cohorts have the searchTerms element removed - presence/absence of searchTerms is the test for search/cohort
+    
+    Loading, saving, deleting is made using saved-cohort-search-instance and xmlstoreHandle
+    
+    This model is used in cityEHRCohortSearch and cityEHRAdmin
+        
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="manageCohortSearch-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Control of cohort management -->
+    <xf:instance id="manageCohortSearchControl-instance">
+        <control xmlns="">
+            <userId/>
+            <roleId/>
+            <xmlstoreHandle/>
+            <status/>
+
+            <!-- Template for cohortSearch.
+                 Used to initiate cohort-search-instance and cohort-instance -->
+            <cohortSearch>
+                <id/>
+                <origin/>
+                <cohortName/>
+                <cohortPatientString/>
+                <cohortPatientCount>0</cohortPatientCount>
+                <cohortAnalysis/>
+                <searchTerms><!-- <term>....</term> --></searchTerms>
+            </cohortSearch>
+        </control>
+    </xf:instance>
+
+
+    <!-- ==== Get lists of searches from the xmlstore === 
+         ================================================ -->
+
+    <!-- Load the query from file -->
+    <xf:instance id="getCohortSearchesXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getCohortSearchesXQuery.xml"/>
+
+    <!-- Query instance for submission -->
+    <xf:instance id="cohortSearchListQuery-instance">
+        <exist:query start="1" max="5000">
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+    <!-- Response instances -->
+    <xf:instance id="userSearches-instance">
+        <userSearches/>
+    </xf:instance>
+    <xf:instance id="sharedSearches-instance">
+        <sharedSearches/>
+    </xf:instance>
+
+    <!-- Bindings so that searches can be selected -->
+    <xf:bind nodeset="xxf:instance('userSearches-instance')/search/@selected"
+        type="xs:boolean"/>
+    <xf:bind nodeset="xxf:instance('sharedSearches-instance')/search/@selected"
+        type="xs:boolean"/>
+
+    <!-- Submission to get list of saved searches for a user -->
+    <xf:submission id="user-searches-submission"
+        ref="xxf:instance('cohortSearchListQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/cohortSearches/users/{xxf:instance('manageCohortSearchControl-instance')/userId}"
+        method="post" replace="instance" instance="userSearches-instance">
+        <xf:action ev:event="xforms-submit-error">
+            <!-- Not doing anything here -->
+        </xf:action>
+    </xf:submission>
+
+    <!-- Submission to get list of shared searches for specified roles -->
+    <xf:submission id="shared-searches-submission"
+        ref="xxf:instance('cohortSearchListQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/cohortSearches/roles/{xxf:instance('manageCohortSearchControl-instance')/roleId}"
+        method="post" replace="instance" instance="sharedSearches-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Make sure all searches are deselected -->
+            <xf:action xxf:iterate="xxf:instance('sharedSearches-instance')/search">
+                <xf:setvalue ref="./@selected" value="false()"/>
+            </xf:action>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <!-- Not doing anything here -->
+        </xf:action>
+    </xf:submission>
+
+    <!-- Get list of searches for the user.
+         -->
+    <xf:action ev:event="get-user-searches">
+        <xxf:variable name="userId" select="event('userId')"/>
+
+        <!-- Set context for the search -->
+        <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/userId"
+            value="$userId"/>
+
+        <!-- No filter required - search is run in the collection for this user -->
+        <xf:setvalue ref="xxf:instance('getCohortSearchesXQuery-instance')/originFilter"
+            value="''"/>
+
+        <!-- Set up the query text for eXist -->
+        <xf:setvalue ref="xxf:instance('cohortSearchListQuery-instance')/exist:text"
+            value="xxf:instance('getCohortSearchesXQuery-instance')"/>
+
+        <!-- Query to get saved searches for current user -->
+        <xf:send submission="user-searches-submission"/>
+
+    </xf:action>
+
+
+    <!-- Get list of searches for specified roles.
+         These are searches to be shared.
+         If no role is passed, then get searches for all roles. 
+         If one role is passed then set parameters to get searches for that role.
+         If more than one role is passed then set parameters to get searches for those roles.-->
+    <xf:action ev:event="get-shared-searches">
+        <xxf:variable name="roleList" select="event('roleList')"/>
+
+        <xxf:variable name="roleIdList" select="$roleList/substring-after(.,'#CityEHR:Role:')"/>
+
+        <!-- Only get searches if the roleIdList matches the roleList -->
+        <xf:action if="count($roleList) = count($roleIdList)">
+            <!-- Set context for the search -->
+            <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/roleId"
+                value="if (count($roleIdList) = xs:integer('1')) then $roleIdList[1] else ''"/>
+
+            <!-- Set filter for the search origin -->
+            <xf:setvalue ref="xxf:instance('getCohortSearchesXQuery-instance')/originFilter"
+                value="if (count($roleIdList) gt 1) then concat('[origin=(''',string-join($roleIdList,''','''),''']') else ''"/>
+
+            <!-- Set up the query text for eXist -->
+            <xf:setvalue ref="xxf:instance('cohortSearchListQuery-instance')/exist:text"
+                value="xxf:instance('getCohortSearchesXQuery-instance')"/>
+
+            <!-- Query to get saved searches for current user -->
+            <xf:send submission="shared-searches-submission"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- ========= Loading, Saving and deleting cohort searches ========= 
+        ============================================================== -->
+
+    <!-- Saved cohort search - needs its own instance, since some elements are removed before saving.
+         Must have the same root element as cohort-search-instance, defined by template in manageCohortSearchControl-instance.
+         The saved-cohort-search-instance is used to load searches and cohorts for display and cohorts to be included as search terms -->
+    <xf:instance id="saved-cohort-search-instance">
+        <cohortSearch/>
+    </xf:instance>
+
+
+    <!-- Submission to load the saved cohort search instance -->
+    <xf:submission id="load-saved-search-submission" serialization="none"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('manageCohortSearchControl-instance')/xmlstoreHandle}"
+        validate="false" method="get" replace="instance" instance="saved-cohort-search-instance"
+        f:url-type="resource">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Not doing anything here yet -->
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to load the cohort search to saved-cohort-search-instance
+         -->
+    <xf:action ev:event="load-saved-search">
+        <xxf:variable name="searchHandle" select="event('searchHandle')"/>
+
+        <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/xmlstoreHandle"
+            value="$searchHandle"/>
+        <xf:send submission="load-saved-search-submission"/>
+
+    </xf:action>
+
+
+    <!-- Save a cohort search or cohort using saved-cohort-search-instance -->
+    <xf:submission id="save-search-submission"
+        ref="xxf:instance('saved-cohort-search-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('manageCohortSearchControl-instance')/xmlstoreHandle}"
+        method="put" replace="none" f:url-type="resource" includenamespacesprefixes="">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/status" value="'saved-cohort-search'"/>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSaveCohortSearch']"
+            />
+            <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/status" value="'failed-save-cohort-search'"/>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to save the cohort search for the specified user
+         Copy searchInstance to saved-cohort-search-instance
+         Then remove the search results (these are regenerated when the search is reloaded)      
+         And save the saved-cohort-search-instance -->
+    <xf:action ev:event="save-cohort-search-for-user">
+        <xxf:variable name="userIRI" select="event('userIRI')"/>
+        <xxf:variable name="searchInstance" select="event('searchInstance')"/>
+
+        <!-- Set up saved-cohort-search-instance -->
+        <xf:delete nodeset="xxf:instance('saved-cohort-search-instance')/*"/>
+        <xf:insert context="xxf:instance('saved-cohort-search-instance')"
+            origin="$searchInstance/*"/>
+
+        <!-- The search can only be saved if its id has been set -->
+        <xf:action
+            if="xxf:instance('saved-cohort-search-instance')/id != '' and $userIRI!=''">
+
+            <!-- Remove cohort lists -->
+            <xf:setvalue
+                ref="xxf:instance('saved-cohort-search-instance')/cohortPatientString"
+                value="''"/>
+            <xf:setvalue
+                ref="xxf:instance('saved-cohort-search-instance')/cohortPatientCount" value="''"/>
+
+            <!-- Reset all search results - terms may be nested, so need to make sure all result, count and percentage elements are found -->
+            <xf:action
+                xxf:iterate="xxf:instance('saved-cohort-search-instance')//result | xxf:instance('saved-cohort-search-instance')//count | xxf:instance('saved-cohort-search-instance')//percentage">
+                <xf:setvalue ref="." value="''"/>
+            </xf:action>
+
+            <!-- Save the search -->
+            <xf:dispatch name="save-cohort-search" target="manageCohortSearch-model">
+                <xxf:context name="originIRI" select="$userIRI"/>
+            </xf:dispatch>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to save the cohort for the specified user
+         Copy cohortInstance to saved-cohort-search-instance
+         Then remove the search terms (these should be empty anyway)      
+         And save the saved-cohort-search-instance -->
+    <xf:action ev:event="save-cohort-for-user">
+        <xxf:variable name="userIRI" select="event('userIRI')"/>
+        <xxf:variable name="cohortInstance" select="event('cohortInstance')"/>
+
+        <!-- Set up saved-cohort-search-instance -->
+        <xf:delete nodeset="xxf:instance('saved-cohort-search-instance')/*"/>
+        <xf:insert context="xxf:instance('saved-cohort-search-instance')"
+            origin="$cohortInstance/*"/>
+
+        <!-- The search can only be saved if its id has been set -->
+        <xf:action
+            if="xxf:instance('saved-cohort-search-instance')/id != '' and $userIRI!=''">
+
+            <!-- Remove search terms -->
+            <xf:delete nodeset="xxf:instance('saved-cohort-search-instance')/searchTerms"/>
+
+            <!-- Save the search -->
+            <xf:dispatch name="save-cohort-search" target="manageCohortSearch-model">
+                <xxf:context name="originIRI" select="$userIRI"/>
+            </xf:dispatch>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to save the cohort search for the specified user or role
+         The originIRI determines the user/role
+         Saves the saved-cohort-search-instance, without modification
+         is used to save searches or cohorts
+         -->
+    <xf:action ev:event="save-cohort-search">
+        <xxf:variable name="originIRI" select="event('originIRI')"/>
+        
+        <!-- Reset status -->
+        <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/status" value="''"/>
+        
+        <xxf:variable name="originType"
+            select="if (starts-with($originIRI,'#CityEHR:Role:')) then 'roles' else if (starts-with($originIRI,'#CityEHR:User:')) then 'users' else ''"/>
+        <xxf:variable name="originId"
+            select="if ($originType='roles') then  substring-after($originIRI,'#CityEHR:Role:') else if ($originType='users') then substring-after($originIRI,'#CityEHR:User:') else ''"/>
+
+        <!-- Should only be one id if format of saved-cohort-search-instance is correct -->
+        <xxf:variable name="cohortSearchId"
+            select="xxf:instance('saved-cohort-search-instance')/id"/>
+
+        <!-- The search can only be saved if originType/originId are OK and its id has been set -->        
+        <xf:action
+            if="$originType!='' and $originId!='' and count($cohortSearchId)=xs:integer('1') and $cohortSearchId != ''">
+
+            <!-- Set the origin of the search -->
+            <xf:setvalue ref="xxf:instance('saved-cohort-search-instance')/origin"
+                value="$originIRI"/>
+
+            <!-- Save the search -->
+            <xf:setvalue
+                ref="xxf:instance('manageCohortSearchControl-instance')/xmlstoreHandle"
+                value="concat(xxf:instance('view-parameters-instance')/applicationStorageLocation,'/cohortSearches/',$originType,'/',$originId,'/',$cohortSearchId)"/>
+
+            <xf:send submission="save-search-submission"/>
+
+        </xf:action>
+        
+        <!-- Problem with originType/originId or id --> 
+        <xf:action
+            if="not($originType!='' and $originId!='' and count($cohortSearchId)=xs:integer('1') and $cohortSearchId != '')">
+            <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/status" value="'cohort-search-format-error'"/>            
+        </xf:action>
+             
+    </xf:action>
+
+
+    <!-- Submission to delete the search that has previously been saved -->
+    <xf:submission id="delete-search-submission"
+        ref="xxf:instance('saved-cohort-search-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('manageCohortSearchControl-instance')/xmlstoreHandle}"
+        validate="false" method="delete" replace="none" serialization="none">
+
+        <xf:action ev:event="xforms-submit-error">
+            <!--
+            <xf:message
+                ref="concat('Failed: ',xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('control-instance')/currentSearchHandle)"
+            />
+            -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-done">
+            <!--
+            <xf:message
+                ref="concat('Success: ',xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('control-instance')/currentSearchHandle)"
+            />
+            -->
+        </xf:action>
+
+    </xf:submission>
+
+
+    <!-- Application defined action to delete the saved cohort/search
+         Called from confirmation dialogue or in cityEHRAdmin.
+         xmlstoreHandle must be set to the cohort search to delete.
+         Pattern of the handle is applications/<applicationId>/cohortSearches/[users|role]/[<userId>/<roleId>]/id
+         Loads the search from the handle, verifies its id and then deletes
+         -->
+    <xf:action ev:event="delete-cohortSearch">
+        <xxf:variable name="handle" select="event('handle')"/>
+        <xxf:variable name="id" select="event('id')"/>
+        
+        <xf:setvalue ref="xxf:instance('manageCohortSearchControl-instance')/xmlstoreHandle"
+            value="$handle"/>
+
+        <!-- Load candidate search from xmlstore -->
+        <xf:send submission="load-saved-search-submission"/>
+
+        <!-- The handle should have the database location ending in cohortSearches/userid/timestamp -->
+        <xxf:variable name="handleComponents"
+            select="reverse(tokenize(xxf:instance('manageCohortSearchControl-instance')/xmlstoreHandle,'/'))"/>
+
+        <!-- Delete the resource in xmlstore and reset the list.
+             But only if:
+                The id passed as a parameter matches the id in the saved search/cohort
+                The handle is to a resource the correct cohortSearches collection
+                The resource name, as stored, matches the id -->
+        <xf:action
+            if="($id = xxf:instance('saved-cohort-search-instance')/id) and ($handleComponents[4]='cohortSearches') and ($handleComponents[1]=xxf:instance('saved-cohort-search-instance')/id)">
+            <!-- Remove from xmlstore -->
+            <xf:send submission="delete-search-submission"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- ========= Cohort Instance ================================== 
+        ============================================================ -->
+
+    <!-- Cohort instance contains the set of patients returned from a cohort search.
+         The template for cohortSearch is inserted from manageCohortSearchModel
+         Has the same structure as cohort-search-instance but without searchTerms -->
+    <xf:instance id="cohort-instance">
+        <cohortSearch/>
+    </xf:instance>
+
+    <!-- Application defined action to initialise the cohort-instance.
+         The cohortName, cohortPatientString and cohortPatientCount are passed as parameters
+         Evyerthing else is cleared.
+    -->
+    <xf:action ev:event="initialize-cohort-instance">
+        <xxf:variable name="cohortName" select="event('cohortName')"/>
+        <xxf:variable name="cohortPatientString" select="event('cohortPatientString')"/>
+        <xxf:variable name="cohortPatientCount" select="event('cohortPatientCount')"/>
+
+        <xf:setvalue ref="xxf:instance('cohort-instance')/id" value="''"/>
+        <xf:setvalue ref="xxf:instance('cohort-instance')/origin" value="''"/>
+
+        <xf:setvalue ref="xxf:instance('cohort-instance')/cohortName" value="$cohortName"/>
+        <xf:setvalue ref="xxf:instance('cohort-instance')/cohortPatientString"
+            value="$cohortPatientString"/>
+        <xf:setvalue ref="xxf:instance('cohort-instance')/cohortPatientCount"
+            value="$cohortPatientCount"/>
+
+        <xf:delete nodeset="xxf:instance('cohort-instance')/searchTerms"/>
+
+    </xf:action>
+
+
+    <!-- === Set up model when it is ready  
+    ======================================= -->
+
+    <xf:action ev:event="xforms-model-construct-done">
+        <xf:insert nodeset="xxf:instance('cohort-instance')"
+            origin="xxf:instance('manageCohortSearchControl-instance')/cohortSearch"/>
+    </xf:action>
+
+
+</xf:model>

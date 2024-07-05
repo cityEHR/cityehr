@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    exportDataSetListXQuery.xml
+    
+    XQuery to return a list of export data set template details
+    Context is the systemConfiguration/datasets collection of the specialty
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<exist:query xmlns:exist="http://exist.sourceforge.net/NS/exist" start="1" max="500" xml:space="preserve">
+    <exist:text>
+        xquery version "1.0"; 
+        declare namespace iso-13606="http://www.iso.org/iso-13606"; 
+        for $resource in collection()
+        let $resourceHandle := document-uri($resource)
+        let $id := data($resource//iso-13606:entryCollection/@id)
+        let $displayName := data($resource//iso-13606:entryCollection/@displayName)
+        return
+        &lt;iso-13606:entryCollection id="{$id}" displayName="{$displayName}" handle="{$resourceHandle}"/>
+    </exist:text>
+</exist:query>
+
+

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        purgePatientListXQuery.xml
+        
+        Get list of patients in records collection that meet criteria for purge operation.
+        The criteria are set in this query, so need to modify to suit whatever purge is required.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<exist:query xmlns:exist="http://exist.sourceforge.net/NS/exist" start="1" max="-1" xml:space="preserve">
+        <exist:text>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        declare namespace xdb="http://exist-db.org/xquery/xmldb";
+
+        declare variable $path := request:get-path-info();
+        declare variable $root := if (ends-with($path,'/')) then $path else concat($path,'/');
+              
+        for $collection in xdb:get-child-collections($root) 
+        let $collectionPath := concat($root,$collection)
+        let $size := count(xdb:get-child-resources($collectionPath))
+        let $resource := collection($collectionPath)[1]
+        let $effectiveTimeSet := $resource/cda:ClinicalDocument/cda:effectiveTime/@value
+        return
+        if ($size eq 1 and $resource/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:id/@extension != $resource/cda:ClinicalDocument/descendant::cda:observation[cda:id/@extension='#ISO-13606:Entry:hospitalnumber']/cda:value[@extension='#ISO-13606:Element:hospitalnumberstring']/@value) then
+        &lt;patient>{$collection}&lt;/patient>
+        else ()
+        </exist:text>
+</exist:query>
+

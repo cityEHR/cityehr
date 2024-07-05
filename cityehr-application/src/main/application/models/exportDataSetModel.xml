@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    exportDataSetModel.xml
+    
+    Xforms model for managing export data sets.
+    And also for exporting patient data.
+    Used in cityEHR Admin and cityEHRCohortSearch (via the manageExportDataSetDialog launched from the exportDataDialog)
+    
+    Export data sets are stored in the xnlstore at systemConfiguration/ISO-13606-Folder-FeatureDemo/datasets
+    (e.g. for the specialty FeatureDemo) in the form:
+    
+    <entryCollection id="" displayName="" xmlns="http://www.iso.org/iso-13606">    
+        <entry extension="#ISO-13606:Entry:BMI" displayName=""/>
+    </entryCollection>
+    
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="exportDataSet-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- === Manage export data sets 
+     ========================================= -->
+
+    <!-- Control for management of export data sets -->
+    <xf:instance id="exportDataSetControl-instance">
+        <control xmlns="">
+            <exportDataSet>
+                <id/>
+                <displayName/>
+                <specialtyIRI/>
+                <specialtyId/>
+                <handle/>
+                <iso-13606:entry extension="" displayName=""/>
+                <editStatus>unedited<!-- unedited | edited  --></editStatus>
+                <lifecycleStatus>new<!-- new | selected --></lifecycleStatus>
+                <filter/>
+                <compositionFilter/>
+            </exportDataSet>
+        </control>
+    </xf:instance>
+
+    <!-- Get list of data sets -->
+    <xf:instance id="exportDataSetList-instance">
+        <exist:result>
+            <!-- Will get replaced by the list of data sets -->
+            <iso-13606:entryCollection id="" displayName="" handle=""/>
+        </exist:result>
+    </xf:instance>
+
+    <!-- Load the queries from file -->
+    <xf:instance id="exportDataSetListXQuery-instance" src="oxf:/apps/ehr/xquery/exportDataSetListXQuery.xml"/>
+
+    <!-- Get list of export data sets -->
+    <xf:submission id="exportDataSetList-submission" ref="xxf:instance('exportDataSetListXQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/systemConfiguration/{xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyId}/datasets"
+        method="post" replace="instance" instance="exportDataSetList-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Set the current export data set.
+                 Note that setting exportDataSet/id causes displayName, handle to be set and the load-exportDataSet-submission due to the xforms-value-changed -->
+            <!-- Don't do this any more, since we need to keep the current data set when it is saved 2014-07-31
+                <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus" value="'selected'"/>
+                <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/id" value="xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection[1]/@id"/> 
+            -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/failedEDSLQuery"/>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Load an export data set -->
+    <xf:instance id="exportDataSet-instance">
+        <entryCollection xmlns="http://www.iso.org/iso-13606"><!-- Gets replaced by the loaded EDS --></entryCollection>
+    </xf:instance>
+
+    <!-- Load EDS from xmlstore -->
+    <xf:submission id="load-exportDataSet-submission" serialization="none"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('exportDataSetControl-instance')/exportDataSet/handle}"
+        validate="false" method="get" replace="instance" instance="exportDataSet-instance" f:url-type="resource">
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(xxf:instance('view-parameters-instance')/systemError,xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedToLoadEDS'],xxf:instance('exportDataSetControl-instance')/exportDataSet/handle)"
+            />
+        </xf:action>
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Reset the edit status -->
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'unedited'"/>
+            <!-- Set lifecycleStatus -->
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus" value="'selected'"/>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Load EDS from template -->
+    <xf:submission id="load-exportDataSet-template-submission"
+        resource="{xxf:instance('view-parameters-instance')/staticFileURL}/templates/exportDataSetDefinition.xml" method="get" replace="instance"
+        instance="exportDataSet-instance" serialization="none">
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(xxf:instance('view-parameters-instance')/systemError,xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedToLoadEDSTemplate'])"
+            />
+        </xf:action>
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('control-instance')/error"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'unedited'"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus" value="'new'"/>
+            <!-- Setting the displayName will also reset the id and handle due to xxforms-value-changed event on the input control -->
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName" value="''"/>
+        </xf:action>
+    </xf:submission>
+
+
+    <!-- === Application defined action to delete current data set.
+         Deletes the data set and then resets the data sets for the current specailty
+         === -->
+    <xf:action ev:event="deleteDataSet">
+        <xf:send submission="delete-exportDataSet-submission" target="exportDataSet-model"/>
+        <xf:dispatch name="initialiseDataSetForSpecialty" target="exportDataSet-model">
+            <xxf:context name="specialtyIRI" select="xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyIRI"/>
+        </xf:dispatch>
+    </xf:action>
+
+
+    <!-- === Application defined action to initialise data sets fot the current specialty.
+         Specialty is set in 'exportDataSetControl-instance'/exportDataSet/specialtyId
+         Get the list of data sets for the specialty.
+         Set selected data set to first on the list
+         Or reset parameters if there are no data sets
+         === -->
+    <xf:action ev:event="initialiseDataSetForSpecialty">
+        <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+
+        <!-- Set the specialty  -->
+        <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyIRI" value="$specialtyIRI"/>
+        <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyId"
+            value="replace(substring($specialtyIRI,2),':','-')"/>
+
+        <!-- Get list of data sets for this specialty.
+             Uses exportDataSet/specialtyId -->
+        <xf:send submission="exportDataSetList-submission" target="exportDataSet-model"/>
+        <!-- Set the current data set to the first on the list (if there is one) .
+             Setting the id will trigger the data set to be loaded (xforms-value-changed event in selection control)-->
+        <xf:action if="exists(xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection)">
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus" value="'selected'"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'unedited'"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/id"
+                value="xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection[1]/@id"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName"
+                value="xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection[1]/@displayName"/>
+        </xf:action>
+        <!-- Reset paramaters if there is no data set -->
+        <xf:action if="not(exists(xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection))">
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus" value="'new'"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'unedited'"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/id" value="''"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName" value="''"/>
+        </xf:action>
+        <!-- Reset Filters -->
+        <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/filter" value="''"/>
+        <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/compositionFilter" value="''"/>
+    </xf:action>
+
+
+    <!-- === Application defined action to set contents of the data set.
+        Inserts or deletes and entry from the data set.
+        There are two input parameters - dictionaryEntry and dataSetEntry.
+        They are set when a user selects an entry from either list - one holds the selected entry, the other must always be blank.
+        If dictionaryEntry is blank then delete dataSetEntry from the exportDataSet-instance
+        If dataSetEntry is blank then insert dictionaryEntry into the exportDataSet-instance
+        === -->
+    <xf:action ev:event="setDataSetContents">
+        <xxf:variable name="dictionaryEntryIRI" select="event('dictionaryEntryIRI')"/>
+        <xxf:variable name="dataSetEntryIRI" select="event('dataSetEntryIRI')"/>
+        <!-- Remove entry from data set -->
+        <xf:action if="$dictionaryEntryIRI='' and $dataSetEntryIRI!=''">
+            <xf:delete nodeset="xxf:instance('exportDataSet-instance')/iso-13606:entry[@extension=$dataSetEntryIRI]"/>
+        </xf:action>
+        <!-- Add entry to data set. -->
+        <xf:action if="$dataSetEntryIRI='' and $dictionaryEntryIRI!=''">
+            <!-- Set the template iso-13606:entry -->
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/iso-13606:entry/@extension"
+                value="$dictionaryEntryIRI"/>
+            <!-- Make sure we get the displayName for the main entry here (not an aliased entry, so use @root = @extension) -->
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/iso-13606:entry/@displayName"
+                value="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry/cda:component/cda:observation[cda:id/@root = cda:id/@extension][cda:id/@extension=$dictionaryEntryIRI]/cda:code/@displayName"/>
+            <xf:insert context="xxf:instance('exportDataSet-instance')"
+                origin="xxf:instance('exportDataSetControl-instance')/exportDataSet/iso-13606:entry"/>
+        </xf:action>
+        <!-- Set the editStatus -->
+        <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'edited'"/>
+    </xf:action>
+
+
+    <!-- === Application defined action to clear contents of the data set.
+             === -->
+    <xf:action ev:event="clearDataSetContents">
+        <!-- Only do this if there is something to delete -->
+        <xf:action if="exists(xxf:instance('exportDataSet-instance')/iso-13606:entry)">
+            <xf:delete nodeset="xxf:instance('exportDataSet-instance')/iso-13606:entry"/>
+            <!-- Set the editStatus -->
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'edited'"/>
+        </xf:action>
+    </xf:action>
+
+    <!-- === Application defined action to load contents of the data set.
+             The list of entries is passed in as a parameter.
+             This is a list of cda:observation elements
+        === -->
+    <xf:action ev:event="loadDataSetContents">
+        <xxf:variable name="entryList" select="event('entryList')"/>
+
+        <!-- Only do this if the entryList has something in it -->
+        <xf:action if="not(empty($entryList))">
+            <xf:action xxf:iterate="$entryList">
+                <xxf:variable name="entry" select="."/>
+                <xxf:variable name="entryIRI" select="$entry/cda:id/@extension"/>
+
+                <!-- Only process entries that aren't already in the data set (just to be sure) -->
+                <xf:action if="not(exists(xxf:instance('exportDataSet-instance')/iso-13606:entry[@extension=$entryIRI]))">
+                    <!-- Set up the template entry to insert -->
+                    <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/iso-13606:entry/@extension"
+                        value="$entryIRI"/>
+                    <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/iso-13606:entry/@displayName"
+                        value="$entry/cda:code[@codeSystem='cityEHR']/@displayName"/>
+
+                    <!-- Insert entry -->
+                    <xf:insert context="xxf:instance('exportDataSet-instance')"
+                        origin="xxf:instance('exportDataSetControl-instance')/exportDataSet/iso-13606:entry"/>
+                </xf:action>
+            </xf:action>
+
+            <!-- Set the editStatus -->
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'edited'"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Save data set to xmlstore -->
+    <xf:submission id="save-exportDataSet-submission" ref="xxf:instance('exportDataSet-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('exportDataSetControl-instance')/exportDataSet/handle}"
+        method="put" replace="none" f:url-type="resource" includenamespacesprefixes="">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError" value="''"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'unedited'"/>
+            <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus" value="'selected'"/>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(xxf:instance('view-parameters-instance')/systemError,' Failed to save export data set to ',xxf:instance('exportDataSetControl-instance')/exportDataSet/handle)"
+            />
+        </xf:action>
+    </xf:submission>
+
+
+    <!-- Delete data set from xmlstore -->
+    <xf:submission id="delete-exportDataSet-submission" ref="xxf:instance('exportDataSet-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('exportDataSetControl-instance')/exportDataSet/handle}"
+        method="delete" replace="none" serialization="none"/>
+</xf:model>

@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    processModel.xml
+    
+    Xforms model containing stuff for running multi-action processes.
+    The processes are defined in the processExecution element in view-parameters
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="process-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:controller="http://www.orbeon.com/oxf/controller">
+
+    <xf:instance id="processControl-instance">
+        <control>
+            <status status-instanceId="" status-elementName=""/>
+            <completionAction model="" actionName=""/>
+            <action processName="" model="" actionName="" actionNumber="" context="" errorCode="" startTime="" endTime="" elapsedTime=""/>
+            <message/>
+            <processExecution>
+                <action/>
+            </processExecution>
+        </control>
+    </xf:instance>
+
+    <xf:instance id="processExecutionLog-instance">
+        <!-- status is waiting | running | aborted | completed -->
+        <processExecutionLog status="waiting" progressDisplay="" errorCode="" actionCount="" startTime="" endTime="" elapsedTime=""/>
+    </xf:instance>
+
+
+    <!-- ========= Process Actions ==================       
+         ============================================ -->
+
+    <!-- Application defined action to clear the processExecutionLog. -->
+    <xf:action ev:event="clear-processExecutionParameters">
+        <!-- processExecution -->
+        <xf:delete nodeset="xxf:instance('processControl-instance')/processExecution/*"/>
+        <xf:delete nodeset="xxf:instance('processControl-instance')/completionAction/*"/>
+        <xf:setvalue ref="xxf:instance('processControl-instance')/completionAction/@model" value="''"/>
+        <xf:setvalue ref="xxf:instance('processControl-instance')/completionAction/@actionName" value="''"/>
+
+        <!-- processExecutionLog -->
+        <xf:delete nodeset="xxf:instance('processExecutionLog-instance')/*"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@actionCount" value="''"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressDisplay" value="''"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@errorCode" value="''"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@startTime" value="''"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@endTime" value="''"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@elapsedTime" value="''"/>
+    </xf:action>
+
+
+    <!-- Application defined action to run a process consisting of multiple actions.
+         The process for processName must be pre-configured in view-parameters.
+         There can only be one instance of a process for processName running at one time.
+         But there can be multiple processes of different names. -->
+    <xf:action ev:event="run-process">
+        <xxf:variable name="processName" select="event('processName')"/>
+        <xxf:variable name="contextSet" select="event('contextSet')"/>
+        <xxf:variable name="completionActionModel" select="event('completionActionModel')"/>
+        <xxf:variable name="completionActionName" select="event('completionActionName')"/>
+
+        <!-- Clear the processExecution controls -->
+        <xf:dispatch name="clear-processExecutionParameters" target="process-model"/>
+
+        <!-- Set up the completionAction (may be blank) -->
+        <xf:setvalue ref="xxf:instance('processControl-instance')/completionAction/@model" value="$completionActionModel"/>
+        <xf:setvalue ref="xxf:instance('processControl-instance')/completionAction/@actionName" value="$completionActionName"/>
+
+        <!-- Set up the actions for the process in processExecution control -->
+        <xf:dispatch name="generate-processActions" target="process-model">
+            <xxf:context name="processName" select="$processName"/>
+            <xxf:context name="contextSet" select="$contextSet"/>
+        </xf:dispatch>
+
+        <!-- Set the count of actions in the process -->
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@actionCount"
+            value="count(xxf:instance('processControl-instance')/processExecution/action)"/>
+
+        <!-- Invoke the first action for the process.
+             Log the action and then simulate pressing the invoke-processAction button.
+             This button is a hidden trigger in cityEHRFooter.xhtml
+             Need to logProcessAction first to make sure the progress display is updated to show the first action before it runs. -->
+        <xf:dispatch name="log-processAction" target="process-model"/>
+        <xxf:script>document.getElementById("invoke-processAction").click();</xxf:script>
+
+    </xf:action>
+
+
+    <!-- Application defined action to generate the actions for the process defined in view-parameters.
+         The process is generated in the processExecution element of the control-instance
+         Creates a flat list of actions for the process, including repeated actions and sub-process actions.
+         Processes must be acyclic, otherwise would open the possibility of infinitely looping process.
+         -->
+    <xf:action ev:event="generate-processActions">
+        <xxf:variable name="processName" select="event('processName')"/>
+        <xxf:variable name="contextSet" select="event('contextSet')"/>
+
+        <xxf:variable name="processDefinition" select="xxf:instance('view-parameters-instance')/processExecution/process[@name=$processName]"/>
+
+        <!-- Iterate through steps of the process -->
+        <xf:action xxf:iterate="$processDefinition/*">
+            <xxf:variable name="step" select="."/>
+            <xxf:variable name="stepType" select="$step/name()"/>
+
+            <!-- Step is a (sub-)process - generate actions in recursive call -->
+            <xf:action if="$stepType='process'">
+                <xf:dispatch name="generate-processActions" target="process-model">
+                    <xxf:context name="processName" select="$step/@name"/>
+                    <xxf:context name="contextSet" select="$contextSet"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Step is an action -->
+            <xf:action if="$stepType='action'">
+                <xxf:variable name="context" select="$step/@context"/>
+
+                <!-- Action has context
+                     Add an action for each element in the contextSet that matches the context. -->
+                <xf:action xxf:iterate="$contextSet[name()=$context]">
+                    <xxf:variable name="contextElement" select="."/>
+                    <xf:dispatch name="add-processAction" target="process-model">
+                        <xxf:context name="processDefinition" select="$processDefinition"/>
+                        <xxf:context name="actionDefinition" select="$step"/>
+                        <xxf:context name="contextElement" select="$contextElement"/>
+                        <xxf:context name="contextSet" select="$contextSet"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Action doesn't have context - add the action to the process -->
+                <xf:action if="not(exists($context))">
+                    <xf:dispatch name="add-processAction" target="process-model">
+                        <xxf:context name="processDefinition" select="$processDefinition"/>
+                        <xxf:context name="actionDefinition" select="$step"/>
+                        <xxf:context name="contextElement" select="()"/>
+                        <xxf:context name="contextSet" select="$contextSet"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:action>
+
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to add an action to the process in the control instance.
+         The actionDefinition is the action as defined in view-parameters.
+        -->
+    <xf:action ev:event="add-processAction">
+        <xxf:variable name="processDefinition" select="event('processDefinition')"/>
+        <xxf:variable name="actionDefinition" select="event('actionDefinition')"/>
+        <xxf:variable name="contextElement" select="event('contextElement')"/>
+        <xxf:variable name="contextSet" select="event('contextSet')"/>
+
+        <xxf:variable name="processExecution" select="xxf:instance('processControl-instance')/processExecution"/>
+        <xxf:variable name="actionTemplate" select="xxf:instance('processControl-instance')/action"/>
+
+        <!-- Insert the actionTemplate and get a handle on it (its now the last action in processExecution) -->
+        <xf:insert context="$processExecution" nodeset="*" origin="$actionTemplate" at="last()" position="after"/>
+        <xxf:variable name="action" select="$processExecution/action[last()]"/>
+        <xxf:variable name="position" select="count($processExecution/action)"/>
+
+        <!-- Set the action parameters.
+             For the displayName, just use a snippet of the string content of actionContext, in case its very long-->
+        <xf:setvalue ref="$action/@processName" value="$processDefinition/@name"/>
+        <xf:setvalue ref="$action/@model" value="$processDefinition/@model"/>
+        <xf:setvalue ref="$action/@actionName" value="$actionDefinition/@name"/>
+        <xf:setvalue ref="$action/@actionNumber" value="$position"/>
+        <xf:setvalue ref="$action/@displayName"
+            value="normalize-space(concat($actionDefinition/@displayName,' ',substring($contextElement,1,10)))"/>
+
+        <!-- Insert the context element in the action, if it exists -->
+        <xf:action if="exists($contextElement)">
+            <xf:insert context="$action" origin="$contextElement"/>
+        </xf:action>
+
+        <!-- If the action contains sub-processes, then generate their actions with a recursive call to generate-processActions -->
+        <xf:action xxf:iterate="$actionDefinition/process">
+            <xxf:variable name="subProcessName" select="./@name"/>
+
+            <xf:dispatch name="generate-processActions" target="process-model">
+                <xxf:context name="processName" select="$subProcessName"/>
+                <xxf:context name="contextSet" select="$contextSet"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to abort the process execution. -->
+    <xf:action ev:event="abort-process">
+        <xxf:variable name="errorCode" select="event('errorCode')"/>
+
+        <!-- Remove the actions from the processExecution.
+             This ensures that no action is invoked on the next cycle. -->
+        <xf:delete nodeset="xxf:instance('processControl-instance')/processExecution/action"/>
+
+        <!-- Set the errorCode for the current action in the executionLog -->
+        <xxf:variable name="loggedAction" select="xxf:instance('processExecutionLog-instance')/action[last()]"/>
+        <xf:setvalue ref="$loggedAction/@errorCode" value="$errorCode"/>
+        
+        <!-- Set the status of the process -->
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@status" value="'aborted'"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressDisplay" value="concat(.,' - ',$errorCode)"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action on completion of the process execution. -->
+    <xf:action ev:event="complete-process">
+        <xxf:variable name="completionAction" select="xxf:instance('processControl-instance')/completionAction"/>
+
+        <!-- Perform the action, passing the context (which may not exist).
+             The context is an element inserted into the completionAction at some stage during execution of the process. -->
+        <xf:action if="$completionAction/@actionName != '' and $completionAction/@model != ''">
+            <xf:dispatch name="{$completionAction/@actionName}" target="{$completionAction/@model}">
+                <xxf:context name="context" select="$completionAction/*[1]"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to invoke an action in a multi-action process.
+            Perform current action.
+            Set next action, if there is one.
+            If there is a next action, 'click' processAction-step
+            This triggers xforms-value-changed in hidden input to invoke-processAction again.
+    
+            Note that all processing in this action is completed before any processing invoked by the click.on invoke-processActio
+            So if this actions invokes another process-->
+    <xf:action ev:event="invoke-processAction">
+        <xxf:variable name="action" select="xxf:instance('processControl-instance')/processExecution/action[1]"/>
+      
+        <!-- The current action exists - invoke it and move the process on. -->
+        <xf:action if="exists($action)">
+            <!-- Perform the action, passing the context (which may not exist).
+                 The context is an element inserted into the action when the process was set up in run-process. -->
+            <xf:dispatch name="{$action/@actionName}" target="{$action/@model}">
+                <xxf:context name="context" select="$action/*[1]"/>
+            </xf:dispatch>
+
+            <!-- Remove the action - its done -->
+            <xf:delete nodeset="$action"/>
+
+            <!-- Log the action.
+                 This will complete the log of this current action.
+                 And set up the log for the next action, if one exists. -->
+            <xf:dispatch name="log-processAction" target="process-model"/>
+
+            <!-- Simulate pressing the button again to invoke next action (if there is one) or end the process (if there isn't) -->
+            <xxf:script>document.getElementById("invoke-processAction").click();</xxf:script>
+        </xf:action>
+
+        <!-- The current action does not exist - the process has completed execution. -->
+        <xf:action if="not(exists($action))">
+            <xf:dispatch name="complete-process" target="process-model"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to log an action in the processExecutionLog.
+         Invoked when the action is invoked.
+         Set the endTime, elapsedTime of the processExecution log element for the previous action
+         and then move to the processExecutionLog.
+         Then set all parameters for the new action in the processExecution log element -->
+    <xf:action ev:event="log-processAction">
+        
+        <xxf:variable name="time" select="current-dateTime()"/>
+        
+        <!-- Log the elapsed time for the process, so far -->
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@elapsedTime"
+            value="if (../@startTime castable as xs:dateTime) then xs:dateTime($time) - xs:dateTime(../@startTime) else ''"/>
+                
+        <!-- action is the action about to be invoked in the current execution cycle.
+             loggedAction is the action that was logged on the previous cycle (which has now been invoked and has finished) -->
+        <xxf:variable name="action" select="xxf:instance('processControl-instance')/processExecution/action[1]"/>
+        <xxf:variable name="loggedAction" select="xxf:instance('processExecutionLog-instance')/action[last()]"/>
+
+        <!-- Log the start of the process.
+             (This will be when the first log-processAction is invoked from run-process and there is no previously loggedAction). -->
+        <xf:action if="not(exists($loggedAction))">
+            <!-- Set the status of the process -->
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@status" value="'running'"/>
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@startTime" value="$time"/>
+        </xf:action>
+
+        <!-- Log the end of the previous action, if there was one.
+             Only do this if the loggedAction exists. -->
+        <xf:action if="exists($loggedAction)">
+            <!-- Set the log parameters -->
+            <xf:setvalue ref="$loggedAction/@endTime" value="$time"/>
+            <xf:setvalue ref="$loggedAction/@elapsedTime"
+                value="if (../@startTime castable as xs:dateTime) then xs:dateTime($time) - xs:dateTime(../@startTime) else ''"/>
+
+            <!-- Clear the progressDisplay, but not of this is the last action.
+                 (Will get reset below if there is another action to invoke) -->
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressDisplay" value="if (exists($action)) then '' else ."/>
+        </xf:action>
+
+        <!-- If the action exists, then set up its entry in the log.
+             The action won't exist for the last log-processAction invoked from invoke-processAction at the end of the process -->
+        <xf:action if="exists($action)">
+            <!-- Set the startTime -->
+            <xf:setvalue ref="$action/@startTime" value="$time"/>
+            <!-- Update the processExecutionLog.
+                 Add at the bottom, so that the actions are listed in the order they are performed -->
+            <xf:insert context="xxf:instance('processExecutionLog-instance')" nodeset="*" origin="$action" at="last()" position="after"/>
+
+            <!-- Update the progressDisplay -->
+            <xxf:variable name="processName" select="$action/@processName"/>
+            <xxf:variable name="actionNumber" select="$action/@actionNumber"/>
+            <xxf:variable name="actionCount" select="xxf:instance('processExecutionLog-instance')/@actionCount"/>
+            <xxf:variable name="actionName" select="$action/@actionName"/>
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressDisplay"
+                value="concat($processName,' (',$actionNumber,'/',$actionCount,') ',$actionName)"/>
+        </xf:action>
+
+        <!-- Log the end of the process.
+             (This will be when the last log-processAction is invoked from invoke-processAction 
+              after the last action has been run and deleted at the end of the proces). -->
+        <xf:action if="not(exists($action))">
+            <!-- Set the status of the process -->
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@status" value="if (.='aborted') then . else 'completed'"/>
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@endTime" value="$time"/>
+        </xf:action>
+                     
+    </xf:action>
+
+
+    <!-- Application defined action to log a message in the processExecutionLog.
+         The message is inserted into the current (logged) action  -->
+    <xf:action ev:event="log-processMessage">
+        <xxf:variable name="message" select="event('message')"/>
+        
+        <!-- Get the current action in the executionLog -->
+        <xxf:variable name="loggedAction" select="xxf:instance('processExecutionLog-instance')/action[last()]"/>
+        
+        <!-- Set the message -->
+        <xf:setvalue ref="xxf:instance('processControl-instance')/message" value="$message"/>
+        
+        <!-- Add the message to the current action -->
+        <xf:insert context="$loggedAction" nodeset="*" origin="xxf:instance('processControl-instance')/message" at="last()" position="after"/>
+        
+    </xf:action>
+    
+    
+    <!-- Application defined action to log the context of an action in the processExecutionLog.
+         The context is recorded in the current (logged) action  -->
+    <xf:action ev:event="log-processActionContext">
+        <xxf:variable name="context" select="event('context')"/>
+        
+        <!-- Get the current action in the executionLog -->
+        <xxf:variable name="loggedAction" select="xxf:instance('processExecutionLog-instance')/action[last()]"/>
+        
+        <!-- Set the context -->
+        <xf:setvalue ref="$loggedAction/@context" value="$context"/>
+        
+    </xf:action>
+    
+    
+    <!-- Application defined action to get the status from the processExecutionLog.
+         If the process was aborted, then return the error on the last action  -->
+    <xf:action ev:event="get-processStatus">
+        <xxf:variable name="status" select="event('status')"/>
+        
+        <xxf:variable name="processStatus" select="xxf:instance('processExecutionLog-instance')/@status"/>
+        <xxf:variable name="lastActionStatus" select="xxf:instance('processExecutionLog-instance')/action[last()]/@errorCode"/>
+        
+        <xf:setvalue ref="$status" value="if ($processStatus = 'aborted') then concat($processStatus,' - ',$lastActionStatus) else ''"/>
+        
+    </xf:action>
+    
+    <!-- Application defined action to save the processExecutionLog.
+         Saves to the location defined by systemResourcesURL in view-parameters  -->
+    <xf:action ev:event="save-processExecutionLog">      
+        <xf:dispatch name="save-systemResource" target="systemParameters-model">
+            <xxf:context name="systemResource-instance" select="xxf:instance('processExecutionLog-instance')"/>
+            <xxf:context name="systemResourceName" select="xxf:instance('view-parameters-instance')/systemResourcesURL/@processExecutionLogRessource"/>
+            <xxf:context name="status" select="xxf:instance('processControl-instance')/status"/>
+        </xf:dispatch>
+    </xf:action>
+    
+    <!-- Application defined action to load the processExecutionLog.
+         Loads from the location defined by systemResourcesURL in view-parameters  -->
+    <xf:action ev:event="load-processExecutionLog">
+        <xf:dispatch name="load-systemResource" target="systemParameters-model">
+            <xxf:context name="systemResource-instance" select="xxf:instance('processExecutionLog-instance')"/>
+            <xxf:context name="systemResourceName" select="xxf:instance('view-parameters-instance')/systemResourcesURL/@processExecutionLogRessource"/>
+            <xxf:context name="status" select="xxf:instance('processControl-instance')/status"/>
+        </xf:dispatch>
+    </xf:action>
+    
+</xf:model>

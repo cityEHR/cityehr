@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    rdfKnowledgeMap.xml
+    
+    Template RDF document used to create knowledge map of resources using clinical coding.
+    The coding scheme is in the rdf:datatype attribute which uses the namespace URL of the coding scheme
+    The mapping of namespaces to URL is made in the application-parameters for the application.
+      
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" dc:title=""
+    rdf:datatype="http://www.snomed.org">
+    <rdf:Description rdf:about="">
+        <dc:subject rdf:datatype="http://www.snomed.org"/>
+        <dc:description rdf:datatype=""/>
+    </rdf:Description>
+</rdf:RDF>

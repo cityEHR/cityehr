@@ -1,0 +1,189 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRManageExportDataSetDisplay.xhtml
+    
+    Standard display for managing export data sets.
+    Used in cityEHRAdmin and in cityEHRExportDataSetDialog
+    
+    The view must contain its own viewControlsActions-model which handles the user interaction with the controls
+    The viewControls-input-instance is generic, so is included in the configurationModel loaded with every page 
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:table class="displayList" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <xxf:variable name="dataSetEntryList" select="xxf:instance('exportDataSet-instance')/iso-13606:entry"/>
+
+    <!-- dictionaryEntryList must not contain aliased entries (so @root = @extension)
+    or any of the entries already in the dataSetEntryList -->
+    <xxf:variable name="dictionaryEntryList"
+        select="xxf:sort(xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry/cda:component/cda:observation[cda:typeId/@extension='#HL7-CDA:Observation'][cda:id/@root = cda:id/@extension][not(cda:id/@extension=$dataSetEntryList/@extension)],cda:code[@codeSystem='cityEHR']/@displayName,'text', 'ascending')"/>
+    
+    <!-- Filter dictionaryEntryList by the string entered by the user -->
+    <xxf:variable name="entryPrefix" select="'#ISO-13606:Entry:'"/>
+    <xxf:variable name="filter" select="concat($entryPrefix,xxf:instance('exportDataSetControl-instance')/exportDataSet/filter)"/>
+    <xxf:variable name="filteredDictionaryEntryList" select="$dictionaryEntryList[matches(cda:id/@extension,$filter,'i')]"/>
+
+    <!-- Filter dictionaryEntryList by the composition selected by the user -->
+    <xxf:variable name="compositionEntryList"
+        select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition[@code=xxf:instance('exportDataSetControl-instance')/exportDataSet/compositionFilter]/iso-13606:entry"/>
+    <xxf:variable name="filteredByCompositionDictionaryEntryList"
+        select="if (empty($compositionEntryList)) then $filteredDictionaryEntryList else $filteredDictionaryEntryList[cda:id/@extension=$compositionEntryList]"/>
+
+    <!-- Header - contains:
+            lables
+            filter selection
+            buttons for bulk transfer
+            hidden inputs for selecting entries for transfer
+            -->
+    <xhtml:thead>
+        <xhtml:tr>
+            <!-- Dictionary entries -->
+            <xhtml:td>
+                <xf:output
+                    ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/dictionaryEntryLabel"/>
+                <xf:output ref="concat('(',count($filteredByCompositionDictionaryEntryList),'/',count($dictionaryEntryList),')')"/>
+                <xhtml:br/>
+                <!-- Filter for dictionary entries -->
+                <xf:input ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/filter" incremental="true">
+                    <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/filterLabel"
+                    />
+                </xf:input>
+                <!-- Filter for composition -->
+                <xxf:variable name="compositionSet"
+                    select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition"/>
+                <xf:select1 ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/compositionFilter">
+                    <xf:label
+                        ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/compositionFilterLabel"/>
+                    <xf:itemset
+                        nodeset="(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/allCompositionsSelection | $compositionSet)">
+                        <xf:label ref="@displayName"/>
+                        <xf:value ref="@code"/>
+                    </xf:itemset>
+                </xf:select1>
+            </xhtml:td>
+            <!-- Move all entries to/from EDS -->
+            <xhtml:td>
+                <!-- Move all entries to EDS -->
+                <xxf:variable name="loadEDSLabel"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/loadEDSLabel"/>
+                <xxf:variable name="loadEDSIcon"
+                    select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/move-right.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+
+                <xf:trigger appearance="minimal" class="{if (not(empty($filteredByCompositionDictionaryEntryList))) then '' else 'hidden'}">
+                    <xf:label>
+                        <xhtml:img src="{$loadEDSIcon}" alt=""/>
+                    </xf:label>
+                    <xf:hint ref="$loadEDSLabel"/>
+                    <xf:action ev:event="DOMActivate">
+                        <xf:dispatch name="loadDataSetContents" target="exportDataSet-model">
+                            <xxf:context name="entryList" select="$filteredByCompositionDictionaryEntryList"/>
+                        </xf:dispatch>
+                    </xf:action>
+                </xf:trigger>
+                <!-- Move from EDS (just need to clear it) -->
+                <xxf:variable name="clearEDSLabel"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/clearEDSLabel"/>
+                <xxf:variable name="clearEDSIcon"
+                    select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/move-left.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+
+                <xf:trigger appearance="minimal"
+                    class="{if (exists(xxf:instance('exportDataSet-instance')/iso-13606:entry)) then '' else 'hidden'}">
+                    <xf:label>
+                        <xhtml:img src="{$clearEDSIcon}" alt=""/>
+                    </xf:label>
+                    <xf:hint ref="$clearEDSLabel"/>
+                    <xf:action ev:event="DOMActivate">
+                        <xf:dispatch name="clearDataSetContents" target="exportDataSet-model"/>
+                    </xf:action>
+                </xf:trigger>
+
+            </xhtml:td>
+            <!-- EDS entries -->
+            <xhtml:td>
+                <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/EDSEntryLabel"/>
+                <xf:output ref="concat(' (',count($dataSetEntryList),')')"/>
+            </xhtml:td>
+        </xhtml:tr>
+    </xhtml:thead>
+
+    <!-- Lists of entries in dictionary (left hand side) and data set (right hand side) -->
+    <xhtml:tbody>
+        <xhtml:tr>
+            <!-- Entries (from dictionary) -->
+            <xhtml:td>
+                <xhtml:table class="selectionList">
+                    <xhtml:tbody>
+                        <xf:repeat nodeset="$filteredByCompositionDictionaryEntryList">
+                            <xxf:variable name="entryCount" select="if ((position() mod 2) = 0) then 'even' else 'odd'"/>
+                            <xxf:variable name="entry" select="."/>
+                            <xhtml:tr class="{$entryCount}">
+                                <xhtml:td>
+                                    <xhtml:div>
+                                        <xf:trigger appearance="minimal" xxf:modal="true" class="selection">
+                                            <xf:label
+                                                ref="if ($entry/cda:code[@codeSystem='cityEHR']/@displayName!='') then concat($entry/cda:code[@codeSystem='cityEHR']/@displayName,' (',substring-after($entry/cda:id/@extension,$entryPrefix),')') else concat('(',substring-after($entry/cda:id/@extension,$entryPrefix),')')"/>
+                                            <xf:action ev:event="DOMActivate">
+                                                <xf:dispatch name="setDataSetContents" target="exportDataSet-model">
+                                                    <xxf:context name="dictionaryEntryIRI" select="$entry/cda:id/@extension"/>
+                                                    <xxf:context name="dataSetEntryIRI" select="''"/>
+                                                </xf:dispatch>
+                                            </xf:action>
+                                        </xf:trigger>
+                                    </xhtml:div>
+                                </xhtml:td>
+                            </xhtml:tr>
+                        </xf:repeat>
+                    </xhtml:tbody>
+                </xhtml:table>
+            </xhtml:td>
+            <xhtml:td/>
+            <!-- Export Data Set -->
+            <xhtml:td>
+                <xhtml:table class="selectionList">
+                    <xhtml:tbody>
+                        <xf:repeat nodeset="$dataSetEntryList">
+                            <xxf:variable name="entryCount" select="if ((position() mod 2) = 0) then 'even' else 'odd'"/>
+                            <xxf:variable name="entry" select="."/>
+                            <xhtml:tr class="{$entryCount}">
+                                <xhtml:td>
+                                    <xhtml:div>
+                                        <xf:trigger appearance="minimal" xxf:modal="true" class="selection">
+                                            <xf:label
+                                                ref="if ($entry/@displayName!='') then concat($entry/@displayName,' (',substring-after($entry/@extension,$entryPrefix),')') else concat('(',substring-after($entry/@extension,$entryPrefix),')')"/>
+                                            <xf:action ev:event="DOMActivate">
+                                                <xf:dispatch name="setDataSetContents" target="exportDataSet-model">
+                                                    <xxf:context name="dictionaryEntryIRI" select="''"/>
+                                                    <xxf:context name="dataSetEntryIRI" select="$entry/@extension"/>
+                                                </xf:dispatch>
+                                            </xf:action>
+                                        </xf:trigger>
+                                    </xhtml:div>
+                                </xhtml:td>
+                            </xhtml:tr>
+                        </xf:repeat>
+                    </xhtml:tbody>
+                </xhtml:table>
+            </xhtml:td>
+        </xhtml:tr>
+    </xhtml:tbody>
+</xhtml:table>

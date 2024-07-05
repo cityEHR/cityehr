@@ -1,0 +1,15 @@
+<img src="weightManagement.png" width="1157" height="868" border="0" usemap="#map" />
+
+<map name="map">
+<!-- #$-:Image map file created by GIMP Image Map plug-in -->
+<!-- #$-:GIMP Image Map plug-in by Maurits Rijk -->
+<!-- #$-:Please do not edit lines starting with "#$" -->
+<!-- #$VERSION:2.3 -->
+<!-- #$AUTHOR:John Chelsom -->
+<area shape="rect" coords="239,27,571,128" href="start" />
+<area shape="rect" coords="241,186,574,362" href="enterData" />
+<area shape="poly" coords="406,412,567,463,405,511,240,462,407,413" href="checkBMI" />
+<area shape="rect" coords="239,578,572,692" href="followUp" />
+<area shape="rect" coords="710,377,1083,547" href="dietPlan" />
+<area shape="rect" coords="240,751,571,852" href="finish" />
+</map>

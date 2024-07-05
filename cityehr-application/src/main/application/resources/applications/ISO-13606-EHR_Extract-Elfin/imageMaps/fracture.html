@@ -1,0 +1,128 @@
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    Fracture.html
+    
+    Image map file.
+    Works with/>
+.
+    
+    Note that the following are required in order for this to work:
+    
+    The <script> in the <head> must be present in the page that includes the image map
+    The <img> element must have width and height attributes, which are picked up by the Orbeon form render
+    (data-maphilight does not work if there is no width/height)
+    
+    The src attribute on <img> gets set to the correct path for the image when the file is included using XSLT.
+    
+    The following javascript libraries must be included on the page:
+    
+    jquery.min.js
+    jquery.maphilight.min.js
+    cityEHR.js
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<html xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <head>     
+        <script type="text/javascript" language="javascript" src="../../../scripts/jquery.min.js"> </script>
+        <script type="text/javascript" language="javascript" src="../../../scripts/jquery.maphilight.min.js"> </script>
+        
+        <script type="text/javascript" language="javascript" src="../../../scripts/cityEHR.js"> </script>
+        
+        <script> $(function() { $('.map').maphilight(); }); </script>
+    </head>
+    
+    <body>   
+        <img class="map" src="fracture.png" width="357" height="500" useMap="#fracture" />
+        
+        <map name="fracture" id="fracture">
+ 
+    <area shape="rect" coords="108,70,132,132" id="righthumerus" title="Right Humerus" href="#"  onClick="setXformsControl('fracture-fracturesite','righthumerus');"/> 
+    <area shape="rect" coords="108,136,118,181" id="rightradius" title="Right Prox/Shaft" href="#"  onClick="setXformsControl('fracture-fracturesite','rightradius');"/>
+    <area shape="rect" coords="125,134,130,180" id="rightulna" title="Right Ulna Prox/Shaft" href="#"  onClick="setXformsControl('fracture-fracturesite','rightulna');"/>
+    <area shape="rect" coords="119,294,136,334" id="rightsubtrochanteric" title="Right Subtrochanteric" href="#"  onClick="setXformsControl('fracture-fracturesite','rightsubtrochanteric');"/>
+    <area shape="rect" coords="167,27,196,44" id="facialbones" title="Facial Bones" href="#"  onClick="setXformsControl('fracture-fracturesite','facialbones');"/>
+    <area shape="poly" coords="163,257,174,290,191,288,200,256" id="sacrum" title="Sacrum" href="#"  onClick="setXformsControl('fracture-fracturesite','sacrum');"/>
+    <area shape="rect" coords="175,73,186,79" id="t1" title="T1" href="#"  onClick="setXformsControl('fracture-fracturesite','t1');"/>
+    <area shape="rect" coords="231,297,248,337" id="leftsubtrochanteric" title="Left Subtrochanteric" href="#"  onClick="setXformsControl('fracture-fracturesite','leftsubtrochanteric');"/>
+    <area shape="rect" coords="167,7,195,23" id="skull" title="Skull" href="#"  onClick="setXformsControl('fracture-fracturesite','skull');"/>
+    <area shape="rect" coords="171,46,192,57" id="mandible" title="Mandible" href="#"  onClick="setXformsControl('fracture-fracturesite','mandible');"/>
+    <area shape="rect" coords="177,60,186,69" id="cervicalvertebra" title="Cervical Vertebra" href="#"  onClick="setXformsControl('fracture-fracturesite','cervicalvertebra');"/>
+    <area shape="rect" coords="180,84,187,92" id="t2" title="T2" href="#"  onClick="setXformsControl('fracture-fracturesite','t2');"/>
+    <area shape="rect" coords="180,95,188,103" id="t3" title="T3" href="#"  onClick="setXformsControl('fracture-fracturesite','t3');"/>
+    <area shape="rect" coords="180,104,188,114" id="t4" title="T4" href="#"  onClick="setXformsControl('fracture-fracturesite','t4');"/>
+    <area shape="rect" coords="180,115,187,124" id="t5" title="T5" href="#"  onClick="setXformsControl('fracture-fracturesite','t5');"/>
+    <area shape="rect" coords="181,125,187,133" id="t6" title="T6" href="#"  onClick="setXformsControl('fracture-fracturesite','t6');"/>
+    <area shape="rect" coords="180,135,187,145" id="t7" title="T7" href="#"  onClick="setXformsControl('fracture-fracturesite','t7');"/>
+    <area shape="rect" coords="176,146,186,155" id="t8" title="T8" href="#"  onClick="setXformsControl('fracture-fracturesite','t8');"/>
+    <area shape="rect" coords="176,156,186,165" id="t9" title="T9" href="#"  onClick="setXformsControl('fracture-fracturesite','t9');"/>
+    <area shape="rect" coords="176,166,186,175" id="t10" title="T10" href="#"  onClick="setXformsControl('fracture-fracturesite','t10');"/>
+    <area shape="rect" coords="176,177,187,186" id="t11" title="T11" href="#"  onClick="setXformsControl('fracture-fracturesite','t11');"/>
+    <area shape="rect" coords="176,188,186,196" id="t12" title="T12" href="#"  onClick="setXformsControl('fracture-fracturesite','t12');"/>
+    <area shape="poly" coords="120,65,138,58,170,63" id="rightclavicle" title="Right Clavicle" href="#"  onClick="setXformsControl('fracture-fracturesite','rightclavicle');"/>
+    <area shape="poly" coords="189,64,219,58,239,63" id="leftclavicle" title="Left Clavicle" href="#"  onClick="setXformsControl('fracture-fracturesite','leftclavicle');"/>
+    <area shape="poly" coords="218,68,211,78,218,89,227,79" id="leftscapula" title="Left Scapula" href="#"  onClick="setXformsControl('fracture-fracturesite','leftscapula');"/>
+    <area shape="poly" coords="141,67,133,78,141,90,149,79" id="rightscapula" title="Right Scapula" href="#"  onClick="setXformsControl('fracture-fracturesite','rightscapula');"/>
+    <area shape="rect" coords="230,69,251,135" id="lefthumerus" title="Left Humerus" href="#"  onClick="setXformsControl('fracture-fracturesite','lefthumerus');"/>
+    <area shape="poly" coords="172,68,155,67,156,98,144,99,145,193,174,194" id="rightribs" title="Right Rib(s)" href="#"  onClick="setXformsControl('fracture-fracturesite','rightribs');"/>
+    <area shape="poly" coords="189,68,206,69,207,99,219,100,219,193,190,193" id="leftribs" title="Left Rib(s)" href="#"  onClick="setXformsControl('fracture-fracturesite','leftribs');"/>
+    <area shape="rect" coords="239,138,249,185" id="leftradius" title="Left Prox/Shaft" href="#"  onClick="setXformsControl('fracture-fracturesite','leftradius');"/>
+    <area shape="rect" coords="230,136,235,183" id="leftulna" title="Left Ulna Prox/Shaft" href="#"  onClick="setXformsControl('fracture-fracturesite','leftulna');"/>
+    <area shape="rect" coords="173,200,188,209" id="l1" title="L1" href="#"  onClick="setXformsControl('fracture-fracturesite','l1');"/>
+    <area shape="rect" coords="173,212,189,220" id="l2" title="L2" href="#"  onClick="setXformsControl('fracture-fracturesite','l2');"/>
+    <area shape="rect" coords="173,222,188,232" id="l3" title="L3" href="#"  onClick="setXformsControl('fracture-fracturesite','l3');"/>
+    <area shape="rect" coords="173,234,189,244" id="l4" title="L4" href="#"  onClick="setXformsControl('fracture-fracturesite','l4');"/>
+    <area shape="rect" coords="172,246,188,254" id="l5" title="L5" href="#"  onClick="setXformsControl('fracture-fracturesite','l5');"/>
+    <area shape="poly" coords="108,205,126,206,128,218,118,218,117,209,108,209,108,208,108,209" id="rightdistalforearm" title="Right Wrist" href="#"  onClick="setXformsControl('fracture-fracturesite','rightdistalforearm');"/>
+    <area shape="poly" coords="232,219,230,206,250,206,250,209,242,209,242,219" id="leftdistalforearm" title="Left Wrist" href="#"  onClick="setXformsControl('fracture-fracturesite','leftdistalforearm');"/>
+    <area shape="rect" coords="106,211,116,220" id="rightscaphoid" title="Right Scaphoid" href="#"  onClick="setXformsControl('fracture-fracturesite','rightscaphoid');"/>
+    <area shape="rect" coords="243,211,253,221" id="leftscaphoid" title="Left Scaphoid" href="#"  onClick="setXformsControl('fracture-fracturesite','leftscaphoid');"/>
+    <area shape="rect" coords="230,223,257,243" id="leftmetacarpel" title="Left Metacarpel" href="#"  onClick="setXformsControl('fracture-fracturesite','leftmetacarpel');"/>
+    <area shape="rect" coords="101,220,130,243" id="rightmetacarpel" title="Right Metacarpel" href="#"  onClick="setXformsControl('fracture-fracturesite','rightmetacarpel');"/>
+    <area shape="poly" coords="98,244,130,246,129,257,125,257,124,269,119,269,118,274,113,274,112,269,107,269,106,260,95,259" id="rightdigits" title="Right Digit(s)" href="#"  onClick="setXformsControl('fracture-fracturesite','rightdigits');"/>
+    <area shape="poly" coords="230,244,260,244,265,259,256,261,250,260,251,269,246,268,246,274,241,274,241,268,236,268,235,255,229,256" id="leftdigits" title="Left Digit(s)" href="#"  onClick="setXformsControl('fracture-fracturesite','leftdigits');"/>
+    <area shape="poly" coords="163,259,156,262,152,271,151,277,154,284,168,283,168,282" id="rightpelvis" title="Right Pelvis" href="#"  onClick="setXformsControl('fracture-fracturesite','rightpelvis');"/>
+    <area shape="poly" coords="199,259,208,265,212,276,212,281,206,283,196,281" id="leftpelvis" title="Left Pelvis" href="#"  onClick="setXformsControl('fracture-fracturesite','leftpelvis');"/>
+    <area shape="poly" coords="161,284,166,284,167,290,171,293,175,293,177,297,171,300,165,298,162,294" id="rightpubicramus" title="Right Pubic Ramus" href="#"  onClick="setXformsControl('fracture-fracturesite','rightpubicramus');"/>
+    <area shape="poly" coords="189,296,190,293,197,292,200,288,200,285,205,285,206,293,200,297,193,299,188,297" id="leftpubicramus" title="Left Pubic Ramus" href="#"  onClick="setXformsControl('fracture-fracturesite','leftpubicramus');"/>
+    <area shape="poly" coords="175,291,188,292,183,303" id="coccyx" title="Coccyx" href="#"  onClick="setXformsControl('fracture-fracturesite','coccyx');"/>
+    <area shape="poly" coords="127,283,139,277,147,279,144,286,132,293,124,291" id="rightnof" title="Right NOF" href="#"  onClick="setXformsControl('fracture-fracturesite','rightnof');"/>
+    <area shape="poly" coords="220,279,229,277,242,286,245,293,235,293,224,289" id="leftnof" title="Left NOF" href="#"  onClick="setXformsControl('fracture-fracturesite','leftnof');"/>
+    <area shape="poly" coords="115,284,125,285,122,293" id="righttrochanteric" title="Right Trochanter" href="#"  onClick="setXformsControl('fracture-fracturesite','righttrochanteric');"/>
+    <area shape="poly" coords="243,285,251,286,246,295" id="lefttrochanteric" title="Left Trochanter" href="#"  onClick="setXformsControl('fracture-fracturesite','lefttrochanteric');"/>
+    <area shape="rect" coords="119,337,138,368" id="rightmiddistalfemur" title="Right Mid/Distal Femur" href="#"  onClick="setXformsControl('fracture-fracturesite','rightmiddistalfemur');"/>
+    <area shape="rect" coords="230,337,249,367" id="leftmiddistalfemur" title="Left Mid/Distal Femur" href="#"  onClick="setXformsControl('fracture-fracturesite','leftmiddistalfemur');"/>
+    <area shape="circle" coords="127,373,6" id="rightpatella" title="Right Patella" href="#"  onClick="setXformsControl('fracture-fracturesite','rightpatella');"/>
+    <area shape="circle" coords="238,374,6" id="leftpatella" title="Left Patella" href="#"  onClick="setXformsControl('fracture-fracturesite','leftpatella');"/>
+    <area shape="rect" coords="125,381,135,417" id="righttibia" title="Right Tibia" href="#"  onClick="setXformsControl('fracture-fracturesite','righttibia');"/>
+    <area shape="rect" coords="231,382,242,419" id="lefttibia" title="Left Tibia" href="#"  onClick="setXformsControl('fracture-fracturesite','lefttibia');"/>
+    <area shape="rect" coords="120,381,125,418" id="rightfibula" title="Right Fibula" href="#"  onClick="setXformsControl('fracture-fracturesite','rightfibula');"/>
+    <area shape="rect" coords="243,381,250,420" id="leftfibula" title="Left Fibula" href="#"  onClick="setXformsControl('fracture-fracturesite','leftfibula');"/>
+    <area shape="rect" coords="119,438,135,449" id="righttarsal" title="Right Tarsal" href="#"  onClick="setXformsControl('fracture-fracturesite','righttarsal');"/>
+    <area shape="rect" coords="229,441,247,451" id="lefttarsal" title="Left Tarsal" href="#"  onClick="setXformsControl('fracture-fracturesite','lefttarsal');"/>
+    <area shape="rect" coords="115,451,137,468" id="rightmetatarsal" title="Right Metatarsal" href="#"  onClick="setXformsControl('fracture-fracturesite','rightmetatarsal');"/>
+    <area shape="rect" coords="229,453,250,470" id="leftmetatarsal" title="Left Metatarsal" href="#"  onClick="setXformsControl('fracture-fracturesite','leftmetatarsal');"/>
+    <area shape="poly" coords="116,470,137,470,137,485,132,485,132,489,128,489,128,485,124,486,123,482,119,482,119,481,116,481" id="rightfootdigits" title="Right Foot Digits" href="#"  onClick="setXformsControl('fracture-fracturesite','rightfootdigits');"/>
+    <area shape="poly" coords="229,472,248,471,250,484,246,484,246,486,243,485,243,488,239,487,239,490,233,491,234,489,230,489" id="leftfootdigits" title="Left Foot Digits" href="#"  onClick="setXformsControl('fracture-fracturesite','leftfootdigits');"/>
+    <area shape="rect" coords="230,186,252,205" id="leftdistalforearmwrist" title="Left Distal Forearm/Wrist" href="#"  onClick="setXformsControl('fracture-fracturesite','leftdistalforearmwrist');"/>
+    <area shape="rect" coords="108,185,132,204" id="rightdistalforearmwrist" title="Right Distal Forearm/Wrist" href="#"  onClick="setXformsControl('fracture-fracturesite','rightdistalforearmwrist');"/>
+    <area shape="rect" coords="231,421,247,439" id="leftankle" title="Left Ankle" href="#"  onClick="setXformsControl('fracture-fracturesite','leftankle');"/>
+    <area shape="rect" coords="119,420,136,436" id="rightankle" title="Right Ankle" href="#"  onClick="setXformsControl('fracture-fracturesite','rightankle');"/>
+    <area shape="rect" coords="174,79,180,144" id="sternum" title="Sternum" href="#"  onClick="setXformsControl('fracture-fracturesite','sternum');"/>
+    
+        </map>
+    </body>
+</html>
+

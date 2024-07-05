@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRFooter.xhtml
+    
+    Standard div for cityEHR footer.
+    Always displayed, pinned to the bottom of the window.
+    Shows details of current user and logon audit information
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:div id="sessionInfo" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+
+    <!-- Display of the footer information -->
+    <xhtml:span class="footerItem">
+        <xf:trigger appearance="minimal">
+            <xf:label>
+                <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+                <xf:output ref="xxf:instance('view-parameters-instance')/versionNumber/@displayName"/>
+                <xf:output ref="xxf:instance('view-parameters-instance')/versionNumber/@version"/>
+            </xf:label>
+            <!-- Load the release notes for display -->
+            <xf:action ev:event="DOMActivate">
+                <!-- Get release notes -->
+                <xf:send submission="load-release-notes-submission"/>
+                <!-- Remove any elements targetted at specific pages, but not this one -->
+                <xf:delete nodeset="xxf:instance('release-notes-instance')//*[@class!=xxf:instance('view-parameters-instance')/page]"/>
+                <xxf:show dialog="release-notes-dialog"/>
+            </xf:action>
+        </xf:trigger>
+    </xhtml:span>
+
+    <!-- Current user for this session -->
+    <xhtml:span class="{if (exists(xxf:instance('user-instance')/credentials)) then 'footerItem' else 'hidden'}">
+        <xf:output ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/userLabel/@displayName"/>
+        <xf:output ref="xxf:instance('user-instance')/credentials/username"/>
+        <xf:output
+            ref="if (xxf:instance('session-parameters-instance')/specialtyDisplayName!='') then xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/specialtyLabel/@displayName else xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/noSpecialtyLoaded/@displayName"/>
+        <xf:output ref="xxf:instance('session-parameters-instance')/specialtyDisplayName"/>
+        <xf:output ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/languageLabel/@displayName"/>
+        <xf:output ref="xxf:instance('session-parameters-instance')/languageCode"/>
+    </xhtml:span>
+
+    <!-- Logged on for this session -->
+    <xhtml:span class="{if (exists(xxf:instance('session-parameters-instance')[@sessionId!=''])) then 'footerItem' else 'hidden'}">
+        <xxf:variable name="loginTime" select="xxf:instance('session-parameters-instance')/@loginTime"/>
+        <xf:output
+            ref="if ($loginTime castable as xs:dateTime) then xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/loggedOnLabel/@displayName else ''"/>
+        <xf:output
+            value="if ($loginTime castable as xs:dateTime) then format-dateTime(xs:dateTime($loginTime), xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/dateFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $loginTime"
+        />
+    </xhtml:span>
+
+    <!-- Last logged on -->
+    <xhtml:span class="{if (exists(xxf:instance('session-parameters-instance')[@sessionId!=''])) then 'footerItem' else 'hidden'}">
+        <xxf:variable name="previousLoginTime" select="xxf:instance('session-parameters-instance')/@previousLoginTime"/>
+        <xf:output
+            ref="if ($previousLoginTime castable as xs:dateTime) then xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/lastLoggedOnLabel/@displayName else xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/nolastLoggedOnMessage/@displayName"/>
+        <xf:output
+            value="if ($previousLoginTime castable as xs:dateTime) then format-dateTime(xs:dateTime($previousLoginTime), xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/dateFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else ''"
+        />
+    </xhtml:span>
+
+
+    <!-- Dialogue box to show release notes -->
+    <xxf:dialog id="release-notes-dialog" appearance="full" level="modal" draggable="true" visible="false">
+        <xf:label>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+            <xf:output ref="xxf:instance('view-parameters-instance')/versionNumber/@displayName"/>
+            <xf:output ref="xxf:instance('view-parameters-instance')/versionNumber/@version"/>
+        </xf:label>
+
+        <!-- Debugging -->
+        <!--
+        <xf:output ref="concat(xxf:instance('view-parameters-instance')/appPath,'/resources/releaseNotes/',xxf:instance('view-parameters-instance')/versionNumber/@version,'.html')"/>
+            
+        <xf:output ref="count(xxf:instance('release-notes-instance')/*)"/>
+        <xf:output ref="xxf:instance('release-notes-instance')/*[1]/name(.)"/>
+        <p>Release notes instance:<br/>
+            <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('release-notes-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+        </p>
+        -->
+        <xhtml:div class="ScrollingContainer">
+            <xf:output ref="xxf:serialize(xxf:instance('release-notes-instance'), 'html')" mediatype="text/html"/>
+        </xhtml:div>
+
+    </xxf:dialog>
+
+    <!-- Hidden trigger for the next step in the processAction sequence -->
+    <xf:trigger id="invoke-processAction" appearance="minimal" xxf:modal="false" class="hidden">
+        <xf:label/>
+        <xf:action ev:event="DOMActivate">
+            <xf:dispatch name="invoke-processAction" target="process-model"/>
+        </xf:action>
+    </xf:trigger>
+
+    <!-- Hidden input to pass data in and out of javascript -->
+    <xf:input id="javascriptParameters" ref="xxf:instance('session-parameters-instance')/javascriptParameters" class="hidden"/>
+    
+    <!-- Hidden input to record click in an image map.
+         The value is set in javascript as hotpotId///hotspotClass-->
+    <xf:input id="imageMapCommand" ref="xxf:instance('session-parameters-instance')/imageMapCommand" class="hidden">
+        <xf:action ev:event="xforms-value-changed">
+            <xf:dispatch name="handleImageMapCommand" target="imageMap-model">
+                <xxf:context name="imageMapCommand" select="xxf:instance('session-parameters-instance')/imageMapCommand"/>
+            </xf:dispatch>
+        </xf:action>       
+    </xf:input>
+    
+   <!-- Javascript functions, including default and configuration specific to this application -->
+    <!-- Not using jquery on every page, or for the accordian view
+    <xhtml:script type="text/javascript" language="javascript" src="{xxf:instance('view-parameters-instance')/staticFileRoot}/scripts/jquery.min.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"> </xhtml:script>
+    <xhtml:script type="text/javascript" language="javascript" src="{xxf:instance('view-parameters-instance')/staticFileRoot}/scripts/accordion.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"> </xhtml:script>
+    -->
+    <!--
+    <xhtml:script type="text/javascript" language="javascript"
+        src="{xxf:instance('view-parameters-instance')/staticFileRoot}/scripts/cityEHR.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"> </xhtml:script>
+    <xhtml:script type="text/javascript" language="javascript"
+        src="{xxf:instance('view-parameters-instance')/staticFileRoot}/configuration/{xxf:instance('view-parameters-instance')/applicationId}/scripts/cityEHR.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"> </xhtml:script>
+-->
+
+</xhtml:div>

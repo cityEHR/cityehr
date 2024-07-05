@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        databaseBackup.xml
+        
+        XQuery to back up eXist database
+        Creates the backup in the output directory, relative to the exist data directory.
+        
+        To test, can copy the following directly into the run XQuery in cityEHRAdmin
+        
+        xquery version "1.0"; 
+        let $params :=
+        <parameters>
+                <param name="output" value="export"/>
+                <param name="backup" value="yes"/>
+                <param name="incremental" value="no"/>
+                <param name="zip" value="no"/>
+        </parameters>
+        return
+                system:trigger-system-task("org.exist.storage.ConsistencyCheckTask", $params)
+           
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<exist:query xmlns:exist="http://exist.sourceforge.net/NS/exist" start="1" max="500" xml:space="preserve">
+        <exist:text>
+                xquery version "1.0"; 
+                let $params :=
+                &lt;parameters>
+                        &lt;param name="output" value="export"/>
+                        &lt;param name="backup" value="yes"/>
+                        &lt;param name="incremental" value="no"/>
+                        &lt;param name="zip" value="no"/>
+                &lt;/parameters>
+                return
+                system:trigger-system-task("org.exist.storage.ConsistencyCheckTask", $params)
+        </exist:text>
+</exist:query>
+

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    neutralGivenNames.xml
+    
+    List of male given names used to generate test data.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<nameList>
+    <name>Ashley</name>
+    <name>Alex</name>
+    <name>Billy</name>
+    <name>Chris</name>
+    <name>Charlie</name>
+    <name>Danny</name>
+    <name>Drew</name>
+    <name>Evelyn</name>
+    <name>Francis</name>
+    <name>Gabe</name>
+    <name>Gwyn</name>
+    <name>Hailey</name>
+    <name>Hilary</name>
+    <name>Iggy</name>
+    <name>Jesse</name>
+    <name>Jordan</name>
+    <name>Kim</name>
+    <name>Laurie</name>
+    <name>Lee</name>
+    <name>Mel</name>
+    <name>Meredith</name>
+    <name>Morgan</name>
+    <name>Nicky</name>
+    <name>Odell</name>
+    <name>Page</name>
+    <name>Parker</name>
+    <name>Pat</name>
+    <name>Quinn</name>
+    <name>Robin</name>
+    <name>Rowan</name>
+    <name>Sam</name>
+    <name>Sasha</name>
+    <name>Taylor</name>
+    <name>Terry</name>
+    <name>Tommie</name>
+    <name>Timmy</name>
+    <name>Tracy</name>
+    <name>Tyler</name>
+    <name>Urban</name>
+    <name>Vivian</name>
+    <name>Wallis</name>
+    <name>Zane</name>
+</nameList>

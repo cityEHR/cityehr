@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        databaseClusterXQuery.xml
+        
+        Dashboard query to return status of nodes in beowulf cluster.
+        If the node is configured then it has a document containing node/btu elements in its configuration collection
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3";
+        
+        let $btuCount := count(//btu)
+        let $unconfigured := if ($btuCount=0) then 1 else 0
+        let $available :=  if ($unconfigured=0) then 1 else 0
+        
+        return
+        &lt;queryResults>
+                &lt;total value="1"/>
+                &lt;category displayName="Offline" value="0"/>
+                &lt;category displayName="Unconfigured" value="{$unconfigured}"/>
+                &lt;category displayName="Available" value="{$available}"/>
+        &lt;/queryResults>
+</query>

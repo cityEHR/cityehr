@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cityEHRapi>
+    <command name="authenticate">
+        <description/>
+        <example>/ehr/api/authenticate/?userId=user&password=secret</example>
+        <cityEHRapiResponse>
+            <sessionId>863fa22fd0253e00333d96bb4417973a</sessionId>
+        </cityEHRapiResponse>
+        <cityEHRapiResponse>
+            <userAuthenticationFailed/>
+        </cityEHRapiResponse>
+        <parameters>
+            <parameter name="userId"/>
+            <parameter name="password"/>
+        </parameters>
+    </command>
+    <command name="getApplicationList">
+        <description/>
+        <example>
+            /ehr/api/getApplicationList/?userId=user&sessionId=863fa22fd0253e00333d96bb4417973a
+        </example>
+        <cityEHRapiResponse>
+            <applicationList/>
+        </cityEHRapiResponse>
+        <parameters>
+            <parameter name="userId"/>
+            <parameter name="sessionId"/>
+        </parameters>
+    </command>
+    <command name="getDemographics">
+        <description/>
+        <example>
+            /ehr/api/getDemographics/??userId=user&sessionId=863fa22fd0253e00333d96bb4417973a&applicationId=#ISO-13606:EHR_Extract:cityEHR&patientId=K123456789
+        </example>
+        <cityEHRapiResponse>
+            <entryCollection/>
+        </cityEHRapiResponse>
+        <cityEHRapiResponse>
+            <userAuthenticationFailed/>
+        </cityEHRapiResponse>
+        <parameters>
+            <parameter name="userId"/>
+            <parameter name="sessionId"/>
+            <parameter name="applicationId"/>
+            <parameter name="patientId"/>
+        </parameters>
+    </command>
+    <command name="getCompositionList">
+        <description/>
+        <example>
+            /ehr/api/getCompositionList/??userId=user&sessionId=863fa22fd0253e00333d96bb4417973a&applicationId=#ISO-13606:EHR_Extract:cityEHR&patientId=K123456789
+        </example>
+        <cityEHRapiResponse>
+            <compositionCollection/>
+        </cityEHRapiResponse>
+        <cityEHRapiResponse>
+            <userAuthenticationFailed/>
+        </cityEHRapiResponse>
+        <parameters>
+            <parameter name="userId"/>
+            <parameter name="sessionId"/>
+            <parameter name="applicationId"/>
+            <parameter name="patientId"/>
+        </parameters>
+    </command>
+    <command name="getComposition">
+        <description/>
+        <example>
+            /ehr/api/getComposition/??userId=user&sessionId=863fa22fd0253e00333d96bb4417973a&applicationId=#ISO-13606:EHR_Extract:cityEHR&patientId=K123456789&compositionId=2023-10-26T20-52-40.71*01-00-CityEHR-Form-BaseRegistration-admin
+        </example>
+        <cityEHRapiResponse>
+            <compositionCDA/>
+        </cityEHRapiResponse>
+        <cityEHRapiResponse>
+            <userAuthenticationFailed/>
+        </cityEHRapiResponse>
+        <parameters>
+            <parameter name="userId"/>
+            <parameter name="sessionId"/>
+            <parameter name="applicationId"/>
+            <parameter name="patientId"/>
+            <parameter name="compositionId"/>
+        </parameters>
+    </command>
+    <command name="postComposition">
+        <description/>
+        <example>
+            /ehr/api/postComposition/??userId=user&sessionId=863fa22fd0253e00333d96bb4417973a&applicationId=#ISO-13606:EHR_Extract:cityEHR&patientId=K123456789
+        </example>
+        <cityEHRapiResponse>
+            <compositionId/>
+        </cityEHRapiResponse>
+        <cityEHRapiResponse>
+            <userAuthenticationFailed/>
+        </cityEHRapiResponse>
+        <parameters>
+            <parameter name="userId"/>
+            <parameter name="sessionId"/>
+            <parameter name="applicationId"/>
+            <parameter name="patientId"/>
+        </parameters>
+    </command>
+</cityEHRapi>

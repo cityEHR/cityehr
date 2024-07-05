@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        userSearchesXQuery.xml
+        
+        XQuery to return set of all cohort searches stored in the current collection
+        Called for the collection context of
+                users/<userId>          to get searches for s specific user
+                users                   to get searches for all users
+                roles/<roleId>          to get searches for a specific role
+                roles                   to get searches for all roles
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<exist:query xmlns:exist="http://exist.sourceforge.net/NS/exist" xml:space="preserve">
+        <exist:text>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $resource in collection()
+        let $searchHandle := document-uri($resource)
+        let $cohortName := $resource/cohortSearch/cohortName
+        let $cohortOrigin := $resource/cohortSearch/@origin
+        let $effectiveTime := $resource/cohortSearch/effectiveTime
+        order by $effectiveTime descending
+        return
+        &lt;search> 
+        &lt;handle>{$searchHandle}&lt;/handle>
+        &lt;effectiveTime>{$effectiveTime}&lt;/effectiveTime>
+        &lt;cohortName>{$cohortName}&lt;/cohortName>
+        &lt;cohortOrigin>{$cohortOrigin}&lt;/cohortOrigin>
+        &lt;/search>
+        </exist:text>
+</exist:query>
+

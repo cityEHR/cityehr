@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        getNotificationsXQuery.xml
+        
+        XQuery to return set of notifications for a specified set of actors (users/roles/careTeams)
+        Plus additional criteria that may be set when using the admin facility for redirectNotifications      
+        The notifications can be from annotation or notification documents.
+       
+        This is an XML document which is read by the cityEHR 
+        Any XML elements (i.e. <queryParameters>) are replaced before the query is submitted
+        
+        Returns a set of <notification> elements of the form:
+        <notification>
+                <patientId/>
+                <effectiveTime type="xs:dateTime"/>
+                <functionCode/>
+                <observation>
+                
+                </observation>
+        </notification>
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+<query xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        
+        for $result in /descendant::cda:associatedEntity<actorCriteria/><filterCriteria/><notificationTypeCriteria/>
+        let $composition := $result/ancestor-or-self::cda:ClinicalDocument
+        let $compositionHandle := document-uri(root($result))
+        
+        let $notificationId := $composition/cda:id/@extension
+        let $effectiveTime := $composition/cda:effectiveTime/@value
+        
+        let $patientRole := $composition/descendant::cda:patientRole[1]
+        let $patientId := $patientRole/cda:id/@extension
+        let $patientName := $patientRole/cda:patient/cda:name/cda:family
+        
+        let $author := $composition/descendant::cda:author[1]/cda:assignedAuthor
+        let $authorId := data($author/cda:id/@extension)
+        let $authorDisplayName := if (data($author/cda:assignedPerson/cda:name) != '') then data($author/cda:assignedPerson/cda:name) else $author/cda:id/@extension
+        
+        let $participant := $composition/descendant::cda:participant[1]
+        let $notifyActor := $participant/cda:associatedEntity/cda:id/@extension
+        let $functionCode := $participant/cda:functionCode
+
+        let $documentationOf := $composition/descendant::cda:documentationOf[1]
+        let $displayName := $documentationOf/cda:serviceEvent/cda:code[@codeSystem='cityEHR']/@displayName
+        let $originComposition := $documentationOf/cda:serviceEvent/cda:id/@root
+        let $originEntry := $documentationOf/cda:serviceEvent/cda:id/@extension
+               
+        let $act := $composition/descendant::cda:act[1]
+        let $actDisplayName := $act/cda:code[@codeSystem='cityEHR']/@displayName
+        let $subjectCompositionTypeIRI := $act/cda:subject/cda:typeId/@extension
+        let $subjectHandleId := $act/cda:subject/cda:id/@extension
+                
+        <!-- let $parameters := $resource//cda:observation[1] -->
+        order by $effectiveTime ascending
+        return
+        &lt;notification>
+        &lt;notificationId>{data($notificationId)}&lt;/notificationId>
+        &lt;handle>{$compositionHandle}&lt;/handle>
+        &lt;patientId>{data($patientId)}&lt;/patientId>
+        &lt;patientName>{data($patientName)}&lt;/patientName>
+        &lt;effectiveTime>{data($effectiveTime)}&lt;/effectiveTime>
+        &lt;author displayName="{$authorDisplayName}" value="{$authorId}"/>
+        &lt;notifyActor>{data($notifyActor)}&lt;/notifyActor>
+        &lt;functionCode>{data($functionCode/@code)}&lt;/functionCode>
+        &lt;displayName>{data($displayName)}&lt;/displayName>
+        &lt;actDisplayName>{data($actDisplayName)}&lt;/actDisplayName>
+        &lt;subjectCompositionTypeIRI>{data($subjectCompositionTypeIRI)}&lt;/subjectCompositionTypeIRI>
+        &lt;subjectHandleId>{data($subjectHandleId)}&lt;/subjectHandleId>
+        &lt;originComposition>{data($originComposition)}&lt;/originComposition>
+        &lt;originEntry>{data($originEntry)}&lt;/originEntry>
+        <!-- {$parameters} -->
+        &lt;/notification> 
+</query>
+

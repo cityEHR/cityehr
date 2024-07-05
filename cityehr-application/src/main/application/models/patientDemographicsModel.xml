@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    patientDemographicsModel.xml
+    
+    Xforms model containing parameters needed for holding patient demographics in cityEHR
+    Used in all patient views.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="patientDemographics-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- Control of the model -->
+    <xf:instance id="patientDemographicsControl-instance">
+        <control xmlns="">
+            <status/>
+            <!-- patientId is used in patientDemographics-submission -->
+            <patientId/>
+            <!-- informationType defines where demographics are to be found - can be records or archive -->
+            <informationType>records</informationType>
+        </control>
+    </xf:instance>
+
+    <!-- Instance to hold basic information about the patient. 
+         This is used to display the patient label and is accessible on forms through the built-in cityEHR:instance function
+         -->
+    <xf:instance id="patient-instance">
+        <patientInfo>
+            <!-- Basic demographics from the CDA Header -->
+            <cdaheader>
+                <id/>
+                <prefix/>
+                <given/>
+                <family/>
+                <administrativeGenderCode/>
+                <birthTime/>
+            </cdaheader>
+            <!-- Patient name created from CDA Header elements -->
+            <patientName/>
+            <patientFullName/>
+            <baseTime/>
+            <!-- Age calculated from the effective time of the composition -->
+            <effectiveAge>
+                <years/>
+                <months/>
+                <days/>
+                <inMonths/>
+                <inWeeks/>
+                <inDays/>
+                <asDuration/>
+                <formatted/>
+            </effectiveAge>
+            <!-- Age calculated from the current date -->
+            <currentAge>
+                <years/>
+                <months/>
+                <days/>
+                <inMonths/>
+                <inWeeks/>
+                <inDays/>
+                <asDuration/>
+                <formatted/>
+            </currentAge>
+        </patientInfo>
+    </xf:instance>
+
+
+    <!-- ========= Patient Demographics ==================== 
+         =================================================== -->
+
+    <!-- Application defined action to get patient demographics.
+         Sets the results in patientDemographics-instance
+         Used in cityEHRAdmin, cityEHRInTray and in set-patient-for-view (below) for patient-specific views.
+    
+         This could be refactored to use the full text index on the eventIRI -->
+    <xf:action ev:event="get-patient-demographics">
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="source" select="event('source')"/>
+        <xxf:variable name="informationType" select="event('informationType')"/>
+
+        <!-- Clear demographics, in case anything goes wrong.
+             Probably not necessary, but need to be absolutely certain that demographics are for the correct patient -->
+        <xf:delete nodeset="xxf:instance('patientDemographics-instance')/*"/>
+
+        <!-- Set patientId in patientDemographicsControl-instance for use in the submission.
+             Can only get the demographics if the patientId is set -->
+        <xf:setvalue ref="xxf:instance('patientDemographicsControl-instance')/patientId" value="$patientId"/>
+
+        <!-- patinetId is set, so can get demographics -->
+        <xf:action if="xxf:instance('patientDemographicsControl-instance')/patientId != ''">
+            <xxf:variable name="compositionIRIList" select="xxf:instance('application-parameters-instance')/patientRegistration/registrationEvent/@composition"/>
+            <xxf:variable name="compositionIRISearchList" select="concat('(''',string-join($compositionIRIList,''','''),''')')"/>
+            <xf:setvalue ref="xxf:instance('patientDemographicsXQuery-instance')/compositionClause"
+                value="concat('[cda:typeId/@extension[1]=',$compositionIRISearchList,']')"/>
+
+            <!-- Search is in records or archive, as specified by informationType -->
+            <xf:setvalue ref="xxf:instance('patientDemographicsControl-instance')/informationType"
+                value="if ($informationType!='') then $informationType else 'records'"/>
+
+            <!-- Return demographics entries -->
+            <xxf:variable name="entryIRIList"
+                select="distinct-values(xxf:instance('application-parameters-instance')/patientRegistration/*/@entry | xxf:instance('application-parameters-instance')/patientLabel/controlPanelGroup/controlItem/@entry)"/>
+            <xxf:variable name="entryIRISearchList" select="concat('(''',string-join($entryIRIList,''','''),''')')"/>
+            <xf:setvalue ref="xxf:instance('patientDemographicsXQuery-instance')/entrySet" value="$entryIRISearchList"/>
+
+            <!-- Restrict to source, if specified (used during the unmerge or unarchive processes).
+                 But do not return entries from the source composition itself  -->
+            <xf:setvalue ref="xxf:instance('patientDemographicsXQuery-instance')/sourceConditions"
+                value="if ($source='') then '' else concat('[ancestor::cda:ClinicalDocument/descendant::cda:serviceEvent/cda:id/@extension=''',$source,'''][ancestor::cda:ClinicalDocument/cda:id/@extension!=''',$source,''']')"/>
+
+            <!-- Set the query -->
+            <xf:setvalue ref="xxf:instance('demographics-query-instance')/exist:text"
+                value="xxf:instance('patientDemographicsXQuery-instance')"/>
+
+            <!-- Submit query to get demographics -->
+            <xf:send submission="patientDemographics-submission"/>
+        </xf:action>
+    </xf:action>
+
+    <!-- Demographics XQuery from file -->
+    <xf:instance id="patientDemographicsXQuery-instance" src="oxf:/apps/ehr/xquery/patientDemographicsXQuery.xml"/>
+    <!-- Generic query to be used when parameters need to be set before running.
+         Return unlimited number of hits (there shouldn't be very many) -->
+    <xf:instance id="demographics-query-instance">
+        <exist:query start="1" max="-1">
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+    <!-- Response instance - holds the patient demographics response from search in the record -->
+    <xf:instance id="patientDemographics-instance">
+        <patientDemographics/>
+    </xf:instance>
+
+    <!-- Run query to get demographics for the patient.
+         This uses the patientDemographicsXQuery to return a set of patientDemographics elements.
+         Assumes that xxf:instance('patientDemographicsControl-instance')/patientId is set to the current patient.-->
+    <xf:submission id="patientDemographics-submission" ref="xxf:instance('demographics-query-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/{xxf:instance('patientDemographicsControl-instance')/informationType}/{xxf:instance('patientDemographicsControl-instance')/patientId}"
+        method="post" replace="instance" instance="patientDemographics-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('patientDemographicsControl-instance')/status">success</xf:setvalue>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('patientDemographicsControl-instance')/status">failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSubmissionToGetPatientDemographics']"/>
+        </xf:action>
+    </xf:submission>
+
+
+    <!-- Application defined action to clear the patient demographics.
+         Used in cross-patient views -->
+    <xf:action ev:event="clear-patient-demographics">
+        <!-- Iterate through top level of parameters -->
+        <xf:action xxf:iterate="xxf:instance('patient-instance')/*">
+            <xf:setvalue ref="." value="''"/>
+            <!-- Iterate through second level of parameters -->
+            <xf:action xxf:iterate="./*">
+                <xf:setvalue ref="." value="''"/>
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set up patient demographics 
+        Use the first (i.e. most recent) value of each parameter as returned by the patient demographics search. 
+        Get the first value of each demographic item from the patientDemographics-instance (that is not blank - not doing this now)
+        These are used to display the patient label.
+        This event is raised for patient-specific views and in cityEHRAdmin -->
+
+    <xf:action ev:event="set-patient-demographics">
+        <xxf:variable name="patientId" select="event('patientId')"/>
+
+        <xxf:variable name="patientDemographics" select="xxf:instance('patientDemographics-instance')"/>
+        <xxf:variable name="patientRegistration" select="xxf:instance('application-parameters-instance')/patientRegistration"/>
+
+        <!-- Get the recorded patientId returned from the demographics search.
+             Note teh use of descendant::cda:observation in case the registration entry is a enumeratedClass entry -->
+        <xxf:variable name="recordedPatientId"
+            select="($patientDemographics//cda:observation[cda:id/@extension=$patientRegistration/id/@entry]/descendant::cda:value[@extension=$patientRegistration/id/@element])[1]/@value"/>
+
+        <!-- Can only set the patient demographics if the correct patientId was found.
+             Note the use of descendant::cda:value in case the registration entry contains clusters -->
+        <xf:action if="$recordedPatientId = $patientId">
+            <!-- Id -->
+            <xf:setvalue ref="xxf:instance('patient-instance')/cdaheader/id" value="$recordedPatientId"/>
+            <!-- Prefix -->
+            <xf:setvalue ref="xxf:instance('patient-instance')/cdaheader/prefix"
+                value="($patientDemographics//cda:observation[cda:id/@extension=$patientRegistration/prefix/@entry]/descendant::cda:value[@extension=$patientRegistration/prefix/@element])[1]/@value"/>
+            <!-- Given -->
+            <xf:setvalue ref="xxf:instance('patient-instance')/cdaheader/given"
+                value="($patientDemographics//cda:observation[cda:id/@extension=$patientRegistration/given/@entry]/descendant::cda:value[@extension=$patientRegistration/given/@element])[1]/@value"/>
+            <!-- Family -->
+            <xf:setvalue ref="xxf:instance('patient-instance')/cdaheader/family"
+                value="($patientDemographics//cda:observation[cda:id/@extension=$patientRegistration/family/@entry]/descendant::cda:value[@extension=$patientRegistration/family/@element])[1]/@value"/>
+            <!-- Gender -->
+            <xf:setvalue ref="xxf:instance('patient-instance')/cdaheader/administrativeGenderCode"
+                value="($patientDemographics//cda:observation[cda:id/@extension=$patientRegistration/administrativeGenderCode/@entry]/descendant::cda:value[@extension=$patientRegistration/administrativeGenderCode/@element])[1]/@value"/>
+            <!-- Birth time -->
+            <xf:setvalue ref="xxf:instance('patient-instance')/cdaheader/birthTime"
+                value="($patientDemographics//cda:observation[cda:id/@extension=$patientRegistration/birthTime/@entry]/descendant::cda:value[@extension=$patientRegistration/birthTime/@element])[1]/@value"/>
+
+            <!-- Patient names 
+                 May be used for lookup in default/calculated values using cityEHR:instance(patient-instance,patientName) etc -->
+            <xf:setvalue ref="xxf:instance('patient-instance')/patientName"
+                value="if (xxf:instance('patient-instance')/cdaheader/prefix!='') then normalize-space(concat(xxf:instance('patient-instance')/cdaheader/prefix,' ',xxf:instance('patient-instance')/cdaheader/family)) else  normalize-space(concat(xxf:instance('patient-instance')/cdaheader/given,' ',xxf:instance('patient-instance')/cdaheader/family))"/>
+            <xf:setvalue ref="xxf:instance('patient-instance')/patientFullName"
+                value="normalize-space(concat(xxf:instance('patient-instance')/cdaheader/prefix,' ',xxf:instance('patient-instance')/cdaheader/given,' ',xxf:instance('patient-instance')/cdaheader/family))"
+            />
+        </xf:action>
+
+        <!-- Clear patient demographics if the correct patientId was not found.
+             This must also raise a system error - something has gone badly wrong -->
+        <xf:action if="not($recordedPatientId = $patientId)">
+            <xf:dispatch name="clear-patient-demographics" target="patientDemographics-model"/>
+
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSubmissionToSetPatientDemographics']"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set up patient age parameters        
+         This event is only raised for patient-specific views -->
+    <xf:action ev:event="set-patient-age">
+
+        <!-- This is the new way of setting parameters in the patient-instance -->
+        <xf:action if="substring(xxf:instance('patient-instance')/cdaheader/birthTime,1,10) castable as xs:date">
+            <xxf:variable name="birthTime" select="xs:date(substring(xxf:instance('patient-instance')/cdaheader/birthTime,1,10))"/>
+
+            <!-- Set parameters for the patient age (calculated based on the effectiveTime of the composition) -->
+            <xf:action
+                if="exists(xxf:instance('form-instance')) and substring(xxf:instance('form-instance')/cda:effectiveTime/@value,1,10) castable as xs:date">
+                <xxf:variable name="baseTime"
+                    select="xs:date(substring(xxf:instance('form-instance')/cda:effectiveTime/@value,1,10))"/>
+
+                <xxf:variable name="patientAge" select="xs:date($baseTime) - xs:date($birthTime)"/>
+                <xxf:variable name="ageYears" select="year-from-date($baseTime) - year-from-date($birthTime)"/>
+                <xxf:variable name="ageMonths" select="month-from-date($baseTime) - month-from-date($birthTime)"/>
+                <xxf:variable name="ageDays" select="day-from-date($baseTime) - day-from-date($birthTime)"/>
+                <!-- Adjust month (down) if born later in the month than effectiveTime -->
+                <xxf:variable name="ageMonthsAdjust" select="if ($ageDays lt 0) then 1 else 0"/>
+                <!-- Adjust year (down) if born after effectiveTime month/day -->
+                <xxf:variable name="ageYearsAdjust" select="if ($ageMonths - $ageMonthsAdjust lt 0) then 1 else 0"/>
+
+                <xxf:variable name="patientAgeYears" select="xs:integer($ageYears - $ageYearsAdjust)"/>
+                <xxf:variable name="patientAgeMonths"
+                    select="xs:integer(if ($ageMonths gt 0) then $ageMonths - $ageMonthsAdjust else if ($ageMonths lt 0) then $ageMonths - $ageMonthsAdjust +12 else if ($ageMonths = 0 and  $ageMonthsAdjust = 1) then 11 else 0)"/>
+                <xxf:variable name="patientAgeDays" select="xs:integer(if ($ageDays lt 0) then day-from-date($baseTime) else $ageDays)"/>
+                <xxf:variable name="patientAgeInMonths" select="xs:integer((12 * $patientAgeYears) + $patientAgeMonths)"/>
+                <xxf:variable name="patientAgeInDays" select="xs:integer(days-from-duration($baseTime - $birthTime))"/>
+                <xxf:variable name="patientAgeInWeeks" select="xs:integer(floor($patientAgeInDays div 7))"/>
+
+                <!-- Patient age is based on the effectiveTime of the composition -->
+                <!-- The patient-instance age parameters -->
+                <xf:setvalue ref="xxf:instance('patient-instance')/baseTime" value="$baseTime"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/effectiveAge/years" value="$patientAgeYears"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/effectiveAge/months" value="$patientAgeMonths"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/effectiveAge/days" value="$patientAgeDays"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/effectiveAge/inMonths" value="$patientAgeInMonths"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/effectiveAge/inWeeks" value="$patientAgeInWeeks"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/effectiveAge/inDays" value="$patientAgeInDays"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/effectiveAge/asDuration" value="xs:duration($baseTime - $birthTime)"/>
+
+                <!-- Set displayName for patient age -->
+                <xf:dispatch name="set-ageDisplayName" target="patientDemographics-model">
+                    <xxf:context name="birthTime" select="$birthTime"/>
+                    <xxf:context name="value" select="$patientAge"/>
+                    <xxf:context name="displayName" select="xxf:instance('patient-instance')/effectiveAge/formatted"/>
+                </xf:dispatch>
+
+            </xf:action>
+
+            <!-- Set parameters for the curent patient age (calculated based on the current date) -->
+            <xf:action>
+                <xxf:variable name="baseTime" select="current-date()"/>
+
+                <!-- The calculations are identical to the above, but the baseTime is now set to the current date -->
+                <xxf:variable name="patientAge" select="xs:date($baseTime) - xs:date($birthTime)"/>
+                <xxf:variable name="ageYears" select="year-from-date($baseTime) - year-from-date($birthTime)"/>
+                <xxf:variable name="ageMonths" select="month-from-date($baseTime) - month-from-date($birthTime)"/>
+                <xxf:variable name="ageDays" select="day-from-date($baseTime) - day-from-date($birthTime)"/>
+                <!-- Adjust month (down) if born later in the month than effectiveTime -->
+                <xxf:variable name="ageMonthsAdjust" select="if ($ageDays lt 0) then 1 else 0"/>
+                <!-- Adjust year (down) if born after effectiveTime month/day -->
+                <xxf:variable name="ageYearsAdjust" select="if ($ageMonths - $ageMonthsAdjust lt 0) then 1 else 0"/>
+
+                <xxf:variable name="patientAgeYears" select="xs:integer($ageYears - $ageYearsAdjust)"/>
+                <xxf:variable name="patientAgeMonths"
+                    select="xs:integer(if ($ageMonths gt 0) then $ageMonths - $ageMonthsAdjust else if ($ageMonths lt 0) then $ageMonths - $ageMonthsAdjust +12 else if ($ageMonths = 0 and  $ageMonthsAdjust = 1) then 11 else 0)"/>
+                <xxf:variable name="patientAgeDays" select="xs:integer(if ($ageDays lt 0) then day-from-date($baseTime) else $ageDays)"/>
+                <xxf:variable name="patientAgeInMonths" select="xs:integer((12 * $patientAgeYears) + $patientAgeMonths)"/>
+                <xxf:variable name="patientAgeInDays" select="xs:integer(days-from-duration($baseTime - $birthTime))"/>
+                <xxf:variable name="patientAgeInWeeks" select="xs:integer(floor($patientAgeInDays div 7))"/>
+
+                <!-- Current patient age is based on today's date -->
+                <!-- The patient-instance currentAge parameters -->
+                <xf:setvalue ref="xxf:instance('patient-instance')/currentAge/years" value="$patientAgeYears"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/currentAge/months" value="$patientAgeMonths"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/currentAge/days" value="$patientAgeDays"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/currentAge/inMonths" value="$patientAgeInMonths"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/currentAge/inWeeks" value="$patientAgeInWeeks"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/currentAge/inDays" value="$patientAgeInDays"/>
+                <xf:setvalue ref="xxf:instance('patient-instance')/currentAge/asDuration" value="xs:duration($baseTime - $birthTime)"/>
+
+                <!-- Set displayName for patient age -->
+                <xf:dispatch name="set-ageDisplayName" target="patientDemographics-model">
+                    <xxf:context name="birthTime" select="$birthTime"/>
+                    <xxf:context name="value" select="$patientAge"/>
+                    <xxf:context name="displayName" select="xxf:instance('patient-instance')/currentAge/formatted"/>
+                </xf:dispatch>
+            </xf:action>
+
+        </xf:action>
+    </xf:action>
+
+    <!-- Application defined action to set up patient age displayName        
+         This event is only raised for patient-specific views, called from CDA2XForm-Module.xsl.
+        
+        The patient's date of birth is stored in 'patient-instance'/cdaheader/birthTime.
+        So if this is set, use it as the base to calculated the displayed age. -->
+    <xf:action ev:event="set-patient-ageDisplayName">
+        <xxf:variable name="value" select="event('value')"/>
+        <xxf:variable name="displayName" select="event('displayName')"/>
+
+        <!-- If patient date of birth is set, then use to generate age display -->
+        <xxf:variable name="birthTimeString" select="substring(xxf:instance('patient-instance')/cdaheader/birthTime,1,10)"/>
+        <xxf:variable name="birthTime" select="if ($birthTimeString castable as xs:date) then xs:date($birthTimeString) else ''"/>
+
+        <!-- Set displayName for patient age -->
+        <xf:dispatch name="set-ageDisplayName" target="patientDemographics-model">
+            <xxf:context name="birthTime" select="$birthTime"/>
+            <xxf:context name="value" select="$value"/>
+            <xxf:context name="displayName" select="$displayName"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set up patient age displayName        
+         This event is only raised for patient-specific views.
+    
+         The patient's date of birth is stored in 'patient-instance'/cdaheader/birthTime.
+         So if this is set, use it as the base to calculated the displayed age.
+         If it is not set, then use -->
+    <xf:action ev:event="set-ageDisplayName">
+        <xxf:variable name="birthTime" select="event('birthTime')"/>
+        <xxf:variable name="value" select="event('value')"/>
+        <xxf:variable name="displayName" select="event('displayName')"/>
+
+        <!-- Can only set age display if value is castable as xs:dayTimeDuration and birthTime is set -->
+        <xf:action if="$value castable as xs:dayTimeDuration and $birthTime castable as xs:date">
+
+            <!-- Age is displayed as follows:
+                If age is < ageDisplayDaysThreshold then display in days
+                If age is >= ageDisplayDaysTreshold and < ageDisplayMonthsThreshold then display in months
+                If age is >= ageDisplayMonthsTreshold and < ageDisplayYearsTreshold then display in years and months
+                If age is >= ageDisplayYearsTreshold then display in years
+            -->
+            <!-- Get the parameters for the formatted age -->
+            <xxf:variable name="ageDisplayDays" select="xxf:instance('application-parameters-instance')/patientLabel/ageDisplayDays"/>
+            <xxf:variable name="ageDisplayWeeks" select="xxf:instance('application-parameters-instance')/patientLabel/ageDisplayWeeks"/>
+            <xxf:variable name="ageDisplayMonths" select="xxf:instance('application-parameters-instance')/patientLabel/ageDisplayMonths"/>
+            <xxf:variable name="ageDisplayYears" select="xxf:instance('application-parameters-instance')/patientLabel/ageDisplayYears"/>
+
+            <xxf:variable name="ageDisplayDaysThreshold" select="xs:integer($ageDisplayDays/@threshold)"/>
+            <xxf:variable name="ageDisplayWeeksThreshold" select="xs:integer($ageDisplayWeeks/@threshold)"/>
+            <xxf:variable name="ageDisplayMonthsThreshold" select="xs:integer($ageDisplayMonths/@threshold)"/>
+            <xxf:variable name="ageDisplayYearsThreshold" select="xs:integer($ageDisplayYears/@threshold)"/>
+
+            <!-- Get the baseTime from the birthDate -->
+            <xxf:variable name="baseTime" select="xs:date($birthTime) + xs:dayTimeDuration($value)"/>
+
+            <xxf:variable name="ageYears" select="year-from-date($baseTime) - year-from-date($birthTime)"/>
+            <xxf:variable name="ageMonths" select="month-from-date($baseTime) - month-from-date($birthTime)"/>
+            <xxf:variable name="ageDays" select="day-from-date($baseTime) - day-from-date($birthTime)"/>
+            <!-- Adjust month (down) if born later in the month than effectiveTime -->
+            <xxf:variable name="ageMonthsAdjust" select="if ($ageDays lt 0) then 1 else 0"/>
+            <!-- Adjust year (down) if born after effectiveTime month/day -->
+            <xxf:variable name="ageYearsAdjust" select="if ($ageMonths - $ageMonthsAdjust lt 0) then 1 else 0"/>
+
+            <xxf:variable name="patientAgeYears" select="xs:integer($ageYears - $ageYearsAdjust)"/>
+            <xxf:variable name="patientAgeMonths"
+                select="xs:integer(if ($ageMonths gt 0) then $ageMonths - $ageMonthsAdjust else if ($ageMonths lt 0) then $ageMonths - $ageMonthsAdjust +12 else if ($ageMonths = 0 and  $ageMonthsAdjust = 1) then 11 else 0)"/>
+            <xxf:variable name="patientAgeDays" select="xs:integer(if ($ageDays lt 0) then day-from-date($baseTime) else $ageDays)"/>
+
+            <xxf:variable name="patientAgeInMonths" select="xs:integer((12 * $patientAgeYears) + $patientAgeMonths)"/>
+            <xxf:variable name="patientAgeInDays" select="xs:integer(days-from-duration($baseTime - xs:date($birthTime)))"/>
+            <xxf:variable name="patientAgeInWeeks" select="xs:integer(floor($patientAgeInDays div 7))"/>
+
+            <!-- Set the age displayName -->
+            <xf:setvalue ref="$displayName"
+                value="if ($patientAgeInMonths lt $ageDisplayDaysThreshold) then concat($patientAgeInDays,' ',$ageDisplayDays/@displayName) else 
+                if (($patientAgeInMonths ge $ageDisplayDaysThreshold) and ($patientAgeInMonths lt  $ageDisplayWeeksThreshold)) then concat($patientAgeInWeeks,' ',$ageDisplayWeeks/@displayName) else
+                if (($patientAgeInMonths ge $ageDisplayWeeksThreshold) and ($patientAgeInMonths lt  $ageDisplayMonthsThreshold)) then concat($patientAgeInMonths,' ',$ageDisplayMonths/@displayName) else
+                if (($patientAgeInMonths ge  $ageDisplayMonthsThreshold) and ($patientAgeInMonths lt  $ageDisplayYearsThreshold)) then concat($patientAgeYears,' ',$ageDisplayYears/@displayName,' ',$patientAgeMonths,' ',$ageDisplayMonths/@displayName) else 
+                if ($patientAgeInMonths ge  $ageDisplayYearsThreshold) then concat($patientAgeYears,' ',$ageDisplayYears/@displayName) else ''"/>
+
+        </xf:action>
+
+        <!-- Blank age display if value is not castable as xs:dayTimeDuration -->
+        <xf:action if="not($value castable as xs:dayTimeDuration and $birthTime castable as xs:date)">
+            <xf:setvalue ref="$displayName" value="''"/>
+        </xf:action>
+
+    </xf:action>
+
+    <!-- ========= Patient Alerts ==================== 
+         ============================================= -->
+    <!-- Load the queries from file -->
+    <xf:instance id="getRecordedEntryCountXQuery-instance" src="oxf:/apps/ehr/xquery/getRecordedEntryCountXQuery.xml"/>
+
+    <!-- Generic query to be used when parameters need to be set before running -->
+    <xf:instance id="alert-query-instance">
+        <exist:query start="1" max="-1">
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+    <!-- Response instance -->
+    <xf:instance id="entryCount-instance">
+        <count>hello</count>
+    </xf:instance>
+
+    <!-- Submission to get the count for a specified entry.
+         Returns the total count of the entries for this patient.
+         -->
+    <xf:submission id="getRecordedEntryCount-submission" ref="xxf:instance('alert-query-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/records/{xxf:instance('view-parameters-instance')/patientId}"
+        method="post" replace="instance" instance="entryCount-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('patientDemographicsControl-instance')/status">success</xf:setvalue>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('patientDemographicsControl-instance')/status">failed</xf:setvalue>
+        </xf:action>
+    </xf:submission>
+
+
+    <!-- Application defined action to check patient alerts        
+         This event is only raised for patient-specific views 
+    
+            Check whether to display the warning sign for alerts.
+            Get the alert view.
+            Check the type of the view (from the dictionary)
+            alertsViewCompositions is the set of compositions in the view
+            For a 'composition' type view, get the count of entries contained in the first view composition, that have a value recorded
+    -->
+    <xf:action ev:event="check-patient-alerts">
+        <xxf:variable name="specialtyIRI" select="xxf:instance('view-parameters-instance')/specialtyIRI"/>
+        <xxf:variable name="alertList" select="xxf:instance('application-parameters-instance')/patientLabel/controlPanelGroup/controlItem[@type='alert']"/>
+
+        <xf:action xxf:iterate="$alertList">
+            <xxf:variable name="alertDisplay" select="."/>
+            <xxf:variable name="alertsViewIRI" select="$alertDisplay/@view"/>
+            <xxf:variable name="alertsView"
+                select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@code=$alertsViewIRI]"/>
+
+            <!-- If checking boolean values, then value must have boolean of 'true' or 'false' to contribute to the entryCount -->
+            <xxf:variable name="checkWarningValue" select="$alertDisplay[@warningEntry!=''][@warningElement!=''][@warningValue!='']"/>
+
+            <!-- The alertsView must exist in the dictionary in order to process it -->
+            <xf:action if="exists($alertsView)">
+                <xxf:variable name="alertsViewType" select="$alertsView/@cityEHR:viewType"/>
+                <xxf:variable name="alertsViewCompositions" select="$alertsView/iso-13606:composition"/>
+
+                <!-- Composition type view - check entries in composition.
+                     TBD - get the entries in the composition -->
+                <xf:action if="$alertsViewType='Composition'">
+                    <xxf:variable name="alertsViewEntries"
+                        select="distinct-values(xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@code=$alertsViewCompositions]/iso-13606:entry)"/>
+                    <xf:setvalue ref="xxf:instance('getRecordedEntryCountXQuery-instance')/whereCompositionClause"
+                        value="concat('[contains(''',xxf:instance('view-parameters-instance')/resultSeparator,string-join($alertsViewCompositions,xxf:instance('view-parameters-instance')/resultSeparator),xxf:instance('view-parameters-instance')/resultSeparator,''',concat(''',xxf:instance('view-parameters-instance')/resultSeparator,''',data(cda:typeId/@extension),''',xxf:instance('view-parameters-instance')/resultSeparator,'''))]')"/>
+
+                    <!-- The clauses for entry and element depend on whether checking for boolean value.
+                        TBD -->
+                    <xf:setvalue ref="xxf:instance('getRecordedEntryCountXQuery-instance')/whereEntryClause"
+                        value="concat('[descendant::cda:id[1]/@extension=(''',string-join($alertsViewEntries,''','''),''')]')"/>
+                    <xf:setvalue ref="xxf:instance('getRecordedEntryCountXQuery-instance')/whereElementClause"
+                        value="'[descendant::cda:value/@value!='''']'"/>
+                </xf:action>
+
+                <!-- Folder type view - check compositions in view -->
+                <xf:action if="$alertsViewType='Folder'">
+
+                    <xf:setvalue ref="xxf:instance('getRecordedEntryCountXQuery-instance')/whereCompositionClause"
+                        value="concat('[contains(''',xxf:instance('view-parameters-instance')/resultSeparator,string-join($alertsViewCompositions,xxf:instance('view-parameters-instance')/resultSeparator),xxf:instance('view-parameters-instance')/resultSeparator,''',concat(''',xxf:instance('view-parameters-instance')/resultSeparator,''',data(cda:typeId/@extension),''',xxf:instance('view-parameters-instance')/resultSeparator,'''))]')"/>
+
+                    <!-- The clauses for entry and element depend on whether checking for warning value. -->
+                    <xf:setvalue ref="xxf:instance('getRecordedEntryCountXQuery-instance')/whereEntryClause"
+                        value="if ($checkWarningValue) then concat('[descendant::cda:id[1]/@extension=(''',$alertDisplay/@warningEntry,''')]') else ''"/>
+                    <xf:setvalue ref="xxf:instance('getRecordedEntryCountXQuery-instance')/whereElementClause"
+                        value="if ($checkWarningValue) then concat('[descendant::cda:value[@extension=''',$alertDisplay/@warningElement,'''][@value=''',$alertDisplay/@warningValue,''']]') else ''"/>
+
+                    <!-- Add extra predicate ([1]) if checking the current value (otherwise all historic values are checked) -->
+                    <xf:setvalue ref="xxf:instance('getRecordedEntryCountXQuery-instance')/whereElementClause"
+                        value="if ($checkWarningValue and  $alertDisplay/@warningValueType='current') then concat('[1]',.) else ."/>
+
+                </xf:action>
+
+                <!-- Now send submission to get the entry count -->
+                <xf:setvalue ref="xxf:instance('alert-query-instance')/exist:text"
+                    value="xxf:instance('getRecordedEntryCountXQuery-instance')"/>
+                <xf:send submission="getRecordedEntryCount-submission"/>
+
+                <!-- Set the flag to display alerts.
+                    The flag is only hidden if the getRecordedEntryCount-submission was successful and returns 0 hits.
+                    Otherwise the alert flag will be shown.
+                    This ensures the flag is positively switched off and will display if anything goes wrong. -->
+                <xf:action if="xxf:instance('patientDemographicsControl-instance')/status = 'success'">
+                    <xxf:variable name="alertCount" select="xxf:instance('entryCount-instance')"/>
+                    <xf:setvalue ref="$alertDisplay/@show"
+                        value="if ($alertCount castable as xs:integer and xs:integer($alertCount) eq 0) then 'noDisplay' else 'alertDisplay'"/>
+                </xf:action>
+            </xf:action>
+
+            <!-- Set the alert to its error display if it couldn't be positively checked -->
+            <xf:action if="xxf:instance('patientDemographicsControl-instance')/status != 'success' or not(exists($alertsView))">
+                <xf:setvalue ref="$alertDisplay/@show" value="'errorDisplay'"/>
+            </xf:action>
+
+            <!-- Set alert displayName to its value, or error -->
+            <xf:setvalue ref="$alertDisplay/@displayName"
+                value="if ($alertDisplay/@show='alertDisplay') then $alertDisplay/@alertDisplay else if ($alertDisplay/@show='errorDisplay') then $alertDisplay/@errorDisplay else ''"
+            />
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to check patient demographics        
+         This event is only raised when the first patient-specific view is loaded for a patient (from patientSearch, cohortSearch or inTray)
+        
+         Check whether a web service check is configured.
+         If so, call and compare results with parameters in the patient label
+    -->
+    <xf:action ev:event="check-patient-demographics"> </xf:action>
+
+
+    <!-- ===== Action to set up patient for a patient-specific view ========
+        But only if a patient id has been supplied.
+        
+        When this model is used in the patient registration form then no patientId is supplied.
+        If the search is made without an Id then it finds the most recently entered in the database, which is not what we want (clinically very unsafe!).
+
+            Get the patient demographics
+            Set the current patient
+            Check alerts for this patient
+            2019-03-29 Check demographics for this patient, if necessary (on first load, when demographicsCheck='perform')
+         =================================================================== -->
+
+    <xf:action ev:event="set-patient-for-view" if="xxf:instance('view-parameters-instance')/patientId!=''">
+
+        <!-- Get the patient demographics.
+             This assumes that xxf:instance('view-parameters-instance')/patientId is set to the current patient -->
+        <xxf:variable name="startTime" select="current-time()"/>
+        <xf:dispatch name="get-patient-demographics" target="patientDemographics-model">
+            <xxf:context name="patientId" select="xxf:instance('view-parameters-instance')/patientId"/>
+            <xxf:context name="source" select="''"/>
+            <xxf:context name="informationType" select="'records'"/>
+        </xf:dispatch>
+
+        <!-- Debugging - show time for demographics search as a system error -->
+        <!--
+        <xxf:variable name="endTime" select="current-time()"/>
+        <xxf:variable name="searchTime"
+            select="xs:time($endTime) - xs:time($startTime)"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError" value="$searchTime"/>
+        -->
+
+        <!-- Set the patient demographics (including age) for the current record -->
+        <xf:dispatch name="set-patient-demographics" target="patientDemographics-model">
+            <xxf:context name="patientId" select="xxf:instance('view-parameters-instance')/patientId"/>
+        </xf:dispatch>
+        <xf:dispatch name="set-patient-age" target="patientDemographics-model"/>
+
+        <!-- Check alerts for the patient (sets display in the patient label -->
+        <xf:dispatch name="check-patient-alerts" target="patientDemographics-model"/>
+
+        <!-- Check demographics when the first patient-specific view is loaded (from patientSearch, cohortSearch or inTray) -->
+        <xf:action if="xxf:instance('view-parameters-instance')/demographicsCheck='perform'">
+            <xf:dispatch name="check-patient-demographics" target="patientDemographics-model"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- ========= Set up model when it is first loaded ==================== 
+        =================================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Be careful doing anything here because this model is used in both patient-specific views where the patient is loaded as the view is created
+             but also in the registration view and the inTray where the patient is not known when the model is first loaded -->
+    </xf:action>
+
+
+</xf:model>

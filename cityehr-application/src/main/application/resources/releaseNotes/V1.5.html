@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    Release Notes
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<html xmlns="" class="releasNotes">
+
+    <head>
+        <link rel="stylesheet" type="text/css" href="releaseNotes.css" media="screen"/>
+    </head>
+
+    <body>
+        <h1>V1.5 - New Features</h1>
+            <h2>System Level</h2>
+            <ol>
+                <li>Use eXist range index for database search</li>
+                <li>Set up database index on blank start</li>
+                <li>Option to restrict patient access to patients in user's care team(s)</li>
+                <li>Details displayed in patient lists are configurable - patient search, cohort search, clinic lists</li>
+                <li>Enhanced support for triggers on published events (entry/element)</li>
+                <li>Annotations (record view) can specify effective time</li>
+                <li>Session control - redirect to home page on error.</li>
+                <li>Session control - prevent URL injection - redirect to homepage.</li>
+                <li>Session control - sign on displays message on redirect.</li>
+            </ol>
+
+            <h2>Information Models</h2>
+            <ol>
+                <li>Improved support for directory lookup entries</li>
+                <li>Support calculated enumerated values</li>
+                <li>Define language for information model</li>
+            </ol>
+
+            <h2>Clinical Data Entry (Forms, Letters, etc)</h2>
+            <ol>
+                <li>Record author information when comitting compositions to database</li>
+                <li>Mouseover shows provenance of compositions in navigation list</li>
+                <li>Letter templates (MS Word) are configurable by composition type</li>
+            </ol>
+
+            <h2>Patient Search</h2>
+            <ol>
+                <li>Search results cleared when criteria are changed</li>
+                <li>Patients picked from lists must be confirmed before opening patient record</li>
+                <li>Results can be limited to care team patients only (configurable)</li>
+                <li>List patients in selected care team</li>
+                <li>Assign patients to care team</li>
+            </ol>
+
+            <h2>Cohort Search</h2>
+            <ol>
+                <li>Improved search performance (up to 100x faster)</li>
+                <li>Administration search (effective time, author by composition</li>
+                <li>Set effective time of search (i.e. search on snapshot in time)</li>
+                <li>Restrict search to current data or all historic data</li>
+                <li>Rebuild search results when saved searches are loaded</li>
+                <li>Support saved cohorts (with search criteria removed)</li>
+                <li>Delete saved searches and cohorts</li>
+                <li>Print summary of patient cohort lists</li>
+                <li>Export patient cohorts</li>
+                <li>Export formats - XML, OWL/XML, spreadsheet (Open Office or Microsoft)</li>
+                <li>Anonymous patient data export</li>
+            </ol>
+
+            <h2>In-Tray</h2>
+            <ol>
+                <li>Click through to launch action (if available)</li>
+                <li>Click through to patient record</li>
+                <li>Filters on In-Tray lists</li>
+                <li>In-tray items can be limited to care team patients only (configurable)</li>
+            </ol>
+
+            <h2>System Administration</h2>
+            <ol>
+                <li>Automated regeneration of directories when an information model is updated</li>
+                <li>Export language packs for information model</li>
+                <li>Apply language pack to information model</li>
+                <li>Define common models for an application (shared between specialties)</li>
+                <li>Check patient lists</li>
+                <li>Assign listed patients to care team</li>
+                <li>Redirect norifications</li>
+                <li>Improvements to user management</li>
+                <li>Restrict user access to care team patients only</li>
+            </ol>
+
+            <h1>V1.5 - Defects Fixed</h1>
+            <dl>
+                <dt>D-082</dt>
+                <dd>Empty sections should not be shown in letters</dd>
+                <dt>D-084</dt>
+                <dd>Spaces in patient id cause crash on external id (for letters, export, etc)</dd>
+
+
+            </dl>
+    </body>
+</html>

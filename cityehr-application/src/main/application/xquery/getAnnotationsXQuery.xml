@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        getAnnotationsXQuery.xml
+        
+        XQuery to return set of annotations for a specified event (composition) in the patient record
+        
+        This is an XML document which is read by the cityEHR 
+        Any XML elements (i.e. <queryParameters>) are replaced before the query is submitted
+        
+        Returns a set of <annotation> elements of the form:
+        <annotation status="published">
+                <id/>
+                <effectiveTime type="xs:dateTime"/>
+                <author type="xs:string"/>
+                <type type="xs:string"/>
+                <description type="memo"/>
+                <notification type="xs:string"/>
+                <notifyActor type="xs:string"/>
+        </annotation>
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+<query xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $resource in collection()/cda:ClinicalDocument[cda:typeId/@root='#CityEHR:Annotation']<whereClause/>
+        
+        let $effectiveTime := $resource/cda:effectiveTime/@value
+        let $id := $resource/cda:id/@extension
+        
+        let $authorTime := $resource/cda:author/cda:time/@value
+        let $authorName := $resource/cda:author/cda:assignedAuthor/cda:assignedPerson/cda:name
+        
+        let $participant := $resource/cda:participant
+        let $notificationValue := $participant/cda:functionCode/@code
+        let $notificationDisplayName := $participant/cda:functionCode/@displayName
+        let $notifyActorId := $participant/cda:associatedEntity[1]/cda:id[1]/@extension
+        let $notifyActorDisplayName := $participant/cda:associatedEntity[1]/cda:code[@codeSystem='cityEHR'][1]/@displayName
+        
+        let $parameterSet := $resource//cda:observation[1]/cda:value
+
+        order by $effectiveTime descending
+        return
+        &lt;annotation status="published">
+        &lt;id>{$id}&lt;/id>
+        &lt;authorTime>{$authorTime}&lt;/authorTime>
+        &lt;authorName>{$authorName}&lt;/authorName>
+        &lt;parameterSet>
+        {for $element in $parameterSet
+             let $nameFromExtension := substring-after($element/@extension,'#ISO-13606:Element:CityEHR:Annotation:')
+             let $parameterId := if ($nameFromExtension = '') then 'parameter' else $nameFromExtension
+             let $value := $element/@value
+             let $displayName := $element/@displayName
+             let $label := $element/@cityEHR:elementDisplayName
+         return
+         &lt;parameter id="{$parameterId}"  type="xs:string" label="{$label}" value="{$value}" displayName="{$displayName}"/>
+        }
+        &lt;/parameterSet>
+        &lt;notification displayName="{$notificationDisplayName}" value="{$notificationValue}"/>
+        &lt;notifyActor displayName="{$notifyActorDisplayName}" value="{$notifyActorId}"/>
+        &lt;effectiveTime>{$effectiveTime}&lt;/effectiveTime>
+        &lt;/annotation> 
+</query>
+

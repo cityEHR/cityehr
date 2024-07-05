@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    patientListModel.xml
+    
+    Xforms model containing parameters needed for executing the patient search
+    and displaying patient lists in cityEHR
+    
+    Performs searches to create patient lists and return results in response-instance:
+       
+    These are then made into strings of patient ids, separated by @@@ (or equivalent separator).
+    These are stored in <recordList/>
+
+    If the number of records is small enough, the patients are then sorted by the orderBy criteria
+    This is another search that forms the patient-set-instance
+    The (ordered) list of patient ids in patient-set-instance is then passed to initialize-cohort-set in cohort-set-model
+    This handles display of the patient cohort, page by page
+    
+    In addition to <recordList/>, there are other lists of patients held for direct selection in the viewNavigation pane:
+    <recentPatientList/>
+    <inPatientList/>
+    <careTeamPatientList/>
+    
+    Patient info is returned for each cohort so that it can be displayed with details from the CDA header.
+    These are defined in cohortSetModel.
+    
+    patient-cohort-instance holds the set of patients from the search results 
+    recentPatient-cohort-instance holds the set of recent patients
+    inPatient-cohort-instance holds the set of in-patients
+    careTeamPatient-cohort-instance holds the set of patients in a care team
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="patientList-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Parameters for control of the patient list-->
+    <xf:instance id="patientListControl-instance">
+        <control xmlns="">
+            <submissionStatus>ready</submissionStatus>
+
+            <!-- Location to set for searching for patients -->
+            <patientSearchLocation/>
+
+            <!-- Location to set for direct check when patientId is the only search criteria -->
+            <patientRecordLocation/>
+
+            <!-- <controlPanelGroup/> with search criteria will be inserted from parameters-instance when model is loaded -->
+            <controlPanel/>
+
+            <!-- <databaseSearch/> with parameters for indexed text search will be inserted from view-parameters-instance when model is loaded -->
+
+            <searchResultMessage/>
+
+            <searchCriteria><!-- Set to a string with a list of the search criteria --></searchCriteria>
+            <!-- No longer used 2017-10-31 <registrationEventList/> -->
+            <registrationEntryList/>
+            <queryParameters>
+                <searchComposition/>
+                <whereClause-entryElement/>
+                <whereClause-values/>
+                <orderByClause/>
+                <maxResults>20<!-- Value is set from view-parameters, but only if an integer --></maxResults>
+            </queryParameters>
+
+            <!-- Set to selection | search -->
+            <patientListType>search</patientListType>
+
+            <!-- Record lists -->
+            <recordList/>
+            <recentPatientList/>
+            <inPatientList/>
+            <careTeamList/>
+
+            <count/>
+            <recordExists/>
+
+            <debugOutput>debugging information</debugOutput>
+        </control>
+    </xf:instance>
+
+    <!-- Set the datatype bindings for input of the search terms.
+         Bindings are made on the element type of built-in elements
+         If not a built-in element then item is not bound and default is a standard input field
+    -->
+
+    <xf:bind nodeset="xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup">
+        <!--
+            <xf:bind
+            nodeset="controlItem[@element = xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@xsi:type='xs:date']/@extension]"
+            type="xs:date"/>
+        -->
+        <xf:bind nodeset="controlItem[@element='#ISO-13606:Element:Date']" type="xs:date"/>
+        <xf:bind nodeset="controlItem[@element='#ISO-13606:Element:DateTime']" type="xs:dateTime"/>
+        <xf:bind nodeset="controlItem[@element='#ISO-13606:Element:Time']" type="xs:time"/>
+        <xf:bind nodeset="controlItem[@element='#ISO-13606:Element:String']" type="xs:string"/>
+        <xf:bind nodeset="controlItem[@element='#ISO-13606:Element:Integer']" type="xs:integer"/>
+        <xf:bind nodeset="controlItem[@element='#ISO-13606:Element:Double']" type="xs:double"/>
+        <xf:bind nodeset="controlItem[@element='#ISO-13606:Element:Boolean']" type="xs:boolean"/>
+    </xf:bind>
+
+
+    <!-- Query parameters for the patient search.
+         This instance holds the parameters entered by the user. -->
+    <xf:instance id="query-parameters-instance">
+        <parameters xmlns="">
+            <id/>
+            <family/>
+            <given/>
+            <administrativeGenderCode/>
+            <birthTimeFrom/>
+            <birthTimeTo/>
+            <orderByEntry/>
+        </parameters>
+    </xf:instance>
+
+
+    <!-- ======= Action to initialise (reset) patient search ======= 
+         This is called when page is loaded, when users presses 'reset' or when user selects a patient from one of the standing lists
+         First clear the results
+         Then reset all search criteria (including setting all parameter input fields to '')
+        ================================================ -->
+
+    <xf:action ev:event="initialise-patient-search">
+        <!-- Clear the search results -->
+        <xf:dispatch name="clear-search-results" target="patientList-model"/>
+
+        <!-- Reset patientListType -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/patientListType" value="'waiting'"/>
+
+        <!-- Reset status -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus" value="''"/>
+
+        <!-- Reset search terms.
+             Iterate through each criteria and set to ''
+             patientListType is 'waiting' so actions aren't triggered on xforms-value-changed -->
+        <xf:action xxf:iterate="xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup/controlItem">
+            <xf:setvalue ref="." value="''"/>
+        </xf:action>
+
+        <!-- Reset searchCriteria string -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/searchCriteria" value="''"/>
+
+        <!-- Set default orderBy entry -->
+        <xf:setvalue ref="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/@value"
+            value="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/item[1]/@value"/>
+        <xf:dispatch name="set-orderBy-clause" target="patientList-model">
+            <xxf:context name="orderBySelection" select="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/@value"/>
+        </xf:dispatch>
+
+        <!-- Don't allow search if there is no specialty model loaded -->
+        <xf:action if="not(exists(xxf:instance('dictionary-instance')/iso-13606:elementCollection))">
+            <xf:setvalue ref="xxf:instance('patientListControl-instance')/searchResultMessage"
+                value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/noSpecialtyMessage"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- ======= Action to perform patient search =======  
+         This is the action called when the users presses the search button
+         First execute the search to get a list of patientIds
+         Then run another search to create the patient cohort (which has one element for each patient, sorted with orderBy)
+         ================================================ -->
+
+    <xf:action ev:event="patient-search">
+        <!-- For debugging
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus" value="concat(current-time(),'/')"/>
+        -->
+
+        <!-- Set the search criteria string.
+             This should get done each time the criteria are changed by the user, so don't really need to do it again here -->
+        <xf:dispatch name="set-search-criteria" target="patientList-model"/>
+
+        <!-- Check that some search criteria have been set -->
+        <xxf:variable name="searchCriteria" select="xxf:instance('patientListControl-instance')/searchCriteria"/>
+
+        <!-- If criteria are set, then do the search -->
+        <xf:action if="$searchCriteria != ''">
+            <!-- Clear existing results -->
+            <xf:dispatch name="clear-search-results" target="patientList-model"/>
+
+            <!-- Execute the search (with timing) -->
+            <xxf:variable name="searchStartTime" select="current-time()"/>
+            <xf:dispatch name="execute-patient-search" target="patientList-model"/>
+
+            <xxf:variable name="searchEndTime" select="current-time()"/>
+            <xxf:variable name="searchTime" select="xs:time($searchEndTime) - xs:time($searchStartTime)"/>
+
+            <!-- Get patient cohort (with timing) -->
+            <xxf:variable name="getCohortStartTime" select="current-time()"/>
+            <xf:dispatch name="get-patient-cohort" target="patientList-model"/>
+
+            <xxf:variable name="getCohortEndTime" select="current-time()"/>
+            <xxf:variable name="getCohortTime" select="xs:time($getCohortEndTime) - xs:time($getCohortStartTime)"/>
+
+            <!-- If logging, then show the time taken for the searches -->
+            <xf:action if="exists(xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/logPerformance['true'])">
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+                    value="concat(.,xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/logPerformance/@displayName,$searchTime,' / ',$getCohortTime)"
+                />
+            </xf:action>
+        </xf:action>
+
+        <!-- If no criteria set, then this is the same as resetting the search -->
+        <xf:action if="$searchCriteria = ''">
+            <!-- clear results set -->
+            <xf:dispatch name="clear-search-results" target="patientList-model"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- ======= Action to clear results lists ==========
+         ================================================ -->
+    <xf:action ev:event="clear-search-results">
+        <!-- Reset the recordList (results set which is a string of patient ids separated by @@@) -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/recordList" value="''"/>
+        <!-- Reset the patient-set-instance -->
+        <xf:delete nodeset="xxf:instance('patient-set-instance')/*"/>
+
+        <!-- Clear cohort page (will reset the hits and page counters) -->
+        <xf:dispatch name="clear-cohort-page" target="cohortSet-model"/>
+
+        <!-- Set message for cohort selection display -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/searchResultMessage"
+            value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/startUpMessage"/>
+    </xf:action>
+
+
+    <!-- ======= Action to set searchCriteria display ==========
+         ======================================================= -->
+    <xf:action ev:event="set-search-criteria">
+        <!-- Get list of values input for the search terms -->
+        <xxf:variable name="searchCriteriaInput"
+            select="xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup/controlItem/normalize-space(.)"/>
+        <!-- Search criteria joins all terms that have a value set -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/searchCriteria" value="string-join($searchCriteriaInput[.!=''],'/')"/>
+        <!-- Criteria are displayed in the systemStatus -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+            value="xxf:instance('patientListControl-instance')/searchCriteria"/>
+        <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+        <xf:recalculate model="viewControlsActions-model"/>
+    </xf:action>
+
+
+    <!-- ========= Query to get list of patients ========= 
+         ================================================= -->
+
+    <xf:instance id="patientSearchXQuery-instance" src="oxf:/apps/ehr/xquery/patientSearchXQuery.xml"/>
+
+    <xf:instance id="response-instance">
+        <exist:result/>
+    </xf:instance>
+
+
+    <!-- Application defined action to set orderBy clause.
+         The results are ordered by the selected item and then by each of the other items in the order that they are listed in the configuration file. -->
+    <xf:action ev:event="set-orderBy-clause">
+        <xxf:variable name="orderBySelection" select="event('orderBySelection')"/>
+
+        <xxf:variable name="patientRegistrationEntryForSelection"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/*[name()=$orderBySelection]"/>
+
+        <xf:action if="exists($patientRegistrationEntryForSelection)">
+            <!-- Set the main orderBy item -->
+            <xxf:variable name="orderByEntry" select="$patientRegistrationEntryForSelection/@entry"/>
+            <xxf:variable name="orderByElement" select="$patientRegistrationEntryForSelection/@element"/>
+            <xf:setvalue ref="xxf:instance('patientListControl-instance')/queryParameters/orderByClause"
+                value="concat('order by ($registrationSet//cda:observation[cda:id/@extension=''',$orderByEntry,''']/descendant::cda:value[@extension=''',$orderByElement,'''])[1]/@value')"/>
+
+            <!-- Now add all the other items, in the order that they are listed -->
+            <xf:action
+                xxf:iterate="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/item[@value != $orderBySelection]/@value">
+                <xxf:variable name="orderByParameter" select="."/>
+
+                <xxf:variable name="patientRegistrationEntryForParameter"
+                    select="xxf:instance('application-parameters-instance')/patientRegistration/*[name()=$orderByParameter]"/>
+
+                <xf:action if="exists($patientRegistrationEntryForParameter)">
+                    <xxf:variable name="orderByParameterEntry" select="$patientRegistrationEntryForParameter/@entry"/>
+                    <xxf:variable name="orderByParameterElement" select="$patientRegistrationEntryForParameter/@element"/>
+                    <xf:setvalue ref="xxf:instance('patientListControl-instance')/queryParameters/orderByClause"
+                        value="concat(.,', ($registrationSet//cda:observation[cda:id/@extension=''',$orderByParameterEntry,''']/descendant::cda:value[@extension=''',$orderByParameterElement,'''])[1]/@value')"
+                    />
+                </xf:action>
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set value clause for the specified composition.
+         This is a set of [ ] predicates built up from the list of controlPanel/controlPanelGroup/controlItems that match the current searchComposition 
+         
+         When using ft:query need to use the lucene index for the equality comparisons of entryIRI and elementIRI 
+         and also take account of the way the terms are tokenised in the index.
+         
+         These equality comparisons are made either as:
+         
+         ft:query(@extension,'nhsnumber|hospitalnumber') or matches(@extension,'nhsnumber|hospitalnumber','i'))
+         
+         The 'i' parameter in matches() makes the match case insensitive
+         
+         Testing has shown that the most efficient way to do this is as follows:
+         
+         for $document in collection()//cda:ClinicalDocument[descendant::cda:value[ft:query(@extension,'element*gender')][ft:query(@value,'male')][ft:query(../cda:id/@extension,'entry*Gender')]]
+                                                            [descendant::cda:value[ft:query(@extension,'element*String')][ft:query(@value,'corn*')][ft:query(../cda:id/@extension,'entry*surname')]] 
+                                                            return <patient id="{data($document//cda:patientRole/cda:id/@extension)[1]}"/>
+    
+         Note that ft:query(@value,'y*')  finds y followed by anything
+         Whereas matches(@value,'y*','i') finds 0 or more y characters
+          -->
+    <xf:action ev:event="set-values-clause">
+        <xxf:variable name="composition" select="event('composition')"/>
+
+        <!-- Clear the whereClause-values -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/queryParameters/whereClause-values" value="''"/>
+
+        <!-- Iterate through each search term for the composition sequence.
+             Only need terms that have a value entered by the user.
+             Sort so that the longest value is found first - this makes the search more efficient. -->
+        <xxf:variable name="searchTerms"
+            select="xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup/controlItem[@searchComposition=$composition]"/>
+        <xxf:variable name="sortedSearchTerms" select="xxf:sort($searchTerms,string-length(.),'number', 'descending')"/>
+
+        <xf:action xxf:iterate="$sortedSearchTerms">
+            <xxf:variable name="controlItem" select="."/>
+
+            <!-- Get the dictionaryElement of the input element -->
+            <xxf:variable name="dictionaryElement"
+                select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$controlItem/@element][1]"/>
+
+            <xxf:variable name="entryType" select="if (exists($controlItem/@entryType)) then $controlItem/@entryType else 'cda:observation'"/>
+            <!-- Get lists of entries and elements to search -->
+            <xxf:variable name="entryIRIList" select="tokenize($controlItem/@searchEntry,',')"/>
+            <xxf:variable name="elementIRIList" select="tokenize($controlItem/@searchElement,',')"/>
+
+            <!-- Search predicate is either specified for the item or defaults to the containsPredicate.
+                 The specific settings handled are:
+                        contains 
+                        equals
+                        starts-with
+                        ends-with                     
+                        not specified - defaults to ft:query -->
+            <xxf:variable name="specifiedSearchPredicate" select="$controlItem/@searchPredicate"/>
+            <xxf:variable name="searchPredicate" select="if (exists($specifiedSearchPredicate)) then $specifiedSearchPredicate else 'fullText'"/>
+
+            <!-- Get value entered by user -->
+            <xxf:variable name="searchString" select="normalize-space($controlItem/data(.))"/>
+
+            <!-- If user has typed a string as the search value, then split into tokens (handles O'Leary and Chumley-Warren)
+                 Break the searchString into values, using the wordBreak regex expression defined in view-parameters
+                 Then search for each value separately.
+                 If searchString is not set (no input from user) then valueList will be () -->
+            <xxf:variable name="tokenize"
+                select="if ($dictionaryElement/@cityEHR:elementType='#CityEHR:ElementProperty:simpleType' and $dictionaryElement/@xsi:type='xs:string') then true() else false()"/>
+            <xxf:variable name="valueList"
+                select=" if ($tokenize) then tokenize($searchString,xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/wordBreak) else $searchString"/>
+
+            <xf:action xxf:iterate="$valueList">
+                <xxf:variable name="value" select="."/>
+                <!-- Set the elementValueTerm, depending on whether the range index is being used, the full text index or no index
+                 Element values are matched using the $searchPredicate
+                 Currently using starts-with and ends-with instead of ft:query for full text
+                 Use the double quote &quot; so that the search string can contain '  - as in O'Mally 
+                 Do not need to use ^ to match start of string in ft:query
+            -->
+                <xxf:variable name="elementValueTerm"
+                    select="if ($searchPredicate=('=','equals')) then concat('@value eq &quot;',$value,'&quot;')
+                else if ($searchPredicate='starts-with') then concat('starts-with(@value,&quot;',$value,'&quot;)')
+                else if ($searchPredicate='ends-with') then concat('ends-with(@value,&quot;',$value,'&quot;)')
+                else if ($searchPredicate='contains') then concat('contains(@value,&quot;',$value,'&quot;)')
+                else concat('ft:query(@value,&quot;',$value,'*&quot;)')"/>
+
+                <!-- Set entry and element equality comparisons.
+                     If a single id then think we should use 'eq', but tests show = is more efficient for eXist
+                     If multiple ids then create a bracketed list and use '=''
+            -->
+                <xxf:variable name="entrySearchTerm"
+                    select="if ($entryIRIList[2]) then concat(' = (''',string-join($entryIRIList,''','''),''')') else concat(' = ''',$entryIRIList[1],'''')"/>
+                <xxf:variable name="elementSearchTerm"
+                    select="if ($elementIRIList[2]) then concat(' = (''',string-join($elementIRIList,''','''),''')') else concat(' = ''',$elementIRIList[1],'''')"/>
+
+                <!-- Set the whereClause-entryElement, depending on whether the range index is being used or the full text index.
+                 The equalsPredicate is '=' if using the range index,
+                 whereClause-entryElement also depends on the type of the entry
+                 
+                 If using range index (equalsPredicate is '=') then the query is on all listed elements and is of the of the form:
+                 
+                 <query>
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3"; 
+                    for $document in collection()/descendant::cda:value[(@extension =('#ISO-13606:Element:HospitalNumber','#ISO-13606:Element:NHSNumber')) and (../cda:id/@extension=('#ISO-13606:Entry:HospitalNumber','#ISO-13606:Entry:NHSNumber')) and (ft:query(@value,'k180*'))]
+                    return <patient id="{data($document//cda:patientRole/cda:id/@extension)[1]}"/>
+                 </query>
+                 
+                 Otherwise the query is only on the first listed entry/element.
+                 
+                 The components matched on each terms are:  elementIRI. entryIRI, value
+                 They are matched in that order which tests have shown is the most efficient (not exactly sure why)  
+                 
+            -->
+                <xf:setvalue ref="xxf:instance('patientListControl-instance')/queryParameters/whereClause-entryElement"
+                    value="if ($entryType='cda:observation') then concat('//cda:value[@extension',$elementSearchTerm,'][ancestor::cda:observation/cda:id/@extension',$entrySearchTerm,'][',$elementValueTerm,']') else 
+                    if ($entryType='cda:encounter') then concat('/descendant::cda:participantRole[cda:id/@extension',$elementSearchTerm,'][cda:playingEntity@value',$elementValueTerm,'][ancestor::cda:encounter/cda:id/@extension',$entrySearchTerm,']')
+                    else ''"/>
+
+                <!-- Build up the whereClause-values on each iteration through the search terms -->
+                <xxf:variable name="whereClause" select="xxf:instance('patientListControl-instance')/queryParameters/whereClause-entryElement"/>
+                <xf:setvalue ref="xxf:instance('patientListControl-instance')/queryParameters/whereClause-values"
+                    value="if ($value='') then . else if (.='') then $whereClause else concat(.,'/ancestor::cda:ClinicalDocument',$whereClause)"/>
+
+            </xf:action>
+            <!-- End of iteration through searchTerm values -->
+        </xf:action>
+        <!-- End of iteration through search terms -->
+    </xf:action>
+
+
+    <!-- Application defined action to execute patient search.
+         This is called when the Search button is pressed in the interface (or when carriage return is pressed in input fields).
+         
+         For each searchComposition, run the XQuery and merge the list of patientIds with the results so far
+         A patient must appear in all results sets in order to register as a hit, so the merge takes the intersection of the results sets, with repeats eliminated.
+         
+         When done, the xxf:instance('patientListControl-instance')/recordList holds the list of Ids that match all the search criteria.
+         -->
+    <xf:action ev:event="execute-patient-search">
+        <!-- Reset the recordList (results set which is a string of patient ids separated by @@@) -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/recordList" value="''"/>
+
+        <!-- If the patientId was entered as the only search criteria, then see if there is a patient with that id.
+             If there is, then don't need to perform a search -->
+        <xxf:variable name="patientIdModel" select="xxf:instance('application-parameters-instance')/patientRegistration/id"/>
+        <xxf:variable name="patientIdEntry" select="$patientIdModel/@entry"/>
+        <xxf:variable name="patientIdElement" select="$patientIdModel/@element"/>
+
+        <xxf:variable name="patientIdSearchTerm"
+            select="xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup/controlItem[contains(@searchEntry,$patientIdEntry) and contains(@searchElement,$patientIdElement)]"/>
+        <xf:variable name="patientId" select="$patientIdSearchTerm/data(.)"/>
+
+        <!-- If patientId entered and is the only search term, then try a direct match before searching.
+             Condition is true if the patientId matches the complete searchCriteria string which has already been set 
+             (and cannot be blank, if we've reached this point) -->
+        <xf:action if="$patientId = xxf:instance('patientListControl-instance')/searchCriteria">
+            <!-- Set collectionLocation for the patient record -->
+            <xf:setvalue ref="xxf:instance('patientListControl-instance')/patientRecordLocation"
+                value="concat(xxf:instance('patientListControl-instance')/patientSearchLocation,'/',$patientId)"/>
+
+            <!-- Check to see if anything already exists at the location for the patient record (in storageObject) -->
+            <xf:dispatch name="collection-exists" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="xxf:instance('patientListControl-instance')/patientRecordLocation"/>
+                <xxf:context name="result" select="xxf:instance('patientListControl-instance')/recordExists"/>
+            </xf:dispatch>
+
+            <!-- Patient record found, so set patientId as single search hit -->
+            <xf:action if="xxf:instance('patientListControl-instance')/recordExists = 'true'">
+                <xf:setvalue ref="xxf:instance('patientListControl-instance')/recordList" value="$patientId"/>
+            </xf:action>
+        </xf:action>
+
+
+        <!-- Perform the search if needed (i.e. not retrieved directly from patientId -->
+        <xf:action if="xxf:instance('patientListControl-instance')/recordList = ''">
+
+            <!-- Note that the @searchComposition may be a list of comma-separated compositions.
+             The search is repeated for each distinct @searchComposition.
+             But only for terms that have a value entered (found using [data(.)])-->
+            <xxf:variable name="searchCompositions"
+                select="distinct-values(xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup/controlItem[data(.)]/@searchComposition)"/>
+
+            <!-- Perform one search for each composition in the list.
+             But only run the search if some terms have been set for that composition type.
+             searchComposition is actually a string with a list of compositions, read from the parameters file.
+             Need to set queryParameters/searchComposition so that it can be used in set-values-clause
+        
+             Iterate through the compositions so that we look for documents containing all the search criteria (entry/element) within the same document -->
+            <xf:action xxf:iterate="$searchCompositions">
+                <xxf:variable name="searchComposition" select="."/>
+                <xf:setvalue ref="xxf:instance('patientListControl-instance')/queryParameters/searchComposition" value="$searchComposition"/>
+
+                <!-- Set search predicate for entry/element values  - is different for each composition -->
+                <xf:dispatch name="set-values-clause" target="patientList-model">
+                    <xxf:context name="composition" select="$searchComposition"/>
+                </xf:dispatch>
+
+                <!-- Set predicate for restriction to care team patients -->
+                <xxf:variable name="careTeamPatientIdString"
+                    select="string-join(xxf:instance('careTeamPatients-instance')/patient/@id,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                <xxf:variable name="patientRestriction" select="concat('[contains(''',$careTeamPatientIdString,''',@extension)]')"/>
+
+                <!-- Set the values of the query parameters in the search instance submitted to eXist -->
+                <xf:setvalue ref="xxf:instance('patientSearchXQuery-instance')/whereClause-values"
+                    value="xxf:instance('patientListControl-instance')/queryParameters/whereClause-values"/>
+                <!-- Restrict to patients in care team(s) -->
+                <xf:setvalue ref="xxf:instance('patientSearchXQuery-instance')/patientRestriction"
+                    value="if (exists(xxf:instance('user-instance')/rbac/restrictPatientAccess[@value='careTeam'])) then $patientRestriction else ''"/>
+                <!-- Set the maximum number of results (has been set as an integer - need one more for the query -->
+                <xxf:variable name="maxResults" select="xxf:instance('patientListControl-instance')/queryParameters/maxResults +1"/>
+
+
+                <!-- Run the query to return response-instance -->
+                <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="xxf:instance('patientListControl-instance')/patientSearchLocation"/>
+                    <xxf:context name="physicalClusterNode" select="''"/>
+                    <xxf:context name="maxResults" select="$maxResults"/>
+                    <xxf:context name="query" select="xxf:instance('patientSearchXQuery-instance')"/>
+                    <xxf:context name="response" select="xxf:instance('response-instance')"/>
+                    <xxf:context name="status" select="xxf:instance('patientListControl-instance')/submissionStatus"/>
+                </xf:dispatch>
+
+                <!-- Response instance contains a set of XML elements (doesn't matter what the element name is), with repeats (possibly) of the patient identifier 
+                     Set the result as a string separated by the defined separator to create a string like:
+                        63636363@@@96956868@@@4939494
+                     This is done by getting the set of id tokens and joining them with @@@     
+                     The result string in this form can then be used to return a set of patient id tokens using tokenize
+                    -->
+                <xxf:variable name="resultsSet" select="distinct-values(xxf:instance('response-instance')/*/@*[1])"/>
+
+                <xxf:variable name="firstSearch" select="if ($searchComposition = $searchCompositions[1]) then 'true' else 'false'"/>
+
+                <!-- First search - create first instance of the recordList -->
+                <xf:action if="$firstSearch='true'">
+                    <xf:setvalue ref="xxf:instance('patientListControl-instance')/recordList"
+                        value="string-join($resultsSet,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                </xf:action>
+
+                <!-- For the second and subsequent searches.
+                     Combine results sets.
+                -->
+                <xf:action if="$firstSearch='false'">
+                    <!--
+                <xf:setvalue ref="xxf:instance('patientListControl-instance')/debugOutput" value="xxf:instance('patientSearchXQuery-instance')"/>
+                -->
+                    <xxf:variable name="resultsSetSoFar"
+                        select="tokenize(xxf:instance('patientListControl-instance')/recordList,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                    <xxf:variable name="newResultsSet" select="for $p in $resultsSet return if ($p=$resultsSetSoFar) then $p else ()"/>
+                    <xf:setvalue ref="xxf:instance('patientListControl-instance')/recordList"
+                        value="string-join($newResultsSet,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                </xf:action>
+
+            </xf:action>
+            <!--
+            <xf:setvalue ref="xxf:instance('patientListControl-instance')/debugOutput" value="xxf:instance('patientSearchXQuery-instance')"/>
+             <xf:setvalue ref="xxf:instance('patientListControl-instance')/debugOutput" value="xxf:instance('dalQuery-instance')/exist:text"/>           
+            -->
+            <xf:setvalue ref="xxf:instance('patientListControl-instance')/debugOutput"
+                value="xxf:instance('databaseControl-instance')/databaseURL"/>
+
+        </xf:action>
+
+        <!-- Reset the keyboard focus (to the currently selected control) -->
+        <!--  <xf:setfocus control="initial-focus"/> -->
+
+    </xf:action>
+
+
+    <!-- ========= Generate the Patient Cohort Set ====================================== 
+         The set of patients in the cohort with their patient Id
+         Ordered according to the criteria set in the search.
+         ================================================================================ -->
+
+    <xf:instance id="patientSetXQuery-instance" src="oxf:/apps/ehr/xquery/patientSetXQuery.xml"/>
+
+    <!--  Contains the patients in a cohort as a set of patient elements -->
+    <xf:instance id="patient-set-instance">
+        <exist:result>
+            <!-- Gets replaced by patient list -->
+        </exist:result>
+    </xf:instance>
+
+
+    <!-- Application defined action to get the patient cohort.
+        This is called when the Search button is pressed in the interface (or when carriage return is pressed in input fields)
+        AFTER the patient search has been run (which sets up the patient ids in xxf:instance('patientListControl-instance')/recordList)
+        ***Can only get-patient-cohort if the recordList has something in it***
+        If the recordList is empty then clear out the cohort.
+    -->
+    <xf:action ev:event="get-patient-cohort">
+        <!-- Tokenise the set of patientIds returned from the search (repeats have already been eliminated) -->
+        <xxf:variable name="patientIdSet"
+            select="tokenize(xxf:instance('patientListControl-instance')/recordList,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+
+        <!-- Set message for patient selection display -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/searchResultMessage"
+            value="if (not(exists($patientIdSet))) then xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/noResultsMessage
+            else ''"/>
+
+        <!-- Something in the record list.
+             maxResults will always be an integer (default is used if not set as an integer in view-parameters)
+             But check anyway, just in case -->
+        <xf:action if="exists($patientIdSet)">
+
+            <xxf:variable name="patientListCount" select="count($patientIdSet)"/>
+
+            <xxf:variable name="maxResults" select="xxf:instance('patientListControl-instance')/queryParameters/maxResults"/>
+
+            <xf:action if="$maxResults castable as xs:integer and $patientListCount gt xs:integer($maxResults)">
+                <xf:setvalue ref="xxf:instance('patientListControl-instance')/searchResultMessage"
+                    value="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/exceedsMaxResultsMessage,$maxResults)"
+                />
+            </xf:action>
+
+            <!-- Only get cohort if less than maximum allowed in results set.
+                 (Or if the maximum is not set in the view-parameters.xml) -->
+            <xf:action if="not($maxResults castable as xs:integer) or $patientListCount le xs:integer($maxResults)">
+                <xf:setvalue ref="xxf:instance('patientSetXQuery-instance')/patientIdList"
+                    value="concat('''',string-join($patientIdSet,''','''),'''')"/>
+                <!-- No longer used 2017-10-31 
+                <xf:setvalue
+                    ref="xxf:instance('patientSetXQuery-instance')/registrationEventList"
+                    value="concat('''',xxf:instance('patientListControl-instance')/registrationEventList,'''')"/>
+                    -->
+                <xf:setvalue ref="xxf:instance('patientSetXQuery-instance')/registrationSetSelector"
+                    value="concat('//cda:entry[descendant::cda:observation/cda:id/@extension=',xxf:instance('patientListControl-instance')/registrationEntryList,']')"/>
+                <!-- orderByClause has already been set in set-orderBy-clause -->
+                <xf:setvalue ref="xxf:instance('patientSetXQuery-instance')/orderByClause"
+                    value="xxf:instance('patientListControl-instance')/queryParameters/orderByClause"/>
+
+                <!-- Search to get patient-set-instance -->
+                <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="xxf:instance('patientListControl-instance')/patientSearchLocation"/>
+                    <xxf:context name="physicalClusterNode" select="''"/>
+                    <xxf:context name="query" select="xxf:instance('patientSetXQuery-instance')"/>
+                    <xxf:context name="response" select="xxf:instance('patient-set-instance')"/>
+                    <xxf:context name="status" select="xxf:instance('patientListControl-instance')/submissionStatus"/>
+                </xf:dispatch>
+
+            </xf:action>
+        </xf:action>
+
+        <!-- Initialize the cohortSetControl-instance with the number of records and pages
+             Then set up the first page. -->
+        <xf:dispatch name="initialize-cohort-set" target="cohortSet-model">
+            <xxf:context name="patientCohort" select="xxf:instance('patient-set-instance')/patient/@id"/>
+            <xxf:context name="cohortName" select="'patient search'"/>
+        </xf:dispatch>
+
+        <!-- Load the first page of the cohort -->
+        <xf:dispatch name="load-cohort-page" target="cohortSet-model"/>
+
+        <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+        <xf:recalculate model="viewControlsActions-model"/>
+    </xf:action>
+
+
+
+    <!-- ========= Cohort Patient Sets for Navigation =================================================== 
+        The set of patients in the cohort with their full details for display/selection.
+        These ones are for display in the viewNavigation, currently:
+        inPatients
+        recentPatients
+        careTeamPatients
+        ================================================================================ -->
+
+    <xf:instance id="inpatientSetXQuery-instance" src="oxf:/apps/ehr/xquery/inPatientSetXQuery.xml"/>
+
+
+    <!-- Get cohort of recent patients
+     Get the list (from audit log)
+     Set the query parameters to get chort info
+     Run query to get cohort info in recentPatient-cohort-indsance
+-->
+
+    <xf:action ev:event="get-recentPatient-cohort">
+        <!-- Get the list of recent patients visited by this user (from the audit log)
+        Until 2016-11-24 - then replaced by recentPatients list from user-instance 
+        Until 2021-01-12 - then replaced by recentPatienrs stored in the database under the user location -->
+        <!--
+        <xf:dispatch name="get-patientAuditList" target="auditLog-model"/>
+        
+        <xxf:variable name="recentPatientList"
+        select="distinct-values(xxf:instance('patientAuditList-instance')/patient/@id[.!=''])"/>
+        
+        -->
+        <!-- Get the list of recentPatients -->
+        <xf:dispatch name="load-recentPatients" target="session-model"/>
+        <xxf:variable name="recentPatientList"
+            select="distinct-values(xxf:instance('recentPatients-instance')/recentPatients[@applicationIRI=xxf:instance('view-parameters-instance')/applicationIRI]/patient/@id[.!=''])"/>
+
+        <!-- If patient access is restricted, then not all recent patients may be accessible -->
+        <xxf:variable name="accessibleRecentPatientList"
+            select="if (xxf:instance('user-instance')/rbac/restrictPatientAccess/@value='careTeam') then $recentPatientList[. = xxf:instance('careTeamPatients-instance')/patient/@id] else $recentPatientList"/>
+
+        <xf:action if="not(empty($accessibleRecentPatientList))">
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/patientIdList"
+                value="concat('''',string-join($accessibleRecentPatientList,''','''),'''')"/>
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/entryList"
+                value="concat('''',xxf:instance('application-parameters-instance')/patientRegistration/family/@entry,'''')"/>
+            <xf:setvalue ref="xxf:instance('patientCohortQuery-instance')/exist:text"
+                value="xxf:instance('getPatientCohortXQuery-instance')"/>
+            <xf:send submission="recentPatient-cohort-submission" target="cohortSet-model"/>
+        </xf:action>
+
+    </xf:action>
+
+
+
+    <!-- Get cohort of patients in current care team
+         Get the list (from current care team)
+         Load up <patient @id=""/> elements 
+    -->
+    <xf:action ev:event="get-careTeam-cohort">
+        <!-- patientList is set when care team is loaded -->
+        <xxf:variable name="cohortPatientList" select="xxf:instance('careTeamControl-instance')/careTeam/patientList"/>
+
+        <!-- There are patients in the cohort - reload the careTeamPatient-cohort-instance -->
+        <xf:action if="$cohortPatientList!=''">
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/patientIdList"
+                value="concat('''',replace($cohortPatientList,xxf:instance('view-parameters-instance')/resultSeparator,''','''),'''')"/>
+
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/entryList"
+                value="concat('''',xxf:instance('application-parameters-instance')/patientRegistration/family/@entry,'''')"/>
+
+            <xf:setvalue ref="xxf:instance('patientCohortQuery-instance')/exist:text"
+                value="xxf:instance('getPatientCohortXQuery-instance')"/>
+            <xf:send submission="careTeamPatient-cohort-submission" target="cohortSet-model"/>
+        </xf:action>
+
+        <!-- There are no patients in the cohort - clear the careTeamPatient-cohort-instance -->
+        <xf:action if="$cohortPatientList=''">
+            <xf:delete nodeset="xxf:instance('careTeamPatient-cohort-instance')/*"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- ========= Set up view when it is first loaded ========= 
+        =================================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+
+        <!-- Set the patientSearchLocation -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/patientSearchLocation"
+            value="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/records')"/>
+
+        <!-- Set the maximum number of results that can be returned.
+             This is one more then the maxResults set in view-parameters.
+             The results set is then tested - if more than maxResults is returned (will be maxResults+1) then the results are not displayed -->
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/queryParameters/maxResults"
+            value="if (xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/maxResults castable as xs:integer) then xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/maxResults else ."/>
+
+        <!-- Set up the search terms in the control-instance from the application-parameters parameters -->
+        <xf:action xxf:iterate="xxf:instance('application-parameters-instance')/patientSearch/controlPanelGroup">
+            <xxf:variable name="controlPanelGroup" select="."/>
+            <xf:insert context="xxf:instance('patientListControl-instance')/controlPanel" nodeset="*" origin="$controlPanelGroup" at="last()"
+                position="after"/>
+        </xf:action>
+
+        <!-- Set CDA Header configuration -->
+        <!-- No longer used 2017-10-31
+        <xf:setvalue
+            ref="xxf:instance('patientListControl-instance')/registrationEventList"
+            value="string-join(xxf:instance('application-parameters-instance')/patientRegistration/registrationEvent,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+        -->
+
+        <xf:setvalue ref="xxf:instance('patientListControl-instance')/registrationEntryList"
+            value="concat('(''',string-join(distinct-values(xxf:instance('application-parameters-instance')/patientRegistration/*/@entry),''','''),''')')"/>
+
+    </xf:action>
+
+    <!-- === Set up view when it is ready  
+        ======================================= -->
+    <xf:action ev:event="xforms-ready">
+        <!-- Set focus to the username input -->
+        <!-- <xf:setfocus control="'ps1-1'"/> -->
+    </xf:action>
+
+</xf:model>

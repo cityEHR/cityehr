@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        patientDemographicsXQuery.xml
+        
+        Run in the context of a single patient record, to get demographics for that patient
+        Finds the complete set of the CDA entries for all defined entryIRIs
+        Returns the most recent records of each entry
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        
+        **********************************************************************************************************
+-->
+<!-- This one returns all entries matching the entrySet -->
+<query xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+
+        for $entry in collection()//cda:entry[descendant::cda:id/@extension=<entrySet/>][descendant::cda:value]<sourceConditions/>
+        let $effectiveTime := data($entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value[1])
+        order by $effectiveTime descending
+        return
+        $entry
+</query>
+<!-- This one returns first entry - until 2017-10-30
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $entryIRI in <entrySet/>
+        let $entrySet :=
+          for $entry in collection()//cda:entry[descendant::cda:id/@extension=$entryIRI][descendant::cda:value]
+          let $effectiveTime := data($entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value[1])
+          order by $effectiveTime descending
+          return
+          $entry
+        return $entrySet[1]
+</query>
+-->

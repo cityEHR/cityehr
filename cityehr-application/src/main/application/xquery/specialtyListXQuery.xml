@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        specialtyListXQuery.xml
+        
+        XQuery to return list of all specialties for an application
+        The context of the query is the informationModel collection of the application
+        
+        The informationModel collection (which is the context for this query) contains one collection for each specialty 
+        and within each of those, one model for the specialty and others for class hierarchies
+        
+        Just use the specialty model itself for retrieving the $specialtyIRI and $specialtyDisplayName
+        (These are present in all the models for the specialty, so we want to avoid repeats)
+        
+        Both the collection and the model will be named starting 'ISO-13606-Folder'
+        
+        The elements returned must match the format used for specialties in the user profile and data dictionary:
+        
+        <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<exist:query xmlns:exist="http://exist.sourceforge.net/NS/exist" xml:space="preserve">
+        <exist:text> 
+                xquery version "1.0"; 
+                declare namespace owl="http://www.w3.org/2002/07/owl#";
+                declare namespace iso-13606="http://www.iso.org/iso-13606"; 
+                declare namespace xdb="http://exist-db.org/xquery/xmldb";
+                                
+                declare variable $path := request:get-path-info();
+                declare variable $root := if (ends-with($path,'/')) then $path else concat($path,'/');
+                                
+                for $collection in xdb:get-child-collections($root)
+                let $collectionPath := concat($root,$collection)
+                let $documentPath := concat($collectionPath,'/',$collection)
+                                
+                let $applicationIRI := data((doc($documentPath)/owl:Ontology/owl:ClassAssertion[owl:Class/@IRI="#ISO-13606:EHR_Extract"])[1]/owl:NamedIndividual/@IRI)
+                let $specialtyIRI := data((doc($documentPath)/owl:Ontology/owl:ObjectPropertyAssertion[owl:ObjectProperty/@IRI="#hasContent"][owl:NamedIndividual[1]/@IRI=$applicationIRI])[1]/owl:NamedIndividual[2]/@IRI)
+                
+                let $specialtyDisplayNameIRI := data((doc($documentPath)/owl:Ontology/owl:ObjectPropertyAssertion[owl:ObjectProperty/@IRI="#hasDisplayName"][owl:NamedIndividual/@IRI=$specialtyIRI])[1]/owl:NamedIndividual[2]/@IRI)
+                let $specialtyDisplayName := data((doc($documentPath)/owl:Ontology/owl:DataPropertyAssertion[owl:DataProperty/@IRI="#hasValue"][owl:NamedIndividual/@IRI=$specialtyDisplayNameIRI])[1]/owl:Literal)
+                
+                order by $specialtyDisplayName descending 
+                
+                return if ($specialtyIRI!='') then
+                &lt;iso-13606:Folder id="{$specialtyIRI}" displayName="{$specialtyDisplayName}"/>               
+                else ()
+        </exist:text>
+</exist:query>

@@ -1,0 +1,80 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRRecordNavigation.xhtml
+    
+    Standard div for record navigation.
+    Included in every patient view.
+    
+    Has control for the user to select the careSettingIRI
+    This is passed in the session-parameters but can be set by the user from the folders defined in yhe information model
+    (Contrast with the specialtyIRI which is set for the session and determins the information model used)
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:div id="viewTypeControls" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- recordNavigationControls are subject to access control rules -->
+    <xxf:variable name="recordNavigationControls"
+        select="xxf:instance('application-parameters-instance')/recordNavigationControls/control[not(exists(role/@id)) or role/@id=xxf:instance('user-instance')/rbac/role/@value]"/>
+
+    <!-- Iterate through the configuration to get the record navigation controls.
+         xxf:modal="true" on trigger blocks the UI until the action in the trigger is done.-->
+    <xf:repeat nodeset="$recordNavigationControls">
+        <xxf:variable name="control" select="."/>
+        <xxf:variable name="controlItemClass"
+            select="if (xxf:instance('view-parameters-instance')/page=$control/@value) then 'controlItem current' else 'controlItem'"/>
+        <xf:trigger appearance="minimal" class="{$controlItemClass}" xxf:modal="true">
+            <xf:label ref="$control/@displayName"/>
+            <xf:action ev:event="DOMActivate" if="xxf:instance('view-parameters-instance')/page!=$control/@value">
+                <!-- Set handle and status to blank/none -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle" value="'blank'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'none'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/formCacheHandle" value="'blank'"/>
+
+                <!-- Navigate to new page, or ask for confirmation if current form has been edited -->
+                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                    <xxf:context name="page" select="$control/@value"/>
+                </xf:dispatch>
+
+            </xf:action>
+        </xf:trigger>
+    </xf:repeat>
+
+    <!-- Selection of care setting.
+    Only display this if there is more than one care setting -->
+    <xhtml:span>
+        <xxf:variable name="careSettingList" select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder"/>
+        <!-- Group will be out of scope unless there are two or more care settings -->
+        <xf:group class="controlLabel" ref="$careSettingList[2]">
+            <xf:select1 ref="xxf:instance('view-parameters-instance')/careSettingIRI">
+                <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/careSetting"/>
+                <xf:itemset nodeset="$careSettingList">
+                    <xf:label ref="./@displayName"/>
+                    <xf:value ref="./@code"/>
+                </xf:itemset>
+                <xf:action ev:event="xforms-value-changed">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList" value="'true'"/>
+                </xf:action>
+            </xf:select1>
+        </xf:group>
+    </xhtml:span>
+</xhtml:div>

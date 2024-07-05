@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRRegistration.xhtml
+    
+    Enter details of new patient and create new record in the xmlstore
+    Uses same mechanisms as formed-based entry for an identified patient 
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+
+    <!-- ========= HTML Head - Includes the Xforms Model ========= 
+    ========================================================= -->
+
+    <xhtml:head>
+
+        <!-- Try this to force compatibility mode -->
+        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
+
+        <!-- HTML Title is the displayName of the current application -->
+        <xhtml:title>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+        </xhtml:title>
+
+        <!-- Stylesheet -->
+        <xhtml:link rel="stylesheet" type="text/css"
+            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
+
+
+        <!-- ========= System Parameters ===================================================== 
+             ================================================================================= -->
+        <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
+            ================================================================================== -->
+        <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Session model contains stuff for handling of user sessions ============ 
+            ================================================================================== -->
+        <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Audit log model contains stuff for audit of user actions ============== 
+            ================================================================================== -->
+        <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Page navigation model contains stuff for navigation between pages =====
+        ====================================================================================== -->
+        <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Configuration model contains standard configuration of the page ======= 
+            ================================================================================== -->
+        <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= Dictionary model contains the specialty dictionary ========= 
+            ======================================================================= -->
+        <xi:include href="../models/dictionaryModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Release Notes ========= 
+            ============================================================================ -->
+        <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Patient Demographics model contains demographics data for the patient == 
+            =================================================================================== -->
+        <xi:include href="../models/patientDemographicsModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Reference data - directories of entries and elements ==== 
+            =================================================================== -->
+        <xi:include href="../models/directoryModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- === Web Services ===
+             ==================== -->
+        <xi:include href="../models/webServiceModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Class dictionary model ====================================
+            contains stuff for loading and accessing class dictionaries
+            ===================================================================== -->
+        <xi:include href="../models/classDictionaryModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= empiModel model contains stuff for Enterprise Master Patient Index ====== 
+             =================================================================================== -->
+        <xi:include href="../models/empiModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= cdaModel model contains stuff for loading CDA documents ==== 
+            =================================================================================== -->
+        <xi:include href="../models/cdaModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Main model contains stuff specific to this page ========= 
+            The main model for views that edit compositions is shared between forms, letters,
+            The compositionType (forms, letters) is set from the page passed in view-parameters
+            =================================================================== -->
+        <xi:include href="../models/compositionMainModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- ===  Manage image maps   === -->
+        <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= View Controls actions model contains actions for view control ========= 
+            These actions are specific to this page, so the model is implemented directly.           
+            There must be one event handler for each action defined in the <viewControlsActions> for this page in application-parameters
+            The viewControlsActions-instance holds the actions for this view, inserted from parameters-instance for this view
+            ===================================================================================== -->
+        <xf:model id="viewControlsActions-model">
+
+            <xf:instance id="viewControlsActions-instance">
+                <control xmlns=""/>
+            </xf:instance>
+
+            <!-- Bindings for dynamic change of display of view controls  -->
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display" calculate="'show'"/>
+
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view">
+                <!-- Register only when patientId is filled out (and visible) -->
+                <!--
+                <xf:bind ref="action[@id='register']">
+                    <xf:bind ref="@display"
+                        calculate="if (xxf:instance('form-instance')/descendant::cda:entry/cda:observation[cda:id/@extension=xxf:instance('application-parameters-instance')/patientRegistration/id/@entry][not(ancestor-or-self::*/@cityEHR:visibility=('false','alwaysHidden'))]/descendant::cda:value[@extension=xxf:instance('application-parameters-instance')/patientRegistration/id/@element][not(@cityEHR:visibility='false')][@value!='']) then 'show' else 'hidden'"
+                    />
+                </xf:bind>
+                -->
+                <!-- Reset only on edited forms -->
+                <xf:bind nodeset="action[@id='reset']/@display"
+                    calculate="if (xxf:instance('control-instance')/current-form/editStatus='edited') then 'show' else 'hidden'"/>
+                <!-- Show XML only when debugging -->
+                <xf:bind nodeset="action[@id='xml']/@display"
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+                <!-- Show Ids. ISO13606 stucture only when debugging -->
+                <xf:bind nodeset="input[@id=('showISO13606','showIds')]/@display"
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+            </xf:bind>
+
+            <!-- Application defined action to show XML -->
+            <xf:action ev:event="xml">
+                <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                    <xxf:context name="title" select="''"/>
+                    <xxf:context name="displayXML" select="xxf:instance('form-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+            
+            
+
+            <!-- Application defined action to reset the form -->
+            <xf:action ev:event="reset">
+                <!-- Confirmation dialogue calls reload-composition in main-model -->
+                <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                    <xxf:context name="action" select="'resetRegistrationForm'"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to register the patient.
+                 Checks all is Ok and then displays dialogue box to confirm. -->
+            <xf:action ev:event="register">
+
+                <!-- If required values are unset, then display the information about them.
+                     Otherwise can do the actions to register -->
+                <xf:dispatch name="check-requiredElements" target="main-model"/>
+
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/showRequiredElements"
+                    value="xxf:instance('control-instance')/current-form/requiredElementsSet"/>
+
+                <xf:action if="xxf:instance('control-instance')/current-form/requiredElementsSet != 'true'">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+                        value="normalize-space(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/requiredDataNotSet/@displayName)"
+                    />
+                </xf:action>
+
+
+                <xf:action if="xxf:instance('control-instance')/current-form/requiredElementsSet = 'true'">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus" value="''"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/error" value="''"/>
+
+                    <!-- Get the patient identifier specified in the parameters-instance - e.g. NHS Number.
+                         patientRegistrationEntry is the cda:observation within the cda:entry.
+                         Note that there may be more than one patientRegistrationEntry if there are aliased entries/elements 
+                         (for example if using lookup for demographics)
+                         Get the first visible (i.e. not with @cityEHR:visibility='false') entry, which is assumed to be the one with the valid patient id -->
+                    <xxf:variable name="patientRegistration" select="xxf:instance('application-parameters-instance')/patientRegistration"/>
+
+                    <!-- There could be more than one of these visible on the form (although unlikely).
+                         The observation may be in an organizer, if the entry is an enumeratedClass entry-->
+                    <xxf:variable name="patientRegistrationEntry"
+                        select="xxf:instance('form-instance')/descendant::cda:entry/descendant::cda:observation[cda:id/@extension=$patientRegistration/id/@entry][not(ancestor-or-self::*/@cityEHR:visibility=('false','alwaysHidden'))]"/>
+
+                    <!-- Element must be visible - there should only be one of these -->
+                    <xxf:variable name="patientRegistrationElement"
+                        select="$patientRegistrationEntry/descendant::cda:value[@extension=$patientRegistration/id/@element][not(@cityEHR:visibility='false')][1]"/>
+                    <xxf:variable name="patientIdDisplayName"
+                        select="normalize-space(concat($patientRegistrationEntry/cda:code[@codeSystem='cityEHR']/@displayName,' ',$patientRegistrationElement/@cityEHR:elementDisplayName))"/>
+
+                    <xxf:variable name="patientId" select="normalize-space($patientRegistrationElement/@value)"/>
+
+                    <!-- Check for invalid characters in the patientId -->
+                    <xxf:variable name="validIdentifier"
+                        select="if ( not(exists($patientRegistration/id/@deprecatedCharacters)) or (exists($patientRegistration/id/@deprecatedCharacters) and not(string-to-codepoints($patientRegistration/id/@deprecatedCharacters) = string-to-codepoints($patientId)))) then true() else false()"/>
+
+                    <!-- Patient id is no good, so don't register -->
+                    <xf:action if="$patientId = '' or not($validIdentifier)">
+                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+                            value="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/invalidPatientId/@displayName,'(',$patientIdDisplayName,') /',$patientId)"
+                        />
+                    </xf:action>
+
+
+                    <!-- Patient id is OK. 
+                         Should have check of the constraints on patientId here.
+                         E.g. patientId with spaces in caused a problem (fixed 2016-03-31) -->
+                    <xf:action if="$patientId != '' and $validIdentifier">
+
+                        <!-- This is needed in publish-cda-composition.
+                             But should be refactored, since we no longer want to use view-parameters for holding session data -->
+                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/patientId" value="$patientId"/>
+
+                        <!-- Record location for this patient -->
+                        <xxf:variable name="patientRecordLocation"
+                            select="concat('/xmlstore/applications/',xxf:instance('session-parameters-instance')/applicationId,'/records/',$patientId)"/>
+
+                        <!-- Check to see if anything already exists at the location for the patient record -->
+                        <xf:dispatch name="collection-exists" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="storageLocation" select="$patientRecordLocation"/>
+                            <xxf:context name="result" select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+
+                        <!-- Patient already has record, so don't register -->
+                        <xf:action if="xxf:instance('control-instance')/status != 'false'">
+                            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+                                value="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/patientIdAlreadyExists/@displayName,$patientId)"
+                            />
+                        </xf:action>
+
+                        <!-- Patient doesn't already have record, so can register as new patient -->
+                        <xf:action if="xxf:instance('control-instance')/status = 'false'">
+                            <xxf:variable name="dialogueId" select="'registerPatient'"/>
+                            <xf:setvalue ref="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/activeDialogue"
+                                value="$dialogueId"/>
+                            <xxf:variable name="activeDialogue"
+                                select="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/dialogue[@id=$dialogueId]"/>
+
+                            <!-- Get navigation triggers for the current form -->
+                            <xxf:variable name="navigationTriggers"
+                                select="xxf:instance('application-parameters-instance')/triggers/triggerSet[@compositionIRI = xxf:instance('control-instance')/current-form/compositionIRI]/trigger[@type='navigation']"/>
+
+                            <!-- Compositions for the current specialty (only with displayName set, which should be all of them) -->
+                            <xxf:variable name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                            <xxf:variable name="specialtyCompositions"
+                                select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@displayName!='']/@code"/>
+
+                            <!-- Active navigation triggers - must exist in the specialty -->
+                            <xxf:variable name="activeNavigationTriggers" select="$navigationTriggers[@compositionIRI=$specialtyCompositions]"/>
+
+                            <!-- Show the dialogue -->
+                            <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                                <xxf:context name="action" select="'registerPatient'"/>
+                                <xxf:context name="navigationTriggers" select="$activeNavigationTriggers"/>
+                            </xf:dispatch>
+                        </xf:action>
+
+                    </xf:action>
+                </xf:action>
+
+            </xf:action>
+            <!-- End register action -->
+
+
+            <!-- Register patient after the user has confirmed.
+                 May navigate to the next form if trigger has been set.
+                 TBD - start a pathway, if trigger has been set. -->
+            <xf:action ev:event="register-patient">
+                <xxf:variable name="navigationTarget" select="event('context')"/>
+
+                <!-- Create an entry for the patient in the EMPI -->
+                <!-- TBD -->
+
+                <!-- Publish the composition as the first event for this patient -->
+                <xf:dispatch name="publish-cda-composition" target="main-model"/>
+
+                <!-- Successfully published -->
+                <xf:action if="xxf:instance('control-instance')/status=''">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+                        value="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/createdRecord/@displayName,xxf:instance('view-parameters-instance')/patientId)"/>
+ 
+                    <!-- Must reset editStatus, so that load-new-composition does not post another confirmation dialogue -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/status" value="'published'"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="''"/>
+
+                    <!-- Get selection made by user in the confirmation dialogue
+                         Then load the next page for the new patient-->
+                    <xxf:variable name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                    <xxf:variable name="newComposition"
+                        select="if (exists($navigationTarget) and $navigationTarget!='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@displayName!=''][@code=$navigationTarget] else ()"/>
+
+                    <!-- User selected to navigate to a specific form -->
+                    <xf:action if="exists($newComposition)">
+                        <xf:dispatch name="load-new-composition" target="main-model">
+                            <xxf:context name="composition" select="$newComposition"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!-- No form specified for navigation, so go to the URL configured as the home page for patient views -->
+                    <xf:action if="not(exists($newComposition))">
+                        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                            <xxf:context name="page"
+                                select="xxf:instance('application-parameters-instance')/pageTransition/patientFolderURL/@value"/>
+                        </xf:dispatch>
+                    </xf:action>
+                    <!-- Don't display actions now that the form is published -->
+                    <!-- TBD -->
+                    <!-- Reset dirty flag -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                </xf:action>
+
+
+            </xf:action>
+
+        </xf:model>
+
+    </xhtml:head>
+
+
+
+    <!-- ========= Body of HTML Page ====================================== 
+        Contains the basic framework of divs that are standard across pages in the cityEHR
+        =================================================================== -->
+    <xhtml:body class="cityEHRBase">
+        <!-- View XML dialogue box -->
+        <xi:include href="cityEHRViewXMLDialog.xhtml"/>
+        <!-- Action confirmation dialogue -->
+        <xi:include href="cityEHRActionConfirmationDialog.xhtml"/>
+        <!-- Fixed Header Information -->
+        <xhtml:div id="ehrHeader">
+            <xhtml:div id="patientLabel" class="hidden"></xhtml:div>
+            <xhtml:div id="systemNavigation">
+                <!-- System-level Navigation Pane -->
+                <xi:include href="cityEHRNavigation.xhtml"/>
+            </xhtml:div>
+            <!-- Logo Pane -->
+            <xhtml:div id="logo">
+                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+            </xhtml:div>
+        </xhtml:div>
+        <!-- === Level 2 /3 =================================== 
+            ehrContent
+            Contains
+                ehrNavigation
+                ehrView
+                ehrInfo
+            ==================================================
+        -->
+        <xhtml:div id="ehrContent">
+
+            <!-- EHR Navigation -->
+            <xhtml:div id="ehrNavigation" class="navigation">
+
+                <xhtml:div id="navigationType">
+
+                    <!-- Controls to select the View Navigation type -->
+                    <xi:include href="cityEHRViewNavigationTypeSelection.xhtml"/>
+
+                </xhtml:div>
+
+                <xhtml:div id="navigationDisplay"></xhtml:div>
+
+            </xhtml:div>
+
+            <!-- =========================================================
+                EHR View 
+                Contains
+                    viewType
+                    viewControls
+                    viewDisplay
+                ========================================================= -->
+            <xhtml:div id="ehrView">
+
+                <xhtml:div id="viewType"></xhtml:div>
+
+
+                <xhtml:div id="viewControls" class="interaction">
+                    <!-- View controls header - generated in standard way for each view -->
+                    <xi:include href="cityEHRViewControlsHeader.xhtml"/>
+
+                    <!-- Display of required elements -->
+                    <xi:include href="cityEHRRequiredElementsInfo.xhtml"/>
+                    <!-- Debugging 
+                    <xf:output ref="xxf:instance('control-instance')/current-form/visibleRequiredElementList"/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/systemStatus"/>
+                    -->
+                    <!--
+                    <xhtml:p class="error">
+                        <xf:output ref="xxf:instance('control-instance')/current-form/requiredElementStatus"/>
+                    </xhtml:p>
+                    -->
+                </xhtml:div>
+
+                <xhtml:div id="viewDisplay" class="content">
+                    <!-- Debugging -->
+                    <!--
+                    <xhtml:p> Record count: <xf:output ref="xxf:instance('control-instance')/count"/>
+                    </xhtml:p>
+                    -->
+                    <!--
+                    <xhtml:p> Required elements: <xf:output
+                            ref="xxf:instance('control-instance')/current-form/requiredElementList"
+                        />
+                    </xhtml:p>
+                    -->
+
+                    <!-- Display the registration form -->
+
+                    <!-- Include generated form content 
+                         The include instruction is targetted at the Orbeon pipeline processor
+                         The pipeline running is cityEHRFolder-Forms.xpl
+                        
+                         The generated form content is included here when the pipeline is run.
+                         
+                         The form is only displayed until it has been published (i.e. the patient has been registered)
+                         Commented out 2015-05-30
+                    -->
+
+                    <!--
+                    <xf:group
+                        ref="xxf:instance('control-instance')/current-form[status!='published']">
+                    -->
+
+                    <xi:include href="input:formContent" xxi:omit-xml-base="true"/>
+
+                    <!--
+                    </xf:group>
+                        -->
+
+                    <!-- Debugging -->
+                    <!--
+                    <p>Parameters instance:<br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('application-parameters-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </p>
+                    -->
+                    <!--
+                    <xf:output class="message"
+                    ref="xxf:instance('control-instance')/current-form/editStatus"/>
+                    -->
+                    <!--
+                    <xf:output class="message"
+                        ref="concat('Status: ',xxf:instance('cdaControl-instance')/formStatus)"/>
+                     -->
+                    <!--
+                    <xf:output class="message"
+                        ref="xxf:instance('control-instance')/current-form/requiredElementStatus"/>
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('viewControlsActions-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                    -->
+
+                    <!--
+                    <xhtml:p>Form instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('form-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+                    <!--
+                    <xhtml:p>Patient instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patient-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+
+                    <!--
+                        <xhtml:p>Storage instance:<xhtml:br/>
+                        <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('storage-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                        </xhtml:p>
+-->
+                    <!--
+                    <xhtml:p>Web service return:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('webServiceReturn-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+<!--
+                    <xhtml:p>getDirectoryEntryXQuery-instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('getDirectoryEntryXQuery-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    
+                    <xhtml:p>dalQuery-instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('dalQuery-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                                       
+                    <xhtml:p>directoryEntryReturn-instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('directoryEntryReturn-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                
+                    <xhtml:p>directoryEntry-instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('directoryEntry-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+                    <!--
+                    <xhtml:p>application-parameters-instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('session-parameters-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                   -->
+
+                    <!--
+                    <xhtml:p>collectionExists-instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('collectionExists-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                           -->
+
+                    <!-- Include filler so that sections at foot of form can scroll to the top -->
+                    <xi:include href="cityEHRFormFootPadding.xhtml"/>
+
+
+                </xhtml:div>
+                <!-- End of viewDisplay -->
+
+            </xhtml:div>
+
+
+            <!-- EHR Info
+                Contains    infoType, infoDisplay 
+                ===================================================================== -->
+            <!--
+            <xhtml:div id="ehrInfo">
+                <xhtml:div id="infoType"> </xhtml:div>
+                <xhtml:div id="infoDisplay"> </xhtml:div>
+            </xhtml:div>
+            -->
+
+
+        </xhtml:div>
+        <!-- Fixed footer -->
+        <xi:include href="cityEHRFooter.xhtml"/>
+    </xhtml:body>
+</xhtml:html>

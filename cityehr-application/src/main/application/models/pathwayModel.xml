@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    pathwayModel.xml
+    
+    Control of cityEHR care pathways.
+    
+    Pathway is controlled by attributes on sections and entries in the pathway composition:
+    
+    cityEHR:status
+    cityEHR:sessionStatus
+        Can take values:    charted (default, initial value) | triggered | inProgress | completed
+    
+    cityEHR:outcome
+        Can take values:    toBeConfirmed (default, initial value) | completed | aborted | skipped | outOfScope
+        
+    Execution of acts are also controlled by attributes:
+    
+    cityEHR:role
+    cityEHR:start
+    cityEHR:delay
+    
+    Each action (cda:act) in the pathway has an associated source composition.
+    The source composition starts as dynamic 'data' - the cda:act is 'completed' when the subject no longer exists in the data
+    This can be because it has published to the patient record (outcome='completed') or because it has been deleted from the data (outcome='aborted')
+    
+     
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="pathway-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- === Control of the pathway document === -->
+
+    <xf:instance id="pathwayControl-instance">
+        <control xmlns="">
+            <status/>
+        </control>
+    </xf:instance>
+
+
+    <!-- The pathway status is only valid for care pathways. 
+                It is based on the status of the top-level sections (tasks) in the pathway document.
+                If the current-form status is new then the pathway is charted, 
+                otherwise if the status of any section is charted|triggered|inProgress then the pathway status is inProgress, otherwise the status is completed -->
+
+
+    <!--
+            <xf:bind ref="xxf:instance('control-instance')/current-form/pathwayStatus"
+                calculate="if (exists(xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section[@cityEHR:status=('charted','triggered','inProgress')])) then 'inProgress' else 'completed'"/>
+            -->
+
+    <!-- Additional bindings on the form-instance (defined in compositionMainModel).
+                 The completed status for sections (tasks) that do not have an outcome of 'completed' is set based on the contents.
+                 A task is completed when all its contained tasks and actions are completed
+                 This means that no child status is equal to charted, triggered or inProgress -->
+
+    <!-- Additional bindings on the form-instance (defined in compositionMainModel). 
+                 Tasks (sections) contain cda:component/cda:section (task) and/or cda:entry/cda:act (action)  
+                 
+                 A task is in scope if it does not have @visibility='false'
+                 An action is in scope if its parent entry does not have @visibility='false'
+                 
+                 An inProgress task is completed when all its sub-tasks and actions that are in scope are completed.
+                 A charted task is triggered when it has no preceding siblings in scope that are not completed. 
+                 Triggered tasks progress directly to inProgress.
+                 
+                 A charted action is triggered when it has no preceding siblings, in scope that are not completed. 
+                 -->
+
+    <!-- Top level sections (tasks)                 
+                 Top level sections are 'Ranked' so are progressed to 'inProgress' when all preceding siblings have been completed 
+            -->
+    <!--
+            <xf:bind
+                ref="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section/@cityEHR:status"
+                calculate="if (.='inProgress' and not(exists(../*/*[@cityEHR:status=('charted','triggered','inProgress')]))) then 'completed' else if (.='charted' and not(exists(../../preceding-sibling::*/*[@cityEHR:status=('charted','triggered','inProgress')]))) then 'inProgress' else ."/>
+
+            <xf:bind
+                ref="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section/@cityEHR:sessionStatus"
+                calculate="if (exists(../*/*[@cityEHR:sessionStatus=('charted','triggered','inProgress')])) then . else 'completed'"/>
+            -->
+
+
+    <!-- Subtasks and actions. 
+                 These are all within the top-level tasks (sections).
+            -->
+
+    <!--
+            <xf:bind ref="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section">
+-->
+
+    <!-- Section status completed -->
+    <!--
+                <xf:bind ref="//cda:section/@cityEHR:status"
+                    calculate="if (.='inProgress' and not(exists(../*/*[@cityEHR:status=('charted','triggered','inProgress')]))) then 'completed' else if (.='charted' and not(exists(../../preceding-sibling::*/*[@cityEHR:status=('charted','triggered','inProgress')]))) then 'inProgress' else ."/>
+
+                <xf:bind ref="//cda:act/@cityEHR:status"
+                    calculate="if (.='charted' and not(exists(../../preceding-sibling::*/*[@cityEHR:status=('charted','triggered','inProgress')]))) then 'triggered' else ."/>
+                <xf:bind ref="//cda:section/@cityEHR:sessionStatus"
+                    calculate="if (.='inProgress' and not(exists(../*/*[@cityEHR:sessionStatus=('charted','triggered','inProgress')][not(exists(@visibility= 'false'))]))) then 'completed' else if (.='charted' and not(exists(../../preceding-sibling::*/*[@cityEHR:status=('charted','triggered','inProgress')]))) then 'inProgress' else ."/>
+
+                <xf:bind ref="//cda:section/@cityEHR:sessionStatus"
+                    calculate="if (exists(../*/*[@cityEHR:sessionStatus=('charted','triggered','inProgress')])) then . else 'completed'"/>
+                -->
+    <!-- Completed status - now done above -->
+    <!--
+                <xf:bind ref="descendant::cda:section/@cityEHR:status" calculate="if (../@cityEHR:outcome!='completed' and ../*/*/@cityEHR:status=('charted','triggered','inProgress')) then . else 'completed'"/>
+                -->
+    <!-- The triggered status of sections (tasks) is set for charted actions based on their parent and preceding siblings.
+                     A task is triggered when its parent task is inProgress. Triggered tasks are immediately inProgress
+                     If the parent is Unranked then all child tasks are triggered; if Ranked then the first task/action with no siblings charted or triggered is triggered -->
+    <!--
+                <xf:bind ref="descendant::cda:section[cityEHR:Sequence='Unranked']/cda:component/cda:section/@cityEHR:status" readonly="false()" calculate="if (.='charted' and ../../../@cityEHR:status='inProgress') then 'inProgress' else ."/>
+                <xf:bind ref="descendant::cda:section[cityEHR:Sequence='Ranked']/cda:component/cda:section/@cityEHR:status" readonly="false()" calculate="if (.='charted') then (if (../../../@cityEHR:status='inProgress' and empty(../../preceding-sibling::*/*[@cityEHR:status=('charted','triggered','inProgress')])) then . else 'inProgress') else ."/>
+                -->
+    <!-- The status for triggered sections (tasks) is set as inProgress or completed based on their visibility.
+                A triggered section is completed if it is not visible, otherwise it is inProgress. -->
+    <!--
+                <xf:bind ref="descendant::cda:section/@cityEHR:status" readonly="false()" calculate="if (.='triggered') then (if (../@cityEHR:visibility='false') then 'completed-from-triggered' else 'triggered') else ."/>
+                -->
+    <!--
+            </xf:bind>
+            -->
+
+    <!-- Actions (entries). These are within the top-level sections (which are alsways Ranked) or subsections -->
+    <!-- The triggered status of entries (actions) is set for charted actions based on their parent and preceding siblings.
+                     An action is triggered when its parent task is inProgress.
+                     If the parent is Unranked then all child actions are triggered; 
+                     If Ranked then the first task/action with no siblings charted or triggered is triggered. Note that the siblings can be tasks or actions.
+            -->
+    <!--
+            <xf:bind ref="xxf:instance('form-instance')//cda:structuredBody/cda:component">
+                <xf:bind ref="descendant::cda:section[@cityEHR:Sequence='Unranked']/cda:entry/cda:act/@cityEHR:status" readonly="false()" calculate="if (.='charted' and ../../../@cityEHR:status='inProgress') then 'triggered' else ."/>
+                <xf:bind ref="descendant::cda:section[@cityEHR:Sequence='Ranked']/cda:entry/cda:act/@cityEHR:status" readonly="false()" calculate="if (.='charted') then (if (../../../@cityEHR:status='inProgress' and empty(../../preceding-sibling::*/*[@cityEHR:status=('charted','triggered','inProgress')])) then 'triggered' else .) else ."/>
+            </xf:bind>
+            -->
+
+    <!-- Application defined action to set role on each action, if needed.
+         Iterates through each action (entry) in the pathway and sets the cityEHR:role, if its empty -->
+    <xf:action ev:event="set-action-roles">
+        <xxf:variable name="defaultRole" select="xxf:instance('application-parameters-instance')/rbac/role[1]/@value"/>
+        <!-- Actions -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:act[@cityEHR:role='']">
+            <xxf:variable name="action" select="."/>
+            <xf:setvalue ref="$action/@cityEHR:role" value="$defaultRole"/>
+        </xf:action>
+    </xf:action>
+
+    <!-- Application defined action to set the sessionStatus on tasks and actions, from the status.
+         Iterates through each task (section) and action (entry) in the pathway -->
+    <xf:action ev:event="set-session-status">
+        <!-- Tasks -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:section[@cityEHR:status!='']">
+            <xxf:variable name="task" select="."/>
+            <xf:setvalue ref="$task/@cityEHR:sessionStatus" value="$task/@cityEHR:status"/>
+        </xf:action>
+        <!-- Actions -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:act[@cityEHR:status!='']">
+            <xxf:variable name="action" select="."/>
+            <xf:setvalue ref="$action/@cityEHR:sessionStatus" value="$action/@cityEHR:status"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set the status on tasks and actions, from the sessionStatus.
+         Iterates through each task (section) and action (entry) in the pathway -->
+    <xf:action ev:event="set-status">
+        <!-- Tasks -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:section[@cityEHR:sessionStatus!='']">
+            <xxf:variable name="task" select="."/>
+            <xf:setvalue ref="$task/@cityEHR:status" value="$task/@cityEHR:sessionStatus"/>
+        </xf:action>
+        <!-- Actions -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:act[@cityEHR:sessionStatus!='']">
+            <xxf:variable name="action" select="."/>
+            <xf:setvalue ref="$action/@cityEHR:status" value="$action/@cityEHR:sessionStatus"/>
+        </xf:action>
+    </xf:action>
+
+    <!-- Application defined action to trigger tasks and actions.
+         Only one task at each level in the task hierarchy and one action can be inProgress at any one time.
+         Iterate through all charted tasks and actions to see if they have been triggered. 
+         Note that the iteration uses the status, not the sessionStatus because tasks/actions can revert to charted status after they have been triggered. -->
+    <xf:action ev:event="set-triggers-old">
+        <!-- Tasks -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:section[@cityEHR:status='charted']">
+            <xxf:variable name="task" select="."/>
+            <!-- Triggered (actually moves directly to inProgress) if the task is active and all preceding siblings are complete or its the first task.
+                 Task is active if it is a top-level task or its parent task is inProgress.
+                 Top level is cda:structuredBody/cda:component/cda:section -->
+            <xxf:variable name="activeTask"
+                select="if (exists($task/../../../cda:structuredBody) or exists($task/../../cda:section[@cityEHR:sessionStatus='inProgress'])) then 'true' else 'false'"/>
+            <xxf:variable name="triggeredTask"
+                select="if (exists($task/../preceding-sibling::*/*[@cityEHR:sessionStatus=('charted','triggered','inProgress')])) then 'false' else 'true'"/>
+
+            <xf:action if="$activeTask='true' and $triggeredTask='true'">
+                <!-- Task is out of scope -->
+                <xf:action if="$task/cityEHR:visibility='false'">
+                    <xf:setvalue ref="$task/@cityEHR:sessionStatus" value="'completed'"/>
+                    <xf:setvalue ref="$task/@cityEHR:outcome" value="'outOfScope'"/>
+                </xf:action>
+                <!-- Task is in scope -->
+                <xf:action if="$task/cityEHR:visibility='true'">
+                    <xf:setvalue ref="$task/@cityEHR:sessionStatus" value="'inProgress'"/>
+                </xf:action>
+            </xf:action>
+            <!-- Ensure the charted status is set if this task is not triggered (may mean it reverts from a triggered state) -->
+            <xf:action if="$triggeredTask='false'">
+                <xf:setvalue ref="$task/@cityEHR:sessionStatus" value="'charted'"/>
+            </xf:action>
+        </xf:action>
+
+        <!-- Actions.
+             Can only trigger one at a time. (actually should really distinguish between ranked and unranked tasks) -->
+        <xf:action if="not(exists(xxf:instance('form-instance')//cda:act[@cityEHR:status='triggered']))"
+            xxf:iterate="xxf:instance('form-instance')//cda:act[@cityEHR:status='charted']">
+            <xxf:variable name="action" select="."/>
+            <!-- Triggered if all preceding siblings are complete or its the first action -->
+            <xxf:variable name="triggeredAction"
+                select="if (exists($action/../preceding-sibling::*/*[@cityEHR:sessionStatus=('charted','triggered','inProgress')])) then 'false' else 'true'"/>
+            <xf:action if="$triggeredAction='true'">
+                <!-- Action is out of scope -->
+                <xf:action if="$action/@cityEHR:visibility='false'">
+                    <xf:setvalue ref="$action/@cityEHR:sessionStatus" value="'completed'"/>
+                </xf:action>
+                <!-- Action is in scope -->
+                <xf:action if="not(exists($action/@cityEHR:visibility='false'))">
+                    <xf:setvalue ref="$action/@cityEHR:sessionStatus" value="'triggered'"/>
+                </xf:action>
+            </xf:action>
+            <!-- Ensure the charted status is set if this action is not triggered (may mean it reverts from a triggered state) -->
+            <xf:action if="$triggeredAction='false'">
+                <xf:setvalue ref="$action/@cityEHR:sessionStatus" value="'charted'"/>
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to trigger the next action.
+         Only one action can be triggered at any one time.
+         It must be in an active task - ie one which is either charted or inProgress and all its ancestors (and itself) are visible 
+         So get the first charted action (in document order) and set it to triggered. -->
+    <xf:action ev:event="set-triggers">
+
+        <!-- Can't trigger if any action is currently inProgress -->
+        <xf:action if="not(exists(xxf:instance('form-instance')//cda:act[@cityEHR:status='inProgress']))">
+            <!-- Get the active tasks -->
+            <xxf:variable name="activeTasks"
+                select="xxf:instance('form-instance')//cda:section[@cityEHR:status=('charted','inProgress')][not(exists(ancestor-or-self::cda:section[@cityEHR:visibility='false']))]"/>
+
+            <!-- Get the active actions -->
+            <xxf:variable name="activeActions" select="$activeTasks//cda:act[@cityEHR:status='charted'][not(@cityEHR:visibility='false')]"/>
+
+            <!-- Get the triggered action -->
+            <xxf:variable name="triggeredAction" select="$activeActions[1]"/>
+            <xf:setvalue ref="$triggeredAction/@cityEHR:status" value="'triggered'"/>
+
+        </xf:action>
+    </xf:action>
+
+
+
+
+
+    <!-- Application defined action to get the list of notifications stored for the current pathway.
+         The result is put into the notification-actions-instance in the notificationModel-->
+    <xf:action ev:event="get-pathway-action-notifications">
+        <!-- Set up the notifcation query -->
+        <xxf:variable name="pathwayId" select="xxf:instance('control-instance')/current-form/handleId"/>
+        <xf:setvalue ref="xxf:instance('getNotificationsXQuery-instance')/notificationCriteria"
+            value="concat('[cda:id/@root = ''',$pathwayId,''']')"/>
+        <xf:setvalue ref="xxf:instance('notifications-query-instance')/exist:text" value="xxf:instance('getNotificationsXQuery-instance')"/>
+
+        <!-- Submit query to get list of action notifications -->
+        <xf:send submission="load-notifications-actions-submission" target="notification-model"/>
+    </xf:action>
+
+
+    <!-- ========= Get lists of compositions in patient records and data ========= 
+        
+                Uses specifc query instance because there are no parameters to be set
+                
+                Query returns a set of:
+                <event>
+                    <handle/>
+                    <compositionHandle/>
+                    <compositionTypeIRI/>
+                    <compositionIRI/>
+                    <documentationOf/>
+                    <effectiveTime/>
+                    <displayName/>
+                    <author/>
+                    <authorTime/>
+                </event> 
+                ============================================== -->
+
+    <xf:instance id="patientEventsXQuery-instance" src="oxf:/apps/ehr/xquery/patientEventsXQuery.xml"/>
+
+    <xf:instance id="patientEventsList-instance">
+        <patientEvents/>
+    </xf:instance>
+
+    <xf:instance id="inProgressSubjectDocuments-instance">
+        <subjectDocuments/>
+    </xf:instance>
+
+    <xf:instance id="completedSubjectDocuments-instance">
+        <subjectDocuments/>
+    </xf:instance>
+
+    <!-- Application defined action to get the list of subject documents in progress for the current pathway.
+         These are stored in the data folder for the patient, patientDataLocation like:
+            /db/ehr/xmlstore/applications/ISO-13606-EHR_Extract-cityEHR/data/32894145
+         The full list of inProgress documents is returned from a query
+         A sub-set of this list is put into the inProgressSubjectDocuments-instance -->
+    <xf:action ev:event="get-pathway-inProgressSubjectDocuments">
+        <xxf:variable name="pathwayId" select="event('pathwayId')"/>
+
+        <xxf:variable name="patientDataLocation"
+            select="concat('/xmlstore/applications/',xxf:instance('session-parameters-instance')/applicationId,'/data/',xxf:instance('session-parameters-instance')/patientId)"/>
+
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$patientDataLocation"/>
+            <xxf:context name="query" select="xxf:instance('patientEventsXQuery-instance')//exist:text"/>
+            <xxf:context name="response" select="xxf:instance('patientEventsList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('pathwayControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- inProgress subject documents must be documentationOf the current pathway.
+             create complete set of published documents for the patient, then remove all that aren't documentationOf the pathway -->
+        <xf:insert nodeset="xxf:instance('inProgressSubjectDocuments-instance')" origin="xxf:instance('patientEventsList-instance')"/>
+        <xf:delete nodeset="xxf:instance('inProgressSubjectDocuments-instance')/event[documentationOf != $pathwayId]"/>
+    </xf:action>
+
+
+    <!-- Application defined action to get the list of subject documents completed for the current pathway.
+         These are stored in the records folder for the patient, patientRecordsLocation like:
+            /db/ehr/xmlstore/applications/ISO-13606-EHR_Extract-cityEHR/records/32894145
+         The result is put into the completedSubjectDocuments-instance in the pathway-model-->
+    <xf:action ev:event="get-pathway-completedSubjectDocuments">
+        <xxf:variable name="pathwayId" select="event('pathwayId')"/>
+
+        <xxf:variable name="patientRecordsLocation"
+            select="concat('/xmlstore/applications/',xxf:instance('session-parameters-instance')/applicationId,'/records/',xxf:instance('session-parameters-instance')/patientId)"/>
+
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$patientRecordsLocation"/>
+            <xxf:context name="query" select="xxf:instance('patientEventsXQuery-instance')//exist:text"/>
+            <xxf:context name="response" select="xxf:instance('patientEventsList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('pathwayControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- completed subject documents must be documentationOf the current pathway.
+             create complete set of published documents for the patient, then remove all that aren't documentationOf the pathway -->
+        <xf:insert nodeset="xxf:instance('completedSubjectDocuments-instance')" origin="xxf:instance('patientEventsList-instance')"/>
+        <xf:delete nodeset="xxf:instance('completedSubjectDocuments-instance')/event[documentationOf != $pathwayId]"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to progress the pathway when it is loaded.
+                 Iterate through the inProgress actions
+                     (If there is no notification for the action (in notification-actions-instance) then the action has been completed)
+                     If there is no subject document for the action in the patient data, then it has been completed 
+                     Set the action status to completed, with the outocome set depnding on how it was completed
+                 Then progress the pathway (to cater for any newly triggered actions) as if the user had presses the Progress button
+                 This instigates the following:
+                     progress-pathway
+                     Save the pathway CDA
+            -->
+    <xf:action ev:event="progress-on-load">
+        <!-- Iterate through inProgress actions.
+             If any have been completed since the last load, then change status to 'completed' 
+             Completed actions have their outcome set to 'completed' or 'aborted'.
+             Note that inProgress actions can only be completed outside the pathway, by publishing the source document.                    -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:entry[cda:act/@cityEHR:status='inProgress']">
+            <xxf:variable name="actionEntry" select="."/>
+            <xxf:variable name="action" select="$actionEntry/cda:act"/>
+            <xxf:variable name="subject" select="$action/cda:subject"/>
+            <xxf:variable name="subjectHandleId" select="$subject/cda:id/@extension"/>
+
+            <xxf:variable name="hasNotification"
+                select="exists(xxf:instance('notification-actions-instance')/notification[documentationOf=$subjectHandleId])"/>
+            <xxf:variable name="hasCompletedSubjectDocument"
+                select="exists(xxf:instance('completedSubjectDocuments-instance')/event[documentationOf=$subjectHandleId])"/>
+            <xxf:variable name="hasInProgressSubjectDocument"
+                select="exists(xxf:instance('inProgressSubjectDocuments-instance')/event[documentationOf=$subjectHandleId])"/>
+
+
+            <!-- Action is completed, if it has no inProgressSubjectDocument
+                 If completed, its outcome is completed if it has a completedSubjectDocument
+                 or aborted if it hasn't -->
+            <xf:action if="not($hasInProgressSubjectDocument)">
+                <!-- Set the status of the action to completed and the outcome to completed -->
+                <xf:setvalue ref="$action/@cityEHR:status" value="'completed'"/>
+                <xf:setvalue ref="$action/@cityEHR:outcome" value="if ($hasCompletedSubjectDocument) then 'completed' else 'aborted'"/>
+            </xf:action>
+        </xf:action>
+
+
+        <!-- Iterate through inProgress tasks.
+             If any have been completed since the last load, then change status to 'completed' or 'aborted'
+             Note that inProgress actions can only be completed outside the pathway, by publishing the source document.                    -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:section[@cityEHR:status='inProgress']">
+            <xxf:variable name="task" select="."/>
+
+            <!-- Active actions in the task -->
+            <xxf:variable name="activeActions" select="$task//cda:act[not(@cityEHR:visibility='false')]"/>
+
+            <!-- If all activeActions are completed or skipped (so not charted, inProgress) -->
+            <xf:action if="not($activeActions/@cityEHR:status=('charted','inProgress'))">
+                <xf:setvalue ref="$task/@cityEHR:status" value="'completed'"/>
+                <xf:setvalue ref="$task/@cityEHR:outcome" value="'completed'"/>
+            </xf:action>
+        </xf:action>
+
+        <!-- Now need to progress the pathway to trigger any tasks/actions as a result of the newly completed actions -->
+        <xf:dispatch name="progress-and-save" target="pathway-model"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to progress the current pathway and save associated compositions.
+         These are:
+            The pathway itself
+            Notifications from inProgess actions
+            SubjectDocuments from  inProgess actions  
+         -->
+    <xf:action ev:event="progress-and-save">
+        <!-- Progress the pathway -->
+        <xf:dispatch name="progress-pathway" target="pathway-model"/>
+
+        <!-- Save the pathway composition -->
+        <xf:dispatch name="save-cda-composition" target="main-model"/>
+
+        <!-- Actions on successful save -->
+
+        <!-- Update the list of action notifications for this pathway -->
+        <xf:dispatch name="get-pathway-action-notifications" target="pathway-model"/>
+        <!-- Update the session status on tasks/actions -->
+        <xf:dispatch name="set-session-status" target="pathway-model"/>
+        <!-- Reset the dirty flag -->
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+    </xf:action>
+
+
+    <!-- Application defined action to progress the current pathway.
+                 Iterate through the triggered actions
+                    1. Generate the subjectHandleId
+                    2. Set the subjectHandleId in the pathway action
+                    3. Set the notification CDA and store in data for patient
+                    4. Generate the clinical document, set documentationOf and save in data for patient
+                    5. Set action to inProgress
+                    6. Set the ancestor tasks in inProgress
+                    
+                 Iterate through the skipped-tbc - set as skipped
+                 Iterate through the aborted-tbc - set as aborted
+                 Check for completed tasks, set outcome
+                (Save the pathway - done in the calling progress xf:action)
+                
+                The important id is the subjectHandleId which is used for:
+                    The id stored in the cda:act/cda:subject of the pathway as the action composition
+                    The handleId used for storing the action composition in the data collection for the patient
+                    The handleId used for storing the notification composition in the data collection for the patient
+            -->
+    <xf:action ev:event="progress-pathway">
+
+        <!-- Set the triggered tasks/actions -->
+        <xf:dispatch name="set-triggers" target="pathway-model"/>
+
+        <!-- Iterate through triggered actions and set to inProgress. -->
+        <xxf:variable name="triggeredActionEntries" select="xxf:instance('form-instance')//cda:entry[cda:act/@cityEHR:status='triggered']"/>
+
+        <xf:action xxf:iterate="$triggeredActionEntries">
+            <xxf:variable name="actionEntry" select="."/>
+            <xxf:variable name="action" select="$actionEntry/cda:act"/>
+            <xxf:variable name="actionIRI" select="$action/cda:id/@extension"/>
+            <!-- actionId replaces ':' and '#' in standard actionIRI with - and '' (nothing) -->
+            <xxf:variable name="actionId" select="replace(replace($actionIRI,':','-'),'#','')"/>
+            <xxf:variable name="actionDisplayName" select="$action/cda:code[@codeSystem='cityEHR']/@displayName"/>
+            <xxf:variable name="pathwayActionDisplayName"
+                select="concat($actionDisplayName,' in ',xxf:instance('control-instance')/current-form/displayName)"/>
+
+            <!-- Timestamp format replaces ':' and '+' in standard time format with - and * -->
+            <xxf:variable name="currentTime" select="current-dateTime()"/>
+            <xxf:variable name="timeStamp" select="replace(replace(string($currentTime),':','-'),'\+','*')"/>
+
+            <!-- 1, 2, Generate the subjectHandleId and set in the pathway act -->
+            <xxf:variable name="subject" select="$action/cda:subject"/>
+            <xxf:variable name="subjectCompositionTypeIRI" select="$subject/cda:typeId/@root"/>
+            <xxf:variable name="subjectCompositionIRI" select="$subject/cda:typeId/@extension"/>
+            <!-- subjectCompositionId replaces ':' and '#' in standard subjectCompositionIRI with - and '' (nothing) -->
+            <xxf:variable name="subjectCompositionId" select="replace(replace($subjectCompositionIRI,':','-'),'#','')"/>
+            <xxf:variable name="subjectHandleId"
+                select="concat($timeStamp,xxf:instance('view-parameters-instance')/idSeparator,$actionId,xxf:instance('view-parameters-instance')/idSeparator,$subjectCompositionId,xxf:instance('view-parameters-instance')/idSeparator,xxf:instance('view-parameters-instance')/userId)"/>
+            <xf:setvalue ref="$subject/cda:id/@extension" value="$subjectHandleId"/>
+
+            <!-- 3. Set up notification template and store in data for patient.
+                    The id of the notification uses the subjectHandleId - the id of the action composition 0 with '-Notification' appended 
+                    (the notification is never found by its name, so it is not significant) -->
+            <xxf:variable name="notificationHandleId" select="concat($subjectHandleId,'-Notification')"/>
+            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:id/@extension" value="$notificationHandleId"/>
+            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:id/@root"
+                value="xxf:instance('control-instance')/current-form/handleId"/>
+            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:effectiveTime/@value" value="$currentTime"/>
+            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:code[@codeSystem='cityEHR']/@displayName"
+                value="$pathwayActionDisplayName"/>
+
+            <!-- Participant is the role selected for this action -->
+            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@root"
+                value="'#CityEHR:Role'"/>
+            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@extension"
+                value="$action/@cityEHR:role"/>
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:code[@codeSystem='cityEHR']/@displayName"
+                value="xxf:instance('application-parameters-instance')/rbac/role[@value=$action/@cityEHR:role]/@displayName"/>
+
+            <!-- Notification is documentationOf this pathway (root) and action (extension) -->
+            <xxf:variable name="notificationServiceEvent"
+                select="xxf:instance('action-notification-template-instance')/cda:documentationOf/cda:serviceEvent"/>
+            <xf:setvalue ref="$notificationServiceEvent/cda:id/@root" value="xxf:instance('control-instance')/current-form/handleId"/>
+            <xf:setvalue ref="$notificationServiceEvent/cda:id/@extension" value="$subjectHandleId"/>
+            <xf:setvalue ref="$notificationServiceEvent/cda:code[@codeSystem='cityEHR']/@displayName"
+                value="concat($actionDisplayName,' in ',xxf:instance('control-instance')/current-form/displayName)"/>
+
+            <!-- Insert the action entry into the notification as information about the action -->
+            <xxf:variable name="notificationSection"
+                select="xxf:instance('action-notification-template-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+            <xf:delete nodeset="$notificationSection/cda:entry"/>
+            <xf:insert context="$notificationSection" nodeset="*" origin="$actionEntry" at="last()" position="after"/>
+
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
+                value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$notificationHandleId)"/>
+            <xf:send submission="save-action-notification-submission" target="notification-model"/>
+
+            <!-- 4. Generate the clinical document, set documentationOf and save in data for patient -->
+            <!-- Get the action composition template -->
+            <xf:dispatch name="load-action-composition-template" target="notification-model">
+                <xxf:context name="compositionIRI" select="$subjectCompositionIRI"/>
+            </xf:dispatch>
+
+            <!-- Set up the action composition and store in data for patient.
+                         Note that action-composition-instance contains cda:ClinicalDocument inside exist:result-->
+            <xf:setvalue ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:id/@extension" value="$subjectHandleId"/>
+            <xf:setvalue ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:effectiveTime/@value" value="$currentTime"/>
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/@classCode"
+                value="'#CityEHR:Pathway'"/>
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/cda:id/@root"
+                value="xxf:instance('control-instance')/current-form/handleId"/>
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/cda:id/@extension"
+                value="$subjectHandleId"/>
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/cda:code[@codeSystem='cityEHR']/@displayName"
+                value="$pathwayActionDisplayName"/>
+
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentAction/subjectHandle"
+                value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$subjectHandleId)"/>
+            <xf:send submission="save-action-composition-submission" target="notification-model"/>
+
+            <!-- 5. Set the status of the action to inProgress -->
+            <xf:setvalue ref="$action/@cityEHR:status" value="'inProgress'"/>
+
+            <!-- 6. Then iterate through its ancestor tasks and set them to inProgress. -->
+            <xf:action xxf:iterate="$action/ancestor::cda:section">
+                <xxf:variable name="task" select="."/>
+                <xf:setvalue ref="$task/@cityEHR:status" value="'inProgress'"/>
+            </xf:action>
+
+        </xf:action>
+
+        <!-- Set skipped actions -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:act[@cityEHR:status='charted' and @cityEHR:sessionStatus='completed']">
+            <xxf:variable name="action" select="."/>
+            <xf:setvalue ref="$action/@cityEHR:status" value="'completed'"/>
+            <xf:setvalue ref="$action/@cityEHR:outcome" value="'skipped'"/>
+        </xf:action>
+
+        <!-- Set aborted actions -->
+        <xf:action
+            xxf:iterate="xxf:instance('form-instance')//cda:act[@cityEHR:status='inProgress' and @cityEHR:sessionStatus='completed']">
+            <xxf:variable name="action" select="."/>
+            <!-- Delete the notification and subject composition -->
+            <xxf:variable name="subjectHandleId" select="$action/cda:subject/cda:id/@extension"/>
+            <!-- The handle for loading/saving notifications does not include the database location, since it must cater for the return of document-uri in a query -->
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
+                value="concat(xxf:instance('view-parameters-instance')/applicationStorageLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$subjectHandleId)"/>
+            <xf:dispatch name="delete-notification" target="notification-model"/>
+            <!-- Reset the status and outcome -->
+            <xf:setvalue ref="$action/@cityEHR:status" value="'completed'"/>
+            <xf:setvalue ref="$action/@cityEHR:outcome" value="'aborted'"/>
+        </xf:action>
+
+        <!-- Check for completed tasks -->
+        <!-- Iterate through completed tasks. Outcome is now set to completed, if not already -->
+        <xf:action xxf:iterate="xxf:instance('form-instance')//cda:section[@cityEHR:status='completed']">
+            <xxf:variable name="task" select="."/>
+            <xf:setvalue ref="$task/@cityEHR:outcome" value="'completed'"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to check whether the pathway is complete.
+         This happens when all top level tasks are completed
+         -->
+    <xf:action ev:event="check-pathway-complete">
+        <!-- Only perform the check if a pathway is loaded -->
+
+        <xf:action if="exists(xxf:instance('form-instance')//cda:ClinicalDocument[cda:typeId/@root='#CityEHR:Pathway'])">
+            <!-- Get the top level tasks.
+             Tasks are sections with a cityEHR:status attribute (which excludes the section holding external variables -->
+            <xxf:variable name="topLevelTasks"
+                select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section[@cityEHR:status]"/>
+
+            <xxf:variable name="topLevelTaskCount" select="count($topLevelTasks)"/>
+            <xxf:variable name="completedTaskCount" select="count($topLevelTasks[@cityEHR:status='completed'])"/>
+
+            <xf:action if="($topLevelTaskCount gt 0) and ($topLevelTaskCount = $completedTaskCount)">
+                <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                    <xxf:context name="action" select="'publishPathway'"/>
+                </xf:dispatch>
+            </xf:action>
+
+        </xf:action>
+
+    </xf:action>
+
+
+</xf:model>

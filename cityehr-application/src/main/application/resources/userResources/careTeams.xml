@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    careTeams.xml
+    Standard format for list of care teams to be set up in the cityEHR runtime system.
+    
+    Files in this format can be uploaded to the xmlstore using the utility on the Admin page of cityEHR.
+    
+    Each individual <careTeam> element creates a collection called <careTeamId> in the top-level users collection of xmlstore
+    The careTeamId is generated from the userId of the author of the care team and a timestamp
+    
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+    **********************************************************************************************************
+-->
+<careTeams xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    <!-- These care team for cityEHR application -->
+    <careTeam id="student.01-2013-08-30T20-02-10.17*01-00" displayName="Student Team One">
+        <user id="#CityEHR:User:admin"/>
+        <user id="#CityEHR:User:student.01"/>
+        <user id="#CityEHR:User:student.02"/>
+        <user id="#CityEHR:User:student.03"/>
+        <user id="#CityEHR:User:student.04"/>
+        <user id="#CityEHR:User:student.05"/>
+    </careTeam>
+    <careTeam id="student.06-2013-08-30T20-02-10.17*01-00" displayName="Student Team Two">
+        <user id="#CityEHR:User:admin"/>
+        <user id="#CityEHR:User:student.06"/>
+        <user id="#CityEHR:User:student.07"/>
+        <user id="#CityEHR:User:student.08"/>
+        <user id="#CityEHR:User:student.09"/>
+        <user id="#CityEHR:User:student.10"/>
+    </careTeam>
+    <careTeam id="student.11-2013-08-30T20-02-10.17*01-00" displayName="Student Team Three">
+        <user id="#CityEHR:User:admin"/>
+        <user id="#CityEHR:User:student.11"/>
+        <user id="#CityEHR:User:student.12"/>
+        <user id="#CityEHR:User:student.13"/>
+        <user id="#CityEHR:User:student.14"/>
+        <user id="#CityEHR:User:student.15"/>
+    </careTeam>
+</careTeams>

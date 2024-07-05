@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    maleGivenNames.xml
+    
+    List of male given names used to generate test data.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<nameList>
+    <name>Aaron</name>
+    <name>Adam</name>
+    <name>Alastair</name>
+    <name>Anton</name>
+    <name>Archie</name>
+    <name>Arnold</name>
+    <name>Andrew</name>
+    <name>Arthur</name>
+    <name>Alfred</name>
+    <name>Ashley</name>
+    <name>Bernard</name>
+    <name>Barnaby</name>
+    <name>Basil</name>
+    <name>Benjamin</name>
+    <name>Boris</name>
+    <name>Barry</name>
+    <name>Brian</name>
+    <name>Bart</name>
+    <name>Colin</name>
+    <name>Corin</name>
+    <name>Clifford</name>
+    <name>Cecil</name>
+    <name>Cyril</name>
+    <name>Cameron</name>
+    <name>Cuthbert</name>
+    <name>Corey</name>
+    <name>Christopher</name>
+    <name>Charles</name>
+    <name>Carl</name>
+    <name>David</name>
+    <name>Donald</name>
+    <name>Dean</name>
+    <name>Daniel</name>
+    <name>Darren</name>
+    <name>Danton</name>
+    <name>Dustin</name>
+    <name>Edward</name>
+    <name>Edmund</name>
+    <name>Elmore</name>
+    <name>Euan</name>
+    <name>Evan</name>
+    <name>Ethan</name>
+    <name>Emerson</name>
+    <name>Fernando</name>
+    <name>Freddy</name>
+    <name>Finlay</name>
+    <name>Frank</name>
+    <name>Fraser</name>
+    <name>Fergal</name>
+    <name>Fritz</name>
+    <name>Felix</name>
+    <name>George</name>
+    <name>Gary</name>
+    <name>Gerrald</name>
+    <name>Graham</name>
+    <name>Graeme</name>
+    <name>Gervais</name>
+    <name>Grant</name>
+    <name>Geoff</name>
+    <name>Gavin</name>
+    <name>Harold</name>
+    <name>Horatio</name>
+    <name>Hugh</name>
+    <name>Howard</name>
+    <name>Heathcliffe</name>
+    <name>Heston</name>
+    <name>Ian</name>
+    <name>Iain</name>
+    <name>Igor</name>
+    <name>Ivor</name>
+    <name>Isadore</name>
+    <name>Jay</name>
+    <name>John</name>
+    <name>Jack</name>
+    <name>Jamal</name>
+    <name>James</name>
+    <name>Jerome</name>
+    <name>Joshua</name>
+    <name>Jermaine</name>
+    <name>Julian</name>
+    <name>Keith</name>
+    <name>Kevin</name>
+    <name>Kyle</name>
+    <name>Kostas</name>
+    <name>Karl</name>
+    <name>Lee</name>
+    <name>Liam</name>
+    <name>Luke</name>
+    <name>Larry</name>
+    <name>Leyton</name>
+    <name>Lex</name>
+    <name>Leonard</name>
+    <name>Lars</name>
+    <name>Louis</name>
+    <name>Leicester</name>
+    <name>Maximillian</name>
+    <name>Michael</name>
+    <name>Mark</name>
+    <name>Martin</name>
+    <name>Marcel</name>
+    <name>Mitch</name>
+    <name>Matthew</name>
+    <name>Morgan</name>
+    <name>Nigel</name>
+    <name>Nicholas</name>
+    <name>Neil</name>
+    <name>Nile</name>
+    <name>Norburt</name>
+    <name>Nathan</name>
+    <name>Nathaniel</name>
+    <name>Orlando</name>
+    <name>Oliver</name>
+    <name>Orson</name>
+    <name>Orinoko</name>
+    <name>Othello</name>
+    <name>Owen</name>
+    <name>Omar</name>
+    <name>Oscar</name>
+    <name>Piers</name>
+    <name>Peter</name>
+    <name>Paul</name>
+    <name>Patrick</name>
+    <name>Philip</name>
+    <name>Perry</name>
+    <name>Quin</name>
+    <name>Quentin</name>
+    <name>Raymond</name>
+    <name>Richard</name>
+    <name>Ralph</name>
+    <name>Randolph</name>
+    <name>Rupert</name>
+    <name>Roger</name>
+    <name>Robert</name>
+    <name>Rory</name>
+    <name>Russell</name>
+    <name>Steven</name>
+    <name>Stepehn</name>
+    <name>Sebastian</name>
+    <name>Simon</name>
+    <name>Seth</name>
+    <name>Sigmund</name>
+    <name>Sean</name>
+    <name>Trevor</name>
+    <name>Treve</name>
+    <name>Thomas</name>
+    <name>Timothy</name>
+    <name>Tristan</name>
+    <name>Theodore</name>
+    <name>Tyler</name>
+    <name>Tyson</name>
+    <name>Ulysees</name>
+    <name>Umberto</name>
+    <name>Vernon</name>
+    <name>Victor</name>
+    <name>Vincent</name>
+    <name>William</name>
+    <name>Wallace</name>
+    <name>Wilbur</name>
+    <name>Wilfred</name>
+    <name>Xavier</name>
+    <name>Yanis</name>
+    <name>Zak</name>
+    <name>Zander</name>
+    <name>Zebedee</name>
+    <name>Zane</name>
+</nameList>

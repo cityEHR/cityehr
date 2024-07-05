@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        databaseReindexXQuery.xml
+        
+        Reindex the database at the current context.
+        Note - this can take a long time to complete on larger databases, so need to be subject to user confirmation
+        
+        Time to reindex depends on the cacheSize set in <db-connection> element of eXist main conf.xml file
+        cacheSize should be set to 1/3 of the total memory allocated to eXist
+        
+        0.5Gb database - 19 minutes to reindex with cacheSize=128M
+                       - 14 minutes to reindex with cacheSize=512M (25% reduction)
+                       
+        <path/> gets replaced with the database location to index, starting with /db
+        
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query>
+        xquery version "1.0";         
+        declare namespace xmldb="http://exist-db.org/xquery/xmldb";
+        
+        xmldb:reindex('<path/>')    
+        
+</query>
+

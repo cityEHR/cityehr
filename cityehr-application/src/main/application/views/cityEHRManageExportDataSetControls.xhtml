@@ -1,0 +1,247 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRManageExportDataSetControls.xhtml
+    
+    Standard generation of actions for managing export data sets.
+    Used in cityEHRAdmin and in cityEHRExportDataSetDialog
+    
+    The view must contain its own viewControlsActions-model which handles the user interaction with the controls
+    The viewControls-input-instance is generic, so is included in the configurationModel loaded with every page 
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:ul class="viewControlsHeader" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Show current EDS name -->
+    <xhtml:li class="viewControlsDisplay">
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/EDSLabel"
+            class="{if (xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus=('new','selected')) then '' else 'hidden'}"/>
+        <!-- Display or edit (if its new) the EDS name -->
+        <xf:input ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName" incremental="true"
+            class="{if (xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus='new') then '' else 'hidden'}">
+            <xf:action ev:event="xforms-value-changed" if="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus='new'">
+                <!-- To set the id:
+                    1. Remove spaces, using translate
+                    2. encode-for-uri to replace funny characters
+                    3. Remoce any % characters introduced by encode-for-uri
+                -->
+                <xxf:variable name="displayName" select="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName"/>
+                <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/id"
+                    value="replace(encode-for-uri(translate($displayName,' ','')),'%','')"/>
+                <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/handle"
+                    value="concat(xxf:instance('view-parameters-instance')/applicationStorageLocation,'/systemConfiguration/',xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyId,'/datasets/',xxf:instance('exportDataSetControl-instance')/exportDataSet/id)"/>
+                <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus" value="'edited'"/>
+            </xf:action>
+        </xf:input>
+        <!-- Display the dataset displayName and id, if there is one -->
+        <xf:output
+            ref="if (xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus!='new') then xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName else ''"/>
+        <xf:output
+            ref="if (xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus='new' and xxf:instance('exportDataSetControl-instance')/exportDataSet/id!='') then concat(' (',xxf:instance('exportDataSetControl-instance')/exportDataSet/id,')') else ''"
+        />
+    </xhtml:li>
+    <!-- Actions -->
+    <xhtml:li class="viewControlsActions">
+        <!-- Select the specialty.
+             This can only be done in cityEHRAdmin, not when launched from exportDataDialog -->
+        <xxf:variable name="selectSpecialty" select="if (xxf:instance('view-parameters-instance')/page='cityEHRAdmin') then 'viewControl' else 'hidden'"/>
+        <xhtml:span class="{$selectSpecialty}">
+            <xf:select1 ref="if ($selectSpecialty='viewControl') then xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyIRI else ()">
+                <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/selectSpecialtyLabel"/>
+                <xf:itemset nodeset="xxf:instance('specialtyList-instance')/iso-13606:Folder">
+                    <xf:label ref="@displayName"/>
+                    <xf:value ref="@id"/>
+                </xf:itemset>
+                <xf:action ev:event="xforms-value-changed">
+                    <!-- Load the dictionary for the specialty -->
+                    <xf:dispatch name="load-dictionary" target="dictionary-model">
+                        <xxf:context name="specialtyIRI" select="xxf:instance('control-instance')/manageExportDataSet/specialtyIRI"/>
+                    </xf:dispatch>
+                    
+                    <!-- Initialise data sets for this specialty -->
+                    <xf:dispatch name="initialiseDataSetForSpecialty" target="exportDataSet-model">
+                        <xxf:context name="specialtyIRI" select="xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyIRI"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:select1>
+        </xhtml:span>
+        <!-- Select the export data set. 
+             Can't do this if creating a new data set or if there aren't any data sets defined for this specialty -->
+        <xhtml:span
+            class="{if (xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus!='new' and exists(xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection)) then 'viewControl' else 'hidden'}">
+            <xf:select1 ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/id">
+                <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/EDSLabel"/>
+                <xf:itemset nodeset="xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection">
+                    <xf:label ref="@displayName"/>
+                    <xf:value ref="@id"/>
+                </xf:itemset>
+                <xf:action ev:event="xforms-value-changed"
+                    if="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus='selected'">
+                    <!-- Set the displayName, handle and load the data set -->
+                    <xxf:variable name="selectedEDS"
+                        select="xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection[@id=xxf:instance('exportDataSetControl-instance')/exportDataSet/id]"/>
+                    <!-- Only load the data set if the selected one exists.
+                         This handles the case where /exportDataSet/id is reset to '' when the last data set is deleted -->
+                    <xf:action if="exists($selectedEDS)">
+                        <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName"
+                            value="$selectedEDS/@displayName"/>
+                        <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/handle" value="$selectedEDS/@handle"/>
+                        <xf:send submission="load-exportDataSet-submission" target="exportDataSet-model"/>
+                    </xf:action>
+                    <!-- If there is no selected data set, then clear exportDataSet-instance -->
+                    <xf:action if="not(exists($selectedEDS))">
+                        <xf:delete nodeset="xxf:instance('exportDataSet-instance')/*"/>
+                    </xf:action>
+                </xf:action>
+            </xf:select1>
+        </xhtml:span>
+        <!-- Save the export data set.
+             Only show this control if the exportDataSet has an id and has been edited -->
+        <xhtml:span
+            class="{if (xxf:instance('exportDataSetControl-instance')/exportDataSet/id !='' and xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus='edited') then 'viewControl' else 'hidden'}">
+            <xxf:variable name="type" select="'save'"/>
+            <xxf:variable name="label" select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/exportDataSet/saveLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <!-- Save button -->
+            <xf:trigger appearance="minimal">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <!-- Save the data set -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="xxf:instance('exportDataSet-instance')/@displayName"
+                        value="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName"/>
+                    <xf:setvalue ref="xxf:instance('exportDataSet-instance')/@id"
+                        value="xxf:instance('exportDataSetControl-instance')/exportDataSet/id"/>
+                    <xf:send submission="save-exportDataSet-submission" target="exportDataSet-model"/>
+                    <!-- Reload the list of data sets (in case this was a new one) -->
+                    <xf:send submission="exportDataSetList-submission" target="exportDataSet-model"/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:span>
+        <!-- New export data set.
+             Can only create a new exportDataSet if the current selection hasn't been edited
+             The EDS will not be created in the xmlstore until it is saved. -->
+        <xhtml:span
+            class="{if (xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus !='edited') then 'viewControl' else 'hidden'}">
+            <xxf:variable name="type" select="'add'"/>
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/newLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <!-- Add button -->
+            <xf:trigger appearance="minimal">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <!-- Add new EDS -->
+                <xf:action ev:event="DOMActivate">
+                    <!-- Load the template for new data set -->
+                    <xf:send submission="load-exportDataSet-template-submission" target="exportDataSet-model"/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:span>
+        <!-- Reset the data set, if it has been edited -->
+        <xhtml:span
+            class="{if (xxf:instance('exportDataSetControl-instance')/exportDataSet/editStatus='edited') then 'viewControl' else 'hidden'}">
+            <xxf:variable name="type" select="'reset'"/>
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/resetLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <!-- Reset button -->
+            <xf:trigger appearance="minimal">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <!-- Reset the data set -->
+                <xf:action ev:event="DOMActivate">
+                    <!-- Selected - reload from the xmlstore -->
+                    <xf:action if="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus='selected'">
+                        <xf:send submission="load-exportDataSet-submission" target="exportDataSet-model"/>
+                    </xf:action>
+                    <!-- New - abort adding new data set and return to original list -->
+                    <xf:action if="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus='new'">
+                        <xf:delete nodeset="xxf:instance('exportDataSet-instance')/iso-13606:entryCollection/*"/>
+                        <!-- Re-display selection of EDS - can reset lifecycleStatus to new or selected -->
+                        <xf:dispatch name="initialiseDataSetForSpecialty" target="exportDataSet-model">
+                            <xxf:context name="specialtyIRI" select="xxf:instance('exportDataSetControl-instance')/exportDataSet/specialtyIRI"
+                            />
+                        </xf:dispatch>
+                    </xf:action>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:span>
+        <!-- Delete the data set.
+             This can only be done in cityEHRAdmin, not when launched from exportDataDialog -->
+        <xhtml:span
+            class="{if (xxf:instance('control-instance')/adminTask='manageExportDataSet' and xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus='selected') then 'viewControl' else 'hidden'}">
+            <xxf:variable name="type" select="'delete'"/>
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/deleteLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <!-- Delete button -->
+            <xf:trigger appearance="minimal">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <!-- Delete the data set 
+                    Need to confirm the action first -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue
+                        ref="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/dialogue[@id='deleteDataSet']/dynamicMessage/message"
+                        value="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName"/>
+                    
+                    <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                        <xxf:context name="action" select="'deleteDataSet'"/>
+                        <xxf:context name="messageSet" select="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:span>
+
+        <!-- Dismiss the dialog.
+             This can only be done when launched from exportDataDialog, not in cityEHRAdmin-->
+        <xhtml:span class="{if (xxf:instance('control-instance')/adminTask='manageExportDataSet') then 'hidden' else 'viewControl'}">
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageExportDataSets/dismissLabel"/>
+                <xf:action ev:event="DOMActivate">
+                    <!-- Hide manageExportDataSetDialog - it's done -->
+                    <xxf:hide dialog="manageExportDataSetDialog"/>
+                    <!-- If manageExportDataSetDialog was launched from exportDataDialog then show it again -->
+                    <xf:action if="not(xxf:instance('control-instance')/adminTask='manageExportDataSet')">
+                        <xxf:show dialog="exportDataDialog"/>
+                    </xf:action>
+                </xf:action>
+
+            </xf:trigger>
+        </xhtml:span>
+    </xhtml:li>
+    <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+
+</xhtml:ul>

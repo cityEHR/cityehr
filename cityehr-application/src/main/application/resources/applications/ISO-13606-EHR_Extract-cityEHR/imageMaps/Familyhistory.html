@@ -1,0 +1,86 @@
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    Fracture.html
+    
+    Image map file.
+    Works with data-maphilight.
+    
+    Note that the following are required in order for this to work:
+    
+    The <script> in the <head> must be present in the page that includes the image map
+    The <img> element must have width and height attributes, which are picked up by the Orbeon form render
+    (data-maphilight does not work if there is no width/height)
+    
+    The src attribute on <img> gets set to the correct path for the image when the file is included using XSLT.
+    
+    The following javascript libraries must be included on the page:
+    
+    jquery.min.js
+    jquery.maphilight.min.js
+    cityEHR.js
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<html xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <head>     
+        <script type="text/javascript" language="javascript" src="../../../scripts/jquery.min.js"> </script>
+        <script type="text/javascript" language="javascript" src="../../../scripts/jquery.maphilight.min.js"> </script>
+        
+        <script type="text/javascript" language="javascript" src="../../../scripts/cityEHR.js"> </script>
+        
+        <script> $(function() { $('.map').maphilight(); }); </script>
+    </head>
+    
+    <body>   
+        <img class="map" src="Familyhistory.png" width="760" height="800" useMap="#FamilyHistory" />
+        
+        <map name="Familyhistory" id="RFamilyhistory" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+    <area shape="rect" coords="393,185,428,270" title="Father" id="R1" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','1');"/>
+	<area shape="rect" coords="339,185,379,270" title="Mother" id="R2" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','2');"/>
+	<area shape="rect" coords="449,370,481,453" title="Brother" id="R3" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','3');"/>
+	<area shape="rect" coords="288,370,323,453" title="Sister" id="R4" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','4');"/>
+	<area shape="rect" coords="395,541,428,622" title="Son" id="R5" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','5');"/>
+	<area shape="rect" coords="340,541,378,622" title="Daughter" id="R6" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','6');"/>
+	<area shape="rect" coords="506,27,540,115" title="Paternal Grandfather" id="R7" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','7');"/>
+	<area shape="rect" coords="455,27,491,115" title="Paternal Grandmother" id="R8" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','8');"/>
+	<area shape="rect" coords="298,27,330,115" title="Maternal Grandfather" id="R9" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','9');"/>
+    <area shape="rect" coords="242,27,279,115" title="Maternal Grandmother" id="R10" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','10');"/>
+    <area shape="rect" coords="603,185,636,270" title="Paternal Uncle" id="R11" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','11');"/>
+	<area shape="rect" coords="552,185,587,270" title="Paternal Aunt" id="R12" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','12');"/>
+    <area shape="rect" coords="184,185,215,270" title="Maternal Uncle" id="R13" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','13');"/>
+    <area shape="rect" coords="130,185,165,270" title="Maternal Aunt" id="R14" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','14');"/>
+	<area shape="rect" coords="710,370,740,453" title="Male Cousin on fathers side" id="R15" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','15');"/>
+	<area shape="rect" coords="653,370,692,453" title="Female Cousin on fathers side" id="R16" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','16');"/>
+	<area shape="rect" coords="69,370,100,453" title="Male Cousin on mothers side" id="R17" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','17');"/>
+	<area shape="rect" coords="14,370,53,453" title="Female Cousin on mothers side" id="R18" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','18');"/>
+	<area shape="rect" coords="556,370,599,453" title="Paternal Half Brother" id="R19" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','19');"/>
+	<area shape="rect" coords="513,370,549,453" title="Paternal Half Sister" id="R20" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','20');"/>
+	<area shape="rect" coords="218,370,249,453" title="Maternal Half Brother" id="R21" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','21');"/>
+	<area shape="rect" coords="161,370,201,453" title="Maternal Half Sister" id="R22" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','22');"/>
+	<area shape="rect" coords="554,538,594,623" title="Niece brothers child" id="R23" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','23');"/>
+	<area shape="rect" coords="610,538,641,623" title="Nephew brothers child" id="R24" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','24');"/>
+	<area shape="rect" coords="137,541,174,622" title="Niece sisters child" id="R25" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','25');"/>
+	<area shape="rect" coords="189,541,223,622" title="Nephew sisters child" id="R26" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','26');"/>
+	<area shape="rect" coords="499,697,535,781" title="Grandson sons child" id="R27" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','27');"/>
+	<area shape="rect" coords="447,697,485,781" title="Granddaughter sons child" id="R28" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','28');"/>
+	<area shape="rect" coords="291,697,324,781" title="Grandson daughters child" id="R29" href="#" onClick="setXformsControl('Familyhistory-Familyhistory','29');"/>
+	<area shape="rect" coords="238,697,273,781" title="Granddaughter daughters child" id="R30" href="#"  onClick="setXformsControl('Familyhistory-Familyhistory','30');"/>
+
+        </map>
+        
+    </body>
+</html>
+

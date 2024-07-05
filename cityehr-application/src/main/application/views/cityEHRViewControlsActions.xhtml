@@ -1,0 +1,152 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRViewControlsActions.xhtml
+    
+    Standard generation of actions view controls.
+    Included in every view that has actions in the view controls header.
+    
+    The view must contain its own viewControlsActions-model which handles the user interaction with the controls
+    The viewControls-input-instance is generic, so is included in the configurationModel loaded with every page 
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:li class="viewControlsActions" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    <!-- Get the current view and its action display settings.
+         The actions have been copied from application-parameters-instance to viewControlsActions-instance when the page was loaded.
+         Do not show actions which have @display set to 'hidden' (set by bindings in viewControlsActions-instance)
+         The actionList uses access control to only contain actions accessible by this user -->
+    <xxf:variable name="controlSet" select="xxf:instance('viewControlsActions-instance')/view"/>
+    <xxf:variable name="actionList" select="$controlSet/*[not(exists(role/@id)) or role/@id=xxf:instance('user-instance')/rbac/role/@value]"/>
+
+    <!-- All controls may be hidden -->
+    <xxf:variable name="showControlSet" select="$controlSet/@display"/>
+
+    <!-- If display attributes are not set then default is to show icons and no labels -->
+    <xxf:variable name="showLabels" select="if ($controlSet/@showLabels='true') then 'true' else 'false'"/>
+    <xxf:variable name="showIcons" select="if ($controlSet/@showIcons='false') then 'false' else 'true'"/>
+
+    <xxf:variable name="separator" select="$controlSet/@separator"/>
+
+    <!-- Iterate through the configuration to get the actions for this view.
+         Each item is either an action, an input (which can be a selection or simple input) or a label.
+         Only the currenty displayed actions are included in the display -->
+
+    <xhtml:span class="{$showControlSet}">
+        <xf:repeat nodeset="$actionList">
+
+            <xxf:variable name="action" select="."/>
+            <!-- Get the type of the action -->
+            <xxf:variable name="actionType" select="$action/name()"/>
+            <xxf:variable name="showAction" select="if ($actionType='action') then 'viewControl' else 'hidden'"/>
+            <xxf:variable name="showSelect" select="if ($actionType='select') then '' else 'hidden'"/>
+            <xxf:variable name="showInput" select="if ($actionType='input') then '' else 'hidden'"/>
+            <xxf:variable name="showLabel" select="if ($actionType='label') then '' else 'hidden'"/>
+            <xxf:variable name="showIcon" select="if ($showIcons='true' and $actionType='action') then 'true' else 'false'"/>
+
+            <xxf:variable name="controlId" select="$action/@id"/>
+<!--
+            <xxf:variable name="icon"
+                select="if ($showIcons='true' and $actionType='action') then concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$controlId,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version) else ''"/>
+-->
+            <xxf:variable name="icon" select="concat($controlId,'.png')"/>
+            <xxf:variable name="displayName" select="$action/@displayName"/>
+            <xxf:variable name="size" select="$action/@size"/>
+
+            <!-- Action is displayed unless its display attribute is set to 'hidden'.
+                 This attribute is bound to a corresponding action/@display in the control-instance (done when parameters-instance is created).
+                 So use control-instance/viewControlsActions/action/@display to control the display of the action. -->
+            <xhtml:span class="{if ($action/@display='hidden') then 'hidden' else''}">
+
+
+                <!-- Output separator -->
+                <xf:output ref="$separator"/>
+
+                <!-- Debugging - show the display property -->
+                <!--
+            <xf:output ref="$action/@display"/>
+            <xf:output ref="$icon"/>
+            -->
+
+                <!-- Control is an action.
+                     xxf:modal="true" on trigger blocks the UI until the action in the trigger is done.
+                     title="{$displayName}" -->
+                <xhtml:span class="{$showAction}">
+                    <xf:trigger appearance="minimal" xxf:modal="true">
+                        <xf:label>
+                            <xf:output ref="if ($showLabels='true') then $displayName else ''"/>
+                            <!--
+                            <xhtml:img src="{$icon}" class="{$showIcon}" alt=""/>
+                            -->
+                            <xhtml:img class="icon" src="data:image/png;base64,{xs:base64Binary(xxf:instance('iconList-instance')/iconFile[@name=$icon])}"/>
+                        </xf:label>
+                        <xf:hint class="actionHint" ref="$displayName"/>
+                        <xf:action ev:event="DOMActivate">
+                            <xf:dispatch name="{$controlId}" target="viewControlsActions-model"/>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:span>
+
+                <!-- Control is a selection input.
+                 This is out of scope if the item doesn't exist in viewControls-input-instance.
+                 The list of selections comes from the viewControls-input-instance
+                 This may be a static list in the instance or (better) may be constructed there from configuration parameters when the viewControls-input-instance is loaded
+                 The items in the list must have a @displayName and @value, but can have any element name (hence the use of * to get the itemset)
+                 -->
+                <xhtml:span class="{$showSelect}">
+                    <xf:select1 ref="xxf:instance('viewControls-input-instance')/select[@id=$controlId]/@value">
+                        <xf:label ref="$displayName" class="label"/>
+                        <xf:itemset nodeset="../*">
+                            <xf:label ref="./@displayName"/>
+                            <xf:value ref="./@value"/>
+                        </xf:itemset>
+                        <!-- Call action when selection changes -->
+                        <xf:action ev:event="xforms-value-changed">
+                            <xf:dispatch name="{$controlId}" target="viewControlsActions-model"/>
+                        </xf:action>
+                    </xf:select1>
+                </xhtml:span>
+
+                <!-- Control is an input 
+                 This is out of scope if the item doesn't exist in viewControls-input-instance. 
+                 Input depends on how the item is bound in the instance.
+                 Note that changes are incremental -->
+                <xhtml:span class="{$showInput}">
+                    <xf:input ref="xxf:instance('viewControls-input-instance')/input[@id=$controlId]" xxf:size="{$size}" incremental="true">
+                        <xf:label ref="$displayName" class="label"/>
+                        <!-- Call action when selection changes -->
+                        <xf:action ev:event="xforms-value-changed">
+                            <xf:dispatch name="{$controlId}" target="viewControlsActions-model"/>
+                        </xf:action>
+                    </xf:input>
+                </xhtml:span>
+
+                <!-- Control is a label. -->
+                <xhtml:span class="{$showLabel}">
+                    <xf:output ref="$displayName"/>
+                </xhtml:span>
+
+            </xhtml:span>
+
+        </xf:repeat>
+    </xhtml:span>
+
+</xhtml:li>

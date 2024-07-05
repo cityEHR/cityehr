@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRSavedCompositionSelection.xhtml
+    
+    Standard span for selection of saved (in progress) compositions
+    Included in patient views for events, views, forms, letters, etc.
+    
+    Structure of the selection list is:
+    viewNavigationCategory
+    viewNavigationItem
+        viewNavigationSubItem
+        viewNavigationSelectedItem
+            contentIndex
+    viewNavigationSelectedCategory
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:span xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <xxf:variable name="sortedCompositionList"
+        select="if (empty(xxf:instance('patientCompositionsList-instance')/composition)) then xxf:instance('patientCompositionsList-instance')/composition else xxf:sort(xxf:instance('patientCompositionsList-instance')/composition,effectiveTime,'text', 'descending')"/>
+    <xf:repeat nodeset="$sortedCompositionList" id="patientComposition-repeat">
+        <!-- Set the display - depends on whether this is the current composition or not -->
+        <xxf:variable name="compositionSelectionClass"
+            select="if (contains(xxf:instance('control-instance')/current-form/handle,handle)) then 'viewNavigationSelectedItem' else 'viewNavigationItem'"/>
+        <xf:trigger class="{$compositionSelectionClass}" appearance="minimal">
+            <xf:label>
+                <xf:output
+                    value="if (effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime(effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else effectiveTime"/>
+                <xf:output ref="displayName"/>
+            </xf:label>
+
+            <!-- Load saved composition when selected from list.
+                 Reloads the same page, but with the saved form loaded -->
+            <xf:action ev:event="DOMActivate">
+                <xxf:variable name="selectedComposition" select="$sortedCompositionList[index('patientComposition-repeat')]"/>
+ 
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'saved'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
+                    value="concat(xxf:instance('view-parameters-instance')/databaseLocation,$selectedComposition/handle)"/>
+                <xxf:variable name="compositionTypeId" select="replace(substring($selectedComposition/compositionTypeIRI,2),':','-')"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/formCacheHandle"
+                    value="if (xxf:instance('system-parameters-instance')/dynamicParameters/useFormCache/@value!='true') then 'blank' else concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/cache/',$compositionTypeId)"/>
+
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/displayName" value="$selectedComposition/displayName"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/title"
+                    value="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/loadingLabel,xxf:instance('control-instance')/current-form/displayName,'...')"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
+                    value="xxf:instance('control-instance')/current-form/title"/>
+               
+               <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                   <xxf:context name="page" select="xxf:instance('session-parameters-instance')/@page"/>
+               </xf:dispatch>
+            </xf:action>
+        </xf:trigger>
+    </xf:repeat>
+
+</xhtml:span>

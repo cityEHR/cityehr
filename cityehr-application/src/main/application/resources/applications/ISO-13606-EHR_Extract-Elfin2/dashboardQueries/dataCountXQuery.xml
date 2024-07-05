@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        dataCountXQuery.xml
+        
+        Dashboard query to get count of data items (i.e. compositions in progress) in the database
+        
+        Run from the data collection, then find
+        
+        data/<PatientId>/forms
+        data/<PatientId>/letters
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3";
+        
+        let $formCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Form')])
+        let $letterCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Letter')])
+        let $notificationCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Notification')])
+        let $pathwayCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Pathway')])
+        
+        return
+        &lt;queryResults>
+        &lt;total value="{sum(($formCount,$letterCount,$notificationCount,$pathwayCount))}"/>
+                &lt;category displayName="Forms" value="{$formCount}"/>
+                &lt;category displayName="Letters" value="{$letterCount}"/>
+                &lt;category displayName="Notifications" value="{$notificationCount}"/>
+                &lt;category displayName="Pathways" value="{$pathwayCount}"/>
+        &lt;/queryResults>
+</query>

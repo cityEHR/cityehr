@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRPatientLabel.xhtml
+    
+    Displays the patient label for all cityEHRFolder views 
+    and for any cross patient views where individual patient data is displayed (e.g. InTray)
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<!-- Entries for the patient label are specified in parameters-instance as follows:
+    
+    Patient info (first row of label) comes from the patient-instance (see patientDemographicsModel):
+    <cdaheader>
+        <id/>
+        <prefix/>
+        <given/>
+        <family/>
+        <administrativeGenderCode/>
+        <birthTime/>
+    </cdaheader>
+    
+    Age of the patient in the currect record is in:
+    xxf:instance('patient-instance')/currentAge/formatted
+    
+    Other details are specified in the patientLabel:
+    
+    <patientLabel>
+        <patientLabelDoBDisplayName>Born</patientLabelDoBDisplayName>
+        <patientLabelGenderDisplayName>Gender</patientLabelGenderDisplayName>
+        <patientId displayName="Hospital Number">#ISO-13606:Entry:HospitalNumber</patientId>        
+    </patientLabel>
+    
+    Data for the label has been found by query of the record in patientDemographics-instance
+    
+    Data are returned ordered by effectiveDate (descending) - this means most recent event recorded is first in the list.
+    
+    The alters have been checked by check-patient-alerts in patientDemographicsModel
+-->
+
+<xhtml:ul class="controlPanel" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+
+
+    <xxf:variable name="patientDemographics" select="xxf:instance('patientDemographics-instance')"/>
+
+    <!-- Iterate through the rows in the patient label -->
+    <xf:repeat nodeset="xxf:instance('application-parameters-instance')/patientLabel/controlPanelGroup">
+        <xhtml:li class="controlPanelGroup">
+            <!-- Iterate through items in the group -->
+            <xf:repeat nodeset="controlItem">
+                <xxf:variable name="labelItem" select="."/>
+                <xxf:variable name="labelType" select="$labelItem/@type"/>
+                <xxf:variable name="icon"
+                    select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$labelItem/@icon,'?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+
+                <xxf:variable name="value"
+                    select="if ($labelType='age') then xxf:instance('patient-instance')/currentAge/formatted
+                    else if ($labelType='demographics') then ($patientDemographics//cda:observation[cda:id/@extension=$labelItem/@entry]/descendant::cda:value[@extension=$labelItem/@element])[1]/@value
+                else ''"/>
+                <xxf:variable name="valueDisplay"
+                    select="if ($value castable as xs:date) then format-date($value, xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                    else if ($value castable as xs:time) then format-time($value, xxf:instance('view-parameters-instance')/timeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                    else if ($value castable as xs:dateTime) then format-dateTime($value, xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                            else $value"/>
+
+                <xhtml:span class="labelItem">
+                    <xxf:variable name="displayNameClass"
+                        select="if ($labelType!='alert' and $labelItem/@displayName!='') then 'label' else 'hidden'"/>
+                    <xhtml:span class="{$displayNameClass}">
+                        <xf:output ref="$labelItem/@displayName"/>
+                    </xhtml:span>
+                    <xf:output class="{$labelItem/@class}"
+                        ref="if ($valueDisplay!='') then concat($labelItem/@prefix,$valueDisplay,$labelItem/@suffix) else ''"/>
+
+                    <xxf:variable name="alertClass" select="if ($labelType='alert' and $labelItem/@show!='noDisplay') then 'label' else 'hidden'"/>
+
+                    <!-- Can only have trigger for an alert -->
+                    <xf:group ref="$labelItem[@type='alert']">
+                        <xf:trigger class="{$alertClass}" appearance="minimal">
+                            <xf:label>
+                                <xhtml:img src="{$icon}" alt=""/>
+                            </xf:label>
+                            <xf:hint ref="$labelItem/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+
+                                <!-- Set compositionHandle to the viewIRI and compositionStatus to new -->
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle" value="$labelItem/@view"/>
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'new'"/>
+
+                                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                    <xxf:context name="page" select="'cityEHRFolder-Views'"/>
+                                </xf:dispatch>
+
+                            </xf:action>
+                        </xf:trigger>
+                    </xf:group>
+                </xhtml:span>
+            </xf:repeat>
+        </xhtml:li>
+    </xf:repeat>
+</xhtml:ul>

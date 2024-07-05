@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
+  <!--Created by yEd 3.14.4-->
+  <key attr.name="application" attr.type="string" for="graph" id="d0">
+    <default><![CDATA[ORCHID]]></default>
+  </key>
+  <key attr.name="specialty" attr.type="string" for="graph" id="d1">
+    <default><![CDATA[Rheumatology]]></default>
+  </key>
+  <key attr.name="class" attr.type="string" for="graph" id="d2">
+    <default><![CDATA[Diagnosis]]></default>
+  </key>
+  <key attr.name="languageCode" attr.type="string" for="graph" id="d3">
+    <default><![CDATA[en-gb]]></default>
+  </key>
+  <key for="port" id="d4" yfiles.type="portgraphics"/>
+  <key for="port" id="d5" yfiles.type="portgeometry"/>
+  <key for="port" id="d6" yfiles.type="portuserdata"/>
+  <key attr.name="url" attr.type="string" for="node" id="d7"/>
+  <key attr.name="description" attr.type="string" for="node" id="d8"/>
+  <key for="node" id="d9" yfiles.type="nodegraphics"/>
+  <key for="graphml" id="d10" yfiles.type="resources"/>
+  <key attr.name="url" attr.type="string" for="edge" id="d11"/>
+  <key attr.name="description" attr.type="string" for="edge" id="d12"/>
+  <key for="edge" id="d13" yfiles.type="edgegraphics"/>
+  <graph edgedefault="directed" id="G">
+    <data key="d0"><![CDATA[cityEHR
+]]></data>
+    <data key="d1"><![CDATA[FeatureDemo]]></data>
+    <node id="n0">
+      <data key="d9">
+        <y:GenericNode configuration="com.yworks.bpmn.Activity.withShadow">
+          <y:Geometry height="55.0" width="99.58837890625" x="-274.4376630078606" y="1075.5"/>
+          <y:Fill color="#FFFFFF" color2="#FFFF00" transparent="false"/>
+          <y:BorderStyle color="#FFFF00" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="11" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.47607421875" modelName="internal" modelPosition="c" textColor="#000000" visible="true" width="52.30224609375" x="23.64306640625" y="18.761962890625">Diagnosis</y:NodeLabel>
+          <y:StyleProperties>
+            <y:Property class="java.awt.Color" name="com.yworks.bpmn.icon.line.color" value="#000000"/>
+            <y:Property class="com.yworks.yfiles.bpmn.view.TaskTypeEnum" name="com.yworks.bpmn.taskType" value="TASK_TYPE_ABSTRACT"/>
+            <y:Property class="java.awt.Color" name="com.yworks.bpmn.icon.fill2" value="#d4d4d4"/>
+            <y:Property class="java.awt.Color" name="com.yworks.bpmn.icon.fill" value="#ffffff"/>
+            <y:Property class="com.yworks.yfiles.bpmn.view.ActivityTypeEnum" name="com.yworks.bpmn.activityType" value="ACTIVITY_TYPE_TASK"/>
+            <y:Property class="com.yworks.yfiles.bpmn.view.BPMNTypeEnum" name="com.yworks.bpmn.type" value="ACTIVITY_TYPE"/>
+          </y:StyleProperties>
+        </y:GenericNode>
+      </data>
+    </node>
+    <node id="n1">
+      <data key="d8"/>
+      <data key="d9">
+        <y:ShapeNode>
+          <y:Geometry height="46.0" width="114.0" x="-65.5" y="1026.5"/>
+          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="108.6953125" x="2.65234375" y="13.6494140625">Respiratory System<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:Shape type="roundrectangle"/>
+        </y:ShapeNode>
+      </data>
+    </node>
+    <node id="n2">
+      <data key="d8"/>
+      <data key="d9">
+        <y:ShapeNode>
+          <y:Geometry height="46.0" width="176.0" x="-65.5" y="1162.0"/>
+          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="128.06640625" x="23.966796875" y="13.6494140625">Infectious and Parasitic<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:Shape type="roundrectangle"/>
+        </y:ShapeNode>
+      </data>
+    </node>
+    <edge id="e0" source="n0" target="n1">
+      <data key="d12"/>
+      <data key="d13">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e1" source="n0" target="n2">
+      <data key="d12"/>
+      <data key="d13">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e2" source="n1" target="n2">
+      <data key="d12"/>
+      <data key="d13">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e3" source="n2" target="n0">
+      <data key="d12"/>
+      <data key="d13">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+  </graph>
+  <data key="d10">
+    <y:Resources/>
+  </data>
+</graphml>

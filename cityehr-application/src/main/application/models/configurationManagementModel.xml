@@ -1,0 +1,635 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    configurationManagementModel.xml
+    
+    Xforms model for managing application parameters loaded for cityEHRSignOn and cityEHRAdmin.
+    
+    application-parameters-instance is the working application-parameters used for live running application
+    stored-application-parameters-instance is the parameters for the application stored in the xmlstore
+    default-application-parameters-instance is the default parameters stored on disk at ehr/resources/application-parameters.xml
+    shipped-application-parameters-instance is the parameters for the application stored on disk at ehr/resources/<applicationId>application-parameters.xml
+    combined-application-parameters-instance is the combination of default-application-parameters-instance and shipped-application-parameters-instance (where elements in shipped application parameters overide the default)
+    
+    images are held as xs:base64Binary content of elements in application-parameters-instance with attribute cityEHR:type="image"
+    images are loaded using the load-application-images action and stored using store-application-images
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="configurationManagement-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xxf:session-heartbeat="true">
+
+
+    <!-- === Control of the configuration management === -->
+    <xf:instance id="configurationManagemnentControl-instance">
+        <control xmlns="">
+            <status model="configurationManagement-model">application-parameters-uptodate | application-parameters-built |
+                application-parameters-rebuilt</status>
+            <dalStatus/>
+            <defaultParametersStatus/>
+            <specificParametersStatus/>
+            <storedParametersStatus/>
+            <diskParametersStatus/>
+            <imageLocation/>
+            <imageStatus/>
+        </control>
+    </xf:instance>
+
+    <!-- === 
+        Load and set the application parameters.
+        The application-parameters is loaded once the applicationIRI is set (and changes if a different application is selected).
+        The application-parameters is loaded from the database, but with two additional checks (only done in cityEHRSignOn)
+        If the application-parameters can't be read from the database then it is constructed from the default and application-parameters files.
+        If the version of the stored application-parameters is out of date, then the stored application-parameters is updated.
+        =========================================================================================================== -->
+
+    <!-- Instances for application parameters, used for management -->
+
+    <!-- application-parameters stored in the xmlstore -->
+    <xf:instance id="stored-application-parameters-instance">
+        <parameters xmlns="" version="" date="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
+    </xf:instance>
+
+    <!-- Default (generic) application-parameters, stored on disk -->
+    <xf:instance id="default-application-parameters-instance">
+        <parameters xmlns="" version="" date="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
+    </xf:instance>
+
+    <!-- Shipped, application-specific application-parameters. stored on disk -->
+    <xf:instance id="shipped-application-parameters-instance">
+        <parameters xmlns="" version="" date="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
+    </xf:instance>
+
+    <!-- The combined application-parameters of default overwritten with any specific elements from shipped application-parameters -->
+    <xf:instance id="combined-application-parameters-instance">
+        <parameters xmlns="" version="" date="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
+    </xf:instance>
+
+    <!-- The working application-parameters us used when building or rebuilding -->
+    <xf:instance id="working-application-parameters-instance">
+        <parameters xmlns="" version="" date="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
+    </xf:instance>
+
+
+    <!-- Application defined action to load the application parameters from disk.
+         Loads the default-application-parameters and the application-specific parameters (shipped=application-parameters), if they exist.
+         Then combines them in combined-application-parameters-instance.
+         
+         Sets status to an error code if there was a problem -->
+    <xf:action ev:event="load-application-parameters-from-disk">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+        <xxf:variable name="applicationIdBase" select="substring-after($applicationIRI,'#ISO-13606:EHR_Extract:')"/>
+
+        <!-- Read default application parameters from disk - these must exist, otherwise unrecoverable system error. -->
+        <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="'/applications/application-parameters.xml'"/>
+            <xxf:context name="resource" select="xxf:instance('default-application-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/defaultParametersStatus"/>
+        </xf:dispatch>
+
+        <!-- Default parameters were not found - set status to error message -->
+        <xf:action if="xxf:instance('configurationManagemnentControl-instance')/defaultParametersStatus != ''">
+            <xf:setvalue ref="$status" value="xxf:instance('configurationManagemnentControl-instance')/defaultParametersStatus"/>
+        </xf:action>
+
+
+        <!-- Default parameters were read - continue with loading-->
+        <xf:action if="xxf:instance('configurationManagemnentControl-instance')/defaultParametersStatus = ''">
+
+            <!-- Set the application id in the default parameters -->
+            <xf:setvalue ref="xxf:instance('default-application-parameters-instance')/application/iso-13606:EHR_Extract/@id" value="$applicationIRI"/>
+            <xf:setvalue ref="xxf:instance('default-application-parameters-instance')/application/iso-13606:EHR_Extract/@displayName"
+                value="$applicationIdBase"/>
+
+            <!-- Read application-specific parameters from disk - these may or may not exist -->
+            <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+                <xxf:context name="staticResourceLocation" select="concat('/applications/',$applicationId,'/application-parameters.xml')"/>
+                <xxf:context name="resource" select="xxf:instance('shipped-application-parameters-instance')"/>
+                <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/specificParametersStatus"/>
+            </xf:dispatch>
+
+            <!-- Application-specific parameters were not found - so just use the default parameters -->
+            <xf:action if="xxf:instance('configurationManagemnentControl-instance')/specificParametersStatus != ''">
+                <!-- Set the combined-application-parameters-instance -->
+                <xf:insert nodeset="xxf:instance('combined-application-parameters-instance')"
+                    origin="xxf:instance('default-application-parameters-instance')"/>
+            </xf:action>
+
+            <!-- Application specific parameters were read
+                 Now create the combined application parameters (from default and application-specific) -->
+            <xf:action if="xxf:instance('configurationManagemnentControl-instance')/specificParametersStatus = ''">
+                <!-- The starting shell must come from the default application-parameters, so that any attributes on the document element are included -->
+                <xf:insert nodeset="xxf:instance('combined-application-parameters-instance')"
+                    origin="xxf:instance('default-application-parameters-instance')"/>
+                <xf:delete nodeset="xxf:instance('combined-application-parameters-instance')/*"/>
+
+                <!-- Iterate through parameters in the default application-parameters.
+                     If there is an application-specific version then use that, otherwise use the default -->
+                <xf:action xxf:iterate="xxf:instance('default-application-parameters-instance')/*">
+                    <xxf:variable name="defaultParameter" select="."/>
+                    <xxf:variable name="parameterName" select="name($defaultParameter)"/>
+                    <xxf:variable name="applicationParameter"
+                        select="xxf:instance('shipped-application-parameters-instance')/*[name(.)=$parameterName]"/>
+                    <xxf:variable name="activeParameter" select="if (exists($applicationParameter)) then $applicationParameter else $defaultParameter"/>
+                    <xf:insert context="xxf:instance('combined-application-parameters-instance')" origin="$activeParameter" nodeset="*" at="last()"
+                        position="after"/>
+                </xf:action>
+
+            </xf:action>
+
+            <!-- The combined-application-parameters-instance should now be loaded for the application.
+                 If not, set the status to an error code -->
+            <xf:setvalue ref="$status"
+                value="if (xxf:instance('combined-application-parameters-instance')/application/iso-13606:EHR_Extract/@id != $applicationIRI) then 'failed-load-application-parameters-from-disk' else ''"
+            />
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to store the application parameters.
+         This is used after the application-parameters has been built or rebuilt in cityEHRSignOn.
+    
+         Also used when working-application-parameters are edited and saved in cityEHRSAdmin manageApplicationParameters or newApplicationWizard.
+    
+         Pass the applicationId and parameters-instance to save (application-parameters-instance, working-application-parameters-instance or managed-parameters-instance)
+    
+         Note that some data in the parameters-instance are set before saving - @version, @date and the binary image data is cleared. -->
+    <xf:action ev:event="save-application-parameters">
+        <xxf:variable name="applicationId" select="event('applicationId')"/>
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Only if parameters version is blank (should only be invoked it this is true, but check here just in case) -->
+        <xf:action if="$parameters-instance/@version != ''">
+            <xf:setvalue ref="$status" value="'failed-save-application-parameters'"/>
+        </xf:action>
+
+        <!-- Parameters version is blank - continue with saving -->
+        <xf:action if="$parameters-instance/@version = ''">
+            <!-- Set the date of the saved parameters (and timeStamp used for archive) -->
+            <xxf:variable name="currentDateTime" select="current-dateTime()"/>
+            <xxf:variable name="timeStamp" select="substring(replace(replace(string($currentDateTime),':','-'),'\+','*'),1,16)"/>
+
+            <!-- Set the version and date -->
+            <xf:setvalue ref="$parameters-instance/@version" value="xxf:instance('view-parameters-instance')/versionNumber/@version"/>
+            <xf:setvalue ref="$parameters-instance/@date" value="$currentDateTime"/>
+
+            <!-- Now store the application images.
+                 Must be done before the images are cleared (because the binary data is removed) -->
+            <xf:dispatch name="store-application-images" target="configurationManagement-model">
+                <xxf:context name="applicationId" select="$applicationId"/>
+                <xxf:context name="parameters-instance" select="$parameters-instance"/>
+            </xf:dispatch>
+
+            <!-- Clear the application images in parameters-instance -->
+            <xf:dispatch name="clear-application-images" target="configurationManagement-model">
+                <xxf:context name="parameters-instance" select="$parameters-instance"/>
+            </xf:dispatch>
+
+            <!-- Save application-parameters in three locations:
+                 application-parameters
+                 application-parameters-<languageCode>
+                 archive/<timeStamp>/application-parameters
+            -->
+
+            <!-- application-parameters -->
+            <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation"
+                    select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/application-parameters')"/>
+                <xxf:context name="resource" select="$parameters-instance"/>
+                <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/dalStatus"/>
+            </xf:dispatch>
+
+            <!-- application-parameters-<languageCode> -->
+            <xf:action if="xxf:instance('configurationManagemnentControl-instance')/dalStatus=''">
+                <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation"
+                        select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/application-parameters-',$parameters-instance/@languageCode)"/>
+                    <xxf:context name="resource" select="$parameters-instance"/>
+                    <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/dalStatus"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- archive/<timeStamp>/application-parameters -->
+            <xf:action if="xxf:instance('configurationManagemnentControl-instance')/dalStatus=''">
+                <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation"
+                        select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/archive/',$timeStamp,'/application-parameters')"/>
+                    <xxf:context name="resource" select="$parameters-instance"/>
+                    <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/dalStatus"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Set status to error code if any dal-write failed -->
+            <xf:setvalue ref="$status" value="xxf:instance('configurationManagemnentControl-instance')/dalStatus"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the application parameters for the applicationId.
+         The application is defined in applicationId passed as a parameter.
+         The parameters are loaded to working-application-parameters-instance
+         Note that this action is only used for managing the application-parameters.
+         The action that loads the application-parameters when each page loads (other than cityEHRSignOn) is load-application-parameters in configuration-model
+         Status returns one of:
+            application-parameters-uptodate
+            application-parameters-built
+            application-parameters-rebuilt
+            
+            or an error code.
+    -->
+    <xf:action ev:event="load-working-application-parameters">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+
+        <!-- Clear out the various application parameters-instances -->
+        <xf:delete nodeset="xxf:instance('working-application-parameters-instance')/*"/>
+        <xf:delete nodeset="xxf:instance('shipped-application-parameters-instance')/*"/>
+        <xf:delete nodeset="xxf:instance('stored-application-parameters-instance')/*"/>
+
+        <!-- Load the stored application parameters -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation"
+                select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/application-parameters')"/>
+            <xxf:context name="resource" select="xxf:instance('stored-application-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/storedParametersStatus"/>
+        </xf:dispatch>
+
+        <!-- If parameters were not read successfully then the stored application does not exist.
+             This happens when a new application is created (cityEHRAdmin page), a new database is set or when the installed cityEHR is first run (cityEHRSignOn page)
+             Or if there is a problem with the database, which should only be on the cityEHRSignOn page.
+             In this case build the working-application-parameters-instance from disk.
+             On the cityEHRSignOn page the parameters will be saved into database.when the application is launched (i.e. only if the user starts a session)
+             On the cityEHRAdmin page the parameters will be saved into database when the user selects to create-application.
+             Sets status to 'application-parameters-built' or an error code.
+             -->
+        <xf:action if="xxf:instance('configurationManagemnentControl-instance')/storedParametersStatus !=''">
+            <xf:dispatch name="build-application-parameters" target="configurationManagement-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/status"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- If parameters were loaded successfully, then check the version and rebuild if necessary.
+             Comparison is with the session-parameters, so the parameters shouldn't get updated during a session (only at start up) -->
+        <xf:action if="xxf:instance('configurationManagemnentControl-instance')/storedParametersStatus =''">
+            <!-- Stored application-parameters are up to date - set as the working-application-parameters-instance -->
+            <xf:action if="xxf:instance('stored-application-parameters-instance')/@version = xxf:instance('session-parameters-instance')/@version">
+                <xf:insert nodeset="xxf:instance('working-application-parameters-instance')"
+                    origin="xxf:instance('stored-application-parameters-instance')"/>
+                <xf:setvalue ref="xxf:instance('configurationManagemnentControl-instance')/status" value="'application-parameters-uptodate'"/>
+            </xf:action>
+
+            <!-- Stored application-parameters is not up to date, so rebuild.
+                 Result will be in working-application-parameters-instance
+                 Sets status to 'application-parameters-rebuilt' or an error code.-->
+            <xf:action
+                if="not(xxf:instance('stored-application-parameters-instance')/@version = xxf:instance('session-parameters-instance')/@version)">
+                <xf:dispatch name="rebuild-application-parameters" target="configurationManagement-model">
+                    <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                    <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/status"/>
+                </xf:dispatch>
+            </xf:action>
+        </xf:action>
+
+        <!-- Now load the application images.
+             Uses the status to determine how to load default images.
+             Loads the images specified in working-application-parameters-instance -->
+        <xf:dispatch name="load-application-images" target="configurationManagement-model">
+            <xxf:context name="applicationId" select="$applicationId"/>
+        </xf:dispatch>
+
+        <!-- Set the return status -->
+        <xf:setvalue ref="$status" value="xxf:instance('configurationManagemnentControl-instance')/status"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to build application parameters.
+         This is used when there are no stored application-parameters
+         The parameters are loaded to working-application-parameters-instance 
+    
+         Sets status to 'application-parameters-built' or an error code. 
+         -->
+    <xf:action ev:event="build-application-parameters">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Load application parameterss from disk.
+             This creates combined-application-parameters-instance.
+             -->
+        <xf:dispatch name="load-application-parameters-from-disk" target="configurationManagement-model">
+            <xxf:context name="applicationIRI" select="$applicationIRI"/>
+            <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/diskParametersStatus"/>
+        </xf:dispatch>
+
+        <!-- Set application-parameters-instance from combined application-parameters.
+             This is a complete replacement, so includes any attributes on the combined application-parameters (which will have come from the default application-parameters) -->
+        <xf:insert nodeset="xxf:instance('working-application-parameters-instance')" origin="xxf:instance('combined-application-parameters-instance')"/>
+
+        <!-- Set the status. -->
+        <xf:setvalue ref="$status"
+            value="if (xxf:instance('configurationManagemnentControl-instance')/diskParametersStatus='') then 'application-parameters-built' else xxf:instance('configurationManagemnentControl-instance')/diskParametersStatus"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to rebuild application parameters.
+         This is used when the stored application-parameters is out of date.
+         
+         The rebuilt application-parameters is made in working-application-parameters-instance
+         The existing (stored) application-parameters is in stored-application-parameters-instance
+         The default application-parameters (from disk) is in combined-application-parameters-instance
+         
+         Sets status to 'application-parameters-rebuilt' or an error code.
+         -->
+    <xf:action ev:event="rebuild-application-parameters">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Load application parameters from disk.
+             This creates combined-application-parameters-instance.
+             Sets status if there is an error -->
+        <xf:dispatch name="load-application-parameters-from-disk" target="configurationManagement-model">
+            <xxf:context name="applicationIRI" select="$applicationIRI"/>
+            <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/diskParametersStatus"/>
+        </xf:dispatch>
+
+        <!-- Rebuild the parameters, using the generic rebuild-parameters action -->
+        <xf:action if="xxf:instance('configurationManagemnentControl-instance')/diskParametersStatus=''">
+            <xf:dispatch name="rebuild-parameters" target="manageParameters-model">
+                <xxf:context name="parameters-instance" select="xxf:instance('working-application-parameters-instance')"/>
+                <xxf:context name="stored-parameters-instance" select="xxf:instance('stored-application-parameters-instance')"/>
+                <xxf:context name="default-parameters-instance" select="xxf:instance('combined-application-parameters-instance')"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Set the status. -->
+        <xf:setvalue ref="$status"
+            value="if (xxf:instance('configurationManagemnentControl-instance')/diskParametersStatus='') then 'application-parameters-rebuilt' else xxf:instance('configurationManagemnentControl-instance')/diskParametersStatus"/>
+
+    </xf:action>
+
+
+    <!-- ========== Application Images ================================
+         Managing the images in working-application-parameters-instance
+         ============================================================== -->
+
+    <!-- Instance to hold image for storage/load -->
+    <xf:instance id="application-image-instance">
+        <image/>
+    </xf:instance>
+
+    <xf:bind nodeset="xxf:instance('application-image-instance')" type="xs:base64Binary"/>
+
+
+    <!-- Application defined action to set static value of an image.
+         The image is set in the element passed as parameter.
+         The image is located in the images folder of the distribution, using the location passed as a parameter.
+         Assumes that the image is a .png file.
+         Load the static image and set as value, if it exists
+    -->
+    <xf:action ev:event="set-static-image">
+        <xxf:variable name="imageElement" select="event('imageElement')"/>
+        <xxf:variable name="imageLocation" select="event('imageLocation')"/>
+
+        <xf:action if="$imageLocation != '' and exists($imageElement)">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
+                value="concat(xxf:instance('view-parameters-instance')/staticFileURL,'/images/',$imageLocation,'.png')"/>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType" value="'image/*'"/>
+
+            <xxf:variable name="pipeline" select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedBinary.xpl')"/>
+            <xxf:variable name="imageData" select="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
+
+            <xf:setvalue ref="$imageElement" value="if ($imageData castable as xs:base64Binary) then xs:base64Binary($imageData) else ''"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to save application images from the working-application-parameters-instance.
+         Iterate through each image and store in xmlstore for the application.
+         The location for the image is constructed from the image element name and the 
+    -->
+    <xf:action ev:event="store-application-images">
+        <xxf:variable name="applicationId" select="event('applicationId')"/>
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+
+        <xxf:variable name="images"
+            select="$parameters-instance//*[not(starts-with(../name(),'cityEHR:'))][for $e in name(), $a in @*/name() return ancestor::*/cityEHR:type/*[name()=$e][@*/name()=$a][@cityEHR:type='image']]"/>
+
+        <xf:action xxf:iterate="$images">
+            <xxf:variable name="imageElement" select="."/>
+            <xxf:variable name="imageElementName" select="$imageElement/name()"/>
+
+            <!-- Get the resource name of image for loading.
+                 Sets the name in configurationManagemnentControl-instance -->
+            <xf:dispatch name="get-imageResourceName" target="pageNavigation-model">
+                <xxf:context name="imageElement" select="$imageElement"/>
+                <xxf:context name="imageResourceName" select="xxf:instance('configurationManagemnentControl-instance')/imageLocation"/>
+            </xf:dispatch>
+
+            <!-- Set up application-image-instance -->
+            <xf:setvalue ref="xxf:instance('application-image-instance')" value="$imageElement"/>
+
+            <!-- Store the image -->
+            <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation"
+                    select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/images/',xxf:instance('configurationManagemnentControl-instance')/imageLocation)"/>
+                <xxf:context name="resource" select="xxf:instance('application-image-instance')"/>
+                <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/imageStatus"/>
+            </xf:dispatch>
+
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to clear the images in the working-application-parameters-instance.
+         The binary images are stored separately in the xmlstore, so don't need them in the parameters
+         Iterate through each image element in the application-parameters-instance.
+         Set content of the image element to blank
+    -->
+    <xf:action ev:event="clear-application-images">
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+
+        <xxf:variable name="images"
+            select="$parameters-instance//*[not(starts-with(../name(),'cityEHR:'))][for $e in name(), $a in @*/name() return ancestor::*/cityEHR:type/*[name()=$e][@*/name()=$a][@cityEHR:type='image']]"/>
+
+        <!-- Clear binary content of elements in the application-parameters-instance.with attribute cityEHR:type="image" -->
+        <xf:action xxf:iterate="$images">
+            <xxf:variable name="imageElement" select="."/>
+            <xf:setvalue ref="$imageElement" value="''"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set default values of images in the application-parameters-instance.
+         Iterate through each image in configurationManagemnentControl-instance.
+         Load default image from disk, if specified.
+         This is only needed when a new application is created, if it has a application-parameters set up in the ehr/applications folder
+    -->
+    <xf:action ev:event="set-application-images-defaults">
+        <xxf:variable name="images"
+            select="xxf:instance('working-application-parameters-instance')//*[not(starts-with(../name(),'cityEHR:'))][for $e in name(), $a in @*/name() return ancestor::*/cityEHR:type/*[name()=$e][@cityEHR:type='image'][@*/name()=$a]]"/>
+
+        <xf:action xxf:iterate="$images">
+            <xxf:variable name="imageElement" select="."/>
+
+            <!-- Load the default image -->
+            <xf:dispatch name="set-image-default" target="configurationManagement-model">
+                <xxf:context name="imageElement" select="$imageElement"/>
+            </xf:dispatch>
+
+            <!-- Set the image element -->
+            <xf:setvalue ref="$imageElement"
+                value="if (xxf:instance('working-application-image-instance') castable as xs:base64Binary) then xs:base64Binary(xxf:instance('application-image-instance')) else ''"/>
+
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set default value of an image.
+         The image is set in application-image-instance
+         Set the image as blank
+         Load default image and set as value, if it exists
+    -->
+    <xf:action ev:event="set-image-default">
+        <xxf:variable name="imageElement" select="event('imageElement')"/>
+
+        <xxf:variable name="imageElementName" select="$imageElement/name()"/>
+        <xxf:variable name="imageElementAttributeNames" select="$imageElement/@*/name()"/>
+
+        <!-- Get the attribute that defines the image location -->
+        <xxf:variable name="imageAttributeName"
+            select="$imageElement/ancestor::*/cityEHR:type/*[name()=$imageElementName][@cityEHR:type='image']/@*[name()!='cityEHR:type']/name()"/>
+        <xxf:variable name="imageAttribute" select="$imageElement/@*[name()=$imageAttributeName]"/>
+
+        <!-- Set the image instance to blank -->
+        <xf:setvalue ref="xxf:instance('application-image-instance')" value="''"/>
+
+        <!-- Get default image, if specified.
+             Default location must be set in the image attribute, relative to the staticFileURL
+             If the image has been loaded from a file then the image attribute will be set to file:.. - the location of the (temporary) file from which it was loaded 
+             So in this case the cityEHRGetUploadedBinary will not find anything (relative to staticFileURL) -->
+        <xf:action if="$imageAttribute != ''">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
+                value="concat(xxf:instance('view-parameters-instance')/staticFileURL,$imageAttribute)"/>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType" value="'image/*'"/>
+
+            <xxf:variable name="pipeline" select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedBinary.xpl')"/>
+            <xxf:variable name="imageData" select="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
+
+            <xf:setvalue ref="xxf:instance('application-image-instance')"
+                value="if ($imageData castable as xs:base64Binary) then xs:base64Binary($imageData) else ''"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to load images in the application-parameters-instance.
+         Iterate through each image parameter.
+         If application-parameters-built then read the image from disk (if it exists)
+         Otherwise, read each image from the database, or if not in the database then read from disk (if it exists) .
+         If loaded, then set the image as the binary value of the parameter.
+    -->
+    <xf:action ev:event="load-application-images">
+        <xxf:variable name="applicationId" select="event('applicationId')"/>
+
+        <!-- Get all elements in the application-parameters that are dfined to be of type 'image'
+             To date, the only such elements are in the application/images section of the parameters and have the @value as their image location
+             So this could all be simplified, altough the door is left open here to have other parameters dfined as image type -->
+        <xxf:variable name="images"
+            select="xxf:instance('working-application-parameters-instance')//*[not(starts-with(../name(),'cityEHR:'))][for $e in name(), $a in @*/name() return ancestor::*/cityEHR:type/*[@cityEHR:type='image'][name()=$e][@*/name()=$a]]"/>
+
+        <xf:action xxf:iterate="$images">
+            <xxf:variable name="imageElement" select="."/>
+            <xxf:variable name="imageElementName" select="$imageElement/name()"/>
+                       
+            <!-- Get the attribute that defines the image location -->
+            <xxf:variable name="imageAttributeName"
+                select="$imageElement/ancestor::*/cityEHR:type/*[name()=$imageElementName][@cityEHR:type='image']/@*[name()!='cityEHR:type']/name()"/>
+            <xxf:variable name="imageAttribute" select="$imageElement/@*[name()=$imageAttributeName]"/>
+
+            <!-- Get the resource name of image for loading.
+                 Sets the name in configurationManagemnentControl-instance -->
+            <xf:dispatch name="get-imageResourceName" target="pageNavigation-model">
+                <xxf:context name="imageElement" select="$imageElement"/>
+                <xxf:context name="imageResourceName" select="xxf:instance('configurationManagemnentControl-instance')/imageLocation"/>
+            </xf:dispatch>
+
+            <!-- Clear the value of the application-image-instance, in case it doesn't load.
+                 (It won't load if it hasn't previously been configured) -->
+            <xf:setvalue ref="xxf:instance('application-image-instance')" value="''"/>
+
+            <!-- Load image to application-image-instance.
+                 Load the image from the database or from the default file location, if that fails.
+                 Or directly from the default file location if application-parameters-built
+                 Then set as value for the element defined by imageLocation.
+                 But only do this if the imageAttribute is set (so can be cleared, without removing the image from the xmlstore) -->
+            <xf:action if="$imageAttribute !=''">
+
+                <!-- Load image from its location in database, unless application parameters are being built. -->
+                <xf:action if="xxf:instance('configurationManagemnentControl-instance')/status !='application-parameters-built'">
+                    <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation"
+                            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/images/',xxf:instance('configurationManagemnentControl-instance')/imageLocation)"/>
+                        <xxf:context name="resource" select="xxf:instance('application-image-instance')"/>
+                        <xxf:context name="status" select="xxf:instance('configurationManagemnentControl-instance')/dalStatus"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- If the image failed to load, or the application parameters are being built, then set the default.
+                     Loads the default image into application-image-instance -->
+                <xf:action
+                    if="xxf:instance('configurationManagemnentControl-instance')/dalStatus !='' or xxf:instance('configurationManagemnentControl-instance')/status ='application-parameters-built'">
+                    <xf:dispatch name="set-image-default" target="configurationManagement-model">
+                        <xxf:context name="imageElement" select="$imageElement"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Now set the image binary value -->
+                <xf:setvalue ref="$imageElement"
+                    value="if (xxf:instance('application-image-instance') castable as xs:base64Binary) then xs:base64Binary(xxf:instance('application-image-instance')) else ''"
+                />
+            </xf:action>
+
+        </xf:action>
+
+    </xf:action>
+
+</xf:model>

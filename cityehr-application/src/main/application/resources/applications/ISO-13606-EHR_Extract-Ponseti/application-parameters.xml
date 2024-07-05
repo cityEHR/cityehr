@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    application-parameters.xml
+    Parameters for configuration of a cityEHR application.
+    This application is the ponseti database (clubFootDB)
+    
+    This tailored configuration is in the application-parameters.xml file located in the resources/applications/<appId> directory.
+    The base version of application-parameters.xml is located at the root level of the resources/applications directory structure.
+   
+    Any parameters set in this tailored configuration override those set in the base configuration.
+    All parameters need to exist in the base configuration, otherwise they will not get set.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html  
+    **********************************************************************************************************
+-->
+<parameters type="application" version="" date="" languageCode="en-gb" cityEHR:edit="" xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+
+    <!-- Application configuration - for the Ponseti application
+         Release 1 uses xml spreadsheet models (saved/exported from .ods)
+         Release 2 uses ods spreadsheet models directly -->
+    <application release="1" cityEHR:displayName="Application Configuration" cityEHR:edit="newApp">
+        <cityEHR:selection>
+            <iso-13606:EHR_Extract commonModel="" defaultSpecialty="" cityEHR:selection="cityEHR:specialty"/>
+        </cityEHR:selection>
+        <cityEHR:edit>
+            <iso-13606:EHR_Extract id="" cityEHR:edit="readOnly"/>
+        </cityEHR:edit>
+
+        <!-- The application id (fixed) and default models -->
+        <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:Ponseti" displayName="clubFOOT Database" baseLanguageCode="en-GB" commonModel=""
+            defaultSpecialty="#ISO-13606:Folder:Ponseti"/>
+        <!-- The other parameters are all images which can be loaded from the location specified in the @value.
+            These are stored as separate resources in systemConfiguration/images for the application in the xmlstore. -->
+        <images>
+            <cityEHR:type>
+                <logo value="" cityEHR:type="image"/>
+                <favicon value="" cityEHR:type="image"/>
+                <welcomeLogo value="" cityEHR:type="image"/>
+                <welcomeSplash-1 value="" cityEHR:type="image"/>
+                <welcomeSplash-2 value="" cityEHR:type="image"/>
+            </cityEHR:type>
+            <cityEHR:edit>
+                <logo hint="" cityEHR:edit="readOnly"/>
+                <favicon hint="" cityEHR:edit="readOnly"/>
+                <welcomeLogo hint="" cityEHR:edit="readOnly"/>
+                <welcomeSplash-1 hint="" cityEHR:edit="readOnly"/>
+                <welcomeSplash-2 hint="" cityEHR:edit="readOnly"/>
+            </cityEHR:edit>
+            <logo cityEHR:displayName="Application logo" hint="60 x 60 px" value="/applications/ISO-13606-EHR_Extract-Ponseti/images/clubFootDBIcon.png"
+                cityEHR:type="image"/>
+            <favicon cityEHR:displayName="Application favicon" hint="16 x 16 px"
+                value="/applications/ISO-13606-EHR_Extract-cityEHR/images/cityEHRLogoTall-Small.ico" cityEHR:type="image"/>
+            <welcomeLogo cityEHR:displayName="Splash page header logo" hint="Recommended width is 720px"
+                value="/applications/ISO-13606-EHR_Extract-Ponseti/images/clubFootDBBanner.png" cityEHR:type="image"/>
+            <welcomeSplash-1 cityEHR:displayName="Splash page image, left" hint="Recommended width 360px or 180px"
+                value="/applications/ISO-13606-EHR_Extract-Ponseti/images/BootsAndBar.jpg" cityEHR:type="image"/>
+            <welcomeSplash-2 cityEHR:displayName="Splash page image, right" hint="Recommended width 360px or 180px" value="" cityEHR:type="image"/>
+        </images>
+    </application>
+
+    <!-- Can have multiple registrationEvents. 
+        First listed is used as the form for manual registration. 
+        The cityEHRRegistration checks this configuration on load and sets the status to 'ok' if all is well.
+        The check is done by comparison with the form-instance for the first registrationEvent.
+        Each combination of entry/element must exist in the registration event for the configuration to be valid. 
+        Note that other registrationEvents may not include every -->
+    <patientRegistration cityEHR:displayName="Patient Registration">
+        <cityEHR:selection>
+            <registrationEvent composition="" cityEHR:selection="composition"/>
+            <id entry="" cityEHR:selection="entry"/>
+            <id element="" cityEHR:selection="element"/>
+            <prefix entry="" cityEHR:selection="entry"/>
+            <prefix element="" cityEHR:selection="element"/>
+            <given entry="" cityEHR:selection="entry"/>
+            <given element="" cityEHR:selection="element"/>
+            <family entry="" cityEHR:selection="entry"/>
+            <family element="" cityEHR:selection="element"/>
+            <administrativeGenderCode entry="" cityEHR:selection="entry"/>
+            <administrativeGenderCode element="" cityEHR:selection="element"/>
+            <birthTime entry="" cityEHR:selection="entry"/>
+            <birthTime element="" cityEHR:selection="element"/>
+        </cityEHR:selection>
+        <registrationEvent composition="#CityEHR:Form:PonsetiRegistration"/>
+        <!-- These entries must exist in the first registrationEvent -->
+        <id deprecatedCharacters=" #:%£$@&amp;" displayName="Hospital Number" entry="#ISO-13606:Entry:HospitalNumber"
+            element="#ISO-13606:Element:HospitalNumber"/>
+        <prefix displayName="Title" entry="#ISO-13606:Entry:Title" element="#ISO-13606:Element:Title"/>
+        <given displayName="Forename" entry="#ISO-13606:Entry:Forename" element="#ISO-13606:Element:String"/>
+        <family displayName="Surname" entry="#ISO-13606:Entry:Surname" element="#ISO-13606:Element:String"/>
+        <administrativeGenderCode displayName="Gender" entry="#ISO-13606:Entry:Gender" element="#ISO-13606:Element:Gender"/>
+        <birthTime displayName="DoB" entry="#ISO-13606:Entry:DateOfBirth" element="#ISO-13606:Element:Date"/>
+        <!-- Provider organisation is set here -->
+        <providerOrganization value="cityEHR"/>
+    </patientRegistration>
+
+
+    <!-- This control panel configures the parameters for the patient search.
+        Each control item contains the following attributes:
+        displayName - displayed as the label for entry
+        element - the element in the data dictionary to be used a a model for the input (e.g. determines its data type, enuerated values, etc)
+        searchComposition - the IRIs of the compositions to be searched - treats this as a string, so IRIs separated by spaces is OK
+        searchEntry - a sequence of the entry IRIs to be seached
+        searchElement - a sequence of the element IRIs to be seached
+        *** Note that searchEntry, searchElement are sequences, so can be IRI for a single entry/element or IRI-1,IRI-2 to search multiple entry/element.
+        The IRIs *do not* need to be quoted or included in brackets ( ) 
+        Every/any combination of entry/element is found in the search ***
+        searchPredicate is the predicate used in the search, but defaults to the view-parameters/fullText-predicate if not specified:
+            contains
+            starts-with
+            ends-with
+            equals
+            fullText
+    -->
+    <patientSearch cityEHR:displayName="Patient Search">
+        <controlPanelGroup initialFocus="ps1-1">
+            <controlItem id="ps1-1" displayName="Hospital Number" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Form:PonsetiRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:HospitalNumber"
+                searchElement="#ISO-13606:Element:HospitalNumber"/>
+            <controlItem id="ps1-2" displayName="NHS Number" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Form:PonsetiRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:NHSNumber"
+                searchElement="#ISO-13606:Element:NHSNumber"/>
+        </controlPanelGroup>
+        <controlPanelGroup initialFocus="">
+            <controlItem id="ps2-1" displayName="Surname" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Form:PonsetiRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Surname"
+                searchElement="#ISO-13606:Element:String"/>
+            <controlItem id="ps2-2" displayName="Forename" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Form:PonsetiRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Forename"
+                searchElement="#ISO-13606:Element:String"/>
+            <controlItem id="ps2-3" displayName="Gender" element="#ISO-13606:Element:Gender"
+                searchComposition="#CityEHR:Form:PonsetiRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Gender"
+                searchElement="#ISO-13606:Element:Gender" searchPredicate="equals"/>
+        </controlPanelGroup>
+        <controlPanelGroup initialFocus="">
+            <controlItem id="ps3-2" displayName="Year of Birth" element="#ISO-13606:Element:Integer"
+                searchComposition="#CityEHR:Form:PonsetiRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:DateOfBirth"
+                searchElement="#ISO-13606:Element:Date" searchPredicate="starts-with"/>
+            <controlItem id="ps3-3" displayName="Month of Birth" element="#ISO-13606:Element:MonthPicker"
+                searchComposition="#CityEHR:Form:PonsetiRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:DateOfBirth"
+                searchElement="#ISO-13606:Element:Date" searchPredicate="contains"/>
+        </controlPanelGroup>
+    </patientSearch>
+
+
+    <patientLabel cityEHR:displayName="Patient Label">
+        <controlPanelGroup>
+            <controlItem type="demographics" displayName="" prefix="" suffix="," class="family" entry="#ISO-13606:Entry:Surname"
+                element="#ISO-13606:Element:String"/>
+            <controlItem type="demographics" displayName="" prefix="" suffix="" class="given" entry="#ISO-13606:Entry:Forename"
+                element="#ISO-13606:Element:String"/>
+            <controlItem type="demographics" displayName="" prefix="(" suffix=")" class="prefix" entry="#ISO-13606:Entry:Title"
+                element="#ISO-13606:Element:Title"/>
+            <controlItem type="demographics" displayName="Born: " prefix="" suffix="" class="" entry="#ISO-13606:Entry:DateOfBirth"
+                element="#ISO-13606:Element:Date"/>
+            <controlItem type="age" displayName="" prefix="(" suffix=")" class=""/>
+            <controlItem type="demographics" displayName="Gender: " prefix="" suffix="" class="" entry="#ISO-13606:Entry:Gender"
+                element="#ISO-13606:Element:Gender"/>
+        </controlPanelGroup>
+        <controlPanelGroup>
+            <controlItem type="demographics" displayName="Hospital Number" prefix="" suffix="" class="" entry="#ISO-13606:Entry:HospitalNumber"
+                element="#ISO-13606:Element:HospitalNumber"/>
+            <controlItem type="demographics" displayName="NHS Number" prefix="" suffix="" class="" entry="#ISO-13606:Entry:NHSNumber"
+                element="#ISO-13606:Element:NHSNumber"/>
+        </controlPanelGroup>
+
+        <!-- Display thresholds -->
+        <ageDisplayDays threshold="1" displayName="days"/>
+        <ageDisplayWeeks threshold="3" displayName="weeks"/>
+        <ageDisplayMonths threshold="18" displayName="months"/>
+        <ageDisplayYears threshold="60" displayName="years"/>
+
+    </patientLabel>
+
+    <!-- Information for display in patient cohort lists.
+        referenceData='true' used to denote entries used as reference data in spreadhseet export -->
+    <patientCohorts cityEHR:displayName="Patient Cohorts">
+        <patientInfo page="cityEHRPatientSearch">
+            <item displayName="Patient Id" entry="" element="" calculated="patientId"/>
+            <item displayName="Surname" entry="#ISO-13606:Entry:Surname" element="#ISO-13606:Element:String" calculated=""/>
+            <item displayName="Forename" entry="#ISO-13606:Entry:Forename" element="#ISO-13606:Element:String" calculated=""/>
+            <item displayName="Gender" entry="#ISO-13606:Entry:Gender" element="#ISO-13606:Element:Gender" calculated=""/>
+            <item displayName="Date of Birth" entry="#ISO-13606:Entry:DateOfBirth" element="#ISO-13606:Element:Date" calculated=""/>
+        </patientInfo>
+        <patientInfo page="cityEHRCohortSearch">
+            <item displayName="Patient Id" entry="" element="" calculated="patientId"/>
+            <item displayName="Surname" entry="#ISO-13606:Entry:Surname" element="#ISO-13606:Element:String" calculated=""/>
+            <item displayName="Forename" entry="#ISO-13606:Entry:Forename" element="#ISO-13606:Element:String" calculated=""/>
+            <item displayName="Gender" entry="#ISO-13606:Entry:Gender" element="#ISO-13606:Element:Gender" calculated=""/>
+            <item displayName="Date of Birth" entry="#ISO-13606:Entry:DateOfBirth" element="#ISO-13606:Element:Date" calculated=""/>
+            <item displayName="Age" entry="" element="" calculated="age"/>
+        </patientInfo>
+    </patientCohorts>
+
+    <!-- Controls for system-level navigation -->
+    <systemNavigationControls cityEHR:displayName="System Navigation">
+        <topStrip>
+            <control displayName="Quit" value="">
+                <!--
+                    <role id=""/>
+                -->
+            </control>
+            <control displayName="Admin" value="cityEHRAdmin"/>
+        </topStrip>
+        <bottomStrip>
+            <control displayName="Dashboard" value="cityEHRDashboard"/>
+            <control displayName="Patient Search" value="cityEHRPatientSearch"/>
+            <control displayName="Patient Cohorts" value="cityEHRCohortSearch"/>
+            <control displayName="Registration" value="cityEHRRegistration"/>
+        </bottomStrip>
+    </systemNavigationControls>
+
+    <!-- Controls for record-level navigation -->
+    <recordNavigationControls cityEHR:displayName="Record Navigation">
+        <control displayName="Patient Record" value="cityEHRFolder-Events">
+            <!--
+                <role id=""/>
+            -->
+        </control>
+        <control displayName="Summaries" value="cityEHRFolder-Views"/>
+        <control displayName="Forms" value="cityEHRFolder-Forms"/>
+        <control displayName="Letters" value="cityEHRFolder-Letters"/>
+        <control displayName="Pathways" value="cityEHRFolder-Pathways"/>
+    </recordNavigationControls>
+
+
+    <!-- View type selection
+        For tabs in viewType control
+    -->
+
+    <viewNavigationTypeSelection cityEHR:displayName="View Navigation Type">
+        <view viewType="cityEHRPatientSearch">
+            <viewNavigationType value="recent" displayName="Recent" display="show"/>
+            <viewNavigationType value="careTeam" displayName="Care Team" display="show"/>
+        </view>
+        <view viewType="cityEHRCohortSearch">
+            <viewNavigationType value="search" displayName="My Searches" display="show"/>
+            <viewNavigationType value="sharedSearch" displayName="Shared Searches" display="hidden"/>
+            <viewNavigationType value="cohort" displayName="My Cohorts" display="hidden"/>
+            <viewNavigationType value="sharedCohort" displayName="Shared Cohorts" display="hidden"/>
+        </view>
+        <view viewType="cityEHRClinicList">
+            <viewNavigationType value="myClinics" displayName="My Clinics" display="show"/>
+            <viewNavigationType value="allClinics" displayName="All Clinics" display="show"/>
+        </view>
+        <view viewType="cityEHRInTray">
+            <viewNavigationType value="due" displayName="Due" display="show"/>
+            <viewNavigationType value="charted" displayName="Charted" display="show"/>
+            <viewNavigationType value="acknowledged" displayName="Acknowledged" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Events">
+            <viewNavigationType value="events" displayName="Events" display="show"/>
+            <viewNavigationType value="annotations" displayName="Annotations" display="show"/>
+            <viewNavigationType value="lifeLine" displayName="LifeLine" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Forms">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New Form" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Letters">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New Letter" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Orders">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Pathways">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Views">
+            <viewNavigationType value="summaries" displayName="Summaries" display="show"/>
+            <viewNavigationType value="reports" displayName="Reports" display="show"/>
+            <viewNavigationType value="notifications" displayName="Notifications" display="hidden"/>
+        </view>
+    </viewNavigationTypeSelection>
+
+
+    <!-- Dashboard -->
+    <!-- size - wide/normal
+        colour - orange/purple/blue
+        
+        queryTime, queryText, queryResults are set after the configuration is loaded
+        
+        queryResults is of the form:
+        
+        <queryResults>
+        <total>
+        <category displayName="Male">21</category>
+        </queryResults>    
+        
+    -->
+    <dashboardQuerySet cityEHR:displayName="Dashboard Queries">
+        <dashboardQuery displayName="Total Patients" chart="" queryScope="application" queryPath="records" cityEHR:type="text" xml:space="preserve">
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3"; 
+                    declare namespace xdbe="http://exist-db.org/xquery/xmldb";
+                    
+                    declare variable $root := request:get-path-info();                    
+                    let $count := count(xdbe:get-child-collections($root))
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;queryTime>{current-dateTime()}&lt;/queryTime>
+                    &lt;total value="{$count}"/>
+                    &lt;category displayName="Patients"/>
+                    &lt;/queryResults>
+            </dashboardQuery>
+        <dashboardQuery displayName="Total Documents" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">      
+                xquery version "1.0"; 
+                declare namespace cda="urn:hl7-org:v3"; 
+                
+                let $count := count(//cda:ClinicalDocument) 
+                return
+                &lt;queryResults>
+                &lt;queryTime>{current-dateTime()}&lt;/queryTime>
+                &lt;total value="{$count}"/>
+                &lt;category displayName="Documents"/>
+                &lt;/queryResults>
+            </dashboardQuery>
+        <dashboardQuery displayName="Started Treatment" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">      
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3"; 
+                    
+                    let $castDateList := 
+                    for $castDate in //cda:observation[cda:id/@extension='#ISO-13606:Entry:CastDate']/cda:value[@extension='#ISO-13606:Element:BaseTime']/@value
+                    order by $castDate descending
+                    return &lt;cast patientId="{$castDate/ancestor::cda:ClinicalDocument/descendant::cda:patientRole/@extension}" date="{$castDate}"/>     
+                    
+                    let $patientList := distinct-values($castDateList/@patientId)
+                    let $count := count($patientList)   
+                    
+                    let $firstCastDateList := 
+                    for $patientId in $patientList return $castDateList[@patientId=$patientId][1]
+                    
+                    let $today := current-date()
+                    let $date30Days := xs:string($today - xs:dayTimeDuration('P30D'))
+                    let $date3Months := xs:string($today - xs:yearMonthDuration('P3M'))
+                    let $date12Months := xs:string($today - xs:yearMonthDuration('P12M'))
+                    
+                    let $started30Days := count($firstCastDateList[@date gt $date30Days])
+                    let $started3Months := count($firstCastDateList[@date gt $date3Months])
+                    let $started12Months := count($firstCastDateList[@date gt $date12Months])
+                    
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;total value="{$count}"/>
+                    &lt;category displayName="Patients"/>
+                    &lt;category displayName="Last 30 days" value="{$started30Days}"/>
+                    &lt;category displayName="Last 3 months"  value="{$started3Months}"/>
+                    &lt;category displayName="Last 12 months"  value="{$started12Months}"/>
+                    &lt;/queryResults>
+            </dashboardQuery>
+        <dashboardQuery displayName="Average Initial Casts" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">                     
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3"; 
+                    
+                    let $castDateList := 
+                    for $document in //cda:value[@extension='#ISO-13606:Element:CastingPhase'][@value='']/ancestor::cda:ClinicalDocument
+                    return &lt;cast patientId="{$document/descendant::cda:patientRole/@extension}" date="{$document/descendant::cda:observation[cda:id/@extension='#ISO-13606:Entry:CastDate']/cda:value[@extension='#ISO-13606:Element:BaseTime']/@value}"/>     
+                    
+                    let $patientList := distinct-values($castDateList/@patientId)
+                    let $patientCount := count($patientList)   
+                    
+                    let $castAverage := if ($patientCount=0) then 0 else count($castDateList) div $patientCount
+                    
+                    let $today := current-date()
+                    let $date30Days := xs:string($today - xs:dayTimeDuration('P30D'))
+                    let $date3Months := xs:string($today - xs:yearMonthDuration('P3M'))
+                    let $date12Months := xs:string($today - xs:yearMonthDuration('P12M'))
+                    
+                    
+                    let $cast30Days := $castDateList[@date gt $date30Days]
+                    let $cast30DaysPatientCount := count(distinct-values($cast30Days/@patientId))
+                    let $cast30DaysCount := count($cast30Days)
+                    let $cast30DaysAverage := if ($cast30DaysPatientCount=0) then 0 else $cast30DaysCount div $cast30DaysPatientCount
+                    
+                    let $cast3Months := $castDateList[@date gt $date3Months]
+                    let $cast3MonthsPatientCount := count(distinct-values($cast3Months/@patientId))
+                    let $cast3MonthsCount := count($cast3Months)
+                    let $cast3MonthsAverage := if ($cast3MonthsPatientCount=0) then 0 else $cast3MonthsCount div $cast3MonthsPatientCount        
+                    
+                    let $cast12Months := $castDateList[@date gt $date12Months]   
+                    let $cast12MonthsPatientCount := count(distinct-values($cast12Months/@patientId))
+                    let $cast12MonthsCount := count($cast12Months)
+                    let $cast12MonthsAverage := if ($cast12MonthsPatientCount=0) then 0 else $cast12MonthsCount div $cast12MonthsPatientCount        
+                    
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;total value="{$castAverage}"/>
+                    &lt;category displayName="Casts"/>
+                    &lt;category displayName="Last 30 days" value="{$cast30DaysAverage}"/>
+                    &lt;category displayName="Last 3 months"  value="{$cast3MonthsAverage}"/>
+                    &lt;category displayName="Last 12 months"  value="{$cast12MonthsAverage}"/>
+                    &lt;/queryResults>
+            </dashboardQuery>
+        <dashboardQuery displayName="1st Tenotomy" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">                     
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3"; 
+                    
+                    let $firstTenotomyList := 
+                    for $operationDate in //cda:value[@extension='#ISO-13606:Element:#ISO-13606:Element:Procedure'][@value='1st Tenotomy']/../cda:value[@extension='#ISO-13606:Element:#ISO-13606:Element:OperationDate']/@value
+                    order by $operationDate descending
+                    return &lt;operation patientId="{$operationDate/ancestor::cda:ClinicalDocument/descendant::cda:patientRole/@extension}" date="{$operationDate}"/>     
+                    
+                    let $patientList := distinct-values($firstTenotomyList/@patientId)
+                    let $count := count($patientList)   
+                    
+                    let $firstTenotomyDateList := 
+                    for $patientId in $patientList return $firstTenotomyList[@patientId=$patientId][1]
+                    
+                    let $today := current-date()
+                    let $date30Days := xs:string($today - xs:dayTimeDuration('P30D'))
+                    let $date3Months := xs:string($today - xs:yearMonthDuration('P3M'))
+                    let $date12Months := xs:string($today - xs:yearMonthDuration('P12M'))
+                    
+                    let $tenotomy30Days := count($firstTenotomyDateList[@date gt $date30Days])
+                    let $tenotomy3Months := count($firstTenotomyDateList[@date gt $date3Months])
+                    let $tenotomy12Months := count($firstTenotomyDateList[@date gt $date12Months])
+                    
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;total value="{$count}"/>
+                    &lt;category displayName="Patients"/>
+                    &lt;category displayName="Last 30 days" value="{$tenotomy30Days}"/>
+                    &lt;category displayName="Last 3 months"  value="{$tenotomy3Months}"/>
+                    &lt;category displayName="Last 12 months"  value="{$tenotomy12Months}"/>
+                    &lt;/queryResults>    
+            </dashboardQuery>
+        <dashboardQuery displayName="2nd / 3rd Tenotomy" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">                                     
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3"; 
+                    
+                    let $tenotomyList := 
+                    for $operationDate in //cda:value[@extension='#ISO-13606:Element:#ISO-13606:Element:Procedure'][@value=('2nd Tenotomy','3rd Tenotomy')]/../cda:value[@extension='#ISO-13606:Element:#ISO-13606:Element:OperationDate']/@value
+                    order by $operationDate descending
+                    return &lt;operation patientId="{$operationDate/ancestor::cda:ClinicalDocument/descendant::cda:patientRole/@extension}" date="{$operationDate}"/>     
+                    
+                    let $patientList := distinct-values($tenotomyList/@patientId)
+                    let $count := count($patientList)   
+                    
+                    let $tenotomyDateList := 
+                    for $patientId in $patientList return $tenotomyList[@patientId=$patientId][1]
+                    
+                    let $today := current-date()
+                    let $date30Days := xs:string($today - xs:dayTimeDuration('P30D'))
+                    let $date3Months := xs:string($today - xs:yearMonthDuration('P3M'))
+                    let $date12Months := xs:string($today - xs:yearMonthDuration('P12M'))
+                    
+                    let $tenotomy30Days := count($tenotomyDateList[@date gt $date30Days])
+                    let $tenotomy3Months := count($tenotomyDateList[@date gt $date3Months])
+                    let $tenotomy12Months := count($tenotomyDateList[@date gt $date12Months])
+                    
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;total value="{$count}"/>
+                    &lt;category displayName="Patients"/>
+                    &lt;category displayName="Last 30 days" value="{$tenotomy30Days}"/>
+                    &lt;category displayName="Last 3 months"  value="{$tenotomy3Months}"/>
+                    &lt;category displayName="Last 12 months"  value="{$tenotomy12Months}"/>
+                    &lt;/queryResults>
+            </dashboardQuery>
+    </dashboardQuerySet>
+
+</parameters>

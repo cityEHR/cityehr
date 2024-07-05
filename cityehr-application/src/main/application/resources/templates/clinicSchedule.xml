@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    clinicSchedule.xml
+    Standard format for the schedule of a clinic stored in the cityEHR runtime system.
+    This is used to generate instances of the clinic which can then be customized and accept booked appointments
+    
+    Files in this format can be uploaded to the xmlstore using the utility on the Admin page of cityEHR.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+    **********************************************************************************************************
+-->
+<clinicSchedule id="" specialty="" displayName="">
+    <bookingHorizon displayName="Clinic Schedule">
+        <startDate value="" displayName="Start Date "/>
+        <startDate value="" displayName="End Date "/>
+        <horizon value="" displayName="Booking Horizon (months) "/>
+        <rollingHorizon value="" displayName="Rolling Horizon "/>
+    </bookingHorizon>
+    
+    <exclusions displayName="Excluded dates "/>
+
+    <schedulePattern displayName="Schedule Pattern">
+        <months displayName="Months">
+            <month value="all" displayName="All" selected=""/>
+            <month value="1" displayName="Jan" selected=""/>
+            <month value="2" displayName="Feb" selected=""/>
+            <month value="3" displayName="Mar" selected=""/>
+            <month value="4" displayName="Apr" selected=""/>
+            <month value="5" displayName="May" selected=""/>
+            <month value="6" displayName="Jun" selected=""/>
+            <month value="7" displayName="Jul" selected=""/>
+            <month value="8" displayName="Aug" selected=""/>
+            <month value="9" displayName="Sep" selected=""/>
+            <month value="10" displayName="Oct" selected=""/>
+            <month value="11" displayName="Nov" selected=""/>
+            <month value="12" displayName="Dec" selected=""/>
+        </months>
+        <weeks displayName="Weeks">
+            <week value="all" displayName="All" selected=""/>
+            <week value="1" displayName="First" selected=""/>
+            <week value="2" displayName="Second" selected=""/>
+            <week value="3" displayName="Third" selected=""/>
+            <week value="4" displayName="Fourth" selected=""/>
+            <week value="last" displayName="Last" selected=""/>
+        </weeks>
+        <days displayName="Days">
+            <day value="all" displayName="All" selected=""/>
+            <day value="1" displayName="Mon" selected=""/>
+            <day value="2" displayName="Tue" selected=""/>
+            <day value="3" displayName="Wed" selected=""/>
+            <day value="4" displayName="Thu" selected=""/>
+            <day value="5" displayName="Fri" selected=""/>
+            <day value="6" displayName="Sat" selected=""/>
+            <day value="7" displayName="Sun" selected=""/>
+        </days>
+    </schedulePattern>
+
+    <dailySchedule displayName="Daily Schedule">
+        <operatingHours>
+            <startTime value="" displayName="Start Time "/>
+            <endTime value="" displayName="End Time "/>
+            <lastSlotTime value="" displayName="Last appointment "/>
+        </operatingHours>
+        <slotDuration value="15" displayName="Appointment Duration "/>
+        <slotCapacity value="1" displayName="Bookings per slot "/>
+        <intervalDuration value="5" displayName="Interval Duration "/>
+    </dailySchedule>
+</clinicSchedule>

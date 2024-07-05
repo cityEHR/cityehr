@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRRenderFormElement.xhtml
+    Module to render a CityEHR form element
+    Included in cityEHRRenderFormEntry.xhtml
+    
+    The element is represented in CDA as the value element and is set up here in the $value variable
+    The width of the element label (displayName) is set for the entry in $elementLabelWidth
+    
+    <entry cityEHR:Sequence="Unranked" cityEHR:rendition="Form">
+        <observation>
+            <typeId root="cityEHR" extension="Type:Observation"/>
+            <id root="cityEHR" extension="#ISO-13606:Entry:Gender"/>
+            <code code="xxxx" codeSystem="2.16.840.1.113883.2.1.3.2.4.15" displayName="Gender"/>
+            <value xsi:type="xs:enumeratedValue" value="" units="" code="" codeSystem="" displayName="" extension="#ISO-13606:Element:Gender" root="cityEHR"/>
+        </observation>
+    </entry>
+    
+    There are seven types of element to consider:
+        enumerated value
+        enumerated class
+        memo type
+        media type
+        other recognised XML type
+        calculatedValue type
+        range type
+        
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+          
+<xhtml:ul class="ISO13606-Element" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <xxf:variable name="root" select="$value/@root"/>
+    <xxf:variable name="elementType" select="$value/@cityEHR:elementType"/>
+    <xxf:variable name="enumeration" select="xxf:instance('dictionary-instance')//iso-13606:elementCollection/iso-13606:element[@extension = $root]/iso-13606:data"/>
+    
+    <xxf:variable name="fieldLength"
+        select="if (exists($value/@cityEHR:fieldLength)) then $value/@cityEHR:fieldLength else xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/fieldLength"/>
+
+    <!-- displayName is shown for SimpleEntry of every elementType -->
+    <xhtml:li class="ISO13606-Element-DisplayName" style="{$elementStyle}">
+        <xf:output ref="if ($context='SimpleEntry') then $value/@cityEHR:elementDisplayName else ''"/>
+    </xhtml:li>
+
+    <!-- Element is enumerated value 
+         The list of values comes from the data dictionary for the class in which the SDS appears:
+         <element root="cityEHR" extension="#ISO-13606:Element:Gender" cityEHR:elementDisplayName="">
+             <value code="#ISO-13606:Data:Male" codeSystem="cityEHR" value="Male" displayName="Male"/>
+             <value code="#ISO-13606:Data:Female" codeSystem="cityEHR" value="Female" displayName="Female"/>
+             <value code="#ISO-13606:Data:Unspecified" codeSystem="cityEHR" value="Unspecified" displayName="Unspecified"/>
+         </element>
+         
+         This set of elements has been set up in dictionaryElements-instance when the context (dialogue) for the rendered entry was set up
+    -->
+    <xxf:variable name="enumeratedValueInputClass"
+        select="if ($elementType = '#CityEHR:ElementProperty:enumeratedValue') then 'ISO13606-Data' else 'hidden'"/>
+    <xxf:variable name="enumeratedValue"
+        select="if ($elementType = '#CityEHR:ElementProperty:enumeratedValue') then $value/@value else ()"/>   
+    
+    <xhtml:li class="{$enumeratedValueInputClass}">
+        <xf:select1 ref="$enumeratedValue" class="ISO13606-Data">
+            <xf:itemset nodeset="xxf:instance('application-parameters-instance')/displayFormat/unspecifiedElementValue/value | $enumeration">
+                <xf:label ref="./@displayName"/>
+                <xf:value ref="./@value"/>
+            </xf:itemset>
+            <xf:action ev:event="xforms-value-changed">
+                <!-- First get the node that was selected -->
+                <xxf:variable name="selectedValue" select="$enumeration[@value=$value/@value]"/>
+                <xf:setvalue ref="$value/@code" value="$selectedValue/@code"/>
+                <xf:setvalue ref="$value/@codeSystem" value="'cityEHR'"/>
+                <xf:setvalue ref="$value/@displayName" value="$selectedValue/@displayName"/>
+                <!-- Set the dirty flag on the form -->
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'edited'"/>
+            </xf:action>
+        </xf:select1>
+    </xhtml:li>
+
+
+    <!-- Element is enumerated class 
+        
+        Not allowing enumerated class in a SDS
+        
+    -->
+
+    <!-- Element is memo type -->
+    <xxf:variable name="memoInputClass" select="if ($elementType = '#CityEHR:ElementProperty:memo') then 'ISO13606-Data' else 'hidden'"/>
+    <xxf:variable name="memoValue"
+        select="if ($elementType = '#CityEHR:ElementProperty:memo') then $value/@value else ()"/>  
+    
+    <xhtml:li class="{$memoInputClass}">
+        <xf:textarea ref="$memoValue" appearance="xxf:autosize" style="width: 100%">
+            <xf:label/>
+            <xf:action ev:event="xforms-value-changed">
+                <!-- Set the dirty flag on the form -->
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'edited'"/>
+            </xf:action>
+        </xf:textarea>
+    </xhtml:li>
+
+
+    <!-- Element is media type -->
+    <xxf:variable name="mediaInputClass" select="if ($elementType = '#CityEHR:ElementProperty:media') then 'ISO13606-Data' else 'hidden'"/>
+    <xhtml:li class="{$mediaInputClass}">
+        <xf:upload ref="xxf:instance('file-instance')/file/content" incremental="true">
+            <xf:filename ref="../filename"/>
+            <xf:mediatype ref="../mediatype"/>
+            <xxf:size ref="../size"/>
+
+            <xf:action ev:event="xxforms-upload-done">
+                <xf:send submission="load-file-submission"/>
+                <!-- Set the dirty flag on the form -->
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'edited'"/>
+            </xf:action>
+        </xf:upload>
+    </xhtml:li>
+
+    <!-- Element is range type -->
+    <!--
+    <xf:group ref="$value[@cityEHR:elementType = '#CityEHR:ElementProperty:range']">
+        <xf:output ref="if ($context='SimpleEntry') then $value/@cityEHR:elementDisplayName else ''" class="ISO13606-Element-Label"/>
+        <xxf:variable name="code" select="$value/@extension"/>
+        <xxf:variable name="rangeStartValue" select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$extension]/iso-13606:data[1]/@value"/>
+        <xxf:variable name="rangeEndValue" select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$extension]/iso-13606:data[2]/@value"/>
+        <xxf:variable name="rangeStart" select="if ($rangeStartValue castable as xs:integer) then xs:integer($rangeStartValue) else '1'"/>
+        <xxf:variable name="rangeEnd" select="if ($rangeEndValue castable as xs:integer) then xs:integer($rangeEndValue) else '1'"/>
+        <xf:output ref="$value/@value"/> (<xf:output ref="$rangeStart"/> to <xf:output ref="$rangeEnd"/>)
+
+        <xf:range ref="$value/@value" incremental="true" start="$rangeStart" end="$rangeEnd">
+            <xf:label/>
+        </xf:range>
+ 
+    </xf:group>
+    -->
+
+    <!-- Element is recognised XML type -->
+    <xxf:variable name="simpleTypeInputClass"
+        select="if ($elementType = '#CityEHR:ElementProperty:simpleType') then 'ISO13606-Data' else 'hidden'"/>
+    <xxf:variable name="simpleValue"
+        select="if ($elementType = '#CityEHR:ElementProperty:simpleType') then $value/@value else ()"/>  
+    
+    <xhtml:li class="{$simpleTypeInputClass}">
+        <xf:input ref="$simpleValue" xxf:size="{$fieldLength}" class="stripped">
+            <xf:action ev:event="xforms-value-changed">
+                <!-- Set the dirty flag on the form -->
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'edited'"/>
+            </xf:action>
+        </xf:input>
+    </xhtml:li>
+
+    <!-- Element is calculated value -->
+    <xxf:variable name="calculatedValueClass"
+        select="if ($elementType = '#CityEHR:ElementProperty:calculatedValue') then 'ISO13606-Data' else 'hidden'"/>
+    <xxf:variable name="calculatedValue"
+        select="if ($elementType = '#CityEHR:ElementProperty:calculatedValue') then $value/@value else ()"/>
+    
+    <xhtml:li class="{$calculatedValueClass}">
+        <xf:output ref="$calculatedValue"/>
+    </xhtml:li>
+
+
+    <!-- Units are shown for simpleType and calculatedValue -->
+    <xxf:variable name="unitsClass"
+        select="if ($context='SimpleEntry' and $elementType=('#CityEHR:ElementProperty:simpleType','#CityEHR:ElementProperty:calculatedValue') and $value/@units!='') then 'ISO13606-Element-Units' else 'hidden'"/>
+    <xhtml:li class="{$unitsClass}">
+        <xf:output ref="$value/@units"/>
+    </xhtml:li>
+    
+</xhtml:ul>

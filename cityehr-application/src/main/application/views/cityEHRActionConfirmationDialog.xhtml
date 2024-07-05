@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRActionConfirmationDialog.xhtml
+    
+    Modal dialog box that protects actions that would lose focus of (e.g.) edited forms.
+    
+    If the action is confirmed then it is invoked, otherwise the dialog closes with no action.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- === Confirmation Dialog for user actions ==============================================
+     Uses the following data set up in system-parameters:
+    
+    <actionConfirmationDialogue>
+        <activeDialogue>confirmId</activeDialogue>
+        <dialogue id="confirmId">
+            <title>Confirmation Dialogue</title>
+            <message>Confirmation Message</message>
+            <actions>
+                <action displayName="Action 1" model="modelId" event="eventId"/>
+            </actions>
+        </dialogue>
+    </staticConfirmationDialogue>
+    =======================================================================================
+-->
+
+<xxf:dialog id="actionConfirmationDialog" style="z-index: 9999;" appearance="full" level="modal" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xhtml:div class="dialogue">
+        <xxf:variable name="activeDialogue" select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
+        <xxf:variable name="logo" select="xxf:instance('logo-instance')"/>
+
+        <!-- The header -->
+        <xhtml:table>
+            <xhtml:tbody>
+                <xhtml:tr>
+                    <xhtml:td class="dialogueTitle">
+                        <xf:output
+                            ref="xxf:instance('system-parameters-instance')/actionConfirmationDialogue/dialogueMessageLabel/@displayName"/>
+                        <xf:output ref="$activeDialogue/title/@displayName"/>
+                    </xhtml:td>
+                    <xhtml:td class="dialogueTitle" align="right">
+                        <xf:output ref="$logo" mediatype="image/*"/>
+                    </xhtml:td>
+                </xhtml:tr>
+            </xhtml:tbody>
+        </xhtml:table>
+
+        <!-- Messages are output in the order they are found -->
+        <xf:repeat nodeset="$activeDialogue/message[@displayName!='']">
+            <xxf:variable name="message" select="."/>
+            <xhtml:p>
+                <xf:output ref="$message/@displayName"/>
+            </xhtml:p>
+        </xf:repeat>
+
+        <!-- Selection - uses the selection element that must be present in the dialogue
+             If not, then this doesn't get shown -->
+        <xhtml:p>
+            <xf:output ref="if (exists($activeDialogue/selection)) then $activeDialogue/selection/@displayName else ''"/>
+            
+            <xf:select1 ref="if (exists($activeDialogue/selection)) then $activeDialogue/selection/@value else ()"
+                appearance="full">
+                <xf:itemset ref="$activeDialogue/selection/*">
+                    <xf:value ref="./@value"/>
+                    <xf:label ref="./@displayName"/>
+                </xf:itemset>
+            </xf:select1>
+        </xhtml:p>
+
+
+        <!-- Triggers for actions -->
+        <xf:repeat id="actionConfirmationDialog-repeat" nodeset="$activeDialogue/action">
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label ref="./@label"/>
+                <xf:action ev:event="DOMActivate">
+                    <!-- Invoke the action specified for the trigger 
+                         If a selection is configured for the dialogue, then pass as context to the action -->
+                    <xf:dispatch name="{./@event}" target="{./@model}">
+                        <xxf:context name="context" select="$activeDialogue/selection/@value"/>
+                    </xf:dispatch>
+                    <xxf:hide dialog="actionConfirmationDialog"/>
+                </xf:action>
+            </xf:trigger>
+        </xf:repeat>
+
+    </xhtml:div>
+</xxf:dialog>

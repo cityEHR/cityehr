@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRCohortStatisticsDialog.xhtml
+    
+    Dialog to show statistics for a patient cohort.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<xxf:dialog id="cohortStatisticsDialog" width="950" height="700" appearance="full" level="modal" close="false" draggable="true"
+    visible="false" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:xi="http://www.w3.org/2001/XInclude">
+    
+    <xf:label class="stripTitle">Cohort Statistics </xf:label>
+    
+    <xf:trigger id="cancel-cohortStatisticsDialog">
+        <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/acknowledgeLabel"/>
+        <xxf:hide ev:event="DOMActivate" dialog="cohortStatisticsDialog"/>
+    </xf:trigger>
+    
+    <xhtml:div class="chartDisplay">
+        <xhtml:table>
+            <xhtml:tbody>
+                <!-- For each top level statistics category -->
+                <xf:repeat nodeset="xxf:instance('control-instance')/cohortStatistics/statistics/*">
+                    <xxf:variable name="value" select="."/>
+                    <xhtml:tr>
+                        <xhtml:td>
+                            <xf:output ref="$value/@displayName"/>
+                        </xhtml:td>
+                        <xhtml:td>
+                            <!-- only output value for the top level categories -->
+                            <xf:output ref="$value/@value"/>
+                            
+                            <!-- Allow for one level of sub-category -->
+                            <xhtml:table>
+                                <xhtml:tbody>
+                                    <!-- Allow for one level of sub-category -->
+                                    <xf:repeat nodeset="$value/*">
+                                        <xxf:variable name="subValue" select="."/>
+                                        <xhtml:tr>
+                                            <xhtml:td>
+                                                <xf:output ref="$subValue/@displayName"/>
+                                            </xhtml:td>
+                                            <xhtml:td>
+                                                <xf:output ref="$subValue/@value"/>                                               
+                                            </xhtml:td>
+                                        </xhtml:tr>
+                                    </xf:repeat>
+                                </xhtml:tbody>
+                            </xhtml:table>
+                            
+                        </xhtml:td>
+                    </xhtml:tr>
+                </xf:repeat>
+            </xhtml:tbody>
+        </xhtml:table>
+        
+        <!-- Debug graph instance, but only if graph exists -->
+        <!--
+            <xhtml:p>Chart:<xhtml:br/>
+            <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/graph, 'data')/*, 'html')" mediatype="text/html"/>
+            </xhtml:p>
+        -->
+        <!-- If doing fusion charts
+            <fr:fusion-charts ref="xxf:instance('control-instance')/graph" swf="FCF_Column3D" width="600" height="400"/>
+        -->
+        
+    </xhtml:div>
+    
+</xxf:dialog>
+
+

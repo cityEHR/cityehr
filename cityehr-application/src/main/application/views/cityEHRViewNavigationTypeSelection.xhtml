@@ -1,0 +1,46 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRViewNavigationTypeSelection.xhtml
+    
+    Standard div for selecting view navigation type.
+    Included in every patient view.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:div id="navigationTypeControls" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    <xf:repeat nodeset="xxf:instance('application-parameters-instance')/viewNavigationTypeSelection/view[@viewType=xxf:instance('view-parameters-instance')/page]/viewNavigationType[not(@display='hidden')]">
+        <xxf:variable name="viewNavigationType" select="./@value"/>
+        <xxf:variable name="viewTypeDisplayName" select="./@displayName"/>
+        <xxf:variable name="viewTypeSelectionClass" select="if (xxf:instance('view-parameters-instance')/viewNavigationType=$viewNavigationType) then 'controlItem current' else 'controlItem'"/>
+            <xf:trigger appearance="minimal" class="{$viewTypeSelectionClass}">
+                <xf:label>
+                    <xf:output ref="$viewTypeDisplayName"/>
+                </xf:label>
+                <!-- Set the selected viewNavigationType and send event to the viewControlsActions-model model (may or may not be handled in that model for each view) -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="$viewNavigationType"/>
+                    
+                    <!-- Call action on viewNavigationTypeChanged - this is defined (or not) in the viewControlsActions-model in each view -->
+                    <xf:dispatch name="viewNavigationTypeChanged" target="viewControlsActions-model"/>
+                    
+                    <!-- Refresh the bindings on the viewControlsActions-model -->
+                    <xf:recalculate model="viewControlsActions-model"/>
+                    
+                </xf:action>
+            </xf:trigger>
+    </xf:repeat>
+</xhtml:div>

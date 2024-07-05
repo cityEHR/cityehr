@@ -1,0 +1,725 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    system-parameters.xml
+    
+    Parameters which configure the cityEHR deployment.
+    This default version is loaded on first logon to a new installation (ships preloaded in the local database)
+    
+    System parameters are managed using actions in systemParametersmodel and manageParametersModel
+    
+    When stored the cityEHR, the version number (from view-parameters) is stored in  parameters/@version.
+    The system-parameters are refreshed if the version number changes, using update-system-parameters in systemParametersmodel
+    
+    There are three categories of parameter:
+    
+    coreParameters          Set during installation and unlikely to change after that. They are edited through the cityEHRAdmin page.
+    dynamicParameters       Can be edited through the cityEHRAdmin page and are likely to be changed periodically after the initial deployment
+    staticParameters        Can be edited through the cityEHRAdmin page, but will generally be fixed once a deployment has been set up.
+    
+    Control of the edit/update of parameters is made using elements/attributes in the cityEHR namespace
+    
+    These elements contain the elements (with attributes) to which the instruction applies 
+        cityEHR:type                xs:type 
+        cityEHR:edit                replace readOnly distinct notNull pinned recovery
+        cityEHR:calculate           expression relative to the parameter value
+        cityEHR:selection           set of option elements or an expression relative to the parameter value      
+        cityEHR:template            template element used for insertion and rebuild
+        
+    These attributes can appear directly on the parameter element to which they apply
+        cityEHR:edit
+        cityEHR:type (only text or image)
+    
+    If cityEHR:edit contains the 'replace' keyword, then the parameter element is replaced with the default during a rebuild
+    i.e. the system-parameters are reset to the values in this file.
+    *** For development cityEHR:edit="replace" is set on the document element, this must be removed before shipping a release.
+    
+    If cityEHR:edit contains the 'recovery' keyword, then the parameter element (and its children) can be edited in recovery mode
+    (and also when system parameters are edited in cityEHRAdmin)
+          
+          
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<parameters type="system" cityEHR:edit="replace" date="" version="" databaseChecksum="" baseLanguageCode="en-GB" languageCode="en-GB" xmlns=""
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+
+
+    <!-- === dynamicParameters =======================================================================     
+        Can be edited through the cityEHRAdmin page
+        Are likely to be changed periodically after the initial deployment  
+        =============================================================================================
+    -->
+    <dynamicParameters cityEHR:displayName="Dynamic Parameters">
+        <cityEHR:type>
+            <debug value="" xsi:type="xs:boolean"/>
+            <auditLogRecording value="" xsi:type="xs:boolean"/>
+            <useFormCache value="" xsi:type="xs:boolean"/>
+            <sessionPageLoad value="" xsi:type="xs:dayTimeDuration"/>
+            <checkNodeStatus value="" xsi:type="xs:boolean"/>
+            <language userSelection="" xsi:type="xs:boolean"/>
+        </cityEHR:type>
+
+        <cityEHR:calculate>
+            <defaultApplicationIRI value="" cityEHR:calculate="concat(../@prefix,../../defaultApplication/@value)"/>
+        </cityEHR:calculate>
+
+        <cityEHR:edit>
+            <defaultApplicationIRI prefix="" cityEHR:edit="readOnly"/>
+        </cityEHR:edit>
+
+        <!-- Debug value = true | false -->
+        <debug cityEHR:displayName="Debugging Mode" value="false"/>
+
+        <!-- Switch to set whether to record the audit log.
+            true | false (in fact if not true then is assumed that no auditLog is recorded) -->
+        <auditLogRecording cityEHR:displayName="Record Audit Log" value="true"/>
+
+        <!-- Cache forms (recommended) value = true | false -->
+        <useFormCache cityEHR:displayName="Cache Forms" value="false"/>
+
+        <!-- Maximum time allowance for a page load.
+         Must be castable as xs:dayTimeDuration 
+         PT1D1H1M1.1S = 1 day, 1 hour, 1 minute, 1.1 seconds -->
+        <sessionPageLoad cityEHR:displayName="Page load timeout" value="PT10M"/>
+
+        <!-- Check database node status (online/offline) -->
+        <checkNodeStatus cityEHR:displayName="Check database node status (online/offline)" value="false"/>
+
+        <!-- The default application -->
+        <defaultApplication cityEHR:displayName="Default application Id" value="cityEHR"/>
+        <defaultApplicationIRI cityEHR:displayName="Default application IRI" prefix="#ISO-13606:EHR_Extract:" value=""/>
+
+        <language code="en-GB" displayName="English" userSelection="false"/>
+
+    </dynamicParameters>
+
+
+    <!-- === coreParameters ===================================================================================       
+         Set through the cityEHRAdmin page during installation. 
+         They can change (in theory) but this is unlikely. 
+         ======================================================================================================
+        -->
+
+    <coreParameters cityEHR:displayName="Core Parameters" cityEHR:edit="recovery">
+
+        <!-- Database configuration.
+             Parameters for the installed databases and how they are used by the cityEHR applications:
+                ehr
+                patient
+                auditlog       
+        -->
+
+        <!-- Database configuration.
+             There are three levels of database configuration:
+                logical databases - defines the physical database clusters used for each system - ehr or patientstore
+                physical databases - specification of database clusters that can be assigned to a logical database
+                deployed databases (generated in the database-parameters) - the configuration of the nodes deployed in a physical database cluster.        
+        -->
+
+        <databaseConfiguration cityEHR:displayName="Database Configuration">
+            <!-- System databases - one logical database for each system.
+                 Currently only two systems are supported - ehr and patientstore -->
+            <systemDatabases cityEHR:displayName="System databases" cityEHR:edit="replace">
+                <cityEHR:selection>
+                    <database logicalDatabase="" cityEHR:selection="ancestor::databaseConfiguration/logicalDatabases/database/@id"/>
+                </cityEHR:selection>
+                <cityEHR:edit>
+                    <database system="" cityEHR:edit="readOnly"/>
+                </cityEHR:edit>
+                <database cityEHR:displayName="EHR Application" system="ehr" logicalDatabase="basicEHR"/>
+                <database cityEHR:displayName="Patient Access" system="patientstore" logicalDatabase="basicPatientStore"/>
+            </systemDatabases>
+
+            <!-- Logical databases - define the configuration of transaction units (btu).
+                 There are four types of transaction unit:
+                        kernel
+                        empi
+                        patient
+                        auditlog
+                        
+                 There must be at least one btu for each type; records and auditlog may have more than one btu.
+                 
+                 Each logical database can be deployed on one or more physical database clusters.
+                -->
+            <logicalDatabases cityEHR:displayName="Logical databases">
+                <cityEHR:selection>
+                    <physicalCluster clusterId="" cityEHR:selection="ancestor::databaseConfiguration/physicalDatabases/physicalCluster/@id"/>
+                    <btu type="">
+                        <option value="patient"/>
+                        <option value="auditlog"/>
+                    </btu>
+                </cityEHR:selection>
+                <cityEHR:edit>
+                    <btu id="" cityEHR:edit="readOnly"/>
+                </cityEHR:edit>
+                <cityEHR:type>
+                    <physicalCluster primary="" xsi:type="xs:boolean"/>
+                </cityEHR:type>
+                <cityEHR:template>
+                    <database id="" displayName="" logicalDatabaseLocation="/location">
+                        <transactionUnits>
+                            <cityEHR:template>
+                                <btu id="" type="patient" priority="300"/>
+                            </cityEHR:template>
+                            <btu id="" type="kernel" priority="0" cityEHR:edit="pinned readOnly"/>
+                            <btu id="" type="empi" priority="100" cityEHR:edit="pinned readOnly"/>
+                            <btu id="" type="auditlog" priority="200" cityEHR:edit="pinned readOnly"/>
+                            <btu id="" type="patient" priority="300" cityEHR:edit="pinned readOnly"/>
+                        </transactionUnits>
+                        <deployedDatabases>
+                            <cityEHR:template>
+                                <physicalCluster clusterId="cluster-2" primary="false"/>
+                            </cityEHR:template>
+                            <physicalCluster clusterId="cluster-1" primary="true" cityEHR:edit="pinned"/>
+                        </deployedDatabases>
+                    </database>
+                </cityEHR:template>
+
+                <!-- Minimal BTUs -->
+                <database id="basicEHR" displayName="Basic (minimal) EHR" logicalDatabaseLocation="/ehr" cityEHR:edit="pinned">
+                    <transactionUnits cityEHR:edit="readOnly">
+                        <btu id="" type="kernel" priority="0" cityEHR:edit="pinned readOnly"/>
+                        <btu id="" type="empi" priority="0" cityEHR:edit="pinned readOnly"/>
+                        <btu id="" type="patient" priority="0" cityEHR:edit="pinned readOnly"/>
+                        <btu id="" type="auditlog" priority="0" cityEHR:edit="pinned readOnly"/>
+                    </transactionUnits>
+                    <deployedDatabases>
+                        <cityEHR:template>
+                            <physicalCluster clusterId="cluster-1" primary="false"/>
+                        </cityEHR:template>
+                        <physicalCluster clusterId="builtin" primary="true" cityEHR:edit="pinned"/>
+                    </deployedDatabases>
+                </database>
+                <database id="basicPatientStore" displayName="Basic (minimal) patient store" logicalDatabaseLocation="/patientstore"
+                    cityEHR:edit="pinned">
+                    <transactionUnits cityEHR:edit="readOnly">
+                        <btu id="" type="kernel" priority="0" cityEHR:edit="pinned readOnly"/>
+                        <btu id="" type="empi" priority="0" cityEHR:edit="pinned readOnly"/>
+                        <btu id="" type="patient" priority="0" cityEHR:edit="pinned readOnly"/>
+                        <btu id="" type="auditlog" priority="0" cityEHR:edit="pinned readOnly"/>
+                    </transactionUnits>
+                    <deployedDatabases>
+                        <cityEHR:template>
+                            <physicalCluster clusterId="cluster-1" primary="false"/>
+                        </cityEHR:template>
+                        <physicalCluster clusterId="builtin" primary="true" cityEHR:edit="pinned"/>
+                    </deployedDatabases>
+                </database>
+
+            </logicalDatabases>
+
+            <!-- Physical Databases - define the node sets in the physical database clusters.
+                 These are used to generate the database-parameters that specify the nodes deployed for each physical cluster.
+                 A separate deployment is made for each logical database that references the physicalCluster -->
+            <physicalDatabases cityEHR:displayName="Physical databases">
+                <!-- system, logicalDatabase, btuLocation and primary are set when the cluster is deployed.
+                     status is set when the cluster is configured -->
+                <cityEHR:edit>
+                    <physicalCluster system="" logicalDatabase="" btuLocation="" primary="" status="" cityEHR:edit="readOnly"/>
+                </cityEHR:edit>
+                <cityEHR:type>
+                    <nodeset nodeCount="" xsi:type="xs:integer"/>
+                </cityEHR:type>
+                <cityEHR:template>
+                    <physicalCluster id="cluster-1" displayName="" system="" logicalDatabase="" primary="" urlPrefix="http://" urlSuffix="/exist/rest"
+                        urnPrefix="xmldb:exist://" urnSuffix="/exist/xmlrpc" physicalDatabaseLocation="/db" indexLocation="/system/config"
+                        btuLocation="" status="">
+                        <cityEHR:template>
+                            <nodeset host="127.1.1.1" nodeCount="1" port="8022" user="admin" password=""/>
+                        </cityEHR:template>
+                        <nodeset host="127.1.1.1" nodeCount="1" port="8022" user="admin" password=""/>
+                    </physicalCluster>
+                </cityEHR:template>
+                <physicalCluster id="builtin" displayName="Built-in Database" cityEHR:edit="readOnly pinned" system="" logicalDatabase="" primary=""
+                    urlPrefix="" urlSuffix="/exist/rest" urnPrefix="xmldb:exist://" urnSuffix="" physicalDatabaseLocation="/db"
+                    indexLocation="/system/config" btuLocation="" status="">
+                    <nodeset host="" nodeCount="1" port="" user="" password=""/>
+                </physicalCluster>
+                <physicalCluster id="standaloneLocal" displayName="Standalone local database" cityEHR:edit="pinned" system="" logicalDatabase=""
+                    primary="" urlPrefix="http://" urlSuffix="/exist/rest" urnPrefix="xmldb:exist://" urnSuffix="/exist/xmlrpc"
+                    physicalDatabaseLocation="/db" indexLocation="/system/config" btuLocation="" status="">
+                    <nodeset host="127.1.1.1" nodeCount="1" port="8022" user="admin" password=""/>
+                </physicalCluster>
+                <physicalCluster id="tomcatLocal" displayName="Database on local Tomcat" cityEHR:edit="pinned" system="" logicalDatabase="" primary=""
+                    urlPrefix="http://" urlSuffix="/exist/rest" urnPrefix="xmldb:exist://" urnSuffix="/exist/xmlrpc" physicalDatabaseLocation="/db"
+                    indexLocation="/system/config" btuLocation="" status="">
+                    <nodeset host="127.1.1.1" nodeCount="1" port="8080" user="admin" password=""/>
+                </physicalCluster>
+            </physicalDatabases>
+        </databaseConfiguration>
+
+    </coreParameters>
+
+
+    <!-- === Static parameters =======================================================================
+         Static parameters that are never changed, unless through a system upgrade.
+         These are defined for the installation and are applicable to all applications running in it.
+         For application-specific configuration see the application-parameters.xml files.
+         ============================================================================================= -->
+    <staticParameters cityEHR:displayName="Static Parameters">
+        <!-- System and configuration parameters display/edit -->
+        <parametersDisplay cityEHR:displayName="System and configuration parameters display/edit">
+            <fontScaleFactor value="1.5"/>
+            <labelLengthDefault value="10"/>
+        </parametersDisplay>
+
+        <!--Database index errors -->
+        <indexCheckError cityEHR:displayName="Database index errors">
+            <error value="noIndexAvailable" displayName="Could not load index file - please contact your system
+                administrator."/>
+            <error value="indexCreated" displayName="Database index was created successfully."/>
+            <error value="indexExists" displayName="Database is already indexed."/>
+            <error value="reindexFailed" displayName="Failed to reindex database - please contact your system
+                administrator."/>
+            <error value="storeIndexFailed" displayName="Failed to store database index - please contact your system
+                administrator."/>
+            <error value="createdCollectionPathFailed"
+                displayName="Failed to create index collection path - please contact your system
+                administrator."/>
+            <error value="pipelineException" displayName="Database not found - please contact your system administrator."/>
+        </indexCheckError>
+
+
+        <!-- === Confirmation dialogue.
+             The dialoue display is in cityEHRActionConfirmationDialog.xhtml
+             Invoke through confirm-action in pageNavigation-model 
+
+             Each confirmation dialogue in cityEHR has an entry here, which defines:
+             The dialogue identifier
+             The display headline (title) for the dialogue
+             The confirmation message
+             Selection options
+             The list of actions, and for each action
+                 The label to be displayed
+                 The model for the action
+                 The event for the action
+         === -->
+        <actionConfirmationDialogue>
+            <dialogueMessageLabel displayName="Confirm -"/>
+            <dialogueNotFound displayName="No configuration found for the selected dialogue."/>
+
+            <!-- Template -->
+            <dialogue id="confirmId">
+                <title displayName="Confirmation Dialogue"/>
+                <message displayName="Confirmation Message"/>
+                <selection value="" displayName="Selection: " type="full">
+                    <option value="hello" displayName="Say Hello"/>
+                </selection>
+                <action label="Test" model="main-model" event="test-action"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+            
+            <dialogue id="setNextAdminTask">
+                <title displayName="Confirm Administration Task"/>
+                <message displayName="There are unsaved edits for the current task."/>
+                <action label="Discard Edits" model="main-model" event="set-nextAdminTask"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="importShippedResources">
+                <title displayName="Initialize new cityEHR installation"/>
+                <message displayName="Load the default configuration (recommended) or start with an empty database."/>
+                <action label="Load Default Configuration" model="main-model" event="load-default-configuration"/>
+                <action label="Use Empty Database" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="resumeSession">
+                <title displayName="Resume User Session"/>
+                <message displayName="Your last session was not terminated properly."/>
+                <action label="Resume Session" model="main-model" event="resume-session"/>
+                <action label="Start New Session" model="main-model" event="start-new-session"/>
+                <action label="Quit" model="pageNavigation-model" event="quit-session"/>
+            </dialogue>
+
+            <dialogue id="closeSystemParameters">
+                <title displayName="Close system parameters editor"/>
+                <message displayName="The changes you made have not been saved."/>
+                <action label="Close" model="systemParameters-model" event="close-system-parameters-edit"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="resetRegistrationForm">
+                <title displayName="Resetting Registration Form"/>
+                <message displayName="All data entered so far will be lost."/>
+                <action label="Reset Form" model="main-model" event="reload-composition"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="registerPatient">
+                <title displayName="Register New Patient"/>
+                <message displayName="A new record will be created for this patient - data cannot be modified once committed."/>
+                <selection value="" displayName="After registration: " type="full">
+                    <option value="" displayName="Show patient record"/>
+                </selection>
+                <action label="Register" model="viewControlsActions-model" event="register-patient"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="createNewApplication">
+                <title displayName="Create new aplication"/>
+                <message displayName="Create a new cityEHR application with the id:"/>
+                <action label="Confirm" model="main-model" event="create-application"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="generateDatabaseManifest">
+                <title displayName="Generate database manifest"/>
+                <message displayName="Create a manifest for the following collection (root)."/>
+                <action label="Confirm" model="main-model" event="generate-manifest"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="backupDatabase">
+                <title displayName="Create database backup"/>
+                <message displayName="The following collection (root) will be backed up to a zip file."/>
+                <action label="Confirm" model="main-model" event="backup-database"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="backupDatabaseFromManifest">
+                <title displayName="Create database backup"/>
+                <message displayName="The following collection (root) will be backed up to a zip file."/>
+                <action label="Confirm" model="main-model" event="backup-database-from-manifest"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="reindexDatabase">
+                <title displayName="Reindex the database"/>
+                <message displayName="The following collection (root) will be reindexed."/>
+                <message displayName="This action can take a long time - up to 30mins per Gb of data"/>
+                <action label="Confirm" model="main-model" event="reindex-database"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="errorReindexingDatabase">
+                <title displayName="Reindex the database"/>
+                <message displayName="There was an error reindexing the database."/>
+                <message displayName="Error code:"/>
+                <action label="Dismiss" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteResource">
+                <title displayName="Delete xmlstore resource"/>
+                <message displayName="The following resource will be deleted from the xmlstore"/>
+                <action label="Confirm" model="main-model" event="delete-resource"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="rebuild-directories">
+                <title displayName="Rebuild directories"/>
+                <message displayName="Rebuild all element directories for this specialty"/>
+                <action label="Confirm" model="main-model" event="rebuild-directories"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="runDeleteQuery">
+                <title displayName="Run delete XQuery"/>
+                <message displayName="The following resource will be deleted from the database"/>
+                <action label="Confirm" model="main-model" event="invoke-dal-delete"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="performResultsAction">
+                <title displayName="Perform Action on Results Set"/>
+                <message displayName="Run pre-defined action on each resource (handle) in the results set."/>
+                <action label="Confirm" model="main-model" event="performResultsAction"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="performFixCompositionAction">
+                <title displayName="Perform Action on Selected Compositions"/>
+                <message displayName="Run pre-defined action to reset target values from source."/>ns> <action label="Confirm" model="main-model"
+                    event="performFixComposition"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteDataSet">
+                <title displayName="Delete data set"/>
+                <message displayName="The following data set will be deleted from the xmlstore"/>
+                <action label="Confirm" model="exportDataSet-model" event="deleteDataSet"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteUser">
+                <title displayName="Deleting User"/>
+                <message displayName="You are about to delete the user."/>
+                <action label="Delete" model="main-model" event="delete-managed-user"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteCareTeam">
+                <title displayName="Delete care team"/>
+                <message displayName="The following care team will be deleted from the xmlstore"/>
+                <action label="Confirm" model="main-model" event="delete-careTeam"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteSpecialty">
+                <title displayName="Deleting Specialty"/>
+                <message displayName="You are about to delete the specialty with its information models."/>
+                <action label="Delete" model="main-model" event="delete-managedSpecialty"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="purgePatients">
+                <title displayName="Purging patients"/>
+                <message displayName="You are about to purge patients from the xmlstore - this action cannot be undone."/>
+                <action label="Purge" model="main-model" event="purgePatients"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="reload-shippedMedia">
+                <title displayName="Reload shipped media"/>
+                <message displayName="You are about to reload media shipped with this application - this action cannot be undone."/>
+                <action label="Reload" model="main-model" event="reload-shippedMedia"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+            
+            <dialogue id="reload-shippedImageMaps">
+                <title displayName="Reload shipped image maps"/>
+                <message displayName="You are about to reload image maps shipped with this application - this action cannot be undone."/>
+                <action label="Reload" model="main-model" event="reload-shippedImageMaps"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="reload-shippedInformationModels">
+                <title displayName="Reload shipped information models"/>
+                <message displayName="You are about to reload information models shipped with this application - this action cannot be undone."/>
+                <action label="Reload" model="main-model" event="reload-shippedInformationModels"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="reload-shippedResources">
+                <title displayName="Reload shipped resources"/>
+                <message displayName="You are about to reload resources shipped with this application - this action cannot be undone."/>
+                <action label="Reload" model="main-model" event="reload-shippedResources"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="resetForm">
+                <title displayName="Resetting Form"/>
+                <message displayName="Form will reset to last saved values - all data entered so far will be lost."/>
+                <action label="Reset Form" model="main-model" event="reload-composition"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteForm">
+                <title displayName="Deleting Saved Form"/>
+                <message displayName="Form will be deleted - all data entered and saved so far will be lost."/>
+                <action label="Delete Form" model="viewControlsActions-model" event="delete-form"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="saveForm">
+                <title displayName="Saving Form"/>
+                <message displayName="Form will be saved - data will be available to other members of your care team."/>
+                <message displayName="Select Save and Notify to notify your care team."/>
+                <action label="Save and Notify" model="viewControlsActions-model" event="save-form-notify"/>
+                <action label="Save Form" model="viewControlsActions-model" event="save-form"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="publishForm">
+                <title displayName="Publishing Form"/>
+                <message displayName="Form will be committed to the patient record - data cannot be modified once committed."/>
+                <selection value="" displayName="" type="full">
+                    <option value="" displayName="Show patient record" type="preset"/>
+                </selection>
+                <action label="Commit Form" model="viewControlsActions-model" event="publish-form"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="publishLetter">
+                <title displayName="Publishing Letter"/>
+                <message displayName="Letter will be committed to the patient record - data cannot be modified once committed."/>
+                <action label="Commit Letter" model="viewControlsActions-model" event="publish-letter"/>
+                <action label="Commit, Launch Word Processor" model="viewControlsActions-model" event="publish-letter-and-launch-wordprocessor"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteLetter">
+                <title displayName="Deleting Saved Letter"/>
+                <message displayName="Letter will be deleted - all data entered and saved so far will be lost."/>
+                <action label="Delete Letter" model="viewControlsActions-model" event="delete-letter"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="resetLetter">
+                <title displayName="Confirm Letter Reset"/>
+                <message displayName="Letter will reset to last saved values - all data entered so far will be lost."/>
+                <action label="Reset Letter" model="main-model" event="reload-composition"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+
+            <dialogue id="resetPathway">
+                <title displayName="Confirm Pathway Reset"/>
+                <message displayName="Pathway will reset to last saved values - all data entered so far will be lost."/>
+                <action label="Reset Pathway" model="main-model" event="reload-composition"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="publishPathway">
+                <title displayName="Publishing Pathway"/>
+                <message displayName="This Pathway has been completed."/>
+                <message displayName="Pathway will be committed to the patient record - data cannot be modified once committed."/>
+                <selection value="" displayName="" type="full">
+                    <option value="" displayName="Show patient record" type="preset"/>
+                </selection>
+                <action label="Commit Pathway" model="viewControlsActions-model" event="publish-pathway"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="loadNextPage">
+                <title displayName="Quitting Page"/>
+                <message displayName="You are about to quit this page - all unsaved data will be lost."/>
+                <action label="Quit" model="pageNavigation-model" event="load-cityEHR-nextPage"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="saveCohortSearch">
+                <title displayName="Save Cohort Search"/>
+                <message displayName="Are you sure you want to overwrite the search?"/>
+                <action label="Save" model="viewControlsActions-model" event="save-after-confirmation"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteCohortSearch">
+                <title displayName="Delete Saved Cohort Search"/>
+                <message displayName="Are you sure you want to delete the selected search?"/>
+                <action label="Delete" model="viewControlsActions-model" event="delete-after-confirmation"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteCohort">
+                <title displayName="Delete Saved Cohort"/>
+                <message displayName="Are you sure you want to delete the selected cohort?"/>
+                <action label="Delete" model="viewControlsActions-model" event="delete-after-confirmation"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteNotification">
+                <title displayName="Delete Notification"/>
+                <message displayName="Are you sure you want to delete the selected notification?"/>
+                <action label="Delete" model="viewControlsActions-model" event="delete-notification-after-confirmation"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteNotificationList">
+                <title displayName="Delete Selected Notifications"/>
+                <message displayName="Are you sure you want to delete the selected notifications?"/>
+                <action label="Delete" model="main-model" event="delete-notificationList"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="resetParametersLanguagePack">
+                <title displayName="Reset Language Pack"/>
+                <message displayName="Are you sure you want to reset the language pack?"/>
+                <message displayName="All unsaved changes will be lost."/>
+                <action label="Reset" model="main-model" event="load-parametersLanguagePack"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+
+            <dialogue id="deleteLetterTemplate">
+                <title displayName="Delete Letter Template"/>
+                <message displayName="Are you sure you want to continue?"/>
+                <message displayName="The following template will be deleted:"/>
+                <action label="Delete" model="main-model" event="delete-letterTemplate"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
+        </actionConfirmationDialogue>
+
+        <!-- Footer text on every page -->
+        <cityEHRFooter>
+            <userLabel displayName="User: "/>
+            <languageLabel displayName=" / "/>
+            <specialtyLabel displayName=" / "/>
+            <noSpecialtyLoaded displayName=" / No specialty loaded."/>
+            <dateFormat>[H01]:[m01]:[s01] [FNn], [D1o] [MNn] [Y0001]</dateFormat>
+            <loggedOnLabel displayName="Logged on: "/>
+            <lastLoggedOnLabel displayName="Last logged on: "/>
+            <nolastLoggedOnMessage displayName="First log on for this user."/>
+        </cityEHRFooter>
+
+        <!-- Patient registration page -->
+        <cityEHRRegistration>
+            <noRegistrationEvent displayName="No registration event found for this application."/>
+            <invalidPatientId displayName="Cannot create record - patient identifier is invalid "/>
+            <patientIdAlreadyExists displayName="Record already exists for patient with id: "/>
+            <createdRecord displayName="Created new record for patient with id: "/>
+            <requiredDataNotSet displayName="Cannot create record - all required data must be set."/>
+        </cityEHRRegistration>
+
+        <!-- cityEHRSignOn page -->
+        <cityEHRSignOn>
+            <action type="recover" displayName="Recover" hint="Review system parameters"/>
+            <action type="debug" displayName="Debug" hint="Show information for debugging"/>
+            <action type="authenticate" displayName="Log On" hint="Authenticate using username/password"/>
+            <action type="launch" displayName="Start" hint="Launch the selected application"/>
+            <action type="quit" displayName="Quit" hint="Log off and reload home page"/>
+            <action type="test" displayName="Test" hint="Invoke test action"/>
+            <disabledModeMessage displayName="Disabled Mode"/>
+            <recoveryModeMessage displayName="Recovery Mode"/>
+            <debugModeMessage displayName="Debugging Mode"/>
+            <welcomeLabel displayName="Welcome "/>
+            <defaultUserAuthenticationMessage displayName="Enter default user credentials."/>
+            <logOnInstruction displayName="Log on to "/>
+            <launchInstruction displayName="Launching "/>
+            <usernameInput displayName="Username" size="15"/>
+            <passwordInput displayName="Password" size="15"/>
+            <authenticationMessage displayName="Enter username and password "/>
+            <actionMessage displayName="Press Log On to proceed."/>
+            <actionMessageWrongUserReturned
+                displayName="User was authenticated but wrong credentials were returned - please contact your system
+                administrator."/>
+            <actionMessageInvalidUser displayName="Re-enter user, press Log On."/>
+            <actionMessageInvalidPassword displayName="Re-enter password, press Log On."/>
+            <actionMessageInvalidRole displayName="Only system admin users can logon to restore the system."/>
+            <actionMessageDisabled displayName="Started in disabled mode - please contact your system administrator."/>
+            <actionMessageRecovery displayName="Press Log On to proceed in recovery mode."/>
+            <recoveryModeAuthenticatedMessage displayName="Authenticated in recovery mode."/>
+            <authenticationSuccessful displayName="Authentication successful."/>
+            <failedSavingViewParameters displayName="Failed to save view parameters."/>
+            <failedLoadingDefaultApplicationConfiguration displayName="Failed to load default configuration"/>
+            <failedLoadingApplicationConfiguration displayName="Could not load application configuration - using default. "/>
+            <failedStoreConfiguration displayName="Failed to store application configuration - please contact your system administrator."/>
+            <failedArchiveConfiguration
+                displayName="Failed to archive application configuration - please contact your system
+                administrator."/>
+            <failedStartAuditLog
+                displayName="Failed to start the audit log - please contact your system
+                administrator."/>
+            <resultMessage displayName="Enter username and password, then press Log On to proceed."/>
+            <multipleAppsAuthorised displayName="You can access more than one application."/>
+            <specialtyLabel displayName="Specialty: "/>
+            <multipleSpecialties displayName="You can access more than one specialty."/>
+            <languageLabel displayName="Language: "/>
+            <query-submission>
+                <xforms-submit-error displayName="Database connection error - please contact your system administrator."/>
+                <invalidUsername displayName="Invalid user name."/>
+                <invalidPassword displayName="Invalid password for this user."/>
+            </query-submission>
+        </cityEHRSignOn>
+
+        <!-- Class Selection -->
+        <cityEHRClassSelectionDialog>
+            <closeButton displayName="Close"/>
+            <selectButton displayName="Select"/>
+        </cityEHRClassSelectionDialog>
+
+    </staticParameters>
+
+</parameters>

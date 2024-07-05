@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    mergeCDA.xml
+    
+    Template CDA document used to record nerge of patient records.
+    
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"  xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <typeId extension="#CityEHR:Merge" root="#CityEHR:Merge"/>
+    <templateId extension="" root=""/>
+    <id extension="timeStamp" root="#CityEHR:Merge"/>
+    <code code="" codeSystem="cityEHR" codeSystemName="" displayName="Merge"/>
+    <effectiveTime value=""/>
+    <recordTarget>
+        <patientRole>
+            <id extension="" root=""/>
+            <patient>
+                <name>
+                    <prefix/>
+                    <given/>
+                    <family/>
+                </name>
+                <administrativeGenderCode code="" codeSystem="" displayName=""/>
+                <birthTime value=""/>
+            </patient>
+            <providerOrganization>
+                <id extension="" root="2.16.840.1.113883.2.1.4.3"/>
+            </providerOrganization>
+        </patientRole>
+    </recordTarget>
+    <!-- Author records the user merging the patient records -->
+    <author>
+        <time value=""/>
+        <assignedAuthor>
+            <id extension="" root=""/>
+            <assignedPerson>
+                <name/>
+            </assignedPerson>
+            <authoringDevice>
+                <!-- Use the application display name here -->
+                <softwareName/>
+            </authoringDevice>
+            <representedOrganization>
+                <id root=""/>
+                <!-- Use the application owner name here -->
+                <name/>
+            </representedOrganization>
+        </assignedAuthor>
+    </author>
+    <!-- This merge document is documentation of a merge of source and target 
+         The CDA header in this document has details of the target patient (where this document is stored) 
+         The documentationOf records the source -->
+    <documentationOf>
+        <serviceEvent classCode="#CityEHR:Merge">
+            <id extension="" root="cityEHR"/>
+            <typeId extension="" root=""/>
+            <code code="" codeSystem="cityEHR" codeSystemName="" displayName=""/>
+        </serviceEvent>
+    </documentationOf>
+    <component>
+        <structuredBody>
+            <component>
+                <section>
+                    <id extension="#CityEHR:Section:CityEHR:Merge" root="cityEHR"/>
+                    <title/>
+                    <!-- Details of the merge event -->
+                    <entry cityEHR:Sequence="Ranked" cityEHR:rendition="#CityEHR:EntryProperty:Form" cityEHR:initialValue="#CityEHR:EntryProperty:Default" cityEHR:labelWidth="">
+                        <observation>
+                            <typeId root="cityEHR" extension="#HL7-CDA:Observation"/>
+                            <id root="#ISO-13606:Entry:CityEHR:Merge" extension="#ISO-13606:Entry:CityEHR:Merge"/>
+                            <code code="" codeSystem="cityEHR" displayName="Herge Event"/>
+                            <value root="#ISO-13606:Element:CityEHR:MergeId" extension="#ISO-13606:Element:CityEHR:MergeId" xsi:type="xs:string" cityEHR:elementDisplayName="" value="" displayName=""/>
+                            <value root="#ISO-13606:Element:CityEHR:Source" extension="#ISO-13606:Element:CityEHR:Source" xsi:type="xs:string" cityEHR:elementDisplayName="" value="" displayName=""/>
+                            <value root="#ISO-13606:Element:CityEHR:Timestamp" extension="#ISO-13606:Element:CityEHR:Timestamp" xsi:type="xs:dateTime" cityEHR:elementDisplayName="" value="" displayName=""/>
+                        </observation>
+                    </entry>
+                    <!-- Record the patient Id - all other demographics are as per the merged registration compositions.
+                         This is instatiated with the target patientId on merge so that it is found as the most recent record of the patientId -->
+                    <entry cityEHR:Sequence="Ranked" cityEHR:rendition="#CityEHR:EntryProperty:Form" cityEHR:initialValue="#CityEHR:EntryProperty:Default" cityEHR:labelWidth="">
+                        <observation>
+                            <typeId root="cityEHR" extension="#HL7-CDA:Observation"/>
+                            <id root="#ISO-13606:Entry:CityEHR:PatientId" extension="#ISO-13606:Entry:CityEHR:PatientId"/>
+                            <value root="#ISO-13606:Element:CityEHR:PatientId" extension="#ISO-13606:Element:CityEHR:PatientId" xsi:type="xs:string" cityEHR:elementDisplayName="Patient Id" value="" displayName=""/>
+                        </observation>
+                    </entry>
+                </section>
+            </component>
+        </structuredBody>
+    </component>
+</ClinicalDocument>

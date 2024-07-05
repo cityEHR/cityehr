@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    summaryViewModel.xml
+    
+    Xforms model containing stuff for loading and configuring a summary view.
+    Used in the cityEHRFolder-Views but also in the cityEHRPatientLabel (for checking the alerts view)
+    The CDA document for the view is held in view-instance
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="summary-view-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+
+    <xf:instance id="summaryViewControl-instance">
+        <control>
+            <status/>
+        </control>
+    </xf:instance>
+
+
+    <!-- ========= Queries to get data from the CDA Store ========= 
+         ========================================================== -->
+    <!-- Load the queries from file. -->
+    <xf:instance id="viewCompositionXQuery-instance" src="oxf:/apps/ehr/xquery/viewCompositionXQuery.xml"/>
+    <xf:instance id="viewFolderXQuery-instance" src="oxf:/apps/ehr/xquery/viewFolderXQuery.xml"/>
+
+    <xf:instance id="getAllEntryObservationsXQuery-instance" src="oxf:/apps/ehr/xquery/getAllEntryObservationsXQuery.xml"/>
+    <xf:instance id="getAllMultipleEntryOrganizersXQuery-instance" src="oxf:/apps/ehr/xquery/getAllMultipleEntryOrganizersXQuery.xml"/>
+    <xf:instance id="getAllEnumeratedClassEntryOrganizersXQuery-instance" src="oxf:/apps/ehr/xquery/getAllEnumeratedClassEntryOrganizersXQuery.xml"/>
+
+    <!-- Response instances -->
+    <xf:instance id="view-instance">
+        <view xmlns:cda="urn:hl7-org:v3"/>
+    </xf:instance>
+
+    <xf:instance id="allEntryValues-instance">
+        <eventValues/>
+    </xf:instance>
+
+
+    <!-- ========= Load summary view or report for the patient ========= 
+         =============================================================== -->
+
+    <!-- Application defined action to get the form used to construct a summary view of type 'Composition'
+         Put into view-instance 
+         Uses viewCompositionXQuery-instance -->
+    <xf:action ev:event="get-composition-summary">
+        <xxf:variable name="view" select="event('view')"/>
+        <xxf:variable name="compositionIRI" select="$view/iso-13606:composition[1]"/>
+
+        <!-- Set up the query to find compositions -->
+        <xf:setvalue ref="xxf:instance('viewCompositionXQuery-instance')/whereClause" value="concat('[cda:id/@extension=''',$compositionIRI,''']')"/>
+        <xxf:variable name="compositionLocation"
+            select="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/compositions')"/>
+
+        <!-- Run query to get composition -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$compositionLocation"/>
+            <xxf:context name="query" select="xxf:instance('viewCompositionXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('view-instance')"/>
+            <xxf:context name="status" select="xxf:instance('summaryViewControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- The Composition for the view - there should be only one -->
+        <xxf:variable name="viewComposition" select="xxf:instance('view-instance')//cda:ClinicalDocument[1]"/>
+
+        <!-- Composition was retrieved - continue generating the view -->
+        <xf:action if="xxf:instance('summaryViewControl-instance')/status='' and exists($viewComposition)">
+            <xxf:variable name="patientLocation"
+                select="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/records/',xxf:instance('view-parameters-instance')/patientId)"/>
+
+            <!-- Remove alwaysHidden sections of the form - don't need these for a view -->
+            <xf:delete nodeset="$viewComposition//cda:component[cda:section/@cityEHR:visibility='alwaysHidden']"/>
+
+            <!-- Iterate through each entry in the viewComposition to get all stored values 
+                 Currently assume that all entries are observations -->
+            <xf:action xxf:iterate="$viewComposition//cda:entry">
+                <xxf:variable name="entry" select="."/>
+
+                <!-- Simple entry -->
+                <xf:action if="exists($entry/cda:observation)">
+                    <xxf:variable name="entryIRI" select="$entry/cda:observation/cda:id/@extension"/>
+                    <!-- Set up the query and run to get values -->
+                    <xf:setvalue ref="xxf:instance('getAllEntryObservationsXQuery-instance')/whereClause"
+                        value="concat('[cda:id/@extension=''',$entryIRI,''']')"/>
+
+                    <!-- Run query to get entries -->
+                    <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation" select="$patientLocation"/>
+                        <xxf:context name="query" select="xxf:instance('getAllEntryObservationsXQuery-instance')"/>
+                        <xxf:context name="response" select="xxf:instance('allEntryValues-instance')"/>
+                        <xxf:context name="status" select="xxf:instance('summaryViewControl-instance')/status"/>
+                    </xf:dispatch>
+
+                    <!-- Remove the cda:observation for the entry on the form -->
+                    <xf:delete nodeset="$entry/cda:observation"/>
+                    <!-- Insert the set of all cda:observation found in the query -->
+                    <!-- <xf:insert context="." origin="xxf:instance('query-instance')/exist:text"/>  -->
+                    <xf:insert context="$entry" origin="xxf:instance('allEntryValues-instance')//cda:observation"/>
+
+                </xf:action>
+
+                <!-- Entry with SDS (enumeratedClass) *** Currently disabled -->
+                <xf:action if="false() and exists($entry/cda:organizer[@classCode='EnumeratedClassEntry'])">
+                    <xxf:variable name="entryIRI" select="$entry/cda:organizer/cda:component[1]/cda:observation[1]/cda:id/@extension"/>
+                    <!-- Set up the query and run to get values -->
+                    <xf:setvalue ref="xxf:instance('getAllEnumeratedClassEntryOrganizersXQuery-instance')/whereClause"
+                        value="concat('cda:component[1]/cda:observation/cda:id/@extension=''',$entryIRI,'''')"/>
+
+                    <!-- Run query to get entries -->
+                    <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation" select="$patientLocation"/>
+                        <xxf:context name="query" select="xxf:instance('getAllEnumeratedClassEntryOrganizersXQuery-instance')"/>
+                        <xxf:context name="response" select="xxf:instance('allEntryValues-instance')"/>
+                        <xxf:context name="status" select="xxf:instance('summaryViewControl-instance')/status"/>
+                    </xf:dispatch>
+
+                    <!-- Remove the cda:organizer for the entry on the form.-->
+                    <xf:delete nodeset="$entry/cda:organizer"/>
+                    <!-- Insert the set of all cda:organizer found in the query -->
+                    <xf:insert context="$entry" origin="xxf:instance('allEntryValues-instance')/organizerSet/cda:organizer"/>
+                </xf:action>
+
+                <!-- MultipleEntry.
+                     May contain simple entries or entries with enumeratedClass elements -->
+                <xf:action if="exists($entry/cda:organizer[@classCode='MultipleEntry'])">
+                    <xxf:variable name="entryIRI" select="$entry/cda:organizer/cda:component[1]/descendant::cda:observation[1]/cda:id/@extension"/>
+                    <!-- Set up the query and run to get values -->
+                    <!-- Until 2023-05-03
+                    <xf:setvalue ref="xxf:instance('getAllMultipleEntryOrganizersXQuery-instance')/whereClause"
+                        value="concat('cda:component[1]/descendant::cda:observation[1]/cda:id/@extension=''',$entryIRI,'''')"/>
+                    -->
+
+                    <xf:setvalue ref="xxf:instance('getAllMultipleEntryOrganizersXQuery-instance')/whereClause"
+                        value="concat('[descendant::cda:observation[1]/cda:id/@extension=''',$entryIRI,''']')"/>
+                    
+                    <!-- Run query to get entries -->
+                    <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation" select="$patientLocation"/>
+                        <xxf:context name="query" select="xxf:instance('getAllMultipleEntryOrganizersXQuery-instance')"/>
+                        <xxf:context name="response" select="xxf:instance('allEntryValues-instance')"/>
+                        <xxf:context name="status" select="xxf:instance('summaryViewControl-instance')/status"/>
+                    </xf:dispatch>
+
+
+                    <!-- Remove all cda:component for the entry on the form.-->
+                    <xf:delete nodeset="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
+                    <!-- Insert the set of all cda:organizer found in the query -->
+                    <!-- <xf:insert context="." origin="xxf:instance('query-instance')/exist:text"/>  -->
+                    <xf:insert context="$entry/cda:organizer/cda:component[2]"
+                        origin="xxf:instance('allEntryValues-instance')//cda:organizer[exists(@effectiveTime)]"/>
+
+                </xf:action>
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Get the events for this patient used to construct a summary view of type 'Folder'
+         Put into view-instance 
+         Uses viewFolderXQuery-instance -->
+    <xf:action ev:event="get-folder-summary">
+        <xxf:variable name="view" select="event('view')"/>
+
+        <xxf:variable name="compositionIRIList"
+            select="concat(xxf:instance('view-parameters-instance')/resultSeparator,string-join($view/iso-13606:composition,xxf:instance('view-parameters-instance')/resultSeparator),xxf:instance('view-parameters-instance')/resultSeparator)"/>
+
+
+        <!-- Set the query to find folder view -->
+        <xf:setvalue ref="xxf:instance('viewFolderXQuery-instance')/letClause"
+            value="concat('let $eventIdSearchTerm := concat(''',xxf:instance('view-parameters-instance')/resultSeparator,''',$eventId,''',xxf:instance('view-parameters-instance')/resultSeparator,''')')"/>
+        <xf:setvalue ref="xxf:instance('viewFolderXQuery-instance')/whereClause"
+            value="concat('where contains(''',$compositionIRIList,''',$eventIdSearchTerm)')"/>
+
+        <xxf:variable name="patientLocation"
+            select="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/records/',xxf:instance('view-parameters-instance')/patientId)"/>
+
+        <!-- Run query to get compositions -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$patientLocation"/>
+            <xxf:context name="query" select="xxf:instance('viewFolderXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('view-instance')"/>
+            <xxf:context name="status" select="xxf:instance('summaryViewControl-instance')/status"/>
+        </xf:dispatch>
+    </xf:action>
+
+
+    <!-- Application defined action to expand multiple entries. 
+        Iterate through each expanded multiple entry
+        Find the element to expand
+        Get its values from the data dictionary
+        Insert an entry into the ME template for each value found
+        Set the value of the expanded element.
+        
+        This is almost identical to the version in compositionMainModel, 
+        except here the expansion is made in the template (component[1]), rather than the entry (component[2])
+    -->
+    <xf:action ev:event="expand-multiple-entries">
+        <!-- Get the main section (body) of the CDA document for use in processing below.
+            This returns a sequence of sections on the form -->
+        <xxf:variable name="cdaBody"
+            select="xxf:instance('view-instance')/cda:ClinicalDocument/cda:component/cda:structuredBody/cda:component/cda:section"/>
+
+        <xf:action
+            xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:Scope='#CityEHR:EntryProperty:Expanded']/cda:organizer[@classCode='MultipleEntry']">
+            <xxf:variable name="expandedEntryOrganizer" select="."/>
+            <xxf:variable name="entryTemplate" select="$expandedEntryOrganizer/cda:component[1]//cda:observation[1]"/>
+
+            <!-- Find the expanded element (should only be one, but you never know).
+                The descendant axis takes care of enumeratedClass entries and the expanded element being inside a cluster.
+                Need to use the root of the id -->
+            <xxf:variable name="expandedElementIRI"
+                select="$entryTemplate/descendant::cda:value[@cityEHR:Scope='#CityEHR:ElementProperty:Expanded'][1]/@root"/>
+
+            <!-- Get the list of values for the expanded element -->
+            <!-- Get the expanded element from the data dictionary (need to match the root attribute in the data dictionary) -->
+            <xxf:variable name="dictionaryElement"
+                select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$expandedElementIRI]"/>
+            <xxf:variable name="dictionaryElementType" select="$dictionaryElement/@cityEHR:elementType"/>
+            <!-- Get the class and entry node if this is an enumeratedClass element -->
+            <xxf:variable name="classIRI"
+                select="if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $dictionaryElement/iso-13606:data[1]/@code else ''"/>
+            <xxf:variable name="entryNodeIRI"
+                select="if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $dictionaryElement/iso-13606:data[1]/@value else ''"/>
+            <xxf:variable name="classElement"
+                select="if ($classIRI!='') then xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$classIRI][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass'] else ()"/>
+
+            <xxf:variable name="classValues"
+                select="if (empty($classElement)) then () else (if ($entryNodeIRI!='') then $classElement/descendant::iso-13606:data[@code=$entryNodeIRI][1]/descendant::iso-13606:data[not(child::*)] else $classElement/descendant::iso-13606:data[not(child::*)])"/>
+
+            <!-- Get the set of values for the expanded element -->
+            <xxf:variable name="valueSet"
+                select="if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedValue') then $dictionaryElement/iso-13606:data
+                else if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $classValues
+                else ()"/>
+
+            <!-- Iterate through the set of values for the expanded element -->
+            <xf:action xxf:iterate="$valueSet">
+                <xxf:variable name="value" select="."/>
+                <xf:insert context="$expandedEntryOrganizer/cda:component[1]" nodeset="*" origin="$entryTemplate" at="last()" position="after"/>
+                <xxf:variable name="insertedEntry" select="$expandedEntryOrganizer/cda:component[1]/*[last()]"/>
+
+                <!-- Set the attributes of the expanded element (may be inside a cluster).
+                    Can be in a simple entry or an enumeratedClass entry-->
+                <xxf:variable name="insertedEntryElement" select="$insertedEntry//cda:value[@root=$expandedElementIRI]"/>
+                <xf:setvalue ref="$insertedEntryElement/@value" value="$value/@value"/>
+                <xf:setvalue ref="$insertedEntryElement/@code" value="$value/@code"/>
+                <xf:setvalue ref="$insertedEntryElement/@displayName" value="$value/@displayName"/>
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the current view.
+         The view passed as a parameter is an iso-13606:composition element of the form:
+         
+         Only load views for viewType 'Composition' or 'Folder' -->
+    <xf:action ev:event="load-view">
+        <xxf:variable name="view" select="event('view')"/>
+
+        <!-- Clear the view (in case anything goes wrong) -->
+        <xf:delete nodeset="xxf:instance('view-instance')/*"/>
+
+        <!-- View is of type 'Composition' - Run query to load composition for the view -->
+        <xf:action if="$view/@cityEHR:viewType = 'Composition'">
+
+            <!-- Get the composition view in view-instance -->
+            <xf:dispatch name="get-composition-summary" target="summary-view-model">
+                <xxf:context name="view" select="$view"/>
+            </xf:dispatch>
+
+            <!-- Set the type of the composition in the cda:id element -->
+            <xf:setvalue ref="xxf:instance('view-instance')/cda:ClinicalDocument/cda:id/@extension" value="'cityEHR:Composition'"/>
+
+            <!-- Expand out multiple entries where required -->
+            <xf:dispatch name="expand-multiple-entries" target="summary-view-model"/>
+        </xf:action>
+
+        <!-- View is of type 'Folder' - Run query to load events for the view -->
+        <xf:action if="$view/@cityEHR:viewType = 'Folder'">
+
+            <!-- Get the folder view in view-instance -->
+            <xf:dispatch name="get-folder-summary" target="summary-view-model">
+                <xxf:context name="view" select="$view"/>
+            </xf:dispatch>
+
+            <!-- Set the type of the composition in the cda:id element -->
+            <xf:setvalue ref="xxf:instance('view-instance')//cda:ClinicalDocument/cda:id/@extension" value="'cityEHR:Folder'"/>
+        </xf:action>
+
+    </xf:action>
+
+
+</xf:model>

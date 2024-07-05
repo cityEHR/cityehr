@@ -1,0 +1,42 @@
+<!--
+    cityEHR
+    error-dialog.xml
+    
+    Overrides the standard Orbeon error dialog.
+    This one is called from the local directory (ehr) when the session times out.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+-->
+<div xmlns="http://www.w3.org/1999/xhtml" class="xforms-error-panel xforms-initially-hidden">
+    <div class="hd">An error has occurred</div>
+    <div class="bd">
+        <div class="errorContainer">
+            <p> Session has timed out or encountered an error. </p>
+            <p> Press Resume to restart. </p>
+            <p>
+                <a href="../" class="button">Resume</a>
+            </p>
+        </div>
+        <div class="xforms-error-panel-details-hidden xforms-disabled">
+            <p>
+                <a class="xforms-error-panel-show-details"/>
+            </p>
+        </div>
+        <div class="xforms-error-panel-details-shown xforms-disabled">
+            <p>
+                <a class="xforms-error-panel-hide-details"/>
+            </p>
+            <div class="xforms-error-panel-details"/>
+        </div>
+    </div>
+</div>

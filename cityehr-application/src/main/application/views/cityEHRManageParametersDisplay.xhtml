@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRManageParametersDisplay.xhtml
+    
+    Controls to manage parameters.
+    Edit either application or system parameters which have been set up in managed-parameters-instance
+    Used in cityEHRAdmin and in recovery mode in cityEHRSignOn
+      
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+
+<!-- === Edit parameters =======
+     Uses the managed-parameters-instance, which must be set to the required parameters instance before these controls are shown.
+     Uses settings in parametersControl-instance to control the display and controls
+     
+     managed-parameters-instance and parametersControl-instance are defined in manageParametersModel
+     
+     Initiated by invoking the set-managed-parameters action in manageParametersModel
+     
+     The structure of the parameters is:
+    
+     parameterClass
+        parameter
+        parameterContainer
+            parameter
+            parameterContainer
+                parameter  
+                parameterContainer
+                    parameter 
+    
+    Editing doesn't assume anything about the content depth - could have more than three levels, if needed
+    
+    parameterContainer - may have attribute values (editable) and has child parameters
+    parameter - may have attributes (editable) and/or content which is editable as a value if cityEHR:type="text"
+    
+    ============================================================== -->
+<xhtml:div xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- Iterate through the top level parameter classes 
+         editContext is set to the name of the top level element in the parameters-instanc ethat is ot be edited
+         The cityEHR:edit attribute on these elements is used to filter by editMode.
+         If editMode is set to newApp, then only those classes designated for new applications are editable.
+        -->
+    <xxf:variable name="editContext" select="xxf:instance('parametersControl-instance')/editContext"/>
+    <xxf:variable name="editMode" select="xxf:instance('parametersControl-instance')/editMode"/>
+    <!--
+    <xf:repeat nodeset="xxf:instance('managed-parameters-instance')/*[$editMode='' or contains(@cityEHR:edit,$editMode)]">
+    -->
+    <xf:repeat nodeset="xxf:instance('managed-parameters-instance')/*[name()=$editContext]">
+        <xxf:variable name="parameterClass" select="."/>
+
+        <xhtml:p>
+            <xf:output class="parameterClassTitle" ref="concat($parameterClass/@cityEHR:displayName,' (',$parameterClass/name(),')')"/>
+        </xhtml:p>
+
+        <!-- parameters and parameterContainers, to any depth, are processed in depth-first order
+             All parameters of the same name should be adjacent siblings (will look a bit odd if they are not)            
+             control elements, with cityehr: prefix, are excluded from rendering, except:
+                cityEHR:template allows to add/remove parameters.
+             But all parameters within a parent cityEHR:template are excluded
+        -->
+
+        <xxf:variable name="parameterSet"
+            select="$parameterClass/descendant::*[not(ancestor-or-self::*[starts-with(name(),'cityEHR:')]) or name()='cityEHR:template'][not(ancestor::*[name()='cityEHR:template'])]"/>
+
+        <xhtml:ul>
+            <!-- Depth-first iteration through the parameters in the parameterClass.
+                 Each parameter/parameterContainer set of values (attributes) is one row
+                 These are indented with cells depending on the depth of the parameter in the parameter instance
+                 parameterClass is depth 1 -->
+            <xf:repeat nodeset="$parameterSet">
+
+                <xhtml:li class="parameterContainer">
+                    <xxf:variable name="parameter" select="."/>
+                    <xxf:variable name="parameterParent" select=".."/>
+                    <xxf:variable name="parameterName" select="$parameter/name()"/>
+                    <xxf:variable name="parameterDisplayName" select="$parameter/@cityEHR:displayName"/>
+
+                    <!-- Depth is within the parameterClass, which itself is depth 1 -->
+                    <xxf:variable name="parameterDepth" select="count($parameter/ancestor::*) - 1"/>
+
+                    <!-- Parameter is a template (but not within a template) -->
+                    <xxf:variable name="template" select="if ($parameterName='cityEHR:template') then $parameter else ()"/>
+
+                    <!-- Parameter not a template, then must be a rendered parameter  (but not within a template) -->
+                    <xxf:variable name="renderedParameter" select="if ($parameterName='cityEHR:template') then () else $parameter"/>
+
+                    <!-- Indent to the required depth -->
+                    <xf:repeat nodeset="1 to $parameterDepth">
+                        <xhtml:span class="parameterIndent"/>
+                    </xf:repeat>
+
+                    <!-- This is a template - show trigger to add a new parameter.
+                         There should only be one parameter in the template - this is set as templateParameter -->
+                    <xf:group ref="$template">
+                        <!-- Position is within the parent parameter -->
+                        <xxf:variable name="parameterContainer" select="$template/.."/>
+                        <xxf:variable name="parameterPosition" select="$template/position()"/>
+
+                        <xxf:variable name="templateParameter" select="$template/*[1]"/>
+                        <xxf:variable name="templateParameterName" select="$templateParameter/name()"/>
+                        <xxf:variable name="icon"
+                            select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/','add.png',xxf:instance('view-parameters-instance')/staticFileVersion)"/>
+
+                        <xf:trigger appearance="minimal">
+                            <xf:label>
+                                <xhtml:img src="{$icon}" alt=""/>
+                            </xf:label>
+                            <xf:hint/>
+                            <!-- Add new parameter from template.
+                                 The new parameter element is inserted as the last element
+                                 (until 2021-11-10 was immediately after the cityEHR:template element - to do this use $parameterPosition in the at attribute -->
+                            <xf:action ev:event="DOMActivate">
+                                <xf:insert context="$parameterContainer" nodeset="*" origin="$templateParameter" at="last()"
+                                    position="after"/>
+                                <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                            </xf:action>
+                        </xf:trigger>
+
+                        <!-- Show the name of the parameter to be added -->
+                        <xf:output class="parameterTitle" ref="$templateParameterName"/>
+                    </xf:group>
+
+                    <!-- Edit parameter values, but only for rendered parameters -->
+                    <xf:group ref="$renderedParameter">
+                        <!-- If there is a template for this parameter and it does not have cityEHR:edit attribute with keyword 'pinned'
+                             then it can be removed -->
+                        <xf:group ref="$renderedParameter[not(contains(@cityEHR:edit,'pinned'))]/../cityEHR:template/*[name()=$parameterName]">
+                            <xxf:variable name="icon"
+                                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/','remove.png',xxf:instance('view-parameters-instance')/staticFileVersion)"/>
+                            <xf:trigger appearance="minimal">
+                                <xf:label>
+                                    <xhtml:img src="{$icon}" alt=""/>
+                                </xf:label>
+                                <xf:hint/>
+                                <!-- Delete parameter -->
+                                <xf:action ev:event="DOMActivate">
+                                    <xf:delete nodeset="$renderedParameter"/>
+                                    <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                                </xf:action>
+                            </xf:trigger>
+                        </xf:group>
+
+                        <!-- Show parameter displayName or element name, if no displayName -->
+                        <xhtml:span class="parameterTitle">
+                            <xf:output ref="if ($parameterDisplayName!='') then $parameterDisplayName  else $parameterName"/>
+                        </xhtml:span>
+
+                        <!-- Values are attributes (not from cityEHR namespace) or content if cityEHR:type is 'text' or 'image' -->
+                        <xhtml:span>
+                            <!-- Attribute values are edited (but not control parameters, from cityEHR namespace).
+                                 If there is only one attribute, then don't need to display its name -->
+                            <xxf:variable name="parameterValueSet" select="$renderedParameter/@*[not(starts-with(name(),'cityEHR:'))]"/>
+                            <xxf:variable name="parameterValueCount" select="count($parameterValueSet)"/>
+
+                            <!-- Render a control for each parameter value -->
+                            <xf:repeat nodeset="$parameterValueSet">
+                                <xxf:variable name="parameterValue" select="."/>
+                                <xxf:variable name="parameterValueName" select="name()"/>
+                                <xxf:variable name="parameterValueTitle"
+                                    select="if ($parameterValueCount = 1) then '' else concat($parameterValueName,': ')"/>
+
+                                <!-- Get type, selection, distinct, notNull, readOnly or calculate - if they exist (should be only one) -->
+                                <xxf:variable name="type"
+                                    select="$renderedParameter/ancestor::*/cityEHR:type/*[name()=$parameterName][@*/name()=$parameterValueName][1]"/>
+                                <xxf:variable name="selection"
+                                    select="$renderedParameter/ancestor::*/cityEHR:selection/*[name()=$parameterName][@*/name()=$parameterValueName][1]"/>
+                                <xxf:variable name="distinct"
+                                    select="$renderedParameter/ancestor::*/cityEHR:edit/*[name()=$parameterName][@*/name()=$parameterValueName][contains(@cityEHR:edit,'distinct')]"/>
+                                <xxf:variable name="notNull"
+                                    select="$renderedParameter/ancestor::*/cityEHR:edit/*[name()=$parameterName][@*/name()=$parameterValueName][contains(@cityEHR:edit,'notNull')]"/>
+                                <xxf:variable name="readOnly"
+                                    select="$renderedParameter/ancestor::*/cityEHR:edit/*[name()=$parameterName][@*/name()=$parameterValueName][contains(@cityEHR:edit,'readOnly')] | $renderedParameter/ancestor-or-self::*[contains(@cityEHR:edit,'readOnly')]"/>
+                                <xxf:variable name="calculate"
+                                    select="$renderedParameter/ancestor::*/cityEHR:calculate/*[name()=$parameterName][@*/name()=$parameterValueName]"/>
+
+                                <!-- Display the parameter value title -->
+                                <xf:output class="parameterValueTitle" ref="$parameterValueTitle"/>
+
+                                <!-- Just display readOnly or calculated values -->
+                                <xf:output ref="if (exists($readOnly) or exists($calculate)) then $parameterValue else ''"/>
+
+                                <!-- Input parameter value (if its not an image (type), selection, readOnly or calculate) -->
+                                <xf:input
+                                    ref="if ( exists($type[@cityEHR:type='image']) or exists($selection) or exists($readOnly) or exists($calculate) ) then () else $parameterValue">
+                                    <!-- Set editStatus and check value -->
+                                    <xf:action ev:event="xforms-value-changed">
+                                        <!-- Set status to 'edited', but may get reset when value is checked -->
+                                        <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                                        <!-- Check distinct values - scope is the parent of the parameter -->
+                                        <xf:setvalue ref="$parameterValue"
+                                            value="if (exists($distinct) and count($parameterParent/*[name()=$parameterName]/@*[name()=$parameterValueName][.=$parameterValue]) != 1) then '' else ."
+                                        />
+                                    </xf:action>
+                                </xf:input>
+
+                                <!-- Upload image, if type of parameter is 'image'.
+                                     The (temporary) filename of the uploaded image is set as the parameterValue -->
+                                <xf:upload ref="if (exists($type[@cityEHR:type='image'])) then $renderedParameter else ()" incremental="true">
+                                    <xf:filename ref="$parameterValue"/>
+                                    <!-- <xf:filename ref="xxf:instance('view-parameters-instance')/sourceHandle"/> -->
+                                    <!-- Image file has been uploaded -->
+                                    <xf:action ev:event="xxforms-upload-done">
+                                        <!-- Set parameter value to the filename of the source -->
+                                        <!--
+                                        <xf:setvalue ref="$parameterValue" value="xxf:instance('view-parameters-instance')/sourceHandle"/>
+                                        -->
+                                        <!-- Get the content for the uploaded image and set as $renderedParameter -->
+                                        <!--
+                                        <xf:setvalue ref="xxf:instance('parameter-image-instance')"
+                                            value="xs:base64Binary($renderedParameter)"/>
+                                            -->
+                                    </xf:action>
+                                    <!-- Set the edit flag when the image content (renderedParameter) changes.
+                                         Or the user clears the image -->
+                                    <xf:action ev:event="xforms-value-changed">
+                                        <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                                    </xf:action>
+                                </xf:upload>
+
+                                <!-- Display the image, if type of parameter is 'image' and the parameter value is set -->
+                                <xf:group ref="$type[@cityEHR:type='image']" class="{if ($renderedParameter='') then 'hidden' else ''}">
+                                    <xhtml:img src="data:image/*;base64,{xs:base64Binary($renderedParameter)}"/>
+                                </xf:group>
+
+                                <!-- Select parameter value (if a selection is specified and this is not readOnly or calculate).
+                                     Can be a set of options defined in the parameters
+                                     Or a set of elements calculated from the parameters
+                                     Or a selection based on the selection type (but not if editMode is newApp)
+                                            application, specialty or an ISO-13606 component
+                                     Selections for ISO-13606 components - folder, composition, entry, element - are constrained by parent selections on the same parameter -->
+                                <xf:group ref="if (exists($readOnly) or exists($calculate)) then () else $selection">
+                                    <xxf:variable name="definedSelection"
+                                        select="if (exists($selection/option/@value)) then $selection/option/@value else ()"/>
+                                    <xxf:variable name="calculatedSelection"
+                                        select="if (exists($selection/@cityEHR:selection)) then xxf:evaluate($selection/@cityEHR:selection) else ()"/>
+                                    <xxf:variable name="selectionType" select="$selection/@cityEHR:selection"/>
+                                    <xxf:variable name="typeSelection"
+                                        select="if ($editMode!='') then ()
+                                    else if ($selectionType='cityEHR:application') then xxf:instance('applicationList-instance')/iso-13606:EHR_Extract/@id
+                                    else if ($selectionType='cityEHR:specialty') then xxf:instance('specialtyList-instance')/iso-13606:Folder/@id
+                                    else if ($selectionType='cityEHR:folder') then distinct-values(xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder/@code)
+                                    else if ($selectionType='cityEHR:composition') then distinct-values(xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition/@code)
+                                    else if ($selectionType='cityEHR:entry') then distinct-values(xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry/cda:component/cda:observation/cda:id/@extension)
+                                    else if ($selectionType='cityEHR:element') then distinct-values(xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element/@extension)
+                                    else ()"/>
+
+                                    <!-- Only one of the selection options will have values, so can just combine them.
+                                         If the selection list is empty, then the parameter cannot be edited.
+                                         This happens (for example) when no specialties have been created for an application. -->
+                                    <xxf:variable name="selectionValues" select="$definedSelection, $calculatedSelection, ('',$typeSelection)"/>
+                                    <xf:select1 ref="if (exists($selection) and not(empty($selectionValues))) then $parameterValue else ()">
+                                        <xf:itemset nodeset="$selectionValues">
+                                            <xf:label ref="if (.='') then xxf:instance('view-parameters-instance')/staticParameters/cityEHRManageParametersDisplay/unspecifiedValue/@displayName else ."/>
+                                            <xf:value ref="."/>
+                                        </xf:itemset>
+                                        <!-- Set editStatus -->
+                                        <xf:action ev:event="xforms-value-changed">
+                                            <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                                        </xf:action>
+                                    </xf:select1>
+
+                                    <!-- Parameter defined with selected values, but no selection can be made 
+                                     - just display the parameter value (if it has one) -->
+                                    <xf:output ref="if (exists($selection) and empty($selectionValues)) then $parameterValue else ''"/>
+                                </xf:group>
+
+                            </xf:repeat>
+
+                            <!-- Edit parameter text, if specified -->
+                            <xf:textarea ref="if (exists($renderedParameter[@cityEHR:type='text'])) then $parameter else ()">
+                                <!-- Set editStatus -->
+                                <xf:action ev:event="xforms-value-changed">
+                                    <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                                </xf:action>
+                            </xf:textarea>
+
+                        </xhtml:span>
+                    </xf:group>
+                </xhtml:li>
+
+            </xf:repeat>
+        </xhtml:ul>
+
+    </xf:repeat>
+
+
+    <!-- Debugging -->
+    <!--
+    <xf:output ref="count(xxf:instance('parametersControl-instance')/uploadedImages/*)"/>
+    <xf:repeat nodeset="xxf:instance('parametersControl-instance')/uploadedImages/*">
+        <xxf:variable name="image" select="."/>
+        <xhtml:p>
+            <xf:output
+                ref="$image" mediatype="image/*"/>
+        </xhtml:p>       
+    </xf:repeat>
+    -->
+    <!--
+    <xhtml:p>
+        <xf:output
+            ref="xxf:instance('parameter-image-instance')" mediatype="image/*"/>
+    </xhtml:p> 
+    -->
+</xhtml:div>

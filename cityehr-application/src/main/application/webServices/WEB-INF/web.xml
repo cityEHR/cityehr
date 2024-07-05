@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.4"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/j2ee">
+    <servlet>
+        <servlet-name>getXML</servlet-name>
+        <servlet-class>getXML</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>getXML</servlet-name>
+        <url-pattern>/getXML</url-pattern>
+    </servlet-mapping>
+       
+    <servlet>
+        <servlet-name>postXML</servlet-name>
+        <servlet-class>postXML</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>postXML</servlet-name>
+        <url-pattern>/postXML</url-pattern>
+    </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>getDemographics</servlet-name>
+        <servlet-class>getDemographics</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>getDemographics</servlet-name>
+        <url-pattern>/getDemographics</url-pattern>
+    </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>storeDataSQL</servlet-name>
+        <servlet-class>storeDataSQL</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>storeDataSQL</servlet-name>
+        <url-pattern>/storeDataSQL</url-pattern>
+    </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>getDataSQL</servlet-name>
+        <servlet-class>getDataSQL</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>getDataSQL</servlet-name>
+        <url-pattern>/getDataSQL</url-pattern>
+    </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>isReachable</servlet-name>
+        <servlet-class>isReachable</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>isReachable</servlet-name>
+        <url-pattern>/isReachable</url-pattern>
+    </servlet-mapping>
+    
+</web-app>

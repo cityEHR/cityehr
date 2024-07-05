@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    Release Notes
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<html xmlns="" class="releaseNotes">
+
+    <head>
+        <link rel="stylesheet" type="text/css" href="releaseNotes.css" media="screen"/>
+    </head>
+    
+    <body>
+        <span class="cityEHRSignOn">
+            <h1>Previous Releases</h1>
+            <ul>
+                <li>
+                    <a href="resources/releaseNotes/V1.5.html" target="_blank">Version 1.5</a>
+                </li>
+            </ul>
+        </span>
+
+        <h1>V1.6 - New Features</h1>
+        <h2>System Level</h2>
+        <ol>
+            <li>User passwords encrypted in database (if configured)</li>
+            <li>Configurable password policy</li>
+            <li>Check for expired password on sign-on</li>
+        </ol>
+
+        <h2>Information Models</h2>
+        <ol>
+            <li>Support evaluation context in calculations</li>
+            <li>New option DistinctValues in entry initialValue</li>
+            <li>New option staticValue for elements</li>
+        </ol>
+
+        <h2>Clinical Data Entry (Forms, Letters, etc)</h2>
+        <ol>
+            <li>Initial values of entry can be all 'distinct values'</li>
+        </ol>
+
+        <h2>Patient Search</h2>
+        <ol>
+            <li>Search time displayed only in debug mode</li>
+        </ol>
+
+        <h2>Cohort Search</h2>
+        <ol>
+            <li>Search for 'any value'</li>
+            <li>Search data (i.e saved but not published) and archive for authorised users</li>
+            <li>Include saved cohorts as search terms</li>
+            <li>Search scope now included maximum, minimum</li>
+            <li>Cohort analysis feature finds maximum, minimum, sum, average values for cohort</li>
+        </ol>
+
+        <h2>In-Tray</h2>
+        <ol>
+            <li>No new or enhanced features</li>
+        </ol>
+
+        <h2>System Administration</h2>
+        <ol>
+            <li>Manage password - uses password policy</li>
+            <li>Manage records - improved merge/unmerge</li>
+            <li>Manage records - archive/restore records</li>
+            <li>Run XQuery - delete query prompts for confirmation</li>
+        </ol>
+
+        <h1>V1.6 - Defects Fixed</h1>
+
+        <table FRAME="VOID" CELLSPACING="0" COLS="3" RULES="NONE" BORDER="0">
+            <colgroup>
+                <col WIDTH="90"/>
+                <col WIDTH="109"/>
+                <col WIDTH="687"/>
+            </colgroup>
+            <tbody>
+                <tr>
+                    <td WIDTH="90" HEIGHT="20" ALIGN="LEFT" VALIGN="TOP" BGCOLOR="#FFFFCC">
+                        <b>Reference</b>
+                    </td>
+                    <td WIDTH="109" ALIGN="LEFT" VALIGN="TOP" BGCOLOR="#FFFFCC">
+                        <b>Context</b>
+                    </td>
+                    <td WIDTH="687" ALIGN="LEFT" VALIGN="TOP" BGCOLOR="#FFFFCC">
+                        <b>Description</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-001</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Forms</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Single hit on directory lookup not filled</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-002</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Export data not blocking user interface</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-003</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Export data to CSV - header row not generated when requested</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-004</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Searches - Save button not active - need to be able to modify and resave</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-005</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT">Searches, Cohorts - Delete button not working</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-006</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT">View not set correctly after deleting cohort</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-007</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Registration</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Web service lookup shows 'single' (debugging message)</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-008</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Registration</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Patient identifier invalid on registration</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-009</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Manage System Admin - download resources not finding correct file to download</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-010</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Export data, create data set dialog - Save button does not appear on first loaded data set</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-011</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Export data, create data set dialog - Reset button does not work</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-012</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Cohort search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Export data - demographics not set correctly if entries contain clusters</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-013</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Patient Folder</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Pathways tab crashes loading cityEHRFolder-Pathways.xhtml</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-014</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Forms</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Layout of cluster - vertical space &amp; alignment (take displayName of cluster + first
+                        element)</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-015</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Manage Information Model - class browser not displaying childless root nodes - due to D-1-5-018</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-016</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Import Information Model - childless root nodes not included in data dictionary</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-017</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Manage directory - current specialty not loaded when selected</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-018</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">System</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Template specialty spreadsheet does not have calculatedEnumeratedValue</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-019</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Forms</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Multiple instances of an entry with enumerated class causes crash on duplicate control id</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-020</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">ManageUser - viewDisplay does not resize after closing user</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-021</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Views</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Summary views not sorted by rank</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-022</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">ManageCohortSearch - list of searches does not update after new search(es) imported</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-023</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">My User Account - account details not loaded</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-024</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Generate test data - crash if template date of birth not set</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-025</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Generate test data - incremental update setting number of records makes it hard to change</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-026</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Generate test data - generated compositions should have unique ids</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-027</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Admin</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Merge/unmerge not working correctly</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-028</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Patient search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Order By not working for registration entries with clusters</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-029</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Patient search</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Date, Day, Month searches not working due to tokenising on '-'</td>
+                </tr>
+                <tr>
+                    <td HEIGHT="19" ALIGN="LEFT" VALIGN="TOP">D-1-5-030</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Forms</td>
+                    <td ALIGN="LEFT" VALIGN="TOP">Categorise by enumerated class not working (always classifies as Other)</td>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+
+</html>

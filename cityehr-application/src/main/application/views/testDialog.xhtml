@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRActionConfirmationDialog.xhtml
+    
+    Modal dialog box that protects actions that would lose focus of (e.g.) edited forms.
+    
+    If the action is confirmed then it is invoked, otherwise the dialog closes with no action.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- === Confirmation Dialog for user actions ==============================================
+     Uses the following data set up in system-parameters:
+    
+    <actionConfirmationDialogue>
+        <activeDialogue>confirmId</activeDialogue>
+        <dialogue id="confirmId">
+            <title>Confirmation Dialogue</title>
+            <message>Confirmation Message</message>
+            <actions>
+                <action displayName="Action 1" model="modelId" event="eventId"/>
+            </actions>
+        </dialogue>
+    </staticConfirmationDialogue>
+    =======================================================================================
+-->
+
+<xxf:dialog id="testDialog" style="z-index: 9999;" appearance="full" level="modal" close="true" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+</xxf:dialog>

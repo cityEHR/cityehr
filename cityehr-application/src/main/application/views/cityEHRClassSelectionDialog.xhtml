@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRClassSelectionDialog.xhtml
+    
+    Modal dialog to display tree selection for an enumeratedClass.
+    
+    Uses the configuration set in control-instance/enumeratedClass (compositionMainModel) and classDictionaryModel
+           
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- Class selection dialogue - for browsing though class hierarchy and selecting the node
+    The class and entry node have been set in 
+    xxf:instance('control-instance')/enumeratedClass/classNode
+    xxf:instance('control-instance')/enumeratedClass/entryNode
+-->
+<xxf:dialog id="ClassSelect-dialog" appearance="minimal" level="modal" close="false" draggable="true" visible="false" class="container"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xxf:variable name="focus" select="xxf:instance('control-instance')/enumeratedClass/focus"/>
+    <xxf:variable name="element" select="xxf:instance('form-instance')//cda:value[@cityEHR:focus=$focus]"/>
+
+    <xf:label>
+        <xf:output ref="xxf:instance('control-instance')/enumeratedClass/elementDisplayName"/>
+        <!--
+        <xf:output ref="concat('Scope /',xxf:instance('control-instance')/enumeratedClass/elementScope,' / ')"/>
+        -->
+    </xf:label>
+    <!-- Controls -->
+    <xhtml:p>
+        <!-- Cancel - don't set any SDS elements -->
+        <xf:trigger>
+            <xf:label>
+                <xf:output ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRClassSelectionDialog/closeButton/@displayName"/>
+            </xf:label>
+            <xf:action ev:event="DOMActivate">
+                <!-- Clear selected node -->
+                <xf:delete nodeset="xxf:instance('control-instance')/enumeratedClass/selectedNode/*"/>
+                <xxf:hide dialog="ClassSelect-dialog"/>
+            </xf:action>
+        </xf:trigger>
+
+
+        <!-- OK - depends on the type of the class selection defined in @cityEHR:Scope
+            Defined - can only be pressed for leaf node selections (#CityEHR:ElementProperty:Defined)
+            Full - can be pressed for any node (#CityEHR:ElementProperty:Full) -->
+        <xxf:variable name="selectNodeClass"
+            select="if (xxf:instance('control-instance')/enumeratedClass/elementScope='#CityEHR:ElementProperty:Full' or xxf:instance('control-instance')/enumeratedClass/selectedNodeType='Leaf') then '' else 'hidden'"/>
+        <xf:trigger class="{$selectNodeClass}">
+            <xf:label>
+                <xf:output ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRClassSelectionDialog/selectButton/@displayName"/>
+            </xf:label>
+            <xf:action ev:event="DOMActivate">
+                <!-- Update the selection if a node was selected in the dialog -->
+                <xf:action ev:event="DOMActivate">
+                    <xxf:variable name="selectedData" select="xxf:instance('control-instance')/enumeratedClass/selectedNode"/>
+
+                    <xf:action if="exists($selectedData) and exists($element)">
+
+                        <xf:dispatch name="set-elementData" target="main-model">
+                            <xxf:context name="element" select="$element"/>
+                            <xxf:context name="selectedData" select="$selectedData"/>
+                        </xf:dispatch>
+
+                        <!-- Reset the recorded value (used to refresh the input control text) -->
+                        <xf:setvalue ref="$element" value="$selectedData/@displayName"/>
+                    </xf:action>
+                </xf:action>
+                <xxf:hide dialog="ClassSelect-dialog"/>
+            </xf:action>
+        </xf:trigger>
+        <xf:output ref="xxf:instance('control-instance')/enumeratedClass/selectedNode/@displayName"/>
+    </xhtml:p>
+
+    <xxf:variable name="classNode" select="xxf:instance('control-instance')/enumeratedClass/classNode"/>
+    <xxf:variable name="entryNode" select="xxf:instance('control-instance')/enumeratedClass/entryNode"/>
+    <!-- enumerationClass is a set of iso-13606:data elements -->
+    <xxf:variable name="enumerationClass"
+        select="if ($entryNode = $classNode) then xxf:instance('enumeratedClassHierarchy-instance')/descendant::iso-13606:data else xxf:instance('enumeratedClassHierarchy-instance')/descendant::iso-13606:data[@value = $entryNode]/descendant::iso-13606:data"/>
+
+    <!-- Class node selection -->
+    <xf:select1 appearance="xxf:tree" ref="xxf:instance('control-instance')/enumeratedClass/selectedValue">
+        <xf:itemset nodeset="$enumerationClass">
+            <xf:label ref="@displayName"/>
+            <xf:value ref="@value"/>
+        </xf:itemset>
+        <!-- If selected node is a leaf then set it, otherwise clear the selection -->
+        <xf:action ev:event="xforms-value-changed">
+            <!-- Clear selected node -->
+
+            <!-- Set selected node - any node for full scope, but only leaf node for defined scope
+                 Be careful if there is more than one node hit [1] -->
+            <xxf:variable name="selectedNode" select="$enumerationClass[@value=xxf:instance('control-instance')/enumeratedClass/selectedValue][1]"/>
+            <xf:setvalue ref="xxf:instance('control-instance')/enumeratedClass/selectedNodeType"
+                value="if (exists($selectedNode/iso-13606:data)) then 'Intermediate' else 'Leaf'"/>
+
+            <xf:action
+                if="xxf:instance('control-instance')/enumeratedClass/elementScope='#CityEHR:ElementProperty:Full' or xxf:instance('control-instance')/enumeratedClass/selectedNodeType='Leaf'">
+                <xf:dispatch name="set-elementData" target="main-model">
+                    <xxf:context name="element" select="xxf:instance('control-instance')/enumeratedClass/selectedNode"/>
+                    <xxf:context name="selectedData" select="$selectedNode"/>
+                </xf:dispatch>
+            </xf:action>
+
+        </xf:action>
+    </xf:select1>
+</xxf:dialog>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        checkPatientListXQuery.xml
+        
+        Run through a list of patient ids.
+        Return <patient/> element for each patient that exists (has a collection) in the database.
+        selected attribute (blank) is added so that patients can be selected, once returned
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query xml:space="preserve">
+           
+           xquery version "1.0"; 
+           declare namespace xmldb="http://exist-db.org/xquery/xmldb";
+                
+           declare variable $path := util:collection-name(collection()[1]);
+           declare variable $root := string-join(tokenize($path,'/')[not(position() eq last())],'/');
+              
+           for $patientIdSet in (<patientIdList/>)
+            for $patientId in $patientIdSet
+              let $collectionPath := concat($root,'/',normalize-space($patientId))                
+                return 
+                   if (xmldb:collection-available($collectionPath)) then
+                       &lt;patient id="{$patientId}" selected=""/>
+                   else ()
+                   
+</query>
+

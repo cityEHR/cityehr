@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        applicationListXQuery.xml
+        
+        XQuery to return list of all applications for an installation of cityEHR
+        The context of the query is the applications collection of the xmlstore
+        
+        The applications collection will contain one collection for each application
+        The systemConfiguration collection contains the configuration file with:
+        
+        <parameters>
+         <application>
+           <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR"/>
+           ...
+         </applcation>
+         ...
+        </parameters> 
+        
+        Need to target the top level of the systemConfiguration collection (using xcollection())
+        because configuration files are also present in the archive sub-collection.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        
+        **********************************************************************************************************
+-->
+
+<query xml:space="preserve"> 
+                xquery version "1.0"; 
+                declare namespace cda="urn:hl7-org:v3";
+                declare namespace iso-13606="http://www.iso.org/iso-13606";
+                declare namespace xmldb="http://exist-db.org/xquery/xmldb";
+                
+                let $path := request:get-path-info()
+                let $root := if (ends-with($path,'/')) then $path else concat($path,'/')
+                
+                for $collection in xmldb:get-child-collections($root) 
+                  let $systemConfigurationPath := concat($root,$collection,'/systemConfiguration/application-parameters')
+                  for $EHR_Extract in doc($systemConfigurationPath)//parameters/application/iso-13606:EHR_Extract
+                   return $EHR_Extract
+                
+</query>

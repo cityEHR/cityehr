@@ -1,0 +1,562 @@
+<?xml version="1.0"?>
+<!-- ====================================================================
+    cityEHRarchitecture-2018.xml
+    OWL/XML ontology with base assertions for the cityEHR ontology archirecture.
+    Revised version in 2018.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    ==================================================================== -->
+<!--
+<!DOCTYPE Ontology [
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY xml "http://www.w3.org/XML/1998/namespace" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+-->
+
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" xml:base="http://www.openhealthinformatics.org/cityEHR.owl"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    ontologyIRI="http://www.openhealthinformatics.org/cityEHR.owl">
+    <Prefix name="x2" IRI="http://schemas.microsoft.com/office/excel/2003/xml"/>
+    <Prefix name="ss" IRI="urn:schemas-microsoft-com:office:spreadsheet"/>
+    <Prefix name="o" IRI="urn:schemas-microsoft-com:office:office"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="c" IRI="urn:schemas-microsoft-com:office:component:spreadsheet"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="cda" IRI="urn:hl7-org:v3"/>
+    <Prefix name="x" IRI="urn:schemas-microsoft-com:office:excel"/>
+    <Prefix name="xsi" IRI="http://www.w3.org/2001/XMLSchema-instance"/>
+    <Prefix name="office2003Spreadsheet" IRI="urn:schemas-microsoft-com:office:spreadsheet"/>
+    <Prefix name="" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Prefix name="html" IRI="http://www.w3.org/TR/REC-html40"/>
+    <Annotation>
+        <AnnotationProperty abbreviatedIRI="rdfs:cityEHR"/>
+        <Literal datatypeIRI="http://www.openhealthinformatics.org">Copyright (C) 2013-2023 John Chelsom.</Literal>
+    </Annotation>
+    <Annotation>
+        <AnnotationProperty abbreviatedIRI="rdfs:version"/>
+        <Literal datatypeIRI="http://www.openhealthinformatics.org">This is the new 2018 version - V2</Literal>
+    </Annotation>
+    <Annotation>
+        <AnnotationProperty abbreviatedIRI="rdfs:importedFromFile"/>
+        <Literal datatypeIRI="http://www.openhealthinformatics.org">Not known</Literal>
+    </Annotation>
+    <Declaration>
+        <Class IRI="#CityEHR:Patient"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:DataType"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Property"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Error"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Annotation"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Booking"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:CodeSet"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Form"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Letter"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Message"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Notification"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Order"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Pathway"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Prescription"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:View"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Term"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Unit"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Warning"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:EHR_Extract"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:Folder"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:Composition"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:Section"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:Entry"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:Cluster"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:Element"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ISO-13606:Data"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CityEHR:Class"/>
+    </Declaration>
+
+    <Declaration>
+        <ObjectProperty IRI="#hasRecord"/>
+    </Declaration>
+
+    <Declaration>
+        <ObjectProperty IRI="#hasAxis"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasCategorizationCriteria"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasCRUD"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasCodeSystem"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasCohortSearch"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasContent"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasContext"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasData"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasDataClass"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasDataType"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasDisplayName"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasElementType"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasEntryType"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasExtension"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasHeader"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasInformation"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasInitialValue"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSequence"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSubject"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasOccurrence"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasRendition"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasScope"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSectionContext"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSortCriteria"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSortOrder"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSuppDataSet"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSynonym"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasType"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasUnit"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasRequiredValue"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasViewType"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isAxisOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isCategorizationCriteriaOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isCRUDOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isCodeSystemOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isCohortSearch"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isContentOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isContextOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isDataOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isDataClassOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isDataTypeOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isDisplayNameOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isElementTypeOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isExtensionOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isHeaderOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isInformationOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isInitialValueOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isOccurrenceOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isRenditionOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isRequiredValueOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isScopeOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isSectionContextOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isSequenceOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isSubjectOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isSortCriteriaOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isSortOrderOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isSynonymOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isTypeOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isUnitOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isViewTypeOf"/>
+    </Declaration>
+
+    <Declaration>
+        <DataProperty IRI="#hasPrefix"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasGivenName"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasFamilyName"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasAdministrativeGenderCode"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasBirthTime"/>
+    </Declaration>
+
+    <Declaration>
+        <DataProperty IRI="#hasAlert"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasBaseLanguage"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasCalculatedValue"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasCode"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasConditions"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasConstraints"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasContentsList"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasDefaultValue"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasDescription"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasHint"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasInterval"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasLabelLength"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasLanguage"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasOwner"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasPrecision"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasPreConditions"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasEvaluationContext"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasRank"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasType"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasValue"/>
+    </Declaration>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Annotation"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Booking"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:CodeSet"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Form"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Letter"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Message"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Notification"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Order"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Pathway"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:Prescription"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CityEHR:View"/>
+        <Class IRI="#ISO-13606:Composition"/>
+    </SubClassOf>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasAxis"/>
+        <ObjectProperty IRI="#isAxisOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasCategorizationCriteria"/>
+        <ObjectProperty IRI="#isCategorizationCriteriaOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasCRUD"/>
+        <ObjectProperty IRI="#isCRUDOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasCodeSystem"/>
+        <ObjectProperty IRI="#isCodeSystemOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasCohortSearch"/>
+        <ObjectProperty IRI="#isCohortSearchOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasContent"/>
+        <ObjectProperty IRI="#isContentOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasContext"/>
+        <ObjectProperty IRI="#isContextOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasData"/>
+        <ObjectProperty IRI="#isDataOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasDataClass"/>
+        <ObjectProperty IRI="#isDataClassOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasDataType"/>
+        <ObjectProperty IRI="#isDataTypeOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasDisplayName"/>
+        <ObjectProperty IRI="#isDisplayNameOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasElementType"/>
+        <ObjectProperty IRI="#isElementTypeOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasEntryType"/>
+        <ObjectProperty IRI="#isEntryTypeOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasExtension"/>
+        <ObjectProperty IRI="#isExtensionOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasHeader"/>
+        <ObjectProperty IRI="#isHeaderOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#isInformationOf"/>
+        <ObjectProperty IRI="#hasInformation"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasInitialValue"/>
+        <ObjectProperty IRI="#isInitialValueOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasOccurrence"/>
+        <ObjectProperty IRI="#isOccurrenceOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasRendition"/>
+        <ObjectProperty IRI="#isRenditionOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasRequiredValue"/>
+        <ObjectProperty IRI="#isRequiredValueOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasScope"/>
+        <ObjectProperty IRI="#isScopeOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasSectionContext"/>
+        <ObjectProperty IRI="#isSectionContextOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasSequence"/>
+        <ObjectProperty IRI="#isSequenceOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasSubject"/>
+        <ObjectProperty IRI="#isSubjectOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasSortCriteria"/>
+        <ObjectProperty IRI="#isSortCriteriaOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasSortOrder"/>
+        <ObjectProperty IRI="#isSortOrderOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasSynonym"/>
+        <ObjectProperty IRI="#isSynonymOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasUnit"/>
+        <ObjectProperty IRI="#isUnitOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasViewType"/>
+        <ObjectProperty IRI="#isViewTypeOf"/>
+    </InverseObjectProperties>
+
+</Ontology>

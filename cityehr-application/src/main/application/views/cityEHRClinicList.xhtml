@@ -1,0 +1,1269 @@
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRClinicList.xhtml
+    
+    Construct and submit searches to return list of clinics, display patients booked to each clinic, click through to patient record
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <xhtml:head>
+
+        <!-- Try this to force compatibility mode -->
+        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
+
+        <!-- HTML Title is the displayName of the current application -->
+        <xhtml:title>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+        </xhtml:title>
+
+        <!-- Stylesheet -->
+        <xhtml:link rel="stylesheet" type="text/css"
+            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
+
+
+        <!-- ========= System Parameters ===================================================== 
+             ================================================================================= -->
+        <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
+            ================================================================================== -->
+        <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Session model contains stuff for handling of user sessions ============ 
+            ================================================================================== -->
+        <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Audit log model contains stuff for audit of user actions ============== 
+            ================================================================================== -->
+        <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Page navigation model contains stuff for navigation between pages =====
+        ====================================================================================== -->
+        <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Configuration model contains standard configuration of the page ======= 
+            ================================================================================== -->
+        <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= Dictionary model contains the specialty dictionary ========= 
+            ======================================================================= -->
+        <xi:include href="../models/dictionaryModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Release Notes ========= 
+            ============================================================================ -->
+        <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Notifications model contains stuff for handling notifications == 
+            =================================================================================== -->
+        <xi:include href="../models/notificationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Patient Demographics model contains demographics data for the patient == 
+            =================================================================================== -->
+        <xi:include href="../models/patientDemographicsModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- === 
+            Care Teams
+            === -->
+        <xi:include href="../models/careTeamModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= View Controls actions model contains actions for view control ========= 
+            These actions are specific to this page, so the model is implemented directly.           
+            There must be one event handler for each action defined in the <viewControlsActions> for this page in application-parameters
+            The viewControlsActions-instance holds the actions for this view, inserted from parameters-instance for this view
+            ===================================================================================== -->
+        <xf:model id="viewControlsActions-model">
+
+            <xf:instance id="viewControlsActions-instance">
+                <control xmlns=""/>
+            </xf:instance>
+
+            <!-- Bindings for dynamic change of display of view controls  -->
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display" calculate="'show'"/>
+
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view">
+                <!-- Open action composition -->
+                <xf:bind nodeset="action[@id='action']/@display"
+                    calculate="if (exists(xxf:instance('notification-instance')//cda:act[1]/cda:subject[1]/cda:typeId[@extension!=''])) then 'show' else 'hidden'"/>
+                <!-- Navigate to patient record -->
+                <xf:bind nodeset="action[@id='open']/@display"
+                    calculate="if (exists(xxf:instance('notification-instance')//cda:patientRole/cda:id[@extension!=''])) then 'show' else 'hidden'"/>
+                <!-- Acknowledge notification -->
+                <xf:bind nodeset="action[@id='acknowledge']/@display"
+                    calculate="if (exists(xxf:instance('notification-instance')/descendant::cda:participant[1]/cda:functionCode[@code!=xxf:instance('control-instance')/acknowledgeCode])) then 'show' else 'hidden'"/>
+                <!-- Undo Acknowledge notification -->
+                <xf:bind nodeset="action[@id=('undoAcknowledge','delete')]/@display"
+                    calculate="if (exists(xxf:instance('notification-instance')/descendant::cda:participant[1]/cda:functionCode[@code=xxf:instance('control-instance')/acknowledgeCode])) then 'show' else 'hidden'"/>
+                <!-- Show XML only when debugging -->
+                <xf:bind nodeset="action[@id='xml']/@display"
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+            </xf:bind>
+
+
+            <!-- Application defined action to set up the filter selections.
+                 The configuration contains the default for 'No Filter' so this is used as the model for inserting additional items.
+                 Note that if the configuration is not set correctly with the No Filter options then the filter will not be shown
+                 Then add specific items for each filter type.
+                 
+                 Notifications are of the form:
+            
+                <notification>
+                    <notificationId>2016-01-27T10-44-37.258Z-ISO-13606-Entry-schedulingISO-13606-Element-schedulingtaskdate-CityEHRLetterpatientmeds-elfinone</notificationId>
+                    <handle>/db/orbeon/xmlstore/applications/ISO-13606-EHR_Extract-Elfin/data/37373737/2016-01-27T10-44-37.258Z-ISO-13606-Entry-schedulingISO-13606-Element-schedulingtaskdate-CityEHRLetterpatientmeds-elfinone</handle>
+                    <patientId>37373737</patientId>
+                    <patientName>Penrose</patientName>
+                    <effectiveTime>2016-02-03Z</effectiveTime>
+                    <author displayName="Elfin One" value="#CityEHR:User:elfinone"/>
+                    <notifyActor>#CityEHR:Role:Administrator</notifyActor>
+                    <functionCode>#CityEHR:Action:Acknowledge</functionCode>
+                    <displayName>Monitoring questionnaire in Scheduling</displayName>
+                    <actDisplayName/>
+                    <subjectCompositionTypeIRI>#CityEHR:Letter:patientmeds</subjectCompositionTypeIRI>
+                    <subjectHandleId/>
+                    <originComposition>#CityEHR:Form:scheduling</originComposition>
+                    <originEntry>#ISO-13606:Entry:scheduling</originEntry>
+            </notification>           
+            
+               -->
+            <xf:action ev:event="set-filter-selections">
+                <xxf:variable name="notifications" select="event('notifications')"/>
+
+                <!-- Default items for 'No Filter' and 'Not Set' are in view-parameters -->
+                <xxf:variable name="noFilterSelectionItem"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/noFilterSelection/item[1]"/>
+                <xxf:variable name="emptyValueFilterSelectionItem"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/emptyValueFilterSelection/item[1]"/>
+
+                <!-- From filter.
+                     Get the set of authors - cda:author in CDA
+                     Which is in notification/author in the notification list -->
+                <xf:action>
+                    <xxf:variable name="authorSet" select="distinct-values($notifications/author[@value!='']/@value)"/>
+
+                    <!-- Get the set of users, for the authorSet -->
+                    <xf:dispatch name="getUserSelectionList" target="careTeam-model">
+                        <xxf:context name="userListInput" select="$authorSet"/>
+                    </xf:dispatch>
+
+                    <!-- Get the fromFilterSelection control -->
+                    <xxf:variable name="fromFilterSelection" select="xxf:instance('viewControls-input-instance')/select[@id='fromFilter']"/>
+
+                    <!-- Remove exisiting selections -->
+                    <xf:delete nodeset="$fromFilterSelection/item"/>
+
+                    <!-- Insert the default item for 'no filter' -->
+                    <xf:insert context="$fromFilterSelection" origin="if (exists($noFilterSelectionItem)) then $noFilterSelectionItem else ()"/>
+
+                    <!-- Add the other filters -->
+                    <xf:action xxf:iterate="$authorSet">
+                        <xxf:variable name="author" select="."/>
+                        <xxf:variable name="authorDisplayName"
+                            select="xxf:instance('userSelection-instance')/user[@value=$author]/@displayName"/>
+
+                        <!-- Add author filter to the list.
+                             The list will start with the iterm for 'No filter', so don't need an origin template -->
+                        <xf:insert context="$fromFilterSelection" nodeset="*" at="last()" position="after"/>
+
+                        <!-- Set value and displayName of new filter -->
+                        <xxf:variable name="authorFilter" select="$fromFilterSelection/*[last()]"/>
+                        <xf:setvalue ref="$authorFilter/@value" value="$author"/>
+                        <xf:setvalue ref="$authorFilter/@displayName" value="$authorDisplayName"/>
+
+                    </xf:action>
+
+                    <!-- Insert the default item for 'not set'-->
+                    <xf:insert context="$fromFilterSelection" nodeset="*"
+                        origin="if (exists($emptyValueFilterSelectionItem)) then $emptyValueFilterSelectionItem else ()" at="last()" position="after"/>
+
+                    <!-- Set the initial value (no filter, unless it wasn't found in the configuration) -->
+                    <xf:setvalue ref="$fromFilterSelection/@value" value="$fromFilterSelection/item[1]/@value"/>
+
+                </xf:action>
+
+                <!-- To filter.
+                    Get the set of actors (role, user or care team) notified  - cda:participant in CDA
+                    Which is in notification/notifyActor in the notification list -->
+                <xf:action>
+                    <xxf:variable name="participantSet" select="distinct-values($notifications/notifyActor)"/>
+
+                    <!-- Get the toFilterSelection control -->
+                    <xxf:variable name="toFilterSelection" select="xxf:instance('viewControls-input-instance')/select[@id='toFilter']"/>
+
+                    <!-- Remove exisiting selections -->
+                    <xf:delete nodeset="$toFilterSelection/item"/>
+
+                    <!-- Insert the default items for 'no filter' -->
+                    <xf:insert context="$toFilterSelection" origin="if (exists($noFilterSelectionItem)) then $noFilterSelectionItem else ()"/>
+
+                    <xf:action xxf:iterate="$participantSet">
+                        <xxf:variable name="participant" select="."/>
+                        <xxf:variable name="participantDisplayName" select="$participant"/>
+
+                        <!-- Add participant filter to the list.
+                             The list will start with the iterm for 'No filter', so don't need an origin template -->
+                        <xf:insert context="$toFilterSelection" nodeset="*" at="last()" position="after"/>
+
+                        <!-- Set value and displayName of new filter -->
+                        <xxf:variable name="participantFilter" select="$toFilterSelection/*[last()]"/>
+                        <xf:setvalue ref="$participantFilter/@value" value="$participant"/>
+                        <xf:setvalue ref="$participantFilter/@displayName" value="$participantDisplayName"/>
+
+                    </xf:action>
+
+                    <!-- Insert the default item for 'not set'-->
+                    <xf:insert context="$toFilterSelection" nodeset="*"
+                        origin="if (exists($emptyValueFilterSelectionItem)) then $emptyValueFilterSelectionItem else ()" at="last()" position="after"/>
+
+                    <!-- Set the initial value (no filter, unless it wasn't found in the configuration) -->
+                    <xf:setvalue ref="$toFilterSelection/@value" value="$toFilterSelection/item[1]/@value"/>
+
+                </xf:action>
+
+                <!-- Origin (source) filter 
+                     Get the combination of composition/entry - cda:serviceEvent in CDA
+                -->
+                <xf:action>
+                    <xxf:variable name="originSet"
+                        select="distinct-values(for $n in $notifications return concat($n/originComposition,xxf:instance('view-parameters-instance')/resultSeparator,$n/originEntry))"/>
+
+                    <!-- Get the sourceFilterSelection control -->
+                    <xxf:variable name="sourceFilterSelection" select="xxf:instance('viewControls-input-instance')/select[@id='sourceFilter']"/>
+
+                    <!-- Remove exisiting selections -->
+                    <xf:delete nodeset="$sourceFilterSelection/item"/>
+
+                    <!-- Insert the default items for 'no filter' -->
+                    <xf:insert context="$sourceFilterSelection" origin="if (exists($noFilterSelectionItem)) then $noFilterSelectionItem else ()"/>
+
+                    <!-- Origin needs to be split into composition and entry -->
+                    <xf:action xxf:iterate="$originSet">
+                        <xxf:variable name="origin" select="."/>
+                        <xxf:variable name="originTokens" select="tokenize($origin,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                        <xxf:variable name="originComposition" select="$originTokens[1]"/>
+                        <xxf:variable name="originCompositionDisplayName"
+                            select="xxf:instance('dictionary-instance')/descendant::iso-13606:composition[@code=$originComposition][1]/@displayName"/>
+                        <xxf:variable name="originEntry" select="$originTokens[2]"/>
+                        <xxf:variable name="originEntryDisplayName"
+                            select="xxf:instance('dictionary-instance')/descendant::iso-13606:entry[descendant::cda:id[1]/@extension=$originEntry][1]/descendant::cda:code[@codeSystem='cityEHR'][1]/@displayName"/>
+                        <xxf:variable name="originDisplayName" select="concat($originCompositionDisplayName,' / ',$originEntryDisplayName)"/>
+
+                        <!-- Add origin filter to the list.
+                             The list will start with the iterm for 'No filter', so don't need an origin template -->
+                        <xf:insert context="$sourceFilterSelection" nodeset="*" at="last()" position="after"/>
+
+                        <!-- Set value and displayName of new filter -->
+                        <xxf:variable name="sourceFilter" select="$sourceFilterSelection/*[last()]"/>
+                        <xf:setvalue ref="$sourceFilter/@value" value="$origin"/>
+                        <xf:setvalue ref="$sourceFilter/@displayName" value="$originDisplayName"/>
+
+                    </xf:action>
+
+                    <!-- Insert the default item for 'not set'-->
+                    <xf:insert context="$sourceFilterSelection" nodeset="*"
+                        origin="if (exists($emptyValueFilterSelectionItem)) then $emptyValueFilterSelectionItem else ()" at="last()" position="after"/>
+
+                    <!-- Set the initial value (no filter, unless it wasn't found in the configuration) -->
+                    <xf:setvalue ref="$sourceFilterSelection/@value" value="$sourceFilterSelection/item[1]/@value"/>
+
+                </xf:action>
+
+                <!-- Action filter.
+                     Get the set of subject compositions - cda:subject in CDA
+                     Which is in notification/subjectCompositionTypeIRI -->
+                <xf:action>
+                    <xxf:variable name="actionSet" select="distinct-values($notifications/subjectCompositionTypeIRI)"/>
+
+                    <!-- Get the actionFilterSelection control -->
+                    <xxf:variable name="actionFilterSelection" select="xxf:instance('viewControls-input-instance')/select[@id='actionFilter']"/>
+
+                    <!-- Remove exisiting selections -->
+                    <xf:delete nodeset="$actionFilterSelection/item"/>
+
+                    <!-- Insert the default items for 'no filter' -->
+                    <xf:insert context="$actionFilterSelection" origin="if (exists($noFilterSelectionItem)) then $noFilterSelectionItem else ()"/>
+
+                    <!-- The actionSet may include items where there is no action. -->
+                    <xf:action xxf:iterate="$actionSet">
+                        <xxf:variable name="action" select="."/>
+                        <xxf:variable name="actionDisplayName"
+                            select="xxf:instance('dictionary-instance')/descendant::iso-13606:composition[@code=$action][1]/@displayName"/>
+
+                        <!-- Add origin filter to the list.
+                            The list will start with the iterm for 'No filter', so don't need an origin template -->
+                        <xf:insert context="$actionFilterSelection" nodeset="*" at="last()" position="after"/>
+
+                        <!-- Set value and displayName of new filter -->
+                        <xxf:variable name="actionFilter" select="$actionFilterSelection/*[last()]"/>
+                        <xf:setvalue ref="$actionFilter/@value" value="$action"/>
+                        <xf:setvalue ref="$actionFilter/@displayName" value="$actionDisplayName"/>
+
+                    </xf:action>
+
+                    <!-- Insert the default item for 'not set'-->
+                    <xf:insert context="$actionFilterSelection" nodeset="*"
+                        origin="if (exists($emptyValueFilterSelectionItem)) then $emptyValueFilterSelectionItem else ()" at="last()" position="after"/>
+
+                    <!-- Set the initial value (no filter, unless it wasn't found in the configuration) -->
+                    <xf:setvalue ref="$actionFilterSelection/@value" value="$actionFilterSelection/item[1]/@value"/>
+
+                </xf:action>
+
+            </xf:action>
+
+            <!-- Application defined action when viewNavigationType is changed by the user. ***jc
+                 This action is called from cityEHRViewNavigationTypeSelection
+                 The viewNavigationType is due | charted | acknowledged
+                 
+                 Then set the currentNotificationType to annotation or notification (action)
+                 And load the first notification of that type.
+                 
+                 ***TBD This does not account for the filters set - so may set a notification that is currently not displayed (due to the filters).                 
+                  -->
+            <xf:action ev:event="viewNavigationTypeChanged">
+                <!-- Clear the current notification -->
+                <xf:dispatch name="clear-notification" target="main-model"/>
+
+                <!-- Set up variables for checking the current notification -->
+                <xxf:variable name="cutOffTime" select="xxf:instance('control-instance')/cutOffTime"/>
+                <xxf:variable name="acknowledgeCode" select="xxf:instance('control-instance')/acknowledgeCode"/>
+
+                <xxf:variable name="annotationNotifications" select="xxf:instance('notification-annotations-instance')/notification"/>
+                <xxf:variable name="actionNotifications" select="xxf:instance('notification-actions-instance')/notification"/>
+                <xxf:variable name="viewNavigationType" select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
+
+                <!-- Check the notifications for this type = annotations and actions.
+                     Expand the first one to have content and set its first notification as current -->
+
+                <!-- The displayed notifications depend on the viewNavigationType -->
+                <xxf:variable name="displayedAnnotationNotifications"
+                    select="if ($viewNavigationType='due') then $annotationNotifications[effectiveTime le $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='charted') then $annotationNotifications[effectiveTime gt $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='acknowledged') then $annotationNotifications[functionCode = $acknowledgeCode] else ()"/>
+                <xxf:variable name="displayedActionNotifications"
+                    select="if ($viewNavigationType='due') then $actionNotifications[effectiveTime le $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='charted') then $actionNotifications[effectiveTime gt $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='acknowledged') then $actionNotifications[functionCode = $acknowledgeCode] else ()"/>
+
+                <!-- Set the currentNotificationType (annotation | annotation ) -->
+                <xxf:variable name="activeType"
+                    select="if ($displayedAnnotationNotifications[1]) then 'annotation' else if ($displayedActionNotifications[1]) then 'notification' else ''"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/currentNotificationType" value="$activeType"/>
+
+                <!-- Load the first notification of the active type -->
+                <xxf:variable name="activeNotification"
+                    select="if ($activeType='annotation') then  $displayedAnnotationNotifications[1] else if ($activeType='notification') then $displayedActionNotifications[1] else ()"/>
+                <xf:dispatch name="set-notification" target="main-model">
+                    <xxf:context name="selectedNotification" select="$activeNotification"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to show XML -->
+            <xf:action ev:event="xml">
+                <!-- Display the notification instance -->
+                <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                    <xxf:context name="title" select="''"/>
+                    <xxf:context name="displayXML" select="xxf:instance('notification-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to open the composition documented by the curremt notification.
+                 view-parameters-instance/patientId will have been set to the patient for the current notification -->
+            <xf:action ev:event="action">
+
+                <!-- Notification is from an annotation.
+                     Navigate to the composition that is the subject of the annotation.
+                     -->
+                <xf:action if="xxf:instance('control-instance')/currentNotificationType='annotation'">
+                    <xxf:variable name="url" select="'cityEHRFolder-Events'"/>
+                </xf:action>
+
+
+                <!-- Notification is an action in a pathway or from a trigger
+                     Open correct page for the subject composition type.
+                     The current-notification should contain an entry with a cda:act from the pathway:
+                    
+                    <act>
+                    <subject>
+                    <typeId root="#CityEHR:Form" extension="#CityEHR:Form:BMIData"/>
+                    <id root="cityEHR" extension="2013-11-07T14-42-05.237Z-ISO-13606-Entry-mpEnterSchedule-CityEHR-Form-BMIData-forename.surname"/>
+                    </subject>
+                    </act>
+                    
+                    Get details of the subject composition from the notification.
+                    If the id@extension is empty, or the subject document does not exist, then create it
+                    Then look up the correct page to load and set the parameters in gotoPage.
+                    Finally, load the new page (which will move from the cross-patient InTray to a patient-specific view)
+                -->
+                <xf:action if="xxf:instance('control-instance')/currentNotificationType='notification'">
+
+                    <!-- The notification-instance should contain an entry with a cda:act 
+                         that holds details of the action 
+                    -->
+
+                    <xxf:variable name="action" select="xxf:instance('notification-instance')//cda:act[1]"/>
+
+                    <!-- Action exists.
+                         subjectCompositionIRI is (e.g.) #ISO-13606:Form:DietExercisePlan
+                         subjectCompositionTypeIRI is (e.g.) #CityEHR:Form -->
+                    <xf:action if="exists($action)">
+                        <xxf:variable name="subject" select="$action/cda:subject[1]"/>
+                        <xxf:variable name="subjectCompositionTypeIRI" select="$subject/cda:typeId/@root"/>
+                        <xxf:variable name="subjectCompositionIRI" select="$subject/cda:typeId/@extension"/>
+
+                        <xxf:variable name="subjectHandleId" select="$subject/cda:id/@extension"/>
+
+                        <xxf:variable name="currentTime" select="current-dateTime()"/>
+
+                        <!-- If subjectHandleId is empty then set it based on the current time(stamp), subjectCompositionIRI and userId
+                             (This is the same algorithm as creating a new composition in compositionMainModel)
+                             And then save the notification. -->
+                        <xf:action if="$subjectHandleId=''">
+                            <!-- Timestamp format replaces ':' and '+' in standard time format with - and * -->
+                            <xxf:variable name="timeStamp" select="replace(replace(string($currentTime),':','-'),'\+','*')"/>
+                            <!-- subjectCompositionId replaces bad characters in subjectCompositionIRI with '' (nothing) -->
+                            <xxf:variable name="subjectCompositionId" select="translate($subjectCompositionIRI,':#/+$ ','')"/>
+                            <xf:setvalue ref="$subjectHandleId"
+                                value="concat($timeStamp,xxf:instance('view-parameters-instance')/idSeparator,$subjectCompositionId,xxf:instance('view-parameters-instance')/idSeparator,xxf:instance('view-parameters-instance')/userId)"/>
+                            <xf:send submission="save-notification-submission" target="notification-model"/>
+                        </xf:action>
+
+                        <!-- Check that subject composition exists -->
+                        <xxf:variable name="pageInformation"
+                            select="xxf:instance('view-parameters-instance')/pageInformation/page[@compositionTypeIRI=$subjectCompositionTypeIRI][1]"/>
+                        <xxf:variable name="url" select="$pageInformation/@page"/>
+                        <xxf:variable name="storageLocation"
+                            select="concat(xxf:instance('view-parameters-instance')/applicationStorageLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$subjectHandleId)"/>
+
+                        <xf:dispatch name="resource-exists" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="storageLocation" select="$storageLocation"/>
+                            <xxf:context name="result" select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+
+                        <!-- Set up the handle for the subject composition.
+                             This is the complete database URL of the subject composition -->
+                        <xxf:variable name="subjectHandle"
+                            select="concat(xxf:instance('view-parameters-instance')/databaseLocation,$storageLocation)"/>
+
+                        <!-- Create subject composition in xmlstore, if it doesn't exist 
+                             This is similar to the code in cityEHRFolder-Pathways, so could possibly be refactored -->
+                        <xf:action if="xxf:instance('control-instance')/status = 'false'">
+                            <!-- Get the action composition template -->
+                            <xf:setvalue ref="xxf:instance('getCompositionTemplateXQuery-instance')/typeId" value="$subjectCompositionIRI"/>
+                            <xf:setvalue ref="xxf:instance('getComposition-query-instance')/exist:text"
+                                value="xxf:instance('getCompositionTemplateXQuery-instance')"/>
+                            <xf:send submission="load-action-composition-submission" target="notification-model"/>
+
+                            <!-- Set up the action composition and store in data for patient.
+                                 Note that action-composition-instance contains cda:ClinicalDocument inside exist:result-->
+                            <xf:setvalue ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:id/@extension"
+                                value="$subjectHandleId"/>
+                            <xf:setvalue ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:effectiveTime/@value"
+                                value="$currentTime"/>
+                            <!-- The classCode of cda:serviceEvent is used when loaded for the first time, to set default values -->
+                            <xf:setvalue
+                                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/@classCode"
+                                value="'#CityEHR:Notification'"/>
+
+                            <!-- documentationOf records the notification that was the source of the action composition. -->
+                            <xf:setvalue
+                                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/cda:id/@root"
+                                value="'#CityEHR:Notification'"/>
+                            <xf:setvalue
+                                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/cda:id/@extension"
+                                value="xxf:instance('notification-instance')/cda:id/@extension"/>
+                            <xf:setvalue
+                                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:documentationOf/cda:serviceEvent/cda:code[@codeSystem='cityEHR']/@displayName"
+                                value="''"/>
+
+                            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentAction/subjectHandle"
+                                value="$subjectHandle"/>
+                            <xf:send submission="save-action-composition-submission" target="notification-model"/>
+                        </xf:action>
+
+                        <!-- Load the new page with the subject composition -->
+                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle" value="$subjectHandle"/>
+                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'saved'"/>
+
+                        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                            <xxf:context name="page" select="$url"/>
+                        </xf:dispatch>
+
+                    </xf:action>
+                </xf:action>
+
+            </xf:action>
+
+            <!-- Application defined action to open the patient record.
+                 view-parameters-instance/patientId will have been set to the patient for the current notification.
+                 For notification of actions, just go to the home folder.
+                 For annotation notifications, go to the composition that was annotated. -->
+            <xf:action ev:event="open">
+                <!-- Folder page depends on whether notification or annotation -->
+                <xxf:variable name="url"
+                    select="if (xxf:instance('control-instance')/currentNotificationType='notification') then xxf:instance('application-parameters-instance')/pageTransition/patientFolderURL/@value else 'cityEHRFolder-Events'"/>
+
+                <!-- compositionHandle is set for annotations -->
+                <xxf:variable name="compositionHandleId"
+                    select="xxf:instance('notification-instance')//cda:documentationOf/cda:serviceEvent[1]/cda:id/@extension"/>
+                <xxf:variable name="compositionHandle"
+                    select="if (xxf:instance('control-instance')/currentNotificationType='notification') then 'blank' else $compositionHandleId"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle" value="$compositionHandle"/>
+
+                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                    <xxf:context name="page" select="$url"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to acknowledge the current notification.
+                 Sets the functionCode, save the notification, reset the notification list -->
+            <xf:action ev:event="acknowledge">
+                <!-- Set the functionCode -->
+                <xf:setvalue ref="xxf:instance('notification-instance')//cda:participant[1]/cda:functionCode/@code"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/acknowledge/@code"/>
+                <xf:setvalue ref="xxf:instance('notification-instance')//cda:participant[1]/cda:functionCode/@displayName"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/acknowledge/@displayName"/>
+                <xf:setvalue ref="xxf:instance('notification-instance')//cda:participant[1]/cda:functionCode/@codeSystem"
+                    value="xxf:instance('control-instance')/acknowledgeCode"/>
+
+                <!-- Save the notification -->
+                <xf:send submission="save-notification-submission" target="notification-model"/>
+
+                <!-- Reload notification list.
+                     Call load-notification-list action to do this - requires a full query on the database, but this should be fast
+                     -->
+                <xf:action>
+                    <xf:dispatch name="load-notifications-list" target="notification-model">
+                        <xxf:context name="notificationType" select="xxf:instance('control-instance')/currentNotificationType"/>
+                        <xxf:context name="actorList" select="xxf:instance('control-instance')/actorList"/>
+                        <xxf:context name="filterCriteria" select="xxf:instance('control-instance')/filterCriteria"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Set viewNavigationType to show acknowledged notifications -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'acknowledged'"/>
+
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+
+            </xf:action>
+
+
+            <!-- Application defined action to undo acknowledgement of the curremt notification.
+                 Sets the functionCode, save the notification, reset the notification list -->
+            <xf:action ev:event="undoAcknowledge">
+                <!-- Set the functionCode -->
+                <xf:setvalue ref="xxf:instance('notification-instance')//cda:participant[1]/cda:functionCode/@code" value="''"/>
+
+                <!-- Save the notification -->
+                <xf:send submission="save-notification-submission" target="notification-model"/>
+
+                <!-- Reload notification list.
+                     Call load-notifications-lists action to do this - requires a full query on the database, but this should be fast
+                -->
+                <xf:action>
+                    <xf:dispatch name="load-notifications-list" target="notification-model">
+                        <xxf:context name="notificationType" select="xxf:instance('control-instance')/currentNotificationType"/>
+                        <xxf:context name="actorList" select="xxf:instance('control-instance')/actorList"/>
+                        <xxf:context name="filterCriteria" select="xxf:instance('control-instance')/filterCriteria"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Set viewNavigationType - the current notification is now either due or charted -->
+                <xxf:variable name="cutOffTime" select="xxf:instance('control-instance')/cutOffTime"/>
+
+                <!-- viewNavigationType depends on the cutOffTime, as per the display -->
+                <xxf:variable name="viewNavigationType"
+                    select="if (xxf:instance('notification-instance')//cda:effectiveTime[1]/@value le $cutOffTime) then 'due' else 'charted'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="$viewNavigationType"/>
+
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+            </xf:action>
+
+
+            <!-- Application defined action to delete the curremt notification.
+                 Can only be deleted if already acknowledged -->
+            <xf:action ev:event="delete">
+                <xf:action
+                    if="exists(xxf:instance('notification-instance')/descendant::cda:participant[1]/cda:functionCode[@code=xxf:instance('control-instance')/acknowledgeCode])">
+                    <!-- Show confirmation dialogue.
+                         This calls delete-notification-after-confirmation -->
+                    <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                        <xxf:context name="action" select="'deleteNotification'"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:action>
+
+            <!-- Application defined action to delete the current notification.
+                 After confirmation by the user -->
+            <xf:action ev:event="delete-notification-after-confirmation">
+                <!-- Delete the notification -->
+                <xf:dispatch name="delete-notification" target="notification-model"/>
+
+                <!-- Clear the current notification (which is now deleted) -->
+                <xf:dispatch name="clear-notification" target="main-model"/>
+
+                <!-- Reload notification list.
+                     Call load-notification-lists action to do this - requires a full query on the database, but this should be fast
+                    -->
+                <xf:action>
+                    <xf:dispatch name="load-notifications-list" target="notification-model">
+                        <xxf:context name="notificationType" select="xxf:instance('control-instance')/currentNotificationType"/>
+                        <xxf:context name="actorList" select="xxf:instance('control-instance')/actorList"/>
+                        <xxf:context name="filterCriteria" select="xxf:instance('control-instance')/filterCriteria"/>
+                    </xf:dispatch>
+                </xf:action>
+
+            </xf:action>
+
+
+
+            <!-- Application defined actions to set the filters -->
+            <xf:action ev:event="fromFilter toFilter sourceFilter actionFilter">
+                <!-- Set the filter criteria old way (until 2016-01-27) re-run the database query -->
+                <!--
+                <xf:dispatch name="get-notification-lists" target="main-model"/>
+                -->
+                <!-- Don't need to do anything here - filters are applied directly to the notification-annotations-instance and notification-actions-instance -->
+            </xf:action>
+
+        </xf:model>
+
+
+        <!-- ========= Main model contains stuff specific to this page ========= 
+            =================================================================== -->
+        <xf:model id="main-model">
+
+            <!-- Control of the view -->
+            <xf:instance id="control-instance">
+                <control xmlns="">
+                    <status/>
+                    <currentNotificationType/>
+                    <actorList/>
+                    <filterCriteria/>
+                    <cutOffTime/>
+                    <acknowledgeCode/>
+                </control>
+            </xf:instance>
+
+            <!-- Application defined action to download XML - called from the viewXML dialogue -->
+            <xf:action ev:event="download-xml">
+                <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                    <xxf:context name="export-instance" select="xxf:instance('notification-instance')"/>
+                    <xxf:context name="exportType" select="'PatientNotification'"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to clear the current notification.
+                 This is used to make sure the cross=patient view is not compromised when the notification changes -->
+            <xf:action ev:event="clear-notification">
+                <!-- Clear notification -->
+                <xf:delete nodeset="xxf:instance('notification-instance')/*"/>
+                <!-- Clear current notification in notificationsControl-instance -->
+                <xf:delete nodeset="xxf:instance('notificationsControl-instance')/currentNotification/*"/>
+                <!-- Clear demographics for current patient -->
+                <xf:dispatch name="clear-patient-demographics" target="patientDemographics-model"/>
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+            </xf:action>
+
+            <!-- Application defined action to set the current notification.
+                 The notification is passed as the selectedNotification parameter.
+                 Note that this may be empty () in cases where the user has selected a viewNavigationType with no notifications.
+                 If selectedNotification is empty then just clear the currentNotification -->
+            <xf:action ev:event="set-notification">
+                <xxf:variable name="selectedNotification" select="event('selectedNotification')"/>
+
+                <!-- Clear the current notification -->
+                <xf:delete nodeset="xxf:instance('notificationsControl-instance')/currentNotification/*"/>
+
+                <!-- Clear the patientId in view-parameters, in case anything is not right 
+                     (don't want to display wrong information in this cross-patient view) -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/patientId" value="''"/>
+
+                <!-- Only set notification if the requested notifcation exists -->
+                <xf:action if="exists($selectedNotification)">
+                    <xf:insert context="xxf:instance('notificationsControl-instance')/currentNotification" origin="$selectedNotification"/>
+
+                    <!-- Set patientId in view-parameters -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/patientId" value="$selectedNotification/patientId"/>
+
+                    <!-- Load demographics for the current patient (i.e. the patient for the current notification).
+                         This is a potentially dangerous operation - need to make absolutely sure the right patient is selected.
+                     -->
+
+                    <!-- Get the patient demographics. -->
+                    <xf:dispatch name="get-patient-demographics" target="patientDemographics-model">
+                        <xxf:context name="patientId" select="$selectedNotification/patientId"/>
+                        <xxf:context name="source" select="''"/>
+                        <xxf:context name="informationType" select="'records'"/>
+                    </xf:dispatch>
+
+                    <!-- Set the patient demographics (including age) for the current record -->
+                    <xf:dispatch name="set-patient-demographics" target="patientDemographics-model">
+                        <xxf:context name="patientId" select="$selectedNotification/patientId"/>
+                    </xf:dispatch>
+                    <xf:dispatch name="set-patient-age" target="patientDemographics-model"/>
+
+                    <!-- Check alerts for the patient (sets display in the patient label -->
+                    <xf:dispatch name="check-patient-alerts" target="patientDemographics-model"/>
+
+                    <!-- Load the notification composition.
+                         This loads the currently selected notification to notification-instance -->
+                    <xf:send submission="load-notification-submission" target="notification-model"/>
+                </xf:action>
+
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+
+            </xf:action>
+
+
+            <!-- Application defined action to set the filterCriteria.
+                Just sets the patient filter, since the other filters are applied dynamically (since 2016-05-13) -->
+            <xf:action ev:event="set-filterCriteria">
+                <!-- Set predicate for restriction to care team patients -->
+                <xxf:variable name="careTeamPatientIdString"
+                    select="string-join(xxf:instance('careTeamPatients-instance')/patient/@id,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                <xxf:variable name="patientRestriction"
+                    select="concat('[contains(''',$careTeamPatientIdString,''',ancestor::cda:ClinicalDocument/descendant::cda:patientRole[1]/cda:id/@extension)]')"/>
+                <xxf:variable name="patientRestrictionFilter"
+                    select="if (exists(xxf:instance('user-instance')/rbac/restrictPatientAccess[@value='careTeam'])) then $patientRestriction else ''"/>
+
+                <!-- Not setting the user-selected filters (since 2016-01-27) so these are left blank -->
+                <xf:setvalue ref="xxf:instance('control-instance')/filterCriteria" value="$patientRestrictionFilter"/>
+
+            </xf:action>
+
+
+            <!-- ========= Set up view when it is first loaded ========= 
+                =================================================================== -->
+            <xf:action ev:event="xforms-model-construct-done">
+                <!-- Load dictionary for current specialty 
+                     This is language dependent -->
+                <xf:dispatch name="load-dictionary" target="dictionary-model">
+                    <xxf:context name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                    <xxf:context name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
+                    <xxf:context name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+                </xf:dispatch>
+
+                <!-- Set the Care Setting.
+                     careSettingIRI is passed in view-parameters, but use the default if it is not set -->
+                <xxf:variable name="careSetting"
+                    select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
+
+
+                <!-- Set the In-tray displayName.
+                     Depends on the name of the user -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
+                    value="concat(xxf:instance('application-parameters-instance')/viewControlsActions/view[@viewType=xxf:instance('view-parameters-instance')/page]/@displayName,' - ',xxf:instance('user-instance')/credentials/username)"/>
+
+                <!-- Get the care teams for this user -->
+                <xf:dispatch name="getCareTeamsForUser" target="careTeam-model"/>
+
+                <!-- Get the list of the userId, roles and care teams for the current user.
+                     Then set the actor list for use in the get-notifications query -->
+                <xxf:variable name="userIRI" select="xxf:instance('user-instance')/@id"/>
+                <xxf:variable name="careTeamIRIList" select="xxf:instance('careTeamList-instance')/careTeam/@value"/>
+                <xxf:variable name="roleIRIList" select="xxf:instance('user-instance')/rbac/role/@value"/>
+
+                <!-- Set up the actor list for the notifcation query -->
+                <xf:setvalue ref="xxf:instance('control-instance')/actorList"
+                    value="string-join(($userIRI,$careTeamIRIList,$roleIRIList),''',''')"/>
+
+                <!-- Set up the filterCriteria for the notifcation query -->
+                <xf:dispatch name="set-filterCriteria" target="main-model"/>
+
+                <!-- If patient access for this user is limited to care team patients, then get the list of patients -->
+                <xf:action if="xxf:instance('user-instance')/rbac/restrictPatientAccess/@value='careTeam'">
+                    <xf:dispatch name="getCareTeamPatients" target="careTeam-model"/>
+                </xf:action>
+
+                <!-- Get the notifications for this user.
+                     These will be the full lists, since no filters have yet been set-->
+                <xf:dispatch name="load-notifications" target="notification-model">
+                    <xxf:context name="actorList" select="xxf:instance('control-instance')/actorList"/>
+                    <xxf:context name="filterCriteria" select="xxf:instance('control-instance')/filterCriteria"/>
+                </xf:dispatch>
+
+                <!-- Set variables for the loaded notification lists -->
+                <xxf:variable name="annotationNotifications" select="xxf:instance('notification-annotations-instance')/notification"/>
+                <xxf:variable name="actionNotifications" select="xxf:instance('notification-actions-instance')/notification"/>
+
+                <!-- Set up filters for notification display/selection.
+                     These use the full set of notifications, which are initially unfiltered -->
+                <xf:dispatch name="set-filter-selections" target="viewControlsActions-model">
+                    <xxf:context name="notifications" select="$annotationNotifications | $actionNotifications"/>
+                </xf:dispatch>
+
+                <!-- Set cutOffTime for due/charted notifications -->
+                <xf:setvalue ref="xxf:instance('control-instance')/cutOffTime" value="xs:string(current-date())"/>
+                <xxf:variable name="cutOffTime" select="xxf:instance('control-instance')/cutOffTime"/>
+
+                <!-- Set acknowledgeCode for marking notification as acknowledged -->
+                <xf:setvalue ref="xxf:instance('control-instance')/acknowledgeCode"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/acknowledge/@code"/>
+                <xxf:variable name="acknowledgeCode" select="xxf:instance('control-instance')/acknowledgeCode"/>
+
+                <!-- Initial viewNavigationType (e.g. due | charted | acknowledged) is the first on the list which has some items.
+                     Then set the currentNotificationType (first of those which has some items)
+                     Actually, there are only two notification types (annotation | notification) but this may change in the future -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="''"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/currentNotificationType" value="''"/>
+
+                <!-- Iterate through viewNavigationType -->
+                <xf:action
+                    xxf:iterate="xxf:instance('application-parameters-instance')/viewNavigationTypeSelection/view[@viewType=xxf:instance('view-parameters-instance')/page]/viewNavigationType/@value">
+                    <xxf:variable name="viewNavigationType" select="."/>
+
+                    <!-- The displayed notifications depend on the viewNavigationType -->
+                    <xxf:variable name="displayedAnnotationNotifications"
+                        select="if ($viewNavigationType='due') then $annotationNotifications[effectiveTime le $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='charted') then $annotationNotifications[effectiveTime gt $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='acknowledged') then $annotationNotifications[functionCode = $acknowledgeCode] else ()"/>
+                    <xxf:variable name="displayedActionNotifications"
+                        select="if ($viewNavigationType='due') then $actionNotifications[effectiveTime le $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='charted') then $actionNotifications[effectiveTime gt $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='acknowledged') then $actionNotifications[functionCode = $acknowledgeCode] else ()"/>
+
+                    <!-- Iterate through notificationType -->
+                    <xf:action xxf:iterate="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification/@type">
+                        <xxf:variable name="notificationType" select="."/>
+
+                        <!-- Set the first non-empty set found -->
+                        <xf:action if="xxf:instance('control-instance')/currentNotificationType=''">
+                            <!-- Notifications exist for this navigationType -->
+                            <xf:action
+                                if="($notificationType='annotation' and exists($displayedAnnotationNotifications)) or ($notificationType='notification' and exists($displayedActionNotifications))">
+                                <!-- Set the viewNavigationType -->
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="$viewNavigationType"/>
+                                <!-- Set the currentNotificationType -->
+                                <xf:setvalue ref="xxf:instance('control-instance')/currentNotificationType" value="$notificationType"/>
+
+                                <!-- Load the first notification for the viewNavigationType/currentNotificationType -->
+                                <xxf:variable name="activeNotification"
+                                    select="if ($notificationType='annotation') then  $displayedAnnotationNotifications[1] else if ($notificationType='notification') then $displayedActionNotifications[1] else ()"/>
+                                <xf:dispatch name="set-notification" target="main-model">
+                                    <xxf:context name="selectedNotification" select="$activeNotification"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:action>
+                    </xf:action>
+                </xf:action>
+
+                <!-- Expand view navigation list -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList" value="'true'"/>
+
+            </xf:action>
+
+
+            <!-- When form is ready to diaplay -->
+            <xf:action ev:event="xforms-ready">
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+
+            </xf:action>
+
+
+        </xf:model>
+
+    </xhtml:head>
+
+
+
+    <xhtml:body class="cityEHRBase orbeon crossPatient">
+        <!-- Action confirmation dialogue -->
+        <xi:include href="cityEHRActionConfirmationDialog.xhtml"/>
+        <!-- View XML dialogue box -->
+        <xi:include href="cityEHRViewXMLDialog.xhtml"/>
+        <!-- Fixed Header Information -->
+        <xhtml:div id="ehrHeader">
+            <xhtml:div id="patientLabel" class="hidden"></xhtml:div>
+            <xhtml:div id="systemNavigation">
+                <!-- System-level Navigation Pane -->
+                <xi:include href="cityEHRNavigation.xhtml"/>
+            </xhtml:div>
+            <!-- Logo Pane -->
+            <xhtml:div id="logo">
+                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+            </xhtml:div>
+        </xhtml:div>
+        <!-- === Level 2 /3 =================================== 
+            ehrContent
+            Contains
+            ehrNavigation
+            ehrView
+            ehrInfo
+            ==================================================
+        -->
+        <xhtml:div id="ehrContent">
+            <!-- =========================================================
+                ehrNavigation - navigation around the EHR
+                Contains
+                navigationType
+                navigationDisplay
+                ========================================================= -->
+            <xxf:variable name="ehrNavigationClass"
+                select="if (xxf:instance('view-parameters-instance')/viewDisplayLayout='landscape') then 'hidden' else ''"/>
+            <xhtml:div id="ehrNavigation" class="{$ehrNavigationClass}">
+                <xhtml:div id="navigationType">
+
+                    <!-- Controls to select the View Navigation type -->
+                    <xi:include href="cityEHRViewNavigationTypeSelection.xhtml"/>
+
+                    <!-- Button to collapse (hide) ehrNavigation -->
+                    <xhtml:div id="collapseNavigation">
+                        <xf:trigger appearance="minimal" class="layoutControl">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseNavigation']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'landscape'"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+
+                </xhtml:div>
+
+                <!-- Notifications are either due | charted | acknowledged 
+                        due = the notification has effective time today or some time in the past
+                        charted = the notification has effectiveTime in the future
+                        acknowledged = some user has acknowledged the notification (i.e. it is now archived)
+                        
+                        Within each type, notifications are classified as annotations (on events in the record) or actions (actions in pathways or from triggers)
+                        
+                        Notifications are of the form
+                        <notification>
+                            <notificationId>2016-01-27T10-44-37.258Z-ISO-13606-Entry-schedulingISO-13606-Element-schedulingtaskdate-CityEHRLetterpatientmeds-elfinone</notificationId>
+                            <handle>/db/orbeon/xmlstore/applications/ISO-13606-EHR_Extract-Elfin/data/37373737/notifications/2016-01-27T10-44-37.258Z-ISO-13606-Entry-schedulingISO-13606-Element-schedulingtaskdate-CityEHRLetterpatientmeds-elfinone</handle>
+                            <patientId>37373737</patientId>
+                            <patientName>Penrose</patientName>
+                            <effectiveTime>2016-02-03Z</effectiveTime>
+                            <author displayName="Elfin One" value="#CityEHR:User:elfinone"/>
+                            <notifyActor>#CityEHR:Role:Administrator</notifyActor>
+                            <functionCode>#CityEHR:Action:Acknowledge</functionCode>
+                            <displayName>Monitoring questionnaire in Scheduling</displayName>
+                            <actDisplayName/>
+                            <subjectCompositionTypeIRI>#CityEHR:Letter:patientmeds</subjectCompositionTypeIRI>
+                            <subjectHandleId/>
+                            <originComposition>#CityEHR:Form:scheduling</originComposition>
+                            <originEntry>#ISO-13606:Entry:scheduling</originEntry>
+                        </notification>           
+                        
+                -->
+                <xhtml:div id="navigationDisplay">
+
+                    <xxf:variable name="cutOffTime" select="xxf:instance('control-instance')/cutOffTime"/>
+                    <xxf:variable name="acknowledgeCode" select="xxf:instance('control-instance')/acknowledgeCode"/>
+
+                    <!-- Filters are set by the user -->
+                    <xxf:variable name="fromFilter" select="xxf:instance('viewControls-input-instance')/select[@id='fromFilter']/@value"/>
+                    <xxf:variable name="toFilter" select="xxf:instance('viewControls-input-instance')/select[@id='toFilter']/@value"/>
+                    <xxf:variable name="sourceFilter" select="xxf:instance('viewControls-input-instance')/select[@id='sourceFilter']/@value"/>
+                    <xxf:variable name="actionFilter" select="xxf:instance('viewControls-input-instance')/select[@id='actionFilter']/@value"/>
+
+                    <!-- Default items for 'No Filter' and 'Not Set' are in view-parameters -->
+                    <xxf:variable name="noFilterSelectionValue"
+                        select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/noFilterSelection/item[1]/@value"/>
+                    <xxf:variable name="emptyValueFilterSelectionValue"
+                        select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/emptyValueFilterSelection/item[1]/@value"/>
+
+                    <!-- Annotations - restricted by filters set by the user -->
+                    <xxf:variable name="annotationNotificationsUnfiltered"
+                        select="xxf:instance('notification-annotations-instance')/notification"/>
+                    <!-- From filter -->
+                    <xxf:variable name="annotationNotificationsFromFilter"
+                        select="if ($fromFilter = $emptyValueFilterSelectionValue) then $annotationNotificationsUnfiltered[author/@value = ''] else if ($fromFilter != $noFilterSelectionValue) then $annotationNotificationsUnfiltered[author/@value = $fromFilter] else $annotationNotificationsUnfiltered"/>
+                    <!-- To filter -->
+                    <!-- TBD -->
+                    <!-- Source filter -->
+                    <xxf:variable name="annotationNotificationsSourceFilter"
+                        select="if ($sourceFilter = $emptyValueFilterSelectionValue) then $annotationNotificationsFromFilter[originComposition = '' or originEntry=''] else if ($sourceFilter != $noFilterSelectionValue) then $annotationNotificationsFromFilter[concat(originComposition,xxf:instance('view-parameters-instance')/resultSeparator,originEntry) = $sourceFilter] else $annotationNotificationsFromFilter"/>
+                    <!-- Action filter -->
+                    <xxf:variable name="annotationNotificationsActionFilter"
+                        select="if ($actionFilter = $emptyValueFilterSelectionValue) then $annotationNotificationsSourceFilter[subjectCompositionTypeIRI = ''] else if ($actionFilter != $noFilterSelectionValue) then $annotationNotificationsSourceFilter[subjectCompositionTypeIRI = $actionFilter] else $annotationNotificationsSourceFilter"/>
+                    <!-- All filters applied -->
+                    <xxf:variable name="annotationNotificationsFiltered" select="$annotationNotificationsActionFilter"/>
+
+
+                    <!-- Action notifications - restricted by filters set by the user -->
+                    <xxf:variable name="actionNotificationsUnfiltered" select="xxf:instance('notification-actions-instance')/notification"/>
+                    <!-- From filter -->
+                    <xxf:variable name="actionNotificationsFromFilter"
+                        select="if ($fromFilter = $emptyValueFilterSelectionValue) then $actionNotificationsUnfiltered[author/@value = ''] else if ($fromFilter != $noFilterSelectionValue) then $actionNotificationsUnfiltered[author/@value = $fromFilter] else $actionNotificationsUnfiltered"/>
+                    <!-- To filter -->
+                    <!-- TBD -->
+                    <!-- Source filter -->
+                    <xxf:variable name="actionNotificationsSourceFilter"
+                        select="if ($sourceFilter = $emptyValueFilterSelectionValue) then $actionNotificationsFromFilter[originComposition = '' or originEntry=''] else if ($sourceFilter != $noFilterSelectionValue) then $actionNotificationsFromFilter[concat(originComposition,xxf:instance('view-parameters-instance')/resultSeparator,originEntry) = $sourceFilter] else $actionNotificationsFromFilter"/>
+                    <!-- Action filter -->
+                    <xxf:variable name="actionNotificationsActionFilter"
+                        select="if ($actionFilter = $emptyValueFilterSelectionValue) then $actionNotificationsSourceFilter[subjectCompositionTypeIRI = ''] else if ($actionFilter != $noFilterSelectionValue) then $actionNotificationsSourceFilter[subjectCompositionTypeIRI = $actionFilter] else $actionNotificationsSourceFilter"/>
+                    <!-- All filters applied -->
+                    <xxf:variable name="actionNotificationsFiltered" select="$actionNotificationsActionFilter"/>
+
+                    <!-- viewNavigationType can be due | charted | acknowledged -->
+                    <xxf:variable name="viewNavigationType" select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
+
+                    <!-- The displayed notifications depend on the viewNavigationType.                        
+                         The displayed lists are filtered by the type. -->
+                    <xxf:variable name="displayedAnnotationNotifications"
+                        select="if ($viewNavigationType='due') then $annotationNotificationsFiltered[effectiveTime le $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='charted') then $annotationNotificationsFiltered[effectiveTime gt $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='acknowledged') then $annotationNotificationsFiltered[functionCode = $acknowledgeCode] else ()"/>
+                    <xxf:variable name="displayedActionNotifications"
+                        select="if ($viewNavigationType='due') then $actionNotificationsFiltered[effectiveTime le $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='charted') then $actionNotificationsFiltered[effectiveTime gt $cutOffTime][functionCode != $acknowledgeCode] else if ($viewNavigationType='acknowledged') then $actionNotificationsFiltered[functionCode = $acknowledgeCode] else ()"/>
+
+                    <!-- Each set of notifications is split into types (i.e. annotation | notification) -->
+                    <xxf:variable name="notificationTypeList"
+                        select="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification/@type"/>
+
+                    <!-- Annotations and Notifications (Actions) for this category of notifications (i.e. due | charted | acknowledged) -->
+                    <xf:repeat nodeset="$notificationTypeList" id="notification-type-repeat">
+                        <xxf:variable name="notificationType" select="."/>
+                        <xxf:variable name="notificationTypeDisplayName"
+                            select="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification[@type=$notificationType]/@typeDisplayName"/>
+
+                        <xxf:variable name="notificationList"
+                            select="if ($notificationType='annotation') then $displayedAnnotationNotifications else $displayedActionNotifications"/>
+                        <xxf:variable name="notificationsCount" select="count($notificationList)"/>
+
+                        <!-- Set to 'hidden' on zero count if we don't want to show the option -->
+                        <xxf:variable name="viewNavigationItemClass" select="if ($notificationsCount gt 0) then '' else 'hidden'"/>
+
+                        <!-- Click on the viewNavigationItemSelect trigger toggles the display of the viewNavigation contents.
+                                 Contents are displayed for the currently selected notificationType -->
+                        <xhtml:span class="{$viewNavigationItemClass}">
+                            <xxf:variable name="selectionActionClass"
+                                select="if ($notificationType=xxf:instance('control-instance')/currentNotificationType and xxf:instance('view-parameters-instance')/showViewNavigationItemList='true') then 'collapse' else 'expand'"/>
+                            <!-- Trigger selects the type of notification -->
+                            <xf:trigger class="viewNavigationCategory" appearance="minimal">
+                                <xf:label
+                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/viewNavigationItem/prefix[@action=$selectionActionClass],$notificationTypeDisplayName,' (',$notificationsCount,')')"
+                                />
+                                <!-- Action when notification type is selected -->
+                                <xf:action ev:event="DOMActivate">
+                                    <!-- Toggle display of viewNavigationItemList on currently selected viewNavigationItem -->
+                                    <xxf:variable name="selectedNotificationType"
+                                        select="$notificationTypeList[index('notification-type-repeat')]"/>
+                                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                                        value="if ($selectedNotificationType=xxf:instance('control-instance')/currentNotificationType and .='true') then 'false'  else 'true'"/>
+                                    <xf:setvalue ref="xxf:instance('control-instance')/currentNotificationType"
+                                        value="$selectedNotificationType"/>
+                                    <!-- Set first notification in list as the current notification and load it -->
+                                    <xf:action>
+                                        <xxf:variable name="selectedNotification" select="$notificationList[1]"/>
+                                        <!-- Set current notification -->
+                                        <xf:dispatch name="set-notification" target="main-model">
+                                            <xxf:context name="selectedNotification" select="$selectedNotification"/>
+                                        </xf:dispatch>
+                                    </xf:action> </xf:action>
+                            </xf:trigger>
+                            <!-- Show the notifications for the currently selected  type -->
+                            <xxf:variable name="viewNavigationItemListClass"
+                                select="if (xxf:instance('control-instance')/currentNotificationType=$notificationType and xxf:instance('view-parameters-instance')/showViewNavigationItemList='true') then '' else 'hidden'"/>
+                            <!-- Show the notifications for the currently selected  type -->
+                            <xhtml:span class="{$viewNavigationItemListClass}">
+                                <xf:repeat nodeset="$notificationList" id="notification-repeat">
+                                    <xxf:variable name="notification" select="."/> <xxf:variable name="notificationTimeDisplay"
+                                        select="if ($notification/effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($notification/effectiveTime), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                                            else if ($notification/effectiveTime castable as xs:date) then format-date(xs:date($notification/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ())
+                                            else $notification/effectiveTime"
+                                    />
+                                    <!-- selectionClass highlights the currently selected notification -->
+                                    <xxf:variable name="selectionClass"
+                                        select="if (xxf:instance('notificationsControl-instance')/currentNotification/notification/notificationId=$notification/notificationId) then 'viewNavigationSelectedItem' else 'viewNavigationItem'"/>
+                                    <!-- Trigger selects the current notification -->
+                                    <xf:trigger class="{$selectionClass}" appearance="minimal">
+                                        <!-- Note that the &#13; carriage return produces nothing, not a CR -->
+                                        <!--
+                                        <xf:label
+                                            ref="concat($notificationTimeDisplay,' ',$notification/patientId,' ',$notification/patientName,' ',$notification/displayName)"/>
+                                            -->
+                                        <xf:label>
+                                            <xf:output ref="$notificationTimeDisplay"/>
+                                            <xhtml:br />
+                                            <xf:output ref="concat($notification/patientId,' ',$notification/patientName)"/>
+                                            <xhtml:br />
+                                            <xf:output ref="$notification/displayName"/>
+                                        </xf:label>
+                                        <!-- Action when notification is selected -->
+                                        <xf:action ev:event="DOMActivate">
+                                            <xxf:variable name="selectedNotification" select="$notificationList[index('notification-repeat')]"/>
+                                            <!-- Set current notification -->
+                                            <xf:dispatch name="set-notification" target="main-model">
+                                                <xxf:context name="selectedNotification" select="$selectedNotification"/>
+                                            </xf:dispatch>
+                                        </xf:action>
+                                    </xf:trigger>
+                                </xf:repeat>
+                            </xhtml:span>
+                            <!-- End of currently selected notification type -->
+                        </xhtml:span>
+                    </xf:repeat>
+                    <!-- End of repeat through notificationTypes -->
+                </xhtml:div>
+                <!-- End of navigationDisplay -->
+
+            </xhtml:div>
+
+            <!-- =========================================================
+                EHR View 
+                Contains
+                viewType
+                viewControls
+                viewDisplay
+                ========================================================= -->
+            <xhtml:div id="ehrView">
+
+                <!-- View Type - select the type of ehr view 
+                    ===================================================================== -->
+                <xhtml:div id="viewType">
+                    <!-- Button to expand (restore) ehrNavigation -->
+                    <xxf:variable name="expandNavigationClass"
+                        select="if (xxf:instance('view-parameters-instance')/viewDisplayLayout='portrait') then 'hidden' else ''"/>
+                    <xhtml:div id="expandNavigation" class="{$expandNavigationClass}">
+                        <xf:trigger appearance="minimal" class="layoutControl">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandNavigation']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'portrait'"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+                </xhtml:div>
+
+                <!-- View Controls - contains controls for the current displayed view content 
+                    ===================================================================== -->
+                <xhtml:div id="viewControls">
+                    <!-- View Controls Header -->
+                    <xi:include href="cityEHRViewControlsHeader.xhtml"/>
+                </xhtml:div>
+
+
+                <!-- View Display - contains display of the currently selected composition 
+                    ===================================================================== -->
+                <xhtml:div id="viewDisplay" class="content">
+                    <!-- Show message if In-Tray is restricted -->
+                    <xxf:variable name="displayRestrictedPatientAccessMessage"
+                        select="if (exists(xxf:instance('user-instance')/rbac/restrictPatientAccess[@value='careTeam'])) then 'message' else 'hidden'"/>
+                    <xhtml:p class="{$displayRestrictedPatientAccessMessage}">
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/restrictedMessage"/>
+                    </xhtml:p>
+
+                    <!-- Make sure that patient information is only displayed here if the patientId set in the view-parameters 
+                         matches the patientId in the currently selected notification. But only if a patient/notification is set-->
+
+                    <xxf:variable name="displayNotificationClass"
+                        select="if (xxf:instance('view-parameters-instance')/patientId != '' and xxf:instance('view-parameters-instance')/patientId = xxf:instance('notificationsControl-instance')/currentNotification/notification/patientId) then 'notificationInformation' else 'hidden'"/>
+
+                    <!-- Display of patient information for the currently selected notification -->
+                    <xhtml:ul class="{$displayNotificationClass}">
+
+                        <!-- Patient Label Pane -->
+                        <xhtml:li class="patientLabel">
+                            <xi:include href="cityEHRPatientLabel.xhtml"/>
+                        </xhtml:li>
+
+                        <!-- Notification display -->
+                        <xhtml:li>
+                            <xi:include href="cityEHRNotificationDisplay.xhtml"/>
+                        </xhtml:li>
+
+                    </xhtml:ul>
+
+
+                    <!-- For debugging -->
+
+                    <!--
+                    <xf:output ref="$currentNotification/handle"/>
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notification-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                    -->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('userSelection-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                    -->
+
+                    <!-- For debugging -->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notifications-query-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+-->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notification-annotations-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                        -->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notification-actions-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+-->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('resourceExistsXQuery-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('resourceExists-query-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('resourceExists-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                    -->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notificationsControl-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                    -->
+
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('viewControlsActions-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                    -->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notification-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+-->
+
+                </xhtml:div>
+            </xhtml:div>
+
+
+            <!-- EHR Info
+                Contains    infoType, infoDisplay 
+                ===================================================================== -->
+            <!--
+            <xhtml:div id="ehrInfo">
+                <xhtml:div id="infoType"> </xhtml:div>
+                <xhtml:div id="infoDisplay"> </xhtml:div>
+            </xhtml:div>
+            -->
+        </xhtml:div>
+        <!-- Fixed footer -->
+        <xi:include href="cityEHRFooter.xhtml"/>
+    </xhtml:body>
+</xhtml:html>

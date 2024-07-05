@@ -1,0 +1,1874 @@
+/*
+  *********************************************************************************************************
+  cityEHR
+  cityEHRSkin.css
+  Cascading style sheet for cityEHR user interface
+  Copyright (C) 2013-2021 John Chelsom.
+  This program is free software; you can redistribute it and/or modify it under the terms of the
+  GNU Lesser General Public License as published by the Free Software Foundation; either version
+  2.1 of the License, or (at your option) any later version.
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Lesser General Public License for more details.
+  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+  **********************************************************************************************************
+ */
+/*
+  =======================================================
+  Base set up
+  =======================================================
+ */
+body {
+    overflow:hidden;
+    padding:0px;
+    margin:0px;
+    height:100%;
+    max-height:100%;
+    background: #213d63 url("../images/backgrounds/main_bg.jpg") no-repeat top center;
+}
+.cityEHRBase {
+    text-decoration: none;
+    text-align: left;
+/* font-size: 0pt; - set this on the div containers, not at top level */
+    font-weight: normal;
+    font-family: sans-serif;
+    line-height: 19px;
+    color: #636677;
+}
+.releaseNotes {
+    padding:20px;
+    margin:20px;
+    overflow:auto;
+    font-family: sans-serif;
+    text-decoration: none;
+    text-align: left;
+    font-weight: normal;
+}
+.showblock {
+    border: 5px solid red;
+}
+.wireframePane {
+    font-size: 14pt!important;
+    font-family: sans-serif;
+    text-decoration: none;
+    font-weight: bold!important;
+    color: white!important;
+    background: orange!important;
+}
+
+/*
+  =======================================================
+  Framework Layout
+  =======================================================
+ */
+/* Level 1 - Fixed Header */
+#ehrHeader {
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    font-size: 0pt;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    height: 67px;
+    width: 100%;
+    background-color: #f6f8fc;
+    background-image: -webkit-linear-gradient(top, #f6f8fc, #ebeef3);
+    background-image: -moz-linear-gradient(top, #f6f8fc, #ebeef3);
+    background-image: -ms-linear-gradient(top, #f6f8fc, #ebeef3);
+    background-image: -o-linear-gradient(top, #f6f8fc, #ebeef3);
+}
+#patientLabel {
+    display:block;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 300px;
+    white-space:nowrap;
+    padding:5px;
+    font-size: 0pt;
+    background-color: #f6f8fc;
+}
+#systemNavigation {
+    display:block;
+    padding:5px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 1px;
+}
+#systemNavigation .controlPanel {
+    -moz-border-radius: 7px;
+    -webkit-border-radius: 7px;
+    border-radius: 7px;
+    height:100%;
+    text-align:right;
+    background-color: #4f2e65;
+    font-size: 10pt;
+}
+#logo {
+    display:block;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 60px;
+    padding:5px;
+}
+.logoimage {
+    height: 57px;
+}
+/* Level Two */
+#ehrContent {
+    display: flex;
+    flex-direction: row;
+    position:fixed;
+    top:67px;
+    left: 0px;
+    right: 0px;
+    bottom: 25px;
+    width: 100%;
+    font-size: 0pt;
+    overflow:hidden;
+}
+#ehrNavigation {
+    flex-grow: 0;
+    flex-shrink: 0;
+    display:flex;
+    flex-direction: column;
+    width: 300px;
+    text-align: left;
+    font-size: 10pt;
+    overflow: hidden;
+}
+#navigationType {
+    display:block;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 100%;
+    height: 40px;
+    font-size: 10pt;
+}
+#navigationDisplay {
+    display:block;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 100%;
+    text-align: left;
+    overflow: auto;
+    background-color: #262d40;
+    color: #fff;
+    font-size:10pt;
+}
+#ehrView {
+    flex-grow: 1;
+    flex-shrink: 1;
+    display: flex;
+    flex-direction: column;
+    font-size: 0pt;
+    text-align: left;
+    vertical-align:middle;
+    border:0px;
+    padding:0px;
+    margin:0px;
+    overflow:hidden;
+}
+#viewType {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 40px;
+    white-space:nowrap;
+    font-size: 10pt;
+    border:0px;
+    padding:0px;
+    margin:0px;
+    overflow:hidden;
+}
+#viewControls {
+    flex-grow: 0;
+    flex-shrink: 0;
+    background-color: #fff;
+    border:0px;
+    padding:0px;
+    margin:0px;
+    font-size: 10pt;
+    overflow:visible;
+}
+#viewDisplay {
+    flex-grow: 1;
+    flex-shrink: 1;
+    background-color: #fff;
+    font-size: 10pt;
+    border:0px;
+    padding:5px;
+    margin:0px;
+    overflow:auto;
+}
+#ehrInfo {
+    flex-grow: 0;
+    flex-shrink: 0;
+    display:flex;
+    flex-direction: column;
+    font-size: 0pt;
+    text-align: left;
+    width:300px;
+    overflow:hidden;
+}
+#infoType {
+    display:block;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width:100%;
+    height: 40px;
+    font-size: 10pt;
+}
+#infoDisplay {
+    display:block;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 100%;
+    font-size: 10pt;
+    text-align: left;
+    overflow: auto;
+    background: #262d40;
+}
+/* Level Four - Fixed Footer */
+#sessionInfo {
+    position: fixed;
+    width: 100%;
+    height: 25px;
+    bottom: 0px;
+    left: 0px;
+    background-color:#F0F0F1;
+    font-size: 0pt;
+}
+/*
+  ================================
+  Footer display
+  ================================
+ */
+.footerItem {
+    margin-left: 10px;
+    font-size: 8pt;
+    color: #626262;
+    margin-right: 10px;
+}
+/*
+  ================================
+  Level 1 Controls
+  ================================
+ */
+.systemNavigationControl {
+    display:inline-block;
+    *zoom: 1;
+    *display: inline;
+    text-align: center;
+    vertical-align: middle;
+    white-space:nowrap;
+    margin-right: 5px;
+    font-weight: bold!important;
+    color: #fff!important;
+    text-decoration: none!important;
+}
+.systemNavigationControl:hover, .systemNavigationControl:hover a {
+    color: #10b4de!important;
+}
+.systemNavigationControl a {
+    font-weight: bold!important;
+    color: #fff!important;
+    text-decoration: none!important;
+}
+/*
+  ================================
+  Level 2 Controls
+  ================================
+ */
+/* View type selection */
+.ViewTitle {
+    display:inline-block;
+    float:left;
+    height: 40px;
+    line-height: 40px;
+    font-size: 14pt;
+    font-weight:bold;
+    color: #fff;
+}
+#viewTypeControls, #navigationTypeControls {
+    display:inline-block;
+    padding-top: 0px;
+    float: left;
+    color: #fff;
+}
+#viewTypeControls .controlItem, #viewTypeControls .controlItem.current, #viewTypeControls .controlLabel {
+    height: 40px;
+    line-height: 40px;
+}
+#viewTypeControls .controlItem, #viewTypeControls .controlItem:visited {
+    color: #fff;
+}
+#viewTypeControls .controlItem:hover {
+    color: #636677!important;
+    background-color: #fff!important;
+}
+#viewTypeControls .controlItem.current, #viewTypeControls .controlItem.current:visited {
+    color: #636677!important;
+    background-color: #fff!important;
+}
+#viewTypeControls .controlItem.current:hover {
+    cursor:default;
+}
+/* Navigation type selection */
+#navigationTypeControls .controlItem {
+    height: 40px;
+    line-height: 40px;
+}
+#navigationTypeControls .controlItem, #navigationTypeControls .controlItem:visited {
+    color: #fff;
+}
+#navigationTypeControls .controlItem:hover {
+    color: #10b4de;
+    background-color: #262d40!important;
+}
+#navigationTypeControls .current, #navigationTypeControls .current:visited {
+    color: #fff;
+    background-color: #262d40!important;
+}
+#navigationTypeControls .current:hover {
+    cursor:default;
+    background-color: #262d40!important;
+    color: #fff;
+}
+/*
+  ================================
+  Layout controls
+  ================================
+ */
+.layoutControl:hover {
+    cursor:pointer;
+    color: #10b4de;
+}
+.layoutControl {
+    padding-top: 5px;
+    font-size: 8pt!important;
+    color: #fff!important;
+    padding-right: 10px;
+    text-decoration: none;
+}
+#collapseNavigation {
+    float: right;
+    display: inline;
+}
+#expandNavigation {
+    float: left;
+    display: inline;
+}
+#collapseInfo {
+    float: right;
+    display: inline;
+}
+#expandInfo {
+    float: right;
+    display: inline;
+}
+#maximiseView {
+    float: left;
+    display: inline;
+}
+#minimiseView {
+    float: left;
+    display: inline;
+}
+/*
+  =======================================================
+  EHR Navigation
+  Elements within navigationDisplay:
+  #navigationDisplay
+  viewNavigationCategory
+  viewNavigationItem
+  viewNavigationSubItem
+  viewNavigationSelectedItem
+  viewNavigationSelectedCategoryExpanded
+  viewNavigationSelectedCategoryCollpased
+  contentIndex
+  =======================================================
+ */
+.viewNavigationItem, .viewNavigationCategory, .viewNavigationSelectedCategoryExpanded {
+    display:block;
+    padding: 10px 15px;
+    border-bottom: 1px solid #171c28;
+    border-top: 1px solid #2f3852;
+    color: #fff;
+}
+
+.viewNavigationSelectedCategoryCollapsed {
+    display:block;
+    padding: 10px 15px;
+    border-bottom: 1px solid #171c28;
+    border-top: 1px solid #2f3852;
+    background-color:#F0F0F1!important;
+    color: #636677!important;
+}
+
+#navigationDisplay .viewNavigationSelectedItem {
+    display:block;
+    padding: 10px 15px;
+    border-bottom: 1px solid #171c28;
+    border-top: 1px solid #2f3852;
+    background-color:#F0F0F1!important;
+    color: #636677;
+    cursor:default!important;
+}
+#navigationDisplay .viewNavigationSubItem {
+    display:block;
+    padding: 10px 15px;
+    border-bottom: 1px solid #171c28;
+    border-top: 1px solid #2f3852;
+    background-color: #3e4455;
+    color: #fff;
+}
+.viewNavigationItem:hover, .viewNavigationCategory:hover, .viewNavigationSubItem:hover {
+    background-color:#F0F0F1!important;
+    color: #636677!important;
+    cursor:pointer;
+}
+/*
+.viewNavigationSelectedCategory:hover {
+    cursor:default!important;
+}
+ */
+.viewSelectionHeading {
+    font-weight:normal;
+    display:block;
+    padding-left: 15px;
+    border-top: 1px solid #3e4455;
+}
+.viewSelectionHeading:hover {
+    background-color: #3e4455!important;
+    color: #fff;
+    cursor:pointer;
+}
+.viewSelection {
+    padding-left: 30px;
+    color:#d8d8d8;
+}
+.viewSelection:hover {
+    background-color: #3e4455!important;
+    color: #fff;
+    cursor:pointer;
+}
+#navigationDisplay .contentIndex {
+    display:block;
+    background-color:#F0F0F1!important;
+    color: #636677;
+    padding: 5px 15px;
+}
+#navigationDisplay .contentIndex:hover {
+    background-color: #3e4455!important;
+    color: #fff;
+    cursor:pointer;
+}
+/*
+  =======================================================
+  EHR Information
+  =======================================================
+ */
+#infoDisplay .informationItem {
+    padding: 10px 15px;
+    display:block;
+    border-top: 1px solid #cbcbcd;
+    border-bottom: 1px solid #cbcbcd;
+}
+#infoDisplay .informationItemSelect {
+    margin: -10px -15px;
+    padding: 10px 15px;
+    display: block;
+    text-decoration: none;
+    position: relative;
+}
+#infoDisplay .informationItemSelect:hover {
+    background-color:#F0F0F1;
+    color: #636677;
+}
+#infoDisplay .informationItemContent {
+    display:block;
+    margin: 10px 15px;
+    padding: 0px 0px 0px 15px;
+    border: 1px solid #fff;
+    color: #000;
+    background-color:#F0F0F1;
+}
+/*
+  =======================================================
+  Sign On Layout
+  =======================================================
+ */
+#cityEHRSignOn {
+    position:fixed;
+    top:0px;
+    left: 0px;
+    width:100%;
+    bottom:25px;
+    overflow:auto;
+}
+.signOnBlock {
+    color: #fff;
+    text-align:left;
+    width: 720px;
+    margin: 0 auto;
+}
+#signOnBanner {
+    text-align:center;
+    padding-top:50px;
+}
+#signOnDetails {
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    min-height: 300px;
+    font-size: 10pt;
+}
+#signOnInfo {
+    color: #262d40;
+    font-size: 8pt;
+    text-align:left;
+}
+.signOnContent {
+    display:block;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 50%;
+}
+.signOnCredentials {
+    background-color: #262d40;
+}
+.signOnInstructions {
+    padding-top: 10px;
+    padding-left: 10px;
+}
+.signOnSplash {
+    display:flex;
+    flex-grow: 0;
+    flex-shrink: 0;
+    background-color: #fff;
+    align-items: center;
+    justify-content: center;
+}
+.splashImage {
+    display: inline-block!important;
+    text-align:center;
+    vertical-align:middle;
+}
+.signOnMessageContainer {
+    background-color:white;
+    border: 10px solid #262d40;
+    padding: 5px;
+}
+.signOnMessage {
+    display: block!important;
+    margin-top: 10px;
+}
+.signOnHeadline {
+    color: #fff;
+    font-weight:bold;
+    display: block!important;
+}
+.signOnInput {
+    margin-top: 10px;
+    padding-left: 10px;
+}
+.signOnControls {
+    margin-top: 20px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    color: #ffffff;
+}
+.signOnButton {
+    background-color: #3498db!important;
+    color: #ffffff!important;
+    display:inline-block;
+    *zoom: 1;
+    *display: inline;
+    text-align: center;
+    vertical-align: middle;
+    height: 20px;
+    padding: 5px;
+    margin-right: 5px;
+    text-decoration: none;
+    font-weight:bold;
+    border: 1px solid #3498db;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+}
+.signOnButton:hover {
+    background-color: #4f2e65;
+    color: #ffffff;
+    cursor:pointer;
+}
+.signOnButton a {
+    color: #fff  !important;
+}
+/*
+  =======================================================
+  Dashboard.
+  =======================================================
+ */
+.dashboard {
+    overflow: visible !important;
+    position: relative;
+    padding: 0px 0px 20px 20px;
+}
+.dashboard .dash-block {
+    min-width: 280px;
+    height: 171px;
+    float: left;
+    margin: 20px 20px 0px 0px;
+    padding: 18px;
+    background: #345!important;
+    border-color: #000;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+}
+.dashboard .dash-block.wideX {
+    width: 616px;
+}
+.dashboard .dash-block .searchTitle {
+    height: 20px;
+    color: #fff;
+    font-size: 18pt;
+    padding: 12px;
+    margin: -12px -12px 0px -12px;
+    background: #355;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+}
+.dashboard .dash-block .searchControls {
+    float:right;
+    font-size: 10px;
+}
+.dashboard .dash-block .dashboardContent {
+    height: 130px;
+    clear: both;
+}
+.dashboard .dash-block .dashboardContent .fig {
+    color: #fff;
+    font-size: 40px;
+    line-height: 40px;
+    margin: 10px 15px 10px 0px;
+}
+.dashboard .dash-block .dashboardContent .categories {
+    color: #fff;
+    font-size: 16px;
+    margin-top: 15px;
+    height: 90px;
+    overflow: hidden;
+}
+.dashboard .dash-block .dashboardContent .dashboardChart {
+    margin-top: 15px;
+    margin-left: 10px;
+    height: 60px;
+}
+.dashboard .dash-block .searchFooter {
+    border-top: 1px solid #fff;
+    background: #355;
+    font-size: 10px;
+    color: #fff;
+    clear: both;
+}
+/*
+  =======================================================
+  General Layout.
+  =======================================================
+ */
+ul {
+    list-style-type:none;
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+}
+li {
+    list-style-type:none;
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+    min-height: 1%;
+}
+.LayoutFooter {
+    clear:both;
+    height: 1px;
+    font-size: 1pt;
+}
+.Unranked {
+    display:inline;
+    float:left;
+    list-style-type:none;
+    margin: 0px;
+    padding: 0px;
+}
+.Ranked {
+}
+.imageContainer {
+    backgroundAttachment: scroll;
+}
+.standalone {
+    display:block;
+    clear: both;
+}
+.hidden {
+    display: none!important;
+    border: none!important;
+    padding: 0 0 0 0!important;
+}
+.message {
+    padding-left: 5px;
+    font-size: 10pt;
+}
+.info {
+    background:white;
+}
+.errorContainer {
+    background-color:white;
+    padding-left: 5px;
+}
+.error {
+    color: red!important;
+    font-style:bold;
+    font-size: 10pt;
+}
+.alert {
+    color: blue!important;
+    font-style:bold;
+    font-size: 10pt;
+}
+.rightText {
+    text-align: right;
+}
+.icon {
+}
+.ScrollingContainer {
+    font-size: 10pt;
+    max-height:600px;
+    max-width:800px;
+    display:block;
+    overflow:auto;
+}
+.container {
+    font-size: 10pt;
+    display:block;
+    overflow:auto;
+}
+.action:hover {
+    cursor:pointer;
+}
+/*
+  ================================
+  Image maps
+  ================================
+ */
+.imageMap {
+    display: block;
+    position:relative;
+}
+.imageMapHotSpot:hover {
+    height: 20pt;
+    cursor:pointer;
+    color: #10b4de;
+}
+.imageMapHotSpot {
+    padding: 5px;
+    font-size: 10pt;
+    background: #fff;
+}
+.imageMapText {
+    padding: 5px;
+    font-size: 10pt;
+    color: white;
+}
+/*
+  ================================
+  Lifeline
+  ================================
+ */
+ 
+.lifeLine {
+    display: flex;
+    width:90%;
+}
+.lifeLineSlot {
+    flex-basis: 100%;
+    bottom: 0;
+  background: grey;
+  display: flex;
+  flex-wrap: wrap-reverse;
+}
+ .lifeLineEvent {
+   padding: 3px;
+   background-color: #fff;
+   font-size: 20pt;
+   color: #636677;
+   }
+ .lifeLineEventPad {
+   flex-grow: 2;
+   flex-basis: 100%;
+   width: 100%;
+   background-color: green;
+   }
+ /*
+.lifeLine {
+    width: 100%;
+    table-layout: fixed;
+}
+.lifeLineSlot {
+    vertical-align: bottom;
+    text-align:right;
+}
+.lifeLineEvent {
+   float:right;
+   padding: 3px;
+   background-color: #fff;
+   font-size: 20pt;
+   color: #636677;
+   }
+ */
+ 
+/*
+  ================================
+  General display
+  ================================
+ */
+a, a:hover, a:visited {
+    text-decoration:none!important;
+    outline: 0;
+}
+select {
+    border: 1px solid #636677;
+    padding: 3px;
+    margin-top:1px;
+    margin-bottom:1px;
+    text-decoration:none;
+    border-radius: 0;
+    outline: 0;
+    background-color: #fff!important;
+    font-family: sans-serif!important;
+    font-size: 10pt!important;
+    color: #636677!important;
+}
+option {
+    background-color: #fff!important;
+    font-family: sans-serif!important;
+    font-size: 10pt!important;
+}
+input {
+    border: 1px solid #636677;
+    padding: 3px;
+    margin-top:1px;
+    margin-bottom:1px;
+    text-decoration:none;
+    border-radius: 0;
+    font-size: 10pt;
+    color: #636677!important;
+    background-color:#fff!important;
+}
+img {
+    padding 0px;
+    margin-top:1px;
+    margin-bottom:1px;
+}
+a.button {
+    background-color: #3498db!important;
+    display:inline-block;
+    *zoom: 1;
+    *display: inline;
+    text-align: center;
+    vertical-align: middle;
+    padding: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+    height: 20px;
+    text-decoration: none;
+    color: #fff;
+    font-weight:bold;
+    border: 1px solid #3498db;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+}
+a.button:hover {
+    background-color: #4f2e65!important;
+}
+button, button:hover {
+    text-decoration: none;
+    }
+.dialogue {
+    font-size: 10pt;
+}
+.dialogueTitle {
+    font-weight: bold;
+    font-size: 12pt;
+    color:#62675F;
+    list-style-type:none;
+    padding-top: 5px;
+    padding-right: 0px;
+    padding-left: 2px;
+    padding-bottom: 5px;
+    background-color: inherit;
+    border-bottom:1px solid #a0a0a0;
+    margin-bottom: 5px;
+    min-height: 30px;
+}
+/*
+  =======================================================
+  Level 3 - View Controls Layout and Style
+  =======================================================
+ */
+/* View Controls */
+.viewControlsHeader {
+    display: block;
+    clear:both;
+    padding-top: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+    font-size: 10pt;
+    color: #636677;
+    background-color: #fff;
+    border-bottom: 1px solid #dfdfdf;
+}
+.viewControlsTitle {
+    float: left;
+    font-size: 12pt;
+    font-weight: bold;
+    padding-right: 5px;
+}
+.viewControlsMessage {
+    float: left;
+    font-style:italic;
+    padding-right: 5px;
+    font-size: 8pt;
+}
+.viewControlsDisplay {
+    float: left;
+    font-style:normal;
+    padding-right: 5px;
+    font-size: 10pt;
+}
+.viewControlsActions {
+    color: #636677;
+    font-size: 10pt;
+    float:right;
+    padding: 0px;
+    vertical-align: middle;
+}
+.viewControl {
+    font-size: 10pt;
+}
+.requiredElementInfo {
+    background-color:#FFCCCC!important;
+    font-size: 10pt;
+    font-weight: bold;
+}
+/*
+  ================================
+  Control panels
+  ================================
+ */
+.controlPanel {
+    display: block;
+    clear:both;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: 10pt;
+}
+.controlPanelTitle {
+    height: 100%;
+    padding-right: 4em;
+    font-size: 10pt;
+    font-weight: bold;
+    font-style:italic;
+}
+.controlPanelGroup {
+    padding: 3px;
+    white-space:nowrap;
+}
+.controlItem, .controlLabel {
+    display:inline-block;
+    *zoom: 1;
+    *display: inline;
+    text-align: center;
+    vertical-align: middle;
+    white-space:nowrap;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-right: 5px;
+    font-size: 10pt;
+    font-weight: bold;
+    color:inherit!important;
+    background:inherit!important;
+    text-decoration: none!important;
+}
+.label {
+    text-align: left;
+    font-style: italic;
+    font-weight: normal;
+    color:inherit!important;
+    background:inherit!important;
+    padding-right: 0em;
+}
+.labelGroup {
+    text-align: left;
+    font-style: italic;
+    padding-left: 3em;
+    padding-right: 3em;
+}
+.labelItem {
+    height: 100%;
+    white-space:nowrap;
+    padding-left: 0px;
+    padding-right: 1px;
+    margin-right: 5px;
+    font-weight: bold;
+    color: #636677;
+}
+/*
+  ========================================================
+  Patient label (CDA Header)
+  ========================================================
+ */
+.patientLabel {
+    background-color: #f6f8fc!important;
+}
+.prefix {
+}
+.family {
+    text-align: left;
+    text-transform:uppercase;
+}
+.given {
+}
+/*
+  ========================================================
+  CDA Document layout on forms and views
+  ========================================================
+ */
+.checked .unchecked, .unchecked .checked {
+    display:none;
+}
+.checked .checked, .unchecked .unchecked {
+    display:inline;
+}
+.checked, .unchecked {
+    cursor:pointer;
+}
+.smallSelect {
+    font-size: 8pt;
+    white-space:nowrap;
+}
+.formHeader {
+    font-size: 10pt;
+}
+.formControl {
+    vertical-align: middle;
+}
+/*
+  ========================================================
+  Annotations display for CDA Document views
+  ========================================================
+ */
+.annotationsContainer {
+    background-color:#FFCCCC!important;
+}
+table.annotationsList {
+    width: 100%;
+    margin-top:1px;
+    margin-bottom:1px;
+    border:1px solid #e5eff8;
+    font-size:10pt;
+    white-space:normal!important;
+}
+table.annotationsList tbody tr td {
+    padding:0px;
+    margin-top:1px;
+    margin-bottom:1px;
+    border:1px solid #e5eff8;
+    font-size: 10pt;
+    text-align:left;
+    background-color:#F0F0F1;
+    vertical-align:top;
+}
+table.annotationsList thead tr th {
+    text-align:center;
+    font-size: 10pt;
+    background-color:#d8d8d8;
+    border:1px solid #e5eff8;
+    padding:0px;
+    margin-top:1px;
+    margin-bottom:1px;
+}
+/*
+  ========================================================
+  Notification display in the InTray
+  ========================================================
+ */
+.notificationInformation {
+    padding-top:30px;
+    padding-left:30px;
+}
+.notificationHeader {
+    display: block;
+    clear:both;
+    padding-top:10px;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: 10pt;
+}
+.notificationBody {
+    display: block;
+    clear:both;
+    padding-top:10px;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: 10pt;
+}
+/*
+  ======================================
+  Parameters used in cityEHRAdmin
+  ======================================
+ */
+.parameterClass {
+    margin-left:10px;
+    margin-bottom:20px;
+    border:0px solid grey;
+}
+.parameterClassTitle {
+    white-space:nowrap;
+    background-color:#F0F0F1!important;
+    color:#62675F;
+    font-weight:bold;
+    font-style:italic;
+    padding-top: 5px;
+    padding-bottom: 10px;
+    display:block;
+}
+.parameterIndent {
+    display:inline-block;
+    width:30px;
+}
+.parameterContainer {
+    margin-left:10px;
+    margin-bottom:10px;
+    white-space:nowrap;
+}
+.parameterTitle {
+    color:#62675F;
+    font-weight:bold;
+    font-style:italic;
+    margin-left:10px;
+    margin-bottom:5px;
+}
+.parameter {
+    margin-left:10px;
+    margin-bottom:5px;
+}
+.parameterValueTitle {
+    color:#62675F;
+    font-style:italic;
+    margin-left:10px;
+    margin-right:3px;
+}
+.parameterValue {
+    padding-left:20px;
+}
+/*
+  ======================================
+  Schedule used in cityEHRAdmin
+  ======================================
+ */
+ .scheduleTable {
+    padding-left:20px;
+}
+ .scheduleTable td {
+    height: 100px;
+    width:100px;
+    text-align:left;
+    vertical-align:top;
+    white-space:nowrap;
+ }
+  .scheduleTable .active {
+    background-color:#d4ffe4;
+ }
+/*
+  ========================================================
+  Selection list used for patient cohorts (inlcuding clinic lists and patient search results).
+  Also displayList just used for display, not selection
+  ========================================================
+ */
+.border {
+border: solid 2px black!important;
+} 
+.selectionListContainer {
+    height: 300px;
+    overflow:auto;
+}
+/* selectionlist used for patient selection and other lists */
+table.selectionList, table.displayList {
+    min-width:100%;
+    width:100%;
+    margin-top:0px;
+    border-collapse:collapse;
+    border-spacing:0px;
+    font-size: 10pt;
+}
+.selectionList td, .displayList td {
+    color:#000000;
+    text-align:left;
+    vertical-align:top;
+    white-space:nowrap;
+}
+.displayList td {
+    white-space:nowrap;
+}
+.selectionList thead tr, .displayList thead tr {
+    background-color:#F0F0F1!important;
+    color:#62675F;
+    font-weight:bold;
+    font-style:italic;
+}
+.selectionList thead tr td, .displayList thead tr td, .selectionList thead tr th, .displayList thead tr th {
+    border-bottom:2px solid #c3c3c3;
+    padding:2px;
+    white-space:nowrap;
+}
+.selectionList tbody tr td div {
+    display:table;
+    width:100%;
+}
+.selectionList tbody tr td div a {
+    display:table-cell;
+    padding:2px;
+    border:0px;
+    color:#000;
+}
+.selectionList thead tr td, .displayList thead tr td {
+    color:#62675F;
+}
+.selectionList tbody tr, .displayList tbody tr {
+    background:#f8f8f8!important;
+}
+.selectionList tbody tr.odd, .displayList tbody tr.odd {
+    background-color:#fff!important;
+}
+.selectionList tbody tr.selected {
+    background-color: #e7ebf6!important;
+}
+.selectionList tbody tr:hover {
+    background-color: #e7ebf6!important;
+    cursor:pointer;
+}
+.selectionList tbody tr:hover td {
+    color:#000;
+}
+.subSelection {
+    padding-left: 15px;
+}
+/* Selection list controls */
+.selectionListControlPanel {
+    display: block;
+    clear: both;
+    padding-left: 5px;
+    padding-top: 5px;
+    padding-bottom: 0px;
+    border: 0px;
+    margin-top: 10px;
+    font-size: 10pt;
+    background-color: #fff;
+}
+/*
+  ======================================
+  Tables for editing parameters
+  ======================================
+ */
+table.editList {
+    min-width:100%;
+    width:100%;
+    margin-top:0px;
+    border-collapse:separate;
+    border-spacing:5px;
+    font-size: 10pt;
+} 
+table.editList tbody tr td.header {
+    width:48%;
+    text-align:center;
+        font-weight: bold;
+}
+table.editList tbody tr td.baseLanguage {
+text-align:right;
+width:48%;
+}
+table.editList tbody tr td.baseLanguageSet {
+background:#fae2d4;
+    text-align:center;
+}
+table.editList tbody tr td.targetLanguageSet {
+background:#dffad4;
+    text-align:center;
+}
+table.editList tbody tr td.targetLanguage {
+width:48%;
+}
+
+ 
+/*
+  ======================================
+  Dropdown dialogs
+  ======================================
+ */
+.dropdown {
+    font-size: 10pt;
+    max-height: 200px;
+    max-width:400px;
+    display:block;
+    overflow:auto;
+}
+.dropdown ul li:hover {
+    background-color: #e7ebf6;
+    cursor:pointer;
+}
+/*
+  ======================================
+  Charts
+  ======================================
+ */
+.chartDisplayX {
+    position:relative;
+    font-size: normal;
+    border:0px solid green;
+    width: 900px;
+}
+.chartDisplay {
+    font-size: normal;
+    border:0px solid green;
+    width: 1200px;
+}
+.chartLegend {
+    float:left;
+    display:inline;
+    font-size: normal;
+    border:0px solid green;
+}
+.chartSet {
+    font-size: normal;
+    border:0px solid green;
+    padding-left: 10px;
+    height: 600px;
+    width: 1000px;
+    overflow: auto;
+}
+.chartContainer {
+    clear:both;
+    margin-top: 5px;
+    width: 600px;
+    height: 250px;
+    display: block;
+    font-size: 10pt;
+    border:0px solid green;
+}
+.legendItem:hover {
+    background-color:#FFFFFF;
+    color: #10b4de;
+    cursor:pointer;
+}
+.legendItem {
+    font-size: normal;
+}
+/*
+  =======================================================
+  Health Record Content - ISO13606 Component Layout
+  =======================================================
+ */
+.ISO13606-Composition, .ISO-13606\:Composition{
+    font-size: 0pt!important;
+    text-align: left;
+    vertical-align:top;
+    margin-top: 5px;
+    margin-bottom: 20px;
+    border:0px solid green;
+    background-color:#F0F0F1!important;
+}
+.ISO13606-Section {
+    font-size: 0pt;
+    margin-right: 10px;
+    margin-left: 10px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    border:1px solid #c3c3c3;
+    padding-right: 2px;
+    padding-left: 0px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+.ISO13606-Section-DisplayName {
+    font-weight: bold;
+    font-size: 12pt;
+    color:#62675F;
+    list-style-type:none;
+    clear:both;
+    padding-right: 0px;
+    padding-left: 2px;
+    background-color:#d8d8d8;
+    border-bottom:0px solid #a0a0a0;
+    margin-bottom: 5px;
+    min-height: 20px;
+}
+.ISO13606-Entry {
+    font-size: 0pt;
+    margin-right: 0pt;
+    margin-left: 2px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    padding-right: 0px;
+    padding-left: 5px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    border:0px solid red;
+    white-space:nowrap;
+}
+.ISO13606-Entry-DisplayName {
+    font-weight:normal;
+    font-style:italic;
+    font-size: 10pt;
+    white-space:nowrap;
+    text-align:left;
+    padding-right: 4px;
+    padding-left: 1px;
+}
+.ISO13606-Entry-Alert {
+    font-weight:normal;
+    font-style:italic;
+    font-size: 10pt;
+    white-space:nowrap;
+    text-align:left;
+    padding-right: 4px;
+    padding-left: 1px;
+    background-color:#FFCCCC!important;
+}
+.ISO13606-Conditions {
+    font-weight:normal;
+    font-style:italic;
+    font-size: 10pt;
+    white-space:nowrap;
+    text-align:left;
+    padding-right: 4px;
+    padding-left: 1px;
+}
+.ISO13606-Conditions.satisfied {
+    background-color:#66FF99!important;
+}
+.ISO13606-Conditions.notSatisfied {
+    background-color:#FFCCCC!important;
+}
+.ISO13606-Cluster {
+    font-size: 0pt;
+    margin-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px;
+    border:0px solid green;
+    vertical-align:middle;
+}
+.ISO13606-Element {
+    font-size: 0pt;
+    margin-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px;
+    border:0px solid green;
+    vertical-align:middle;
+}
+.firstElement {
+    margin-left: 0px;
+}
+.ISO13606-Element-DisplayName {
+    display:inline-block;
+    font-weight:normal;
+    font-style:italic;
+    font-size: 10pt;
+    white-space:nowrap;
+    text-align:left;
+    vertical-align:middle;
+}
+.ISO13606-Data {
+    display:inline-block;
+    font-size: 10pt;
+    font-weight:bold;
+    padding-left: 0px;
+    margin-left: 5px;
+    margin-top:1px;
+    margin-bottom:1px;
+    white-space:wrap;
+    vertical-align:top;
+    background-color:#F0F0F1!important;
+}
+.ISO13606-Element-Units {
+    display:inline-block;
+    font-size: 10pt;
+    font-weight:normal;
+    font-style:italic;
+    padding-left: 2px;
+    vertical-align:middle;
+}
+/* Element values, including contained Orbeon controls (select1, autocomplete, input) */
+li.ISO13606-Data input {
+    background-color:#f8f8f8;
+    font-size: 10pt;
+    font-weight: bold;
+}
+.requiredNotSet li input {
+    background-color:#FFCCCC!important;
+    font-size: 10pt;
+}
+.requiredNotSet li select {
+    background-color:#FFCCCC !important;
+    font-size: 10pt;
+}
+.inputError input {
+    background-color:#FFCCCC!important;
+}
+.ISO13606-Id {
+    color: #fc7303;
+    font-size: 10pt;
+    font-weight: bold;
+}
+.ISO13606-Composition.ISO13606-Structure {
+    border:4px solid #11eafa;    
+}
+.ISO13606-Section.ISO13606-Structure {
+    border:4px solid #a0a69d;    
+}
+.ISO13606-Entry.ISO13606-Structure {
+    border:4px solid #4efc03;    
+}
+.ISO13606-Cluster.ISO13606-Structure {
+    border:4px solid #fc03c6;    
+}
+.ISO13606-Element.ISO13606-Structure {
+    border:4px solid #fcfc03;    
+}
+.ISO13606-Data.ISO13606-Structure {
+    border:4px solid #ff7c6b;    
+}
+/*
+  ======================================
+  Core Data Sets.
+  Used for display on forms, cohort search, views
+  ======================================
+ */
+.coreDataSet {
+    background-color:#F0F0F1;
+    margin-left: 20px;
+    padding-left: 20px;
+}
+.coreDataSetTitle {
+    white-space:nowrap;
+    font-weight: bold;
+    font-size: 10pt;
+    color:#62675F;
+    background-color:#d8d8d8;
+    padding: 5px;
+    margin: 0px;
+    border:2px solid #d8d8d8;
+}
+.coreDataSetElements {
+    border:2px solid #d8d8d8;
+    padding: 10px;
+}
+a.SupplementaryEntryTrigger.xforms-control.xforms-trigger.xforms-trigger-appearance-minimal {
+    display:inline;
+    white-space:nowrap;
+    font-size: 6pt !important;
+    font-weight:normal;
+    font-style:italic;
+    padding-right: 20px;
+    padding-left: 5px;
+    background-color:#F0F0F1!important;
+}
+.SupplementaryEntry {
+    display: inline-block;
+    white-space:nowrap;
+    font-size: 10pt;
+    font-weight:normal;
+    font-style:italic;
+    border:1px solid black;
+    padding-left: 2px;
+    padding-top: 2px;
+    padding-right: 20px;
+    vertical-align:top;
+    background-color:#F0F0F1!important;
+}
+/*
+  ======================================
+  Class selection
+  ======================================
+ */
+a.ClassHierarchySelectTrigger.xforms-control.xforms-trigger.xforms-trigger-appearance-minimal {
+    display:inline;
+    white-space:nowrap;
+    font-size: 12pt !important;
+    font-weight:normal;
+    font-style:italic;
+    padding-right: 5px;
+    padding-left: 2px;
+    background-color:#F0F0F1!important;
+}
+/*
+  ======================================
+  Table Displays. Used for tables of CDA organisers
+  ======================================
+ */
+.tableContainer {
+    overflow-x: auto;
+    -ms-overflow-x: auto;
+    overflow-y: hidden;
+    -ms-overflow-y: hidden;
+}
+table.CDAEntryList {
+    margin-top:1px;
+    margin-bottom:1px;
+    border:1px solid #e5eff8;
+    font-size:10pt;
+    white-space:normal!important;
+}
+table.CDAEntryList tbody tr td {
+    padding:0px;
+    margin-top:1px;
+    margin-bottom:1px;
+    border:1px solid #e5eff8;
+    font-size: 10pt;
+    text-align:left;
+    background-color:#F0F0F1;
+    vertical-align:top;
+}
+table.CDAEntryList thead tr th {
+    text-align:center;
+    font-size: 10pt;
+    background-color:#d8d8d8;
+    border:1px solid #e5eff8;
+    padding:0px;+
+    margin-top:1px;
+    margin-bottom:1px;
+}
+/*
+  ================================================
+  Autocomplete selections - set width.
+  Using 0.6 the width in characters as the em width
+  ================================================
+ */
+li.ISO13606-Data span.w10 div div span.xforms-input input {
+    width: 7em;
+}
+li.ISO13606-Data span.w11 div div span.xforms-input input {
+    width: 8em;
+}
+li.ISO13606-Data span.w12 div div span.xforms-input input {
+    width: 8em;
+}
+li.ISO13606-Data span.w13 div div span.xforms-input input {
+    width: 9em;
+}
+li.ISO13606-Data span.w14 div div span.xforms-input input {
+    width: 9em;
+}
+li.ISO13606-Data span.w15 div div span.xforms-input input {
+    width: 10em;
+}
+li.ISO13606-Data span.w16 div div span.xforms-input input {
+    width: 11em;
+}
+li.ISO13606-Data span.w17 div div span.xforms-input input {
+    width: 11em;
+}
+li.ISO13606-Data span.w18 div div span.xforms-input input {
+    width: 12em;
+}
+li.ISO13606-Data span.w19 div div span.xforms-input input {
+    width: 12em;
+}
+li.ISO13606-Data span.w20 div div span.xforms-input input {
+    width: 12em;
+}
+li.ISO13606-Data span.w21 div div span.xforms-input input {
+    width: 12em;
+}
+li.ISO13606-Data span.w22 div div span.xforms-input input {
+    width: 13em;
+}
+li.ISO13606-Data span.w23 div div span.xforms-input input {
+    width: 13em;
+}
+li.ISO13606-Data span.w24 div div span.xforms-input input {
+    width: 14em;
+}
+li.ISO13606-Data span.w25 div div span.xforms-input input {
+    width: 15em;
+}
+li.ISO13606-Data span.w26 div div span.xforms-input input {
+    width: 16em;
+}
+li.ISO13606-Data span.w27 div div span.xforms-input input {
+    width: 16em;
+}
+li.ISO13606-Data span.w28 div div span.xforms-input input {
+    width: 17em;
+}
+li.ISO13606-Data span.w29 div div span.xforms-input input {
+    width: 17em;
+}
+li.ISO13606-Data span.w30 div div span.xforms-input input {
+    width: 18em;
+}
+li.ISO13606-Data span.w31 div div span.xforms-input input {
+    width: 18em;
+}
+li.ISO13606-Data span.w32 div div span.xforms-input input {
+    width: 19em;
+}
+li.ISO13606-Data span.w33 div div span.xforms-input input {
+    width: 19em;
+}
+li.ISO13606-Data span.w34 div div span.xforms-input input {
+    width: 20em;
+}
+li.ISO13606-Data span.w35 div div span.xforms-input input {
+    width: 20em;
+}
+li.ISO13606-Data span.w36 div div span.xforms-input input {
+    width: 21em;
+}
+li.ISO13606-Data span.w37 div div span.xforms-input input {
+    width: 22em;
+}
+li.ISO13606-Data span.w38 div div span.xforms-input input {
+    width: 22em;
+}
+li.ISO13606-Data span.w39 div div span.xforms-input input {
+    width: 23em;
+}
+li.ISO13606-Data span.w40 div div span.xforms-input input {
+    width: 24em;
+}
+/* Width of aoutcomplete selection dropdown */
+li.ISO13606-Data span div div div.yui-ac-container div.yui-ac-content {
+    width: 350px!important;
+}
+/*
+  =======================================================
+  Override Orbeon CSS
+  =======================================================
+ */
+
+.xforms-output-output, .xforms-output {
+    font:inherit;
+    font-size: inherit;
+    background: inherit;
+    color: inherit;
+    padding: 0!important;
+    margin: 0!important;
+    border: 0!important;
+}
+
+.xforms-label, .btn-link, .xforms-control, .xforms-trigger, .xforms-trigger-appearance-minimal, .xforms-trigger-appearance-modal {
+    font:inherit;
+    font-size: inherit;
+    background: inherit;
+    color: inherit;
+}
+
+/* Title on home page (cityEHRSignOn) must be hidden */
+.navbar-inverse {
+    display:none;
+}
+/* Full appearance on select (not select1, which is used for element selections) .xforms-select-appearance-full */
+span.verticalList span {
+    display:block!important;
+}
+/* Error display */
+.xforms-error-panel {
+    font-size: 10pt
+}
+/* Make sure Orbeon repeat template is not displayed */
+.xforms-repeat-template {
+    display:none!important;
+    border: 0px!important;
+}
+/* Mouseover on triggers */
+div.yui-tt div.bd {
+    font-size: 10pt!important;
+    background: #262d40!important;
+    color: #fff!important;
+}
+div.xbl-fr-fusion-charts-chart-div {
+    height: 250px;
+    width: 600px;
+    float: left;
+    border:2px solid black;
+}
+.xforms-repeat-selected-item-1, .xforms-repeat-selected-item-2, .xforms-repeat-selected-item-3, .xforms-repeat-selected-item-4, .xforms-tree-label-selected {
+    background-color:transparent;
+}
+/* Autocomplete static selection dropdown */
+div.yuimenu {
+    background-color:#fff!important;
+}
+li.yuimenuitem {
+    background-color:#fff!important;
+}
+li.yuimenuitem:hover {
+    background-color: #e7ebf6!important;
+    cursor:default!important;
+}
+/* position:relative needed to enable dropdown selection to be hidden properly */
+div.xbl-fr-autocomplete {
+    display: inline;
+/*
+  position:relative;
+ */
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container {
+/* background-color:red; */
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span div {
+    display: inline;
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span div div.fr-autocomplete-yui-div {
+    display: inline !important;
+    background-color:blue;
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span div div.xbl-component span {
+/* background-color:blue; */
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span div div.xbl-component span span {
+/* background-color:yellow; */
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span div div.xbl-component span span span {
+/* background-color:red; */
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span span.fr-autocomplete-dynamic-itemset {
+    display: none !important;
+    background-color:yellow;
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span span.xbl-fr-autocomplete-max-results-displayed {
+    display: none !important;
+    background-color:green;
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span select {
+    display: none !important;
+    background-color:cyan;
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span span.fr-autocomplete-external-value {
+    display: none !important;
+    background-color:red;
+}
+div.xbl-fr-autocomplete span.fr-autocomplete-container span button.fr-autocomplete-value-selected {
+    display: none !important;
+}

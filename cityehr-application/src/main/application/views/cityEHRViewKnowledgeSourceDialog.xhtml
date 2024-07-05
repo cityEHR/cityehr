@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRViewKnowledgeSourceDialog.xhtml
+    
+    Modal dialog box that displays a knowledge source
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+
+<xxf:dialog id="viewKnowledgeSourceDialog" appearance="full" level="modal" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xhtml:div class="dialogue">
+
+        <xxf:variable name="selectedMapIndex" select="xxf:instance('control-instance')/codeKnowledgeSources/selectedMapIndex"/>
+        <xxf:variable name="selectedKnowledgeMap"
+            select="if ($selectedMapIndex castable as xs:integer) then xxf:instance('knowledgeMap-instance')/rdf:Description[position()=$selectedMapIndex] else ()"/>
+        <xxf:variable name="selectedKnowledgeMapAbout" select="if (exists($selectedKnowledgeMap)) then $selectedKnowledgeMap/@rdf:about else ''"/>
+
+        <!-- rdf:about URL -->
+        <xf:trigger appearance="minimal">
+            <xf:label ref="$selectedKnowledgeMapAbout"/>
+            <xf:action ev:event="DOMActivate">
+                <xf:load resource="{$selectedKnowledgeMapAbout}" show="new"/>
+            </xf:action>
+        </xf:trigger>
+
+        <xhtml:br/>
+
+        <!-- The knowledge source embedded in iframe -->
+        <xhtml:iframe width="560" height="315" src="{$selectedKnowledgeMapAbout}" frameborder="0"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"/>
+
+        <!-- Need to be able to close the dialog if there was no active dialog defined -->
+        <xf:trigger class="button" appearance="minimal">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/codeKnowledgeSources/closeLabel"/>
+            <xxf:hide ev:event="DOMActivate" dialog="viewKnowledgeSourceDialog"/>
+        </xf:trigger>
+    </xhtml:div>
+</xxf:dialog>

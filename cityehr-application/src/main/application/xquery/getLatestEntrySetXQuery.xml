@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        getLatestEntrySetXQuery.xml
+        
+        XQuery to return all recorded instances of a set of entries.
+        
+        This is returning all cda:entry for the entries in entryIRISet.
+        Will include single and multiple entries
+        May include multiple values for the same entry, either because multiple values have been recorded at differnt effectiveTome
+        Or because the search is made using the @extension and there may be several entries aliased to that extension.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<query start="1" max="-1" xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $entry in //cda:id[@extension=('<entryIRISet/>')]/ancestor::cda:entry[descendant::cda:value]
+        order by $entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value descending
+        return $entry
+</query>
+
+<!--
+<query start="1" max="-1">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $entryIRI in ('<entryIRISet/>')
+        for $entry in collection()//cda:id[@extension eq $entryIRI]/ancestor::cda:entry[descendant::cda:value]
+        order by $entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value descending
+        return $entry
+</query>
+-->
+<!--
+<query start="1" max="-1">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $entryIRI in ('<entryIRISet/>')
+                let $entrySet := for $entry in collection()//cda:id[@extension eq $entryIRI]/ancestor::cda:entry[descendant::cda:value]
+                order by $entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value descending
+                return $entry
+        return $entrySet[1]
+</query>
+-->
+

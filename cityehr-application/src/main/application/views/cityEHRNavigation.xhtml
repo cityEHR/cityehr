@@ -1,0 +1,71 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRNavigation.xhtml
+    
+    Standard div for system navigation.
+    Included in every view, except cityEHRSignOn.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:ul class="controlPanel" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Top group contains navigation to non-patient pages -->
+    <xhtml:li class="controlPanelGroup">
+        <!-- Use access control rules to show only controls applicable to this role -->
+        <xxf:variable name="topStripControls"
+            select="xxf:instance('application-parameters-instance')/systemNavigationControls/topStrip/control[not(exists(role/@id)) or role/@id=xxf:instance('user-instance')/rbac/role/@value]"/>
+
+        <!-- xxf:modal="true" on trigger blocks the UI until the action in the trigger is done. -->
+        <xf:repeat nodeset="$topStripControls">
+            <xxf:variable name="control" select="."/>
+            <xf:trigger class="systemNavigationControl" appearance="minimal" xxf:modal="true">
+                <xf:label ref="$control/@displayName"/>
+                <!-- Invoke control action -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                        <xxf:context name="page" select="$control/@value"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:trigger>
+        </xf:repeat>
+    </xhtml:li>
+
+    <!-- Bottom group contains navigation to cross-patient pages -->
+    <xhtml:li class="controlPanelGroup">
+        <!-- Use access control rules to show only controls applicable to this role -->
+        <xxf:variable name="bottomStripControls"
+            select="xxf:instance('application-parameters-instance')/systemNavigationControls/bottomStrip/control[not(exists(role/@id)) or role/@id=xxf:instance('user-instance')/rbac/role/@value]"/>
+
+        <xf:repeat nodeset="$bottomStripControls">
+            <xxf:variable name="control" select="."/>
+            <xf:trigger class="systemNavigationControl" appearance="minimal" xxf:modal="true">
+                <xf:label ref="$control/@displayName"/>
+                <!-- Invoke control action -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                        <xxf:context name="page" select="$control/@value"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:trigger>
+        </xf:repeat>
+    </xhtml:li>
+</xhtml:ul>

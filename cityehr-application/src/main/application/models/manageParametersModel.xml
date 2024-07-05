@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    manageParametersModel.xml
+    
+    Xforms model for general management of parameters, loaded for cityEHRSignOn and cityEHRAdmin.
+    Has general actions used for both application and system parameters.
+   
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="manageParameters-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xxf:session-heartbeat="true">
+
+
+    <!-- === Control of the configuration management === -->
+    <xf:instance id="parametersControl-instance">
+        <control xmlns="">
+            <applicationIRI/>
+            <applicationId/>
+            <applicationDatabaseLocation/>
+            <timeStamp/>
+            <status model="manageParameters-model">waiting</status>
+            <editMode/>
+            <editContext/>
+            <imageLocation/>
+            <!-- Template for new terms in the language pack -->
+            <languagePack>
+                <term>
+                    <context path=""/>
+                    <variant code="" literal=""/>
+                </term>
+            </languagePack>
+            <!-- Attrbiutes used as terms for inclusion in the language pack -->
+            <termLiterals>
+                <name>displayName</name>
+                <name>label</name>
+                <name>hint</name>
+            </termLiterals>
+        </control>
+    </xf:instance>
+
+    <!-- === Managed parameters - can be application or system parameters === -->
+    <xf:instance id="managed-parameters-instance">
+        <parameters/>
+    </xf:instance>
+
+    <!-- Binding for data types.
+         The data type is specified in a cityEHR:type element at a higher level in the document -->
+    <xf:bind nodeset="xxf:instance('managed-parameters-instance')">
+        <!-- Data type for image parameters (this one on the element, not attribute) -->
+        <xf:bind
+            nodeset="//*[not(starts-with(../name(),'cityEHR:'))][for $e in name(), $a in @*/name() return ancestor::*/cityEHR:type/*[name()=$e][@*/name()=$a][@cityEHR:type='image']]"
+            type="xs:base64Binary"/>
+
+        <!-- Data types for parameters -->
+        <xf:bind
+            nodeset="//@*[for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:type/*[name()=$e][@*/name()=$a][@xsi:type='xs:date']]"
+            type="xs:date"/>
+        <xf:bind
+            nodeset="//@*[for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:type/*[name()=$e][@*/name()=$a][@xsi:type='xs:dateTime']]"
+            type="xs:dateTime"/>
+        <xf:bind
+            nodeset="//@*[for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:type/*[name()=$e][@*/name()=$a][@xsi:type='xs:time']]"
+            type="xs:time"/>
+        <xf:bind
+            nodeset="//@*[for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:type/*[name()=$e][@*/name()=$a][@xsi:type='xs:string']]"
+            type="xs:string"/>
+        <xf:bind
+            nodeset="//@*[for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:type/*[name()=$e][@*/name()=$a][@xsi:type='xs:integer']]"
+            type="xs:integer"/>
+        <xf:bind
+            nodeset="//@*[for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:type/*[name()=$e][@*/name()=$a][@xsi:type='xs:double']]"
+            type="xs:double"/>
+        <xf:bind
+            nodeset="//@*[for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:type/*[name()=$e][@*/name()=$a][@xsi:type='xs:boolean']]"
+            type="xs:boolean"/>
+
+        <!-- Calculate designated values -->
+        <xf:bind
+            nodeset="//@*[not(starts-with(name(),'cityEHR:'))] [not(ancestor::*/name() = ('cityEHR:calculate','cityEHR:template'))] [for $e in ../name(), $a in ./name() return ancestor::*/descendant::cityEHR:calculate/*[name()=$e][@*/name()=$a]]"
+            calculate="for $e in ../name(), $a in ./name() return if (exists(ancestor::*/descendant::cityEHR:calculate/*[name()=$e][@*/name()=$a]/@cityEHR:calculate)) then xxf:evaluate(ancestor::*/descendant::cityEHR:calculate/*[name()=$e][@*/name()=$a]/@cityEHR:calculate) else ''"/>
+
+    </xf:bind>
+
+
+    <!-- Application defined action to set up the managed-parameters-instance.
+         This transfers the system-parameters or application-parameters to the managed-parameters-instance
+         The instance to transfer is passed as a variable.
+    -->
+    <xf:action ev:event="set-managed-parameters">
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+        <xxf:variable name="editMode" select="event('editMode')"/>
+
+        <!-- Set the parameters-instance in managed-parameters-instance -->
+        <xf:insert nodeset="xxf:instance('managed-parameters-instance')" origin="$parameters-instance"/>
+        
+        <!-- Set the editContext -->
+        <xf:setvalue ref="xxf:instance('parametersControl-instance')/editContext" value="xxf:instance('managed-parameters-instance')/*[1]/name()"/>
+
+        <!-- Set the editMode -->
+        <xf:setvalue ref="xxf:instance('parametersControl-instance')/editMode" value="$editMode"/>
+
+        <!-- Set the status -->
+        <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="''"/>
+    </xf:action>
+
+    <!-- Application defined action to set all calculated parameters.
+         This is used before the parameters instance is saved or whenever an element is edited
+         The instance is passed as a parameter
+    -->
+    <xf:action ev:event="set-calculated-parameters">
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+
+        <!-- Find every calculation specification element -->
+        <xf:action xxf:iterate="$parameters-instance/descendant::cityEHR:calculate">
+            <xxf:variable name="specificationElement" select="."/>
+
+            <!-- Then iterate through each attribute on the elements covered by the specification.
+                 (But exclude cityEHR: attributes) -->
+            <xf:action xxf:iterate="$specificationElement/*/@*[not(starts-with(name(),'cityEHR:'))]">
+                <xxf:variable name="calculatedAttribute" select="."/>
+
+                <xxf:variable name="elementName" select="$calculatedAttribute/../name()"/>
+                <xxf:variable name="attributeName" select="$calculatedAttribute/name()"/>
+                <xxf:variable name="calculation" select="$calculatedAttribute/../@cityEHR:calculate"/>
+
+                <!-- Iterate through the calculated attributes covered by the specification.
+                     The scope of these is any element within the parent of the specificationElement.
+                     But not within cityEHR:calculate or cityEHR:template elements
+                     Make sure that the calculation is not empty (exception if it is)
+                     -->
+                <xf:action if="$calculation != ''">
+                    <xf:action
+                        xxf:iterate="$specificationElement/../descendant::*[name()=$elementName][not(ancestor::*[starts-with(name(),'cityEHR:')])]/@*[name()=$attributeName]">
+                        <xf:setvalue ref="." value="xxf:evaluate($calculation)"/>
+                    </xf:action>
+                </xf:action>
+
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- === Working parameter instance.
+             Used to rebuild the parameters === -->
+    <xf:instance id="working-parameters-instance">
+        <parameters/>
+    </xf:instance>
+
+
+    <!-- Application defined action to rebuild parameters.
+         This is used when the stored parameters are out of date.
+         
+         Used for both application-parameters-instance and system-parameters-instance
+         
+         The rebuilt configuration is made in $parameters-instance
+         The existing (stored) configuration is in $stored-parameters-instance
+         The default configuration (from the cityEHR distribution) is in $default-parameters-instance
+         
+         Iterate through top-level elements, calling build-parameter
+         -->
+    <xf:action ev:event="rebuild-parameters">
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+        <xxf:variable name="stored-parameters-instance" select="event('stored-parameters-instance')"/>
+        <xxf:variable name="default-parameters-instance" select="event('default-parameters-instance')"/>
+
+        <!-- Check that all instances exist so that rebuild can proceed -->
+        <xxf:variable name="validParametersInstance" select="if (exists($parameters-instance)) then 'true' else 'false'"/>
+        <xxf:variable name="validStoredParametersInstance" select="if (exists($stored-parameters-instance)) then 'true' else 'false'"/>
+        <xxf:variable name="validDefaultParametersInstance" select="if (exists($default-parameters-instance)) then 'true' else 'false'"/>
+
+        <!-- Check that top level paraemters in default are unique (i.e. unique names) and none are controls (from cityEHR namespace) -->
+        <xxf:variable name="parameterNames"
+            select="if ($validDefaultParametersInstance='true') then distinct-values($default-parameters-instance/*/name()) else ()"/>
+        <xxf:variable name="validParameters"
+            select="if ($validDefaultParametersInstance ='true' and count($default-parameters-instance/*) = count($parameterNames) and not(exists($parameterNames[starts-with(.,'cityEHR:')])) ) then 'true' else 'false'"/>
+
+        <!-- Set the status -->
+        <xf:setvalue ref="xxf:instance('parametersControl-instance')/status"
+            value="if ($validParametersInstance='false') then 'bad-parameters-instance' else if ($validStoredParametersInstance='false') then 'bad-stored-parameters-instance' else if ($validDefaultParametersInstance='false') then 'bad-default-parameters-instance' else if ($validParameters='false') then 'bad-default-parameters' else 'rebuilding'"/>
+
+        <!-- Parameters are good - all instances exist, and default parameters look OK -->
+        <xf:action if="xxf:instance('parametersControl-instance')/status = 'rebuilding'">
+
+            <!-- Prepare the parameters-instance.
+             parameters-instance is first set up as the default-parameters-instance.
+             So any attrbutes on the document element (parameters) are as set in the cityEHR distribution (default-parameters-instance)
+             If in default-parameters-instance, the top-level cityEHR:edit attribute has replace instruction, then the rebuild is not done
+             (i.e. parameters-instance is completely replaced by the default)
+             Otherwise parameters-instance starts as the cleared out shell of the default-parameters-instance.and the rebuild is done
+             -->
+            <xf:insert nodeset="xxf:instance('working-parameters-instance')" origin="$default-parameters-instance"/>
+
+            <!-- The build is driven by the default-parameters-instance.
+                 But not if edit instruction is to replace -->
+            <xf:action if="not(contains($default-parameters-instance/@cityEHR:edit,'replace'))">
+                <!-- First clear out the parameters-instance (so starts as the shell of the default-parameters-instance) -->
+                <xf:delete nodeset="xxf:instance('working-parameters-instance')/*"/>
+                <!-- This causes an exception, which is why working-parameters-instance is used instead
+                <xf:delete nodeset="$parameters-instance/*"/>
+                -->
+
+                <!-- The rebuilt parameters-instance contains the top-level elements from default-parameters-instance.
+                     Top level parameters must have unique names and not be cityEHR controls  (this is assumed, since it was checked above) -->
+                <xf:action xxf:iterate="$default-parameters-instance/*">
+                    <xxf:variable name="defaultParameter" select="."/>
+                    <xxf:variable name="storedParameter" select="$stored-parameters-instance/*[name()=$defaultParameter/name()]"/>
+
+                    <!-- If there is no stored-parameter then just use the default -->
+                    <xf:action if="not(exists($storedParameter))">
+                        <xf:insert context="xxf:instance('working-parameters-instance')" nodeset="*" origin="$defaultParameter" at="last()"
+                            position="after"/>
+                    </xf:action>
+
+                    <!-- Otherwise build the parameter, based on default and stored instances -->
+                    <xf:action if="exists($storedParameter)">
+                        <xf:dispatch name="build-parameter" target="manageParameters-model">
+                            <xxf:context name="parent" select="xxf:instance('working-parameters-instance')"/>
+                            <xxf:context name="defaultParameter" select="$defaultParameter"/>
+                            <xxf:context name="storedParameter" select="$storedParameter"/>
+                        </xf:dispatch>
+                    </xf:action>
+                </xf:action>
+
+            </xf:action>
+
+            <!-- Rebuild is done in working-parameters-instance - transfer to $parameters-instance -->
+            <xf:insert nodeset="$parameters-instance" origin="xxf:instance('working-parameters-instance')"/>
+
+            <!-- Set the status when done -->
+            <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="if (.='rebuilding') then 'rebuilt' else ."/>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to build a parameter, given the variables:
+        
+         parent - the element containing the parameter (i.e. the element into which it will be inserted - in $parameters-instance
+         default-parameter - the element from the $default-parameters-instance
+         stored-parameter - the element from the $stored-parameters-instance
+         
+         This action is called recursively for child parameters
+         But note that it is never called with default-parameter as a cityEHR control, since these are inserted directly before any recursive call
+         -->
+
+    <xf:action ev:event="build-parameter">
+        <xxf:variable name="parent" select="event('parent')"/>
+        <xxf:variable name="defaultParameter" select="event('defaultParameter')"/>
+        <xxf:variable name="storedParameter" select="event('storedParameter')"/>
+
+        <!-- The parameter is inserted from the default -->
+        <xf:insert context="$parent" nodeset="*" origin="$defaultParameter" at="last()" position="after"/>
+        <xxf:variable name="parameter" select="$parent/*[last()]"/>
+        <xxf:variable name="parameterName" select="$parameter/name()"/>
+
+        <!-- If there is no stored parameter, or the default has @cityEHR:edit set as 'replace', 
+             then the rebuilt parameter is just the default, so no further processing is required.
+             Otherwise continue to rebuild using the stored values -->
+        <xf:action if="exists($storedParameter) and not(contains($parameter/@cityEHR:edit,'replace'))">
+
+            <!-- Clear out the parameter -->
+            <xf:delete nodeset="$parameter/*"/>
+
+            <!-- Set the parameter attribute values from the stored value, if it exists.
+                 But control values (cityEHR namespace) are always set from the default -->
+            <xf:action xxf:iterate="$parameter/@*">
+                <xxf:variable name="attribute" select="."/>
+                <xxf:variable name="attributeName" select="$attribute/name()"/>
+
+                <xf:action if="not(starts-with($attributeName,'cityEHR:'))">
+                    <xxf:variable name="storedAttribute" select="$storedParameter/@*[name()=$attributeName]"/>
+                    <xf:setvalue ref="$attribute" value="if (exists($storedAttribute)) then $storedAttribute else ."/>
+                </xf:action>
+            </xf:action>
+
+            <!-- Set the parameter value (there aren't many of these, but they do exist)
+                 This is the text content of the parameter, not its child elements -->
+            <xf:setvalue ref="$parameter" value="$storedParameter"/>
+
+            <!-- Get the set of parameters defined in cityEHR:template for this default-parameter  -->
+            <xxf:variable name="templateParameterNameSet" select="distinct-values($defaultParameter/cityEHR:template/*/name())"/>
+
+            <!-- Build the child parameters that have a template, if there are any.
+                 The number of parameters built is driven by the storedParameter.
+                 Note that there may be instances of the parameter in the storedParameter, but not in the defaultParameter.
+                 Which is why we need to iterate through the names of the template parameters, to make sure we get them all. -->
+            <xf:action xxf:iterate="$templateParameterNameSet">
+                <xxf:variable name="templateParameterName" select="."/>
+                <xxf:variable name="templateParameter" select="$defaultParameter/cityEHR:template/*[name()=$templateParameterName]"/>
+
+                <!-- Iterate through the stored parameters of the same name as the template -->
+                <xf:action xxf:iterate="$storedParameter/*[name()=$templateParameterName]">
+                    <xxf:variable name="storedChildParameter" select="."/>
+
+                    <xf:dispatch name="build-parameter" target="manageParameters-model">
+                        <xxf:context name="parent" select="$parameter"/>
+                        <xxf:context name="defaultParameter" select="$templateParameter"/>
+                        <xxf:context name="storedParameter" select="$storedChildParameter"/>
+                    </xf:dispatch>
+
+                </xf:action>
+
+            </xf:action>
+
+
+            <!-- Build the child parameters that don't have a template, if there are any.
+                 The number of parameters built is driven by the defaultParameter.
+                 Note that there may be more than one instance of the parameter in the default 
+                 (ie. more than one child parameter element with the same name)
+                 -->
+            <xf:action xxf:iterate="$defaultParameter/*[not(name()=$templateParameterNameSet)]">
+                <xxf:variable name="childParameter" select="."/>
+                <xxf:variable name="childParameterName" select="$childParameter/name()"/>
+                <xxf:variable name="childParameterPosition" select="count($childParameter/preceding-sibling::*[name()=$childParameterName])"/>
+
+                <!-- cityEHR control - just insert into the parameter -->
+                <xf:action if="starts-with($childParameterName,'cityEHR:')">
+                    <xf:insert context="$parameter" origin="$childParameter" nodeset="*" at="last()" position="after"/>
+                </xf:action>
+
+                <!-- Not a cityEHR control - call build-parameter action (recursively).
+                     There may be more than one parameter of the same name in the default
+                     So need to get the corresponding stored parameter, which has the same position -->
+                <xf:action if="not(starts-with($childParameterName,'cityEHR:'))">
+
+                    <xxf:variable name="storedChildParameter"
+                        select="$storedParameter/*[name()=$childParameterName][count(./preceding-sibling::*[name()=$childParameterName])=$childParameterPosition]"/>
+
+                    <xf:dispatch name="build-parameter" target="manageParameters-model">
+                        <xxf:context name="parent" select="$parameter"/>
+                        <xxf:context name="defaultParameter" select="$childParameter"/>
+                        <xxf:context name="storedParameter" select="$storedChildParameter"/>
+                    </xf:dispatch>
+
+                </xf:action>
+
+            </xf:action>
+
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- ============= Language Packs ================================================================= 
+         Language packs are maintained for the system-parameters, application-parameters and informationModel 
+         Here, the actions are for parameter language packs - system-parameters or application-parameters
+         ============================================================================================== -->
+
+    <!-- === Working language pack - can be for application or system parameters === -->
+    <xf:instance id="workingParametersLanguagePack-instance">
+        <languagePack/>
+    </xf:instance>
+
+
+    <!-- Application defined action to generate new terms in a languagePack from the parameters-instance (can be system-parameters or application-parameters).
+         The current languagePack-instance is passed as an input parameter
+         The updated languagePack-instance is set as the return, once generated.
+         Used with an empty languagePack-instance when the language pack does not exist (first time the application is run)
+         Then used whenever the parameters change to add terms in the base language
+         -->
+    <xf:action ev:event="generate-parametersLanguagePack">
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+        <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
+        <xxf:variable name="languagePack-instance" select="event('languagePack-instance')"/>
+        <xxf:variable name="status" select="event('status')"/>
+        
+        <!-- Use the language pack template as the empty language pack
+             Load to workingParametersLanguagePack instance -->
+        <xxf:variable name="staticResourceLocation" select="'/templates/cityEHRparameterLanguagePack.xml'"/>
+        <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="$staticResourceLocation"/>
+            <xxf:context name="resource" select="xxf:instance('workingParametersLanguagePack-instance')"/>
+            <xxf:context name="status" select="xxf:instance('parametersControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Template for new terms in the language pack -->
+        <xxf:variable name="termTemplate" select="xxf:instance('parametersControl-instance')/languagePack/term"/>
+        <xf:setvalue ref="$termTemplate/variant/@code" value="$baseLanguageCode"/>
+        <xxf:variable name="contextTemplate" select="$termTemplate/context"/>
+
+        <!-- Iterate through parameter attributes representing term literals.
+             (but only those that have a value set)
+             Add terms to the language pack using the base language specified -->
+        <xf:action xxf:iterate="$parameters-instance//@*[name() = xxf:instance('parametersControl-instance')/termLiterals/name][.!='']">
+            <xxf:variable name="termLiteral" select="."/>
+            <xxf:variable name="contextPath" select="string-join($termLiteral/ancestor-or-self::*/name(),'/')"/>
+
+            <!-- Check for an existing term in the languagePack-instance passed.
+                 and n the workingParametersLanguagePack-instance being built
+                 Must have the same literal and context -->
+            <xxf:variable name="existingTerm"
+                select="xxf:instance('languagePack-instance')/term/variant[@code=$baseLanguageCode][@literal=$termLiteral][context=$contextPath]"/>
+            <xxf:variable name="existingWorkingTerm"
+                select="xxf:instance('languagePack-instance')/term/variant[@code=$baseLanguageCode][@literal=$termLiteral][context=$contextPath]"/>
+            
+            <!-- There are now three cases to consider:
+                    existingWorkingTerm - do nothing (the term was already added with a different context)
+                    existingTerm and no existingWorkingTerm - insert the existing term
+                    no existing term and no existingWorkingTerm - generate new term and insert it -->
+
+            <!-- Only add term if it doesn't already exist -->
+            <xf:action if="not(exists($existingTerm))">
+                <xf:setvalue ref="$termTemplate/variant/@literal" value="$termLiteral"/>
+                <xf:setvalue ref="$termTemplate/context/@path" value="$contextPath"/>
+                <xf:insert context="xxf:instance('workingParametersLanguagePack-instance')" nodeset="*" origin="$termTemplate" at="last()"
+                    position="after"/>
+            </xf:action>
+
+            <!-- If term doesn't already exist with this context -->
+            <xf:action if="exists($existingTerm) and not(exists($existingTerm[context/@path=$contextPath]))">
+                <xf:setvalue ref="$termTemplate/context/@path" value="$contextPath"/>
+                <xf:insert context="$existingTerm" nodeset="*" origin="$termTemplate/context" at="last()" position="after"/>
+            </xf:action>
+        </xf:action>
+
+        <!-- Finished adding term literals - set the return workingParametersLanguagePack instance -->
+        <xf:insert nodeset="$languagePack-instance" origin="xxf:instance('workingParametersLanguagePack-instance')"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to update a languagePack for a language.
+         The current languagePack-instance is passed as an input parameter
+         The updated languagePack-instance is set as the return, once generated.
+         Checks each term in the language pack and adds a new variant for the specified language, if it doesn't already exist
+         The variant literal is set to the baseLanguage literal (which must exist)
+         Used for each of the supported languages, whenever the language pack has been generated (with possible new terms)
+         -->
+    <xf:action ev:event="update-parametersLanguagePack">
+        <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
+        <xxf:variable name="languageCode" select="event('languageCode')"/>
+        <xxf:variable name="languagePack-instance" select="event('languagePack-instance')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Only update if the languageCode is set -->
+        <xf:action if="$languageCode!=''">
+
+            <!-- Start with workingParametersLanguagePack instance as the languagePack instance passed -->
+            <xf:insert nodeset="xxf:instance('workingParametersLanguagePack-instance')" origin="$languagePack-instance"/>
+
+            <!-- Template for new terms in the language pack -->
+            <xxf:variable name="termTemplate" select="xxf:instance('parametersControl-instance')/languagePack/term"/>
+            <xf:setvalue ref="$termTemplate/variant/@code" value="$languageCode"/>
+
+            <!-- Iterate through the terms in the language pack
+             Add terms to the language pack using the base language specified -->
+            <xf:action xxf:iterate="xxf:instance('workingParametersLanguagePack-instance')/term">
+                <xxf:variable name="term" select="."/>
+
+                <xxf:variable name="existingBaseLanguageVariant" select="$term/variant[@code=$baseLanguageCode]"/>
+                <xxf:variable name="existingVariant" select="$term/variant[@code=$languageCode]"/>
+
+                <!-- Only add variant if it doesn't already exist -->
+                <xf:action if="not(exists($existingVariant)) and exists($existingBaseLanguageVariant)">
+                    <xf:setvalue ref="$termTemplate/variant/@literal" value="$existingBaseLanguageVariant/@literal"/>
+                    <xf:insert context="$term" nodeset="variant" origin="$termTemplate/variant" at="last()" position="after"/>
+                </xf:action>
+
+            </xf:action>
+
+            <!-- Finished adding term literals - 
+             Set the return workingParametersLanguagePack instance -->
+            <xf:insert nodeset="$languagePack-instance" origin="xxf:instance('workingParametersLanguagePack-instance')"/>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to merge two languagePacks
+         Checks each term in the stored language pack and adds new variant(s) for any language(s) in the imported language pack that don't already exist.
+         Then sets the stored language pack to the merged result
+         -->
+    <xf:action ev:event="merge-parametersLanguagePack">
+        <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
+        <xxf:variable name="storedLanguagePack-instance" select="event('storedLanguagePack-instance')"/>
+        <xxf:variable name="importedLanguagePack-instance" select="event('importedLanguagePack-instance')"/>
+        <xxf:variable name="status" select="event('status')"/>
+        
+
+        <!-- Start with workingParametersLanguagePack instance as the storedLanguagePack instance passed -->
+        <xf:insert nodeset="xxf:instance('workingParametersLanguagePack-instance')" origin="$storedLanguagePack-instance"/>        
+
+        <!-- Iterate through the terms in the (stored) language pack
+             Add variants from the imported the language pack if they don't exist.
+             The imported term is matched on its baseLanguage literal -->
+        <xf:action xxf:iterate="xxf:instance('workingParametersLanguagePack-instance')/term">
+            <xxf:variable name="storedTerm" select="."/>
+            <xxf:variable name="baseLanguageLiteral" select="$storedTerm/variant[@code=$baseLanguageCode]/@literal"/>
+            <xxf:variable name="importedTerm"
+                select="$importedLanguagePack-instance/term[variant[@code=$baseLanguageCode]/@literal=$baseLanguageLiteral]"/>
+            
+           <!-- Iterate through variants in the importedTerm, add them if not in the storedTerm -->
+            <xf:action xxf:iterate="$importedTerm/variant">
+                <xxf:variable name="importedTermVariant" select="."/>
+                <xxf:variable name="importedTermVariantLanguageCode" select="$importedTermVariant/@code"/>
+                                
+                <!-- Add variant if it doesn't exist in the storedTerm -->
+                <xf:action if="not(exists($storedTerm/variant[@code=$importedTermVariantLanguageCode]))">
+                    <xf:insert context="$storedTerm" nodeset="*" origin="$importedTermVariant" at="last()" position="after"/>
+                </xf:action>
+            </xf:action>
+
+        </xf:action>
+
+        <!-- Iterate through terms in the imported language pack
+            Add to the stored language pack if the term doesn't exist there -->
+        <xf:action xxf:iterate="$importedLanguagePack-instance/term">
+            <xxf:variable name="importedTerm" select="."/>
+            <xxf:variable name="baseLanguageLiteral" select="$importedTerm/variant[@code=$baseLanguageCode]/@literal"/>
+            <xxf:variable name="storedTerm"
+                select="xxf:instance('workingParametersLanguagePack-instance')/term[variant[@code=$baseLanguageCode][@literal=$baseLanguageLiteral]]"/>
+
+            <!-- Add term if it doesn't exist in the stored language pack -->
+            <xf:action if="not(exists($storedTerm))">
+                <xf:insert context="xxf:instance('workingParametersLanguagePack-instance')" nodeset="term" origin="$importedTerm" at="last()" position="after"/>
+            </xf:action>
+
+        </xf:action>
+
+
+        <!-- Finished merging language packs - 
+             Set the return workingParametersLanguagePack instance -->
+        <xf:insert nodeset="$storedLanguagePack-instance" origin="xxf:instance('workingParametersLanguagePack-instance')"/>
+    </xf:action>
+
+
+    <!-- Application defined action to apply a languagePack to the parameters-instance (can be system-parameters or application-parameters).
+         The parameters-instance is assumed to be in the base language.
+         Iteraet through all literals in the parameters instance, replacing with their language variant
+         -->
+    <xf:action ev:event="apply-parametersLanguagePack">
+        <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
+        <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
+        <xxf:variable name="languageCode" select="event('languageCode')"/>
+        <xxf:variable name="languagePack-instance" select="event('languagePack-instance')"/>
+        <xxf:variable name="variant-parameters-instance" select="event('variant-parameters-instance')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Start with the parameters instance as passed -->
+        <xf:insert nodeset="xxf:instance('working-parameters-instance')" origin="$parameters-instance"/>
+
+        <!-- Set the language code -->
+        <xf:setvalue ref="xxf:instance('working-parameters-instance')/@languageCode" value="$languageCode"/>
+
+        <!-- Iterate through parameter attrbutes representing term literals.
+             Add terms to the language pack using the base language specified -->
+        <xf:action
+            xxf:iterate="xxf:instance('working-parameters-instance')//@*[name() = xxf:instance('parametersControl-instance')/termLiterals/name][.!='']">
+            <xxf:variable name="termLiteral" select="."/>
+
+            <!-- Find variant literal in the langugae pack -->
+            <xxf:variable name="term" select="$languagePack-instance/term[variant[@code=$baseLanguageCode][@literal=$termLiteral]]"/>
+            <xxf:variable name="variantTermLiteral" select="$term/variant[@code=$languageCode]/@literal"/>
+
+            <xf:setvalue ref="$termLiteral" value="$variantTermLiteral"/>
+        </xf:action>
+
+        <!-- Finished replacing term literals - set the return variant-parameters-instance  -->
+        <xf:insert nodeset="$variant-parameters-instance" origin="xxf:instance('working-parameters-instance')"/>
+
+    </xf:action>
+
+
+</xf:model>

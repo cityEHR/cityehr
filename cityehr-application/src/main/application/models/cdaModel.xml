@@ -1,0 +1,1112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cdaModel.xml
+    
+    Xforms model containing stuff for loading and instantiating CDA documents.
+    Used for creating reports in cityEHRFolder-Views and for exporting data in cityEHRCohortSearch
+    2016-05-19 - could refactor compositionMainModel to use this at some stage in the future.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="cda-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- === Control for management of cda document -->
+    <xf:instance id="cdaControl-instance">
+        <control xmlns="">
+            <status/>
+            <compositionHandle/>
+            <!-- formStatus is used to stop ev:xforms-value-changed from triggering when the form is being set up -->
+            <formStatus><!-- loaded | error | ready --></formStatus>
+            <!-- Specialty is set for views and cohort queries (not always the same ad the session specialty -->
+            <specialtyIRI/>
+            <specialtyId/>
+            <!-- For degugging -->
+            <prefilledEntrySet/>
+            <test/>
+        </control>
+    </xf:instance>
+
+
+    <!-- === form-instance 
+         This holds the cda document
+         ========================================================= -->
+
+    <xf:instance id="form-instance">
+        <cda:ClinicalDocument xmlns="urn:hl7-org:v3">
+            <!-- Template loaded from xmlstore -->
+        </cda:ClinicalDocument>
+    </xf:instance>
+
+    <!-- Bindings on the form-instance, covers:
+        data type for entry
+        calculated values
+        default values
+        conditional display of section/entry/element
+        constraints
+        required values
+        read-only on CRD multipleEntries
+    -->
+
+    <xf:bind nodeset="xxf:instance('form-instance')">
+
+        <!-- Data types for form entry -->
+        <!-- Input of simpleType can be any date type -->
+        <xf:bind nodeset="//cda:value[@cityEHR:elementType = ('#CityEHR:ElementProperty:simpleType','#CityEHR:Property:ElementType:simpleType')]">
+            <xf:bind nodeset=".[@xsi:type='xs:date']/@value" type="xs:date"/>
+            <xf:bind nodeset=".[@xsi:type='xs:dateTime']/@value" type="xs:dateTime"/>
+            <xf:bind nodeset=".[@xsi:type='xs:time']/@value" type="xs:time"/>
+            <xf:bind nodeset=".[@xsi:type='xs:string']/@value" type="xs:string"/>
+            <xf:bind nodeset=".[@xsi:type='xs:integer']/@value" type="xs:integer"/>
+            <xf:bind nodeset=".[@xsi:type='xs:double']/@value" type="xs:double"/>
+            <xf:bind nodeset=".[@xsi:type='xs:boolean']/@value" type="xs:boolean"/>
+        </xf:bind>
+
+        <!-- Range can only be xs:integer or xs:double -->
+        <xf:bind nodeset="//cda:value[@cityEHR:elementType = ('#CityEHR:ElementProperty:range','#CityEHR:Property:ElementType:range')]">
+            <xf:bind nodeset=".[@xsi:type='xs:integer']/@value" type="xs:integer"/>
+            <xf:bind nodeset=".[@xsi:type='xs:double']/@value" type="xs:double"/>
+        </xf:bind>
+
+        <!-- Until 2021-10-15 patientMedia was stored in the cda:value element as xs:base64Binary -->
+        <!--
+        <xf:bind
+            nodeset="//cda:value[@cityEHR:elementType = ('#CityEHR:ElementProperty:patientMedia','#CityEHR:Property:ElementType:patientMedia')]"
+            type="xs:base64Binary"/>
+        -->
+        <!-- From 2021-10-15 patientMedia is stored in the cda:value/@value -->
+        <xf:bind nodeset="//cda:value[@cityEHR:elementType = ('#CityEHR:ElementProperty:patientMedia','#CityEHR:Property:ElementType:patientMedia')]">
+            <xf:bind nodeset=".[@xsi:type='xs:base64Binary']/@value" type="xs:base64Binary"/>
+        </xf:bind>
+
+        <!-- Media stored in the displayName of media rendered entries -->
+        <xf:bind nodeset="//cda:entry[@cityEHR:rendition='#CityEHR:EntryProperty:Image']//cda:value/@displayName" type="xs:base64Binary"/>
+
+
+        <!-- Calculate values designated as calculatedValue or age types. (age added 2018-02-15)
+            Context of evaluation is the value attribute.
+            So value of local entry/element is found in ../../cda:value[@extension=ElementId]/@value 
+            The check on @cityEHR:elementType in the evaluate ensures that the calculation doesn't happen on publish
+            (@cityEHR:elementType is changed to simpleTyoe before removing hidden sections, entries, elements but the binding still sticks)
+            The check on formStatus ensures that evaluation doesn't happen as the page is loaded, inlcuding during setting of default and pre-filled values.
+            From 2018-04-05 this check is made in the binding, rather than the calculate expression (otherwise just calculates '')
+            2018-05-14 can have calculated media type values (and check that @cityEHR:calculatedValue is set -->
+        <xf:bind
+            nodeset="//cda:value[@cityEHR:elementType=('#CityEHR:ElementProperty:calculatedValue','#CityEHR:ElementProperty:age','#CityEHR:ElementProperty:media','#CityEHR:Property:ElementType:calculatedValue','#CityEHR:Property:ElementType:age','#CityEHR:Property:ElementType:media')][exists(@cityEHR:calculatedValue) and @cityEHR:calculatedValue!=''][xxf:instance('cdaControl-instance')/formStatus='ready']/@value"
+            calculate="if (xxf:instance('cdaControl-instance')/formStatus='ready' and ../@cityEHR:elementType=('#CityEHR:ElementProperty:calculatedValue','#CityEHR:ElementProperty:age','#CityEHR:ElementProperty:media','#CityEHR:Property:ElementType:calculatedValue','#CityEHR:Property:ElementType:age','#CityEHR:Property:ElementType:media')) then xxf:evaluate(../@cityEHR:calculatedValue) else ''"/>
+
+
+        <!-- Calculate units designated as calculatedUnit type.
+            Get the units of the specified the value in the same entry.
+        -->
+        <xf:bind nodeset="//cda:value[@cityEHR:calculatedUnit!='']">
+            <xf:bind nodeset="@units" calculate="xxf:evaluate(concat('../../cda:value[@root=''',../@cityEHR:calculatedUnit,''']/@units'))"/>
+        </xf:bind>
+
+        <!-- Set default values for any form-rendered element that has a default specified.
+            This specific value will override defaults already set on enumeratedValue and boolean elements when the form laods.
+            The default is set whenever the value of the element is empty, but only when the form is first loaded (uses xxf:default instead of calculate) -->
+        <!--
+            <xf:bind nodeset="cda:component/cda:structuredBody/cda:component/cda:section/descendant::cda:entry[@cityEHR:rendition!='#CityEHR:EntryProperty:ImageMap' and @cityEHR:initialValue='#CityEHR:EntryProperty:Default']/descendant::cda:value[exists(@cityEHR:defaultValue)][@value='']/@value" xxf:default="xxf:evaluate(../@cityEHR:defaultValue)"/>
+        -->
+        <!-- Debug
+            <xf:bind nodeset="cda:component/cda:structuredBody/cda:component/cda:section/descendant::cda:entry[@cityEHR:rendition!='#CityEHR:EntryProperty:ImageMap' and @cityEHR:initialValue='#CityEHR:EntryProperty:Default']/descendant::cda:value[exists(@cityEHR:defaultValue)][@value='']/@value" calculate="xxf:evaluate('xs:string(''hello'')')"/>
+        -->
+
+        <!-- Set visibility of conditional sections 
+            If there are no conditions to set visibilty then leave it as it was found (needed to keep hidden sections in place and allow for pre-conditions)
+            Note that these bindings will trigger the ev:observer="form-instance" that is used to set the editStatus 
+        -->
+        <xf:bind nodeset="//cda:section/@cityEHR:visibility"
+            calculate="if (exists(../@cityEHR:conditions[.!=''])) then xxf:evaluate(../@cityEHR:conditions) else ."/>
+
+        <!-- Set visibility of conditional entries.
+            If there are no conditions to set visibilty then leave it as it was found (needed to allow for pre-conditions)
+        -->
+        <xf:bind nodeset="//cda:entry/@cityEHR:visibility"
+            calculate="if (exists(../@cityEHR:conditions[.!=''])) then xxf:evaluate(../@cityEHR:conditions) else ."/>
+        <!-- Set visibility of conditional clusters and elements -->
+        <xf:bind nodeset="//cda:structuredBody/cda:component/cda:section/descendant::cda:value/@cityEHR:visibility"
+            calculate="if (exists(../@cityEHR:conditions[.!=''])) then xxf:evaluate(../@cityEHR:conditions) else ''"/>
+
+        <!-- Set visibility of clinical codes (cda:code-1 for now) -->
+        <xf:bind nodeset="//cda:code-1/@cityEHR:visibility"
+            calculate="if (exists(../@cityEHR:conditions[.!=''])) then xxf:evaluate(../@cityEHR:conditions) else ''"/>
+
+
+        <!-- Check constraints on elements -->
+        <!--
+            <xf:bind
+            nodeset="cda:component/cda:structuredBody/cda:component/cda:section/descendant::cda:value[@cityEHR:constraints]"
+            constraint="xxf:evaluate(../@cityEHR:constraints)"/>
+        -->
+
+        <!-- Set required values on elements -->
+        <!-- Do we need this? 2013-12-04
+            <xf:bind nodeset="cda:component/cda:structuredBody/cda:component/cda:section/descendant::cda:value[@cityEHR:required='Required']" required="true()"/>
+        -->
+
+        <!-- Pre-filled multiple entries cannot be updated for CRD, CR or R entries.
+            The binding is on the component, not the entry so that any new entries added can be updated. -->
+        <xf:bind
+            nodeset="//cda:component[@cityEHR:CRUD=('#CityEHR:EntryProperty:CRD','#CityEHR:EntryProperty:CR','#CityEHR:EntryProperty:R','#CityEHR:Property:CRUD:CRD','#CityEHR:Property:CRUD:CR','#CityEHR:Property:CRUD:R')]/descendant::cda:value"
+            readonly="true()"/>
+
+
+
+    </xf:bind>
+
+
+    <!-- === Queries and submissions to get the cda document 
+         These are similar to the ones in notificationModel.xml
+         ========================================================= -->
+
+    <xf:instance id="getCDATemplateXQuery-instance" src="oxf:/apps/ehr/xquery/getCompositionTemplateXQuery.xml"/>
+
+    <!-- Application defined action to get the composition template.
+         Set template query and run submission.
+         CDA document is then in form-instance. -->
+    <xf:action ev:event="load-composition-template">
+        <xxf:variable name="compositionIRI" select="event('compositionIRI')"/>
+
+        <xxf:variable name="storageLocation"
+            select="concat('/xmlstore/applications/',xxf:instance('session-parameters-instance')/applicationId,'/systemConfiguration/',xxf:instance('cdaControl-instance')/specialtyId)"/>
+        <xf:setvalue ref="xxf:instance('getCDATemplateXQuery-instance')/typeId" value="$compositionIRI"/>
+
+        <!-- Load the template CDA to form-instance -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$storageLocation"/>
+            <xxf:context name="query" select="xxf:instance('getCDATemplateXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('form-instance')"/>
+            <xxf:context name="status" select="xxf:instance('cdaControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Template loaded successfully -->
+        <xf:action if="xxf:instance('cdaControl-instance')/status=''">
+            <!-- Set up the dictionary for enumeratedDirectory elements - requires directory-model to be present -->
+            <xf:dispatch name="load-directoryElements" target="directory-model">
+                <xxf:context name="specialtyIRI" select="xxf:instance('cdaControl-instance')/specialtyIRI"/>
+            </xf:dispatch>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to load the composition.
+         This is used to load the composition for generate-report in exportDataModel
+         Parameters are the patientId and the compositionIRI
+         CDA composition is then in form-instance. 
+    
+         The CDA composition may contain pre-filled entries, directory entries, default values and calculated values
+    
+         -->
+    <xf:action ev:event="load-composition">
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="compositionIRI" select="event('compositionIRI')"/>
+
+        <!-- Set the patientId that is used to get values from the patient record -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/patientId" value="$patientId"/>
+
+        <!-- Load composition template for the patient.
+             This also calls load-directoryElementsForForm if the submission was successful -->
+        <xf:dispatch name="load-composition-template" target="cda-model">
+            <xxf:context name="compositionIRI" select="$compositionIRI"/>
+        </xf:dispatch>
+
+        <!-- Set pre-filled values -->
+        <xf:dispatch name="set-pre-filled-values" target="cda-model"/>
+
+        <!-- Set the default values. ***JC DEBUGGING
+             Need to recalculate first to make sure that pre-filled values have stuck -->
+        <xf:rebuild model="cda-model"/>
+        <xf:dispatch name="set-default-values" target="cda-model"/>
+
+        <!-- Expand out multiple entries where required.
+             Done after pre-filled and default values, in case there are calculatedEnumeratedValues which use pre-filled or default entries.
+             Any default values in the expanded entry are set during expand-entry -->
+        <xf:action>
+            <xf:dispatch name="expand-multiple-entries" target="cda-model"/>
+        </xf:action>
+
+        <!-- Don't need to evaluate pre-conditions on sections and entries,
+             Since this is done for multiple entries in set-pre-filled-values -->
+
+        <!-- Look up all directory entries, in case key value is set as a default, pre-filled or calculated value -->
+        <!-- Not defined yet, so don't use directory entries in reports (ie CRUD = L for entry)
+        <xf:dispatch name="refresh-directory-entries" target="cda-model"/>
+        -->
+
+        <!-- Set default values again, in case any depend on other default values -->
+        <xf:dispatch name="set-default-values" target="cda-model"/>
+
+        <!-- Set the status of the cda document to 'ready' so that calculations are activated.
+             Then rebuild so that calculation bindings are evaluated -->
+        <xf:setvalue ref="xxf:instance('cdaControl-instance')/formStatus" value="'ready'"/>
+        <xf:rebuild model="cda-model"/>
+
+    </xf:action>
+
+
+    <!-- === Queries and instances to get the set of latest entries for a patient 
+         Gets all the listed entries and returns in 
+         ========================================================= -->
+
+
+    <xf:instance id="getLatestEntryXQuery-instance" src="oxf:/apps/ehr/xquery/getLatestEntryXQuery.xml"/>
+    <xf:instance id="getLatestEntrySetXQuery-instance" src="oxf:/apps/ehr/xquery/getLatestEntrySetXQuery.xml"/>
+
+    <xf:instance id="latestEntry-instance">
+        <eventValue/>
+    </xf:instance>
+    <xf:instance id="latestEntrySet-instance">
+        <eventValue/>
+    </xf:instance>
+
+
+
+    <!-- Application defined action to set pre-filled values
+        Need to handle single and multipleEntry cases differently. 
+        The processing must take account of the fact that the information model may have changed since the last entry was recorded.
+        
+        Iterate through the pre-filled entries
+        Get the stored value and if it exists handle the following cases:
+        1) Simple entry
+        2) Enumerated class entry
+        3) Multiple entry (which can repeat simple or enumerated class entries)
+        Then prefill the supplementary data sets of enumerated class entries (whether single or in multiple entries) 
+        
+        EXCEPT for expanded multipleEntry, because the set of entries is fixed from the expansion, so don't need to insert any prefilled entries,
+        but do need to set the prefilled values for each entry in the (expanded) multipleEntry.    
+    -->
+    <xf:action ev:event="set-pre-filled-values">
+        <!-- Get the main section (body) of the CDA document for use in processing below.
+             This returns a sequence of the top-level sections in the document -->
+        <xxf:variable name="cdaBody" select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+
+        <!-- Application id -->
+        <xxf:variable name="applicationId" select="xxf:instance('session-parameters-instance')/applicationId"/>
+        <xxf:variable name="patientId" select="xxf:instance('session-parameters-instance')/patientId"/>
+        <xxf:variable name="patientRecordLocation" select="concat('/xmlstore/applications/',$applicationId,'/records/',$patientId)"/>
+
+        <!-- Get pre-filled entries and latest values from xmlstore.
+             Note that pre-filled entries use the extension, not the root of the entry to get the stored value
+             If there are proxy entries for the same entry on the form, then there will be multiple extensions returned
+             Only want one of each, so use distinct-values to get list of entryIRI 
+             Also note that the prefilledEntryIRISet is only for entries with no evaluation context 
+             Stored entries for other pre-filled entries (with an evaluation context) are found with individual queries (below) -->
+        <xxf:variable name="prefilledEntrySet"
+            select="$cdaBody/descendant::cda:entry[@cityEHR:initialValue=('#CityEHR:EntryProperty:Pre-filled','#CityEHR:EntryProperty:DistinctValues','#CityEHR:EntryProperty:AllValues','#CityEHR:Property:InitialValue:Pre-filled','#CityEHR:Property:InitialValue:DistinctValues','#CityEHR:Property:InitialValue:AllValues')]"/>
+        <xxf:variable name="prefilledEntryIRISet"
+            select="distinct-values(for $entry in $prefilledEntrySet return $entry[not(@cityEHR:evaluationContext)]/descendant::cda:id[1]/@extension)"/>
+
+        <!-- Get set of stored entries for all entryIRI where the entry has no evaluation context.
+             This allows a single query to get all such values and place them in latestEntrySet-instance -->
+        <xf:setvalue ref="xxf:instance('getLatestEntrySetXQuery-instance')/entryIRISet" value="string-join($prefilledEntryIRISet,''',''')"/>
+
+        <!-- Return entries to latestEntrySet-instance -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$patientRecordLocation"/>
+            <xxf:context name="query" select="xxf:instance('getLatestEntrySetXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('latestEntrySet-instance')"/>
+            <xxf:context name="status" select="xxf:instance('cdaControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Check if there was an error -->
+        <xf:action if="not(xxf:instance('cdaControl-instance')/status = '')">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetLatestEntry']"/>
+        </xf:action>
+
+        <!-- Iterate through pre-filled entries.
+             This must include all entries (even where @extension is repeated for different @root) -->
+        <xf:action if="xxf:instance('cdaControl-instance')/status = ''">
+            <xf:action xxf:iterate="$prefilledEntrySet">
+                <xxf:variable name="prefilledEntry" select="."/>
+                <xxf:variable name="prefilledEntryIRI" select="$prefilledEntry/descendant::cda:id[1]/@extension"/>
+
+                <!-- CRUD Property value -->
+                <xxf:variable name="entryCRUD" select="if (exists($prefilledEntry/@cityEHR:CRUD)) then $prefilledEntry/@cityEHR:CRUD else ''"/>
+                <xxf:variable name="entryCRUDValue" select="tokenize($entryCRUD, ':')[position() = last()]"/>
+
+                <xxf:variable name="evaluationContext"
+                    select="if (exists($prefilledEntry/@cityEHR:evaluationContext)) then $prefilledEntry/@cityEHR:evaluationContext else ''"/>
+
+                <!-- If the entry has an evaluation context, 
+                     then need to run an individual query to get its stored values.
+                     The stored entries are placed in latestEntry-instance
+                 -->
+                <xf:action if="$evaluationContext!=''">
+                    <xf:setvalue ref="xxf:instance('getLatestEntryXQuery-instance')/entryIRI" value="$prefilledEntryIRI"/>
+                    <xf:setvalue ref="xxf:instance('getLatestEntryXQuery-instance')/evaluationContext" value="concat('[',$evaluationContext,']')"/>
+                    
+                    <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation" select="$patientRecordLocation"/>
+                        <xxf:context name="query" select="xxf:instance('getLatestEntryXQuery-instance')"/>
+                        <xxf:context name="response" select="xxf:instance('latestEntry-instance')"/>
+                        <xxf:context name="status" select="xxf:instance('cdaControl-instance')/status"/>
+                    </xf:dispatch>
+                    
+                    <!-- Flag if there was an error, but don't stop processing -->
+                    <xf:action if="not)xxf:instance('cdaControl-instance')/status = '')">
+                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                            value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetLatestEntry']"/>
+                    </xf:action>
+                    
+                </xf:action>
+
+                <!-- Then replace the entry as returned from the query.
+                 Need to be careful here, since the information model for the entry may have changed since the last values were recorded.
+                 Need to step through the values in the current form-instance, rather than replacing the whole entry.
+                
+                 There are three cases to consider:
+                    Simple entry
+                    Enumerated class entry
+                    Multiple entry (which can repeat simple or enumerated class entries and may also be expanded)
+            -->
+
+                <!-- The storedEntry is the most recently recorded instance of the entry.
+                 These are returned in effectiveTime order, with most recent first.
+                 The fullStoredEntrySet contains all recorded values
+                 Use the the latestEntrySet-instance or latestEntry-instance-->
+                <xxf:variable name="storedEntryInstance"
+                    select="if ($evaluationContext!='') then xxf:instance('latestEntry-instance') else xxf:instance('latestEntrySet-instance')"/>
+                <xxf:variable name="fullStoredEntrySet" select="$storedEntryInstance/cda:entry[descendant::cda:id[1]/@extension=$prefilledEntryIRI]"/>
+
+                <!-- If initialValue is DistinctValues or AllValues, then keep all fullStoredEntrySet, otherwise just need the first entry -->
+                <xxf:variable name="pre-fillType" select="$prefilledEntry/@cityEHR:initialValue"/>
+                <xxf:variable name="storedEntrySet"
+                    select="if ($pre-fillType=('#CityEHR:EntryProperty:DistinctValues','#CityEHR:Property:InitialValue:DistinctValues','#CityEHR:EntryProperty:AllValues','#CityEHR:Property:InitialValue:AllValues')) then $fullStoredEntrySet else $fullStoredEntrySet[1]"/>
+
+                <!-- If there is a stored entry value, then set in the pre-filled entry.
+                 There are four cases to consider:
+                    Simple entry
+                    Enumerated class entry
+                    Multiple entry
+                    Multiple entry with enumerated class
+                 -->
+                <xf:action if="exists($storedEntrySet)">
+
+                    <!-- Get the stored observation set - may be in a ME, which may be sorted.
+                     There are four cases:
+                        Simple entry
+                        Enumerated class entry
+                        Multiple entry
+                        Multiple entry with enumerated class
+                                               
+                     -->
+                    <xxf:variable name="storedObservationSet"
+                        select="$storedEntrySet/cda:observation | $storedEntrySet/cda:organizer[@classCode='EnumeratedClassEntry']/cda:component[1]/cda:observation | $storedEntrySet/cda:organizer[@classCode='MultipleEntry']/cda:component[2]/cda:organizer/cda:component/cda:observation | $storedEntrySet/cda:organizer[@classCode='MultipleEntry']/cda:component[2]/cda:organizer[@classCode='EnumeratedClassEntry']/cda:component[1]/cda:observation"/>
+
+                    <!-- Get the sorted observation set.
+                     The sort criteria are found on the pre-filled entry.
+                     Note that the sort criteria use the @root to identify the sort criteria element -->
+                    <xxf:variable name="sortOrder"
+                        select="if ($prefilledEntry/@cityEHR:SortOrder = 'Ascending') then 'ascending' else if ($prefilledEntry/@cityEHR:SortOrder = 'Descending') then 'descending' else 'unsorted'"/>
+                    <xxf:variable name="sortCriteria"
+                        select="if (exists($prefilledEntry/@cityEHR:sortCriteria) and exists($prefilledEntry/descendant::cda:value[not(child::*)][@root=$prefilledEntry/@cityEHR:sortCriteria]) ) then $prefilledEntry/@cityEHR:sortCriteria else ($prefilledEntry/descendant::cda:value[@root])[1]/@root"/>
+
+                    <!-- The sorted entry set applies the sort order to the full set.
+                     But xxf:sort throws an exception if the sort criteria (second argument) dosn't exist on any of the elements to be sorted.
+                     So make sure only sortable observations are included in first argument -->
+                    <!--
+                <xxf:variable name="sortableObservationSet"
+                    select="if (count($storedObservationSet) gt 1) then $storedObservationSet[1] else $storedObservationSet[descendant::cda:value[@root=$sortCriteria]/@value]"/>
+                -->
+
+                    <xxf:variable name="sortableObservationSet" select="$storedObservationSet[descendant::cda:value[@root=$sortCriteria][@value]]"/>
+
+                    <!--
+                <xxf:variable name="sortedStoredObservationSet"
+                    select="if ($sortOrder!='unsorted') then xxf:sort($storedObservationSet,descendant::cda:value[not(child::*)][@root=$sortCriteria]/@value,'text', $sortOrder) else $storedObservationSet"/>
+                -->
+                    <xxf:variable name="sortedStoredObservationSet"
+                        select="if ($sortOrder!='unsorted' and exists($sortableObservationSet)) then xxf:sort($sortableObservationSet,descendant::cda:value[@root=$sortCriteria]/@value[1],'text', $sortOrder) else $storedObservationSet"/>
+
+                    <!-- Simple entry.
+                    Iterate through elements of the prefilledEntry, setting values from the storedEntry.
+                    Note that its possible the storedEntry is multiple entry or has a supplementary entry, for a simple prefilled Entry (e.g. when a multiple entry is used in a calculation) 
+                    (Need to cater for clusters here (from 10/03/2014) - make sure that clusterLocation in storedElement matches pre-filled element.)
+                    From 2017-09-29 clusters only used for organisation. not the context of a value. So the entry/element value is set wherever it appears in a cluster.
+                    This also means that an entry can only contain one element of a particular elementIRI -->
+                    <xf:action if="exists($prefilledEntry/cda:observation)">
+
+                        <!-- The stored observation is the first one in the sorted set.
+                         There will only be more than one observation in this set if the simple entry is being prefilled from DistinctValues of a multiple entry -->
+                        <xxf:variable name="storedObservation" select="$sortedStoredObservationSet[1]"/>
+
+                        <!-- Get the set of values to be pre-filled
+                         If the Entry is a directory look-up then just set value of the key element.
+                         Otherwise set all the values -->
+
+                        <xxf:variable name="preFilledValues"
+                            select="if ($entryCRUDValue='L') then ($prefilledEntry/cda:observation//cda:value[@root=$sortCriteria]) else $prefilledEntry/cda:observation/descendant::cda:value[exists(@value)]"/>
+
+                        <!-- Iterate through the values to be pre-filled -->
+                        <xf:action xxf:iterate="$preFilledValues">
+                            <xxf:variable name="prefilledElement" select="."/>
+                            <!-- clusterLocation no longer needed 2017-09-29 -->
+                            <!-- 
+                        <xxf:variable name="clusterLocation" select="string-join($prefilledElement/ancestor::cda:value/@extension,'/')"/>
+                        <xxf:variable name="storedElement"
+                            select="$storedObservation/descendant::cda:value[@extension=$prefilledElement/@extension][string-join(./ancestor::cda:value/@extension,'/')=$clusterLocation][1]"/>
+                        -->
+                            <xxf:variable name="storedElement"
+                                select="$storedObservation/descendant::cda:value[@extension=$prefilledElement/@extension][1]"/>
+
+                            <xf:action if="exists($storedElement)">
+                                <xf:setvalue ref="$prefilledElement/@value" value="$storedElement/@value"/>
+                                <xf:setvalue ref="$prefilledElement/@displayName" value="$storedElement/@displayName"/>
+                                <xf:setvalue ref="$prefilledElement/@code" value="$storedElement/@code"/>
+
+
+                            </xf:action>
+
+                        </xf:action>
+                    </xf:action>
+
+                    <!-- Enumerated Class entry.
+                     Iterate through elements of the prefilledEntry, setting values from the storedEntry. -->
+                    <xf:action if="exists($prefilledEntry/cda:organizer[@classCode='EnumeratedClassEntry'])">
+                        <xxf:variable name="supplementary-entry-organizer" select="$prefilledEntry/cda:organizer[@classCode='EnumeratedClassEntry']"/>
+                        <xxf:variable name="storedSupplementary-entry-organizer"
+                            select="$storedEntrySet[1]/cda:organizer[@classCode='EnumeratedClassEntry']"/>
+
+                        <!-- Iterate through the elements in this entry, including elements in clusters.
+                         This only works on a single level of nested element (ie. does not handle clusters within clusters) -->
+                        <xf:action if="exists($supplementary-entry-organizer)"
+                            xxf:iterate="$supplementary-entry-organizer/cda:component[1]/cda:observation/descendant::cda:value[@value]">
+                            <xxf:variable name="prefilledElement" select="."/>
+                            <xxf:variable name="prefilledElementIRI" select="$prefilledElement/@extension"/>
+
+                            <!-- prefilledClusterIRI no longer needed 2017-09-29 -->
+                            <!--
+                        <xxf:variable name="prefilledClusterIRI"
+                            select="if (exists($prefilledElement/parent::cda:value)) then $prefilledElement/parent::cda:value/@extension else ''"/>
+                        <xxf:variable name="storedElement"
+                            select="if ($prefilledClusterIRI!='') then $storedSupplementary-entry-organizer/cda:component[1]/cda:observation/cda:value[@extension=$prefilledClusterIRI]/cda:value[@extension=$prefilledElementIRI] else $storedSupplementary-entry-organizer/cda:component[1]/cda:observation/cda:value[@extension=$prefilledElementIRI]"/>
+                        -->
+                            <xxf:variable name="storedElement"
+                                select="$storedSupplementary-entry-organizer/cda:component[1]/cda:observation/descendant::cda:value[@extension=$prefilledElementIRI][1]"/>
+
+                            <xf:action if="exists($storedElement)">
+                                <xf:setvalue ref="$prefilledElement/@value" value="$storedElement/@value"/>
+                                <xf:setvalue ref="$prefilledElement/@displayName" value="$storedElement/@displayName"/>
+                                <xf:setvalue ref="$prefilledElement/@code" value="$storedElement/@code"/>
+
+                                <!-- If this element is the enumeratedClass element -->
+                                <xf:action if="$prefilledElement/@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass'">
+                                    <!-- Set the element value to be displayName so that the input for enumeratedClass selection is primed -->
+                                    <xf:setvalue ref="$prefilledElement" value="$storedElement/@displayName"/>
+                                    <!-- Set the value of the supplementary data set in the prefilled entry.
+                                 **jc refactor run query to get SDS from class dictionary -->
+                                    <xxf:variable name="classElement"
+                                        select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$prefilledElementIRI]/iso-13606:data[1]"/>
+                                    <xxf:variable name="classCode" select="$classElement/@code"/>
+                                    <xxf:variable name="dictionaryElement"
+                                        select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$classCode][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedLeafValue']/iso-13606:data[@value=$prefilledElement/@value]"/>
+
+                                    <xxf:variable name="prefilledSDSIRI"
+                                        select="if (exists($dictionaryElement/@cityEHR:suppDataSet)) then $dictionaryElement/@cityEHR:suppDataSet else ''"/>
+                                    <xf:setvalue ref="$prefilledElement/@cityEHR:suppDataSet" value="$prefilledSDSIRI"/>
+                                </xf:action>
+                            </xf:action>
+                        </xf:action>
+                    </xf:action>
+
+
+                    <!-- Multiple entry
+                     Can either use the storedEntry or get storedDistinctEntries (if Pre-filled or DistinctValues)
+                     Iterate through multiple entries of the storedEntry, then through elements in each entry
+                     Once pre-fllled, the template entry needs to be set to ? -->
+                    <xf:action if="exists($prefilledEntry/cda:organizer[@classCode='MultipleEntry'])">
+                        <xxf:variable name="entryTemplate" select="$prefilledEntry/cda:organizer/cda:component[1]"/>
+
+                        <!-- Get parameters for expanded multipleEntry.
+                         The expanded element is the first one with #CityEHR:ElementProperty:Expanded or #CityEHR:ElementProperty:Full -->
+                        <xxf:variable name="expandedMultipleEntry"
+                            select="if ($prefilledEntry/@cityEHR:Scope=('#CityEHR:EntryProperty:Expanded','#CityEHR:EntryProperty:Full','#CityEHR:Property:Scope:Full')) then 'true' else 'false'"/>
+                        <xxf:variable name="expandedElementIRI"
+                            select="$entryTemplate/descendant::cda:value[@cityEHR:Scope=('#CityEHR:ElementProperty:Expanded','#CityEHR:ElementProperty:Full')][1]/@root"/>
+
+                        <!-- Get distinct values for stored entry.
+                         For multiple entries the observation elements are within cda:component in the second cda:component of the entry
+                         pre-fillType is #CityEHR:EntryProperty:Pre-filled or #CityEHR:EntryProperty:DistinctValues 
+                         For distinct values get all previous entries (storedEntry is just most recent and is used for pre-Filled) -->
+
+                        <xxf:variable name="storedObservationKeys"
+                            select="distinct-values($sortedStoredObservationSet/string-join(descendant::cda:value/@value,''))"/>
+                        <xxf:variable name="distinctStoredObservations"
+                            select="for $k in $storedObservationKeys return $sortedStoredObservationSet[string-join(descendant::cda:value/@value,'') = $k][1]"/>
+
+                        <!-- Debugging -->
+                        <!--
+                    <xf:action if="$pre-fillType = ('#CityEHR:EntryProperty:AllValues','#CityEHR:Property:InitialValue:AllValues')">
+                        <xf:message ref="concat(count($distinctStoredObservations),' / ',count($sortedStoredObservationSet))"/>
+                    </xf:action>
+                    -->
+
+                        <!-- Insert an entry for each instance of an entry found in the stored entry.
+                         For DistinctValues then use $distinctStoredObservations, otherwise $sortedStoredObservationSet 
+                         OR if this is an expanded multipleEntry then just set the values of the entry that has already been inserted (by expand-multiple-entries)
+                         The storedEntry instance is a cda:component that may contain a cda:observation (simple entry) or a cda:organizer (enumeratedClass entry) -->
+
+                        <xf:action
+                            xxf:iterate="if ($pre-fillType=('#CityEHR:EntryProperty:DistinctValues','#CityEHR:Property:InitialValue:DistinctValues')) then $distinctStoredObservations else $sortedStoredObservationSet">
+                            <xxf:variable name="storedObservationInstance" select="."/>
+
+                            <!-- If the entry has pre-conditions then evaluate them.
+                             If conditions are true then insert the entry, otherwise don't.
+                             Pre-conditions are evaluated relative to the first child of the storedEntry.
+                             This allows for the context of the expression which uses the elements values relative to the specific entry, if necessary 
+                        -->
+                            <xxf:variable name="preConditions" select="$prefilledEntry/@cityEHR:preConditions"/>
+                            <xxf:variable name="preConditionsEvaluation" context="$storedObservationInstance//cda:id[1]"
+                                select="if (exists($preConditions)) then xxf:evaluate($preConditions) else 'true'"/>
+
+                            <!-- Insert the entryTemplate (or find the entry already inserted by expand-multiple-entries) and set values, but only if conditions allow -->
+                            <xf:action if="$preConditionsEvaluation">
+                                <xf:action if="$expandedMultipleEntry='false'">
+                                    <xf:insert context="$prefilledEntry/cda:organizer/cda:component[2]/cda:organizer" nodeset="cda:component"
+                                        position="last()" origin="$entryTemplate"/>
+                                </xf:action>
+                                <!-- Set values in the entryTemplate after inserting it.
+                                 First need to get the inserted entry 
+                                 This entry should be at the last() position in the entry set if it has just been inserted,
+                                 or is the entry that has the same value of the expandedElement as the storedEntry. 
+                            -->
+                                <xxf:variable name="expandedElementValue"
+                                    select="$storedObservationInstance/descendant::cda:value[@root=$expandedElementIRI][1]/@value"/>
+                                <xxf:variable name="insertedComponent"
+                                    select="if ($expandedMultipleEntry='false') then $prefilledEntry/cda:organizer/cda:component[2]/cda:organizer/cda:component[last()] else $prefilledEntry/cda:organizer/cda:component[2]/cda:organizer/cda:component[descendant::cda:value[@root=$expandedElementIRI][1]/@value=$expandedElementValue]"/>
+
+                                <!-- Check here that the insertedComponent exists - should do, but just in case -->
+                                <xf:action if="exists($insertedComponent)">
+                                    <!-- Set the CRUD attribute on the inserted entry (which is a cda:component).
+                                     Since these are pre-filled entries, we need to consider whether the entry can be updated.
+                                     If $entryCRUDValue contains 'U' then it can be updated (edited) and also deleted.
+                                     If $entryCRUDValue does not contain 'U' then the pre-filled entries are read-only.
+                                     -->
+                                    <xf:setvalue ref="$insertedComponent/@cityEHR:CRUD"
+                                        value="if (contains($entryCRUDValue,'U')) then '#CityEHR:Property:CRUD:U' else '#CityEHR:Property:CRUD:R'"/>
+                                    <!-- Set the origin attribute on the inserted entry -->
+                                    <xf:setvalue ref="$insertedComponent/descendant::cda:id[1]/@cityEHR:origin" value="''"/>
+
+                                    <!-- Simple entry -->
+                                    <xf:action xxf:iterate="$insertedComponent/cda:observation/descendant::cda:value[exists(@value)]">
+                                        <xxf:variable name="prefilledElement" select="."/>
+                                        <xxf:variable name="storedElement"
+                                            select="$storedObservationInstance/descendant::cda:value[@extension=$prefilledElement/@extension][1]"/>
+                                        <xf:action if="exists($storedElement)">
+                                            <xf:setvalue ref="$prefilledElement/@value" value="$storedElement/@value"/>
+                                            <xf:setvalue ref="$prefilledElement/@displayName" value="$storedElement/@displayName"/>
+                                            <xf:setvalue ref="$prefilledElement/@code" value="$storedElement/@code"/>
+                                        </xf:action>
+                                    </xf:action>
+
+                                    <!-- EnumeratedClassEntry -->
+                                    <xf:action
+                                        xxf:iterate="$insertedComponent/cda:organizer[@classCode='EnumeratedClassEntry']/cda:component[1]/cda:observation/descendant::cda:value[exists(@value)]">
+                                        <xxf:variable name="prefilledElement" select="."/>
+                                        <xxf:variable name="prefilledElementIRI" select="$prefilledElement/@extension"/>
+                                        <xxf:variable name="storedElement"
+                                            select="$storedEntryInstance/cda:organizer[@classCode='EnumeratedClassEntry']/cda:component[1]/cda:observation/descendant::cda:value[@extension=$prefilledElement/@extension][1]"/>
+                                        <xf:action if="exists($storedElement)">
+                                            <xf:setvalue ref="$prefilledElement/@value" value="$storedElement/@value"/>
+                                            <xf:setvalue ref="$prefilledElement/@displayName" value="$storedElement/@displayName"/>
+                                            <xf:setvalue ref="$prefilledElement/@code" value="$storedElement/@code"/>
+
+                                            <!-- If this element is the enumeratedClass element -->
+                                            <xf:action if="$prefilledElement/@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass'">
+                                                <!-- Set the element value to be displayName so that the input for enumeratedClass selection is primed -->
+                                                <xf:setvalue ref="$prefilledElement" value="$storedElement/@displayName"/>
+                                                <!-- Set the value of the supplementary data set in the prefilled entry -->
+                                                <xxf:variable name="classElement"
+                                                    select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$prefilledElementIRI]/iso-13606:data[1]"/>
+                                                <xxf:variable name="classCode" select="$classElement/@code"/>
+                                                <xxf:variable name="dictionaryElement"
+                                                    select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$classCode][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedLeafValue']/iso-13606:data[@value=$prefilledElement/@value]"/>
+
+                                                <xxf:variable name="prefilledSDSIRI"
+                                                    select="if (exists($dictionaryElement/@cityEHR:suppDataSet)) then $dictionaryElement/@cityEHR:suppDataSet else ''"/>
+                                                <xf:setvalue ref="$prefilledElement/@cityEHR:suppDataSet" value="$prefilledSDSIRI"/>
+                                            </xf:action>
+                                        </xf:action>
+                                    </xf:action>
+                                    <!-- End of EnumeratedClassEntry -->
+                                </xf:action>
+                                <!-- End of handing inserted entry -->
+                            </xf:action>
+                            <!-- End of processing for valid preConditions -->
+                        </xf:action>
+                        <!-- End iteration through stored entries -->
+
+                        <!-- Reset the initialValue property so that template entry uses default values -->
+                        <xf:setvalue ref="$prefilledEntry/@cityEHR:initialValue" value="'#CityEHR:Property:InitialValue:Default'"/>
+                    </xf:action>
+                    <!-- End of multipleEntry -->
+
+
+                    <!-- Get the set of enumeratedClass observations that need to have SDS prefilled.
+                    This is done once, for both simple and multiple entries.
+                    The enumeratedClassOrganizers are found in either a simple EnumeratedClassEntry or in the second component of a multipleEntry                   
+                    There may be more than one organizer for a multiple entry
+                    Iterate through the set, prefilling the SDS values
+                -->
+                    <xxf:variable name="enumeratedClassOrganizers"
+                        select="$prefilledEntry/cda:organizer[@classCode='EnumeratedClassEntry'] | $prefilledEntry/cda:organizer[@classCode='MultipleEntry']/cda:component[2]/descendant::cda:organizer[@classCode='EnumeratedClassEntry']"/>
+                    <xxf:variable name="storedEnumeratedClassOrganizers"
+                        select="$storedEntrySet/cda:organizer[@classCode='EnumeratedClassEntry'] | $storedEntrySet/cda:organizer[@classCode='MultipleEntry']/cda:component[2]/descendant::cda:organizer[@classCode='EnumeratedClassEntry']"/>
+
+                    <xf:action xxf:iterate="$enumeratedClassOrganizers">
+                        <xxf:variable name="supplementary-entry-organizer" select="."/>
+                        <xxf:variable name="organizerPosition" select="./position()"/>
+                        <!-- Get the corresponding stored supplementary-entry-organizer.
+                        There is only one of these for a simple entry or one for each entry in a multiple entry.
+                        **JC - check this position stuff -->
+                        <xxf:variable name="storedSupplementary-entry-organizer" select="$storedEnumeratedClassOrganizers[$organizerPosition]"/>
+
+                        <!-- Iterate through the elements in the enumeratedClass entry, including elements in clusters -->
+                        <xf:action if="exists($supplementary-entry-organizer)"
+                            xxf:iterate="$supplementary-entry-organizer/cda:component[1]/cda:observation/descendant::cda:value[@value]">
+
+                            <xxf:variable name="prefilledElement" select="."/>
+                            <xxf:variable name="prefilledElementIRI" select="$prefilledElement/@extension"/>
+
+                            <!-- Identify the supplementary data set if the prefilled element has one.
+                            To prefill the SDS need to:
+                            Get the enumeratedClass of the prefilled element from the dictionary
+                            Get the SDS for the prefilled element and insert it
+                            Get the stored SDS, if one exists
+                            Set the values of the prefilled SDS form the stored SDS
+                        -->
+                            <xxf:variable name="prefilledSDSIRI" select="$prefilledElement/@cityEHR:suppDataSet"/>
+                            <xf:action if="$prefilledSDSIRI!=''">
+
+                                <!-- Get SDS from the data dictionary and insert it, then set its origin.
+                                 The SDS is a component containing the cda:entry for the SDS.
+                                 This is found from a query to the class dictionary (refactored 2014-06-19) -->
+                                <xxf:variable name="prefilledSuppDataSet"
+                                    select="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry/cda:component[cda:observation/cda:id/@extension=$prefilledSDSIRI]"/>
+                                <!-- Only insert SDS if it doesn't already exist -->
+                                <xf:action
+                                    if="not(exists($prefilledEntry/cda:organizer[@classCode='EnumeratedClassEntry']/cda:component[2]/cda:organizer/cda:component/cda:observation/cda:id[@extension=$prefilledSDSIRI][@cityEHR:origin=$prefilledElementIRI]))">
+                                    <xf:insert context="$supplementary-entry-organizer/cda:component[2]/cda:organizer" origin="$prefilledSuppDataSet"/>
+                                    <xxf:variable name="insertedSuppDataSet"
+                                        select="$supplementary-entry-organizer/cda:component[2]/cda:organizer/cda:component[1]"/>
+                                    <xf:setvalue ref="$insertedSuppDataSet/cda:observation/cda:id/@cityEHR:origin" value="$prefilledElementIRI"/>
+                                    <!-- Iterate through the elements in the prefilled SDS, setting values from the stored SDS.
+                                    This needs to be done after the SDS is inserted so that the values are not corrupted in the data dictionary -->
+                                    <xxf:variable name="storedSuppDataSet"
+                                        select="$storedSupplementary-entry-organizer/cda:component[2]/cda:organizer/cda:component[cda:observation/cda:id[@extension=$prefilledSDSIRI][@cityEHR:origin=$prefilledElementIRI]]"/>
+                                    <!-- Iterate if there is a stored SDS -->
+                                    <xf:action if="exists($storedSuppDataSet)" xxf:iterate="$insertedSuppDataSet/cda:observation/cda:value">
+                                        <xxf:variable name="insertedSDSElement" select="."/>
+                                        <!-- Simple element -->
+                                        <xf:action if="empty($insertedSDSElement/cda:value)">
+                                            <!-- Get the stored value of the SDS element -->
+                                            <xxf:variable name="storedSDSElement"
+                                                select="$storedSuppDataSet/cda:observation/cda:value[@extension=$insertedSDSElement/@extension]"/>
+                                            <xf:action if="exists($storedSDSElement)">
+                                                <xf:setvalue ref="$insertedSDSElement/@value" value="$storedSDSElement/@value"/>
+                                                <xf:setvalue ref="$insertedSDSElement/@displayName" value="$storedSDSElement/@displayName"/>
+                                                <xf:setvalue ref="$insertedSDSElement/@code" value="$storedSDSElement/@code"/>
+                                            </xf:action>
+                                        </xf:action>
+                                        <!-- Cluster -->
+                                        <xf:action xxf:iterate="$insertedSDSElement/cda:value">
+                                            <xxf:variable name="insertedSDSClusterElement" select="."/>
+                                            <!-- Get the stored value of the SDS element -->
+                                            <xxf:variable name="storedSDSClusterElement"
+                                                select="$storedSuppDataSet/cda:observation/cda:value[@extension=$insertedSDSElement/@extension]/cda:value[@extension=$insertedSDSClusterElement/@extension]"/>
+                                            <xf:action if="exists($storedSDSClusterElement)">
+                                                <xf:setvalue ref="$insertedSDSClusterElement/@value" value="$storedSDSClusterElement/@value"/>
+                                                <xf:setvalue ref="$insertedSDSClusterElement/@displayName"
+                                                    value="$storedSDSClusterElement/@displayName"/>
+                                                <xf:setvalue ref="$insertedSDSClusterElement/@code" value="$storedSDSClusterElement/@code"/>
+                                            </xf:action>
+                                        </xf:action>
+                                    </xf:action>
+                                </xf:action>
+                            </xf:action>
+                        </xf:action>
+                    </xf:action>
+
+                </xf:action>
+
+                <!-- Or if no pre-filled value then use the default.
+                 But only for entries in the main body of the document.
+                 For entries in the alwaysHidden section(s) then these will be prefilled again if the document is reloaded.
+                 (Note that the template entry for pre-filled multiple entries has already been set to #CityEHR:Property:InitialValue:Default above
+              -->
+                <xf:action if="not(exists($storedEntrySet)) and not(exists($prefilledEntry/parent::cda:section[@cityEHR:visibility='alwaysHidden']))">
+                    <xf:setvalue ref="$prefilledEntry/@cityEHR:initialValue" value="'#CityEHR:Property:InitialValue:Default'"/>
+                </xf:action>
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set default values. 
+        This is only done when a new form is loaded (not a saved form)
+        These are on entries with @cityEHR:initialValue='#CityEHR:Entry:InitialValue:Default', so need to iterate through all of these. 
+        This sets the default value of some types of element.
+        Or if a default value has been specified in the model then this is calculated -->
+    <xf:action ev:event="set-default-values">
+        <!-- Get the main section (body) of the CDA document for use in processing below -->
+        <xxf:variable name="cdaBody" select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
+
+        <xf:action
+            xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:initialValue=('#CityEHR:EntryProperty:Default','#CityEHR:Property:InitialValue:Default')]">
+            <xxf:variable name="entry" select="."/>
+
+            <!-- When the simple entry is not rendered as an image map or the template entry of any multiple entry.
+                From 2018-05-07 simple entries (not image map) or template for multiple entries, but not in the prefilled entries of multiple entry
+                Note that this will set default values in the template for multiple entries (which is what we want)
+                Simple entries will be of the form cda:entry/cda:observation/cda:value (assume that other types of entry cannot be rendered as image maps)
+                Whereas multipleEntry is of the form cda:entry/cda:organizer/cda:component/cda:observation/cda:value
+            -->
+            <xxf:variable name="entryForDefault"
+                select="$entry[not(@cityEHR:rendition=('#CityEHR:EntryProperty:ImageMap','#CityEHR:Property:Rendition:ImageMap'))]/cda:observation |
+                $entry[not(@cityEHR:rendition=('#CityEHR:EntryProperty:ImageMap','#CityEHR:Property:Rendition:ImageMap'))]/cda:act |
+                        $entry/cda:organizer/cda:component[1]"/>
+            <xf:action if="exists($entryForDefault)">
+                <xf:dispatch name="set-entry-default-values" target="cda-model">
+                    <xxf:context name="entry" select="$entryForDefault"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Set default values for simple entries rendered as image maps (all element values default to 0).
+                Note that multiple entries displayed as image maps must not get set to 0.
+                Simple entries will be of the form cda:entry/cda:observation/cda:value (assume that other types of entry cannot be rendered as image maps)
+                Whereas multipleEntry is of the form cda:entry/cda:organizer/cda:component/cda:observation/cda:value -->
+            <xf:action
+                xxf:iterate="$entry[@cityEHR:rendition=('#CityEHR:EntryProperty:ImageMap','#CityEHR:Property:Rendition:ImageMap')]/cda:observation/descendant::cda:value[@value='']">
+                <xf:setvalue ref="./@value" value="'0'"/>
+            </xf:action>
+
+            <!-- Multiple entry that does not have any prefilled values.
+                There is no entry in the second organizer yet, so need to add one from the template (which will have had default values set above)
+                This happens for default entries and for pre-filled entries that had no stored entry found -->
+            <!-- Decided not to do this yet 17/01/2014
+                <xf:action if="exists($entry/cda:organizer[@classCode='MultipleEntry'])">
+                
+                </xf:action>
+            -->
+        </xf:action>
+
+        <!-- Set default value of false() for any xs:boolean values that are not set 
+            (i.e. not prefilled and not explicitly set as a default value)
+            This also finds xs:booelan values in the templates of multiple entries -->
+        <xf:action xxf:iterate="$cdaBody/descendant::cda:value[@value=''][@xsi:type='xs:boolean']">
+            <xxf:variable name="element" select="."/>
+            <xf:setvalue ref="$element/@value" value="false()"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set default values for an entry.
+         The entry (cda:observation, cda:act, etc or cda:component for a multiple entry) is passed as a parameter 
+         Called from set-default-values and when a new entry is added to a multipleEntry (in CDA2XForm-Module.xsl)
+    -->
+    <xf:action ev:event="set-entry-default-values">
+        <xxf:variable name="entry" select="event('entry')"/>
+
+        <!-- Iterate through empty values that have a default specified or are xs:boolean -->
+        <!--
+        <xf:action xxf:iterate="$entry/descendant::cda:value[@value=''][@cityEHR:defaultValue!='' or @xsi:type='xs:boolean']">
+        -->
+        <!-- 2019-08-29 - just setting empty values meant that values only got set the first time set-default-values was invoked
+             Iterate through values that have a default specified or are xs:boolean -->
+        <xf:action xxf:iterate="$entry/descendant::cda:value[@cityEHR:defaultValue!='' or @xsi:type='xs:boolean']">
+
+            <xxf:variable name="element" select="."/>
+
+            <!-- Element has a default value specified then use xxf:evaluate to set it               
+                 Context of evaluation must be the value attribute.
+                 So value of local entry/element is found in ../../cda:value[@extension=ElementId]/@value
+                 This means that setvalue must be done with ref=$element/@value so that the evaluation context is correct
+                 If there is no default value specified and the type is xs:boolean, then set to false()
+                 The defaultValue variable can then be set for ongoing processing
+            -->
+            <xf:setvalue ref="$element/@value"
+                value="if ($element/@cityEHR:defaultValue!='') then xxf:evaluate($element/@cityEHR:defaultValue) else if ($element/@xsi:type='xs:boolean') then false() else ''"/>
+            <xxf:variable name="defaultValue" select="$element/@value"/>
+
+            <!-- If the element is an enumeratedValue, enumeratedCalculatedValue, enumeratedClass or enumeratedDirectory 
+                then need to check that the value set is allowable
+                and also need to set the displayName (and code).
+                The checks need to be made against the root element in the dictionary/directory
+            -->
+
+            <!-- enumeratedValue - data dictionary holds a list of element values -->
+            <xf:action if="$element/@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedValue'">
+                <xxf:variable name="elementIRI" select="$element/@root"/>
+                <xxf:variable name="dictionaryElement"
+                    select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$elementIRI]/iso-13606:data[@value=$defaultValue]"/>
+
+                <xf:setvalue ref="$element/@value" value="if (exists($dictionaryElement)) then . else ''"/>
+                <xf:setvalue ref="$element/@displayName" value="if (exists($dictionaryElement)) then $dictionaryElement/@displayName else ''"/>
+                <xf:setvalue ref="$element/@code" value="if (exists($dictionaryElement)) then  $dictionaryElement/@code else ''"/>
+            </xf:action>
+
+            <!-- Enumerated calculated value needs to get the selection list to check the default value.
+                dictionaryElementValues is the list of values in the dictionary
+                evaluatedSelection is either a set of nodes with @value/@displayName for selection
+                or is a string that can be tokenised into the set of selectable values
+                Note that if the context of the evaluation is not set, not all calculations will work.
+                So need context on evaluation so that local paths are found correctly (context="$element/@value") -->
+            <xf:action context="$element/@value" if="$element/@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedCalculatedValue'">
+
+                <xxf:variable name="elementIRI" select="$element/@root"/>
+                <xxf:variable name="dictionaryValueSelection"
+                    select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$elementIRI]/iso-13606:data"/>
+
+                <xxf:variable name="evaluatedSelection" context="$element/@value"
+                    select="if (exists($element[@cityEHR:calculatedValue!=''])) then xxf:evaluate($element/@cityEHR:calculatedValue) else ()"/>
+
+                <xxf:variable name="selectionFilter"
+                    select="if ($evaluatedSelection castable as xs:string) then tokenize($evaluatedSelection,',') else ()"/>
+
+                <xxf:variable name="elementValueSelection"
+                    select="if ($evaluatedSelection instance of element()+) then $evaluatedSelection
+                    else if (not(empty($selectionFilter))) then $dictionaryValueSelection[@value = $selectionFilter]
+                    else ()"/>
+
+                <xxf:variable name="selectedValue" select="$elementValueSelection[@value=$defaultValue]"/>
+
+                <xf:setvalue ref="$element/@value" value="if (exists($selectedValue)) then . else ''"/>
+                <xf:setvalue ref="$element/@displayName" value="if (exists($selectedValue)) then $selectedValue/@displayName else ''"/>
+                <xf:setvalue ref="$element/@code" value="if (exists($selectedValue)) then  $selectedValue/@code else ''"/>
+            </xf:action>
+
+            <!-- Enumerated class needs to look in the class dictionary 
+                TBD - need to get the class dictionary. not use the specialty dictionary -->
+            <xf:action if="$element/@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass'">
+                <!--
+                    <xxf:variable name="elementId" select="$element/@extension"/>
+                    <xxf:variable name="dictionaryElementClass"
+                    select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$elementId][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass']/iso-13606:data/@code"/>
+                    <xxf:variable name="dictionaryElement"
+                    select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$dictionaryElementClass][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedValue']/iso-13606:data[@value=$defaultValue]"/>
+                    <xf:action if="empty($dictionaryElement)">
+                    <xf:setvalue ref="$element/@value" value="''"/>
+                    </xf:action>
+                    <xf:action if="exists($dictionaryElement)">
+                    <xf:setvalue ref="$element/@displayName"
+                    value="$dictionaryElement/@displayName"/>
+                    <xf:setvalue ref="$element/@code" value="$dictionaryElement/@code"/>
+                    </xf:action>
+                -->
+            </xf:action>
+
+            <!-- enumeratedDirectory - look in directoryElements-instance get the element -->
+            <xf:action if="$element/@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedDirectory'">
+                <xxf:variable name="elementIRI" select="$element/@root"/>
+                <xxf:variable name="directoryElement"
+                    select="xxf:instance('directoryElements-instance')/iso-13606:elementCollection/iso-13606:element[@root=$elementIRI]/iso-13606:data[@value=$defaultValue]"/>
+
+                <xf:setvalue ref="$element/@value" value="if (exists($directoryElement)) then . else ''"/>
+                <xf:setvalue ref="$element/@displayName" value="if (exists($directoryElement)) then $directoryElement/@displayName else ''"/>
+                <xf:setvalue ref="$element/@code" value="if (exists($directoryElement)) then  $directoryElement/@code else ''"/>
+            </xf:action>
+
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to expand multiple entries. 
+        Iterate through each expanded multiple entry - has entry property 'Expanded' or (from 2018-04-3) 'Full'
+        Find the element to expand
+        Get its values from the data dictionary or calculate them (if enumeratedCalculatedValue)
+        Insert an entry for each value found
+        Set the value of the expanded element
+    -->
+    <xf:action ev:event="expand-multiple-entries">
+        <!-- Get the main section (body) of the CDA document for use in processing below.
+            This returns a sequence of sections on the form -->
+        <xxf:variable name="cdaBody" select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
+
+        <xf:action
+            xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:Scope=('#CityEHR:EntryProperty:Expanded','#CityEHR:EntryProperty:Full','#CityEHR:Property:Scope:Full')]/cda:organizer[@classCode='MultipleEntry']">
+            <xxf:variable name="expandedEntryOrganizer" select="."/>
+            <xf:dispatch name="expand-entry" target="cda-model">
+                <xxf:context name="expandedEntryOrganizer" select="$expandedEntryOrganizer"/>
+            </xf:dispatch>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set an expanded entry.
+         The complete cda:organizer is passed as a parameter (expandedEntryOrganizer)
+         This contains the template entry in cda:component[1] and the set of existing entries in cda:component[2]
+         Called from expand-multiple-entries and when a change to the expanded element triggers (in CDA2XForm-Module.xsl)
+         enumeratedValue, enumeratedClass or enumeratedDirectory can also be constrained by a calculation
+         enumeratedCalculatedValue is designed to select from a list of tokens, but is also used to constrain the set of enumerated values, if there are any
+    -->
+    <xf:action ev:event="expand-entry">
+        <xxf:variable name="expandedEntryOrganizer" select="event('expandedEntryOrganizer')"/>
+        <xxf:variable name="entryTemplate" select="$expandedEntryOrganizer/cda:component[1]"/>
+
+        <!-- Find the expanded element (2018-04-13 there may be more than one, so use the first).
+            The descendant axis takes care of enumeratedClass entries and the expanded element being inside a cluster.
+            Need to use the root of the id.
+            
+            The expanded element can be enumeratedValue, enumeratedCalculatedValue, enumeratedClass or enumeratedDirectory. -->
+        <xxf:variable name="expandedElementTemplate"
+            select="($entryTemplate/descendant::cda:value[@cityEHR:Scope=('#CityEHR:ElementProperty:Expanded','#CityEHR:ElementProperty:Full')])[1]"/>
+        <xxf:variable name="expandedElementIRI" select="$expandedElementTemplate/@root"/>
+
+        <!-- If the element has a calculatedValue set, then evaluate to get the list of allowed values -->
+        <xxf:variable name="calculatedValue" select="$expandedElementTemplate/@cityEHR:calculatedValue"/>
+        <xxf:variable name="calculatedValueSet" context="$expandedElementTemplate"
+            select="if (exists($calculatedValue) and $calculatedValue!='') then xxf:evaluate($calculatedValue) else ()"/>
+
+        <!-- Get the list of values for the expanded element.
+            The list depends on the e;ement type: enumeratedValue|enumeratedCalculatedValue, enumeratedClass or enumeratedDirectory -->
+
+        <!-- Get the expanded element from the data dictionary (need to match the root attribute in the data dictionary) -->
+        <xxf:variable name="dictionaryElement"
+            select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$expandedElementIRI]"/>
+        <xxf:variable name="dictionaryElementType" select="$dictionaryElement/@cityEHR:elementType"/>
+
+
+        <!-- Dictionary values -->
+        <xxf:variable name="dictionaryValues"
+            select="if ($dictionaryElementType=('#CityEHR:ElementProperty:enumeratedValue','#CityEHR:ElementProperty:enumeratedCalculatedValue')) then $dictionaryElement/iso-13606:data else ()"/>
+
+        <!-- Get the class and entry node if this is an enumeratedClass element -->
+        <xxf:variable name="classIRI"
+            select="if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $dictionaryElement/iso-13606:data[1]/@code else ''"/>
+        <xxf:variable name="entryNodeIRI"
+            select="if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $dictionaryElement/iso-13606:data[1]/@value else ''"/>
+
+
+        <!-- Get the enumerationClass here by query to class dictionary.
+             Only want to do this if needed for enumeratedClass.
+             Sets up enumeratedClassHierarchy-instance with the element values for enumeration -->
+        <xf:action if="$dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass'">
+            <xf:dispatch name="update-enumeratedClassHierarchy" target="classDictionary-model">
+                <xxf:context name="classCode" select="$classIRI"/>
+                <xxf:context name="entryNode" select="''"/>
+                <xxf:context name="elementScope" select="''"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <xxf:variable name="classElement"
+            select="if ($classIRI!='') then xxf:instance('enumeratedClassHierarchy-instance')/descendant::iso-13606:element[@extension=$classIRI][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass'] else ()"/>
+        <xxf:variable name="classValues"
+            select="if (not(exists($classElement))) then () else if ($entryNodeIRI!=$classIRI) then $classElement/descendant::iso-13606:data[@code=$entryNodeIRI][1]/descendant::iso-13606:data[not(child::*)] else $classElement/descendant::iso-13606:data[not(child::*)]"/>
+
+        <!-- Directory values - will be empty if the element is not enumeratedDirectory -->
+        <xxf:variable name="directoryValues"
+            select="xxf:instance('directoryElements-instance')/iso-13606:elementCollection/iso-13606:element[@root=$expandedElementIRI]/iso-13606:data"/>
+
+
+        <!-- Get the (pre-)defined set of values for the expanded element -->
+        <xxf:variable name="definedValueSet"
+            select="if ($dictionaryElementType=('#CityEHR:ElementProperty:enumeratedValue','#CityEHR:ElementProperty:enumeratedCalculatedValue')) then $dictionaryValues
+            else if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $classValues
+            else if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedDirectory') then $directoryValues
+            else ()"/>
+
+        <!-- Set the valueSet for the expaned element.
+             If definedValueSet is empty and enumeratedCalculatedValue then set to calculatedValueSet
+             else if there is a calculation then it is used to constrain the definedValueSet
+             Otherwise its just the definedValueSet (which may be empty) -->
+        <xxf:variable name="valueSet"
+            select="if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedCalculatedValue' and empty($definedValueSet)) then $calculatedValueSet
+                    else if ($calculatedValue!='') then $definedValueSet[@value = $calculatedValueSet]
+                    else $definedValueSet"/>
+
+        <!-- If there is a valueSet to expand
+            The expanded ME may already contain entries.
+            So there are three cases to consider:
+        
+            value in ME, but not in valueSet - remove it
+            value in valueSet and in ME  - just leave it
+            value in valueSet and not in ME - add it  -->
+
+        <xf:action if="exists($valueSet)">
+
+            <!-- Renove existing entries that are not in valueSet -->
+            <xxf:variable name="existingEntries" select="$expandedEntryOrganizer/cda:component[2]/cda:organizer/cda:component"/>
+            <xf:delete nodeset="$existingEntries[descendant::cda:value[@root=$expandedElementIRI][not(xs:string(@value)=$valueSet)]]"/>
+
+            <!-- Iterate through the set of values for the expanded element.
+             The values may be a sequence of nodes or values (in the case of enumeratedCalculatedValue, with no dictionary contraints)-->
+            <xf:action xxf:iterate="$valueSet">
+                <!-- The value in valueSet is either a node or an atomic value -->
+                <xxf:variable name="value" select="."/>
+
+                <!-- Insert new entry if there isn't already one for that value -->
+                <xf:action
+                    if="empty($expandedEntryOrganizer/cda:component[2]/cda:organizer/cda:component/descendant::cda:value[@root=$expandedElementIRI][xs:string(@value)=$value])">
+                    <xf:insert context="$expandedEntryOrganizer/cda:component[2]/cda:organizer" nodeset="cda:component" origin="$entryTemplate"
+                        at="last()" position="after"/>
+                    <xxf:variable name="insertedEntry" select="$expandedEntryOrganizer/cda:component[2]/cda:organizer/cda:component[last()]"/>
+
+                    <!-- Set the origin attribute on the inserted entry -->
+                    <xf:setvalue ref="$insertedEntry/descendant::cda:id[1]/@cityEHR:origin" value="''"/>
+
+                    <!-- Set the attributes of the expanded element (may be inside a cluster).
+                 The scope of the element is set to #CityEHR:ElementProperty:Expanded (from 2018-04-13)  
+                 Can be in a simple entry or an enumeratedClass entry -->
+                    <xxf:variable name="insertedEntryElement"
+                        select="$insertedEntry/cda:observation//cda:value[@root=$expandedElementIRI] | $insertedEntry/cda:organizer[@classCode='EnumeratedClassEntry']/cda:component[1]/cda:observation/descendant::cda:value[@root=$expandedElementIRI]"/>
+
+                    <!-- Two cases for setting the inserted element, depending on whether $valueSet is a set of nodes or atomic values,
+                 which is the case when it was set from calculatedVlaueSet -->
+                    <xf:setvalue ref="$insertedEntryElement/@value" value="if ($value instance of element()) then $value/@value else $value"/>
+                    <xf:setvalue ref="$insertedEntryElement/@code" value="if ($value instance of element()) then $value/@code else ''"/>
+                    <xf:setvalue ref="$insertedEntryElement/@displayName"
+                        value="if ($value instance of element()) then $value/@displayName else $value"/>
+
+                    <!-- Set default values for the inserted entry -->
+                    <xf:dispatch name="set-entry-default-values" target="cda-model">
+                        <xxf:context name="entry" select="$insertedEntry"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:action>
+
+        </xf:action>
+
+        <!-- If there is not value set , then show one empty entry -->
+        <xf:action if="not(exists($valueSet))">
+            <xf:insert context="$expandedEntryOrganizer/cda:component[2]/cda:organizer" nodeset="cda:component" origin="$entryTemplate" at="last()"
+                position="after"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- When the form is ready -->
+    <xf:action ev:event="xforms-ready">
+        <xf:rebuild model="cda-model"/>
+    </xf:action>
+
+</xf:model>

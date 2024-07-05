@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    user.xml
+    Standard format for user account details to be set up in the cityEHR runtime system.
+    
+    Files in this format can be uploaded to the xmlstore using the utility on the Admin page of cityEHR.
+    
+    Each individual <user> element creates a collection called <userid> in the top-level users collection of xmlstore
+    
+    user/@id is of the form: #CityEHR:User:admin where 'admin' matches the userId
+    userId is of the form: admin
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+    **********************************************************************************************************
+-->
+<user id="" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    <credentials>
+        <userId/>
+        <logonAlias/>
+        <username/>
+        <password dateSet="" seedKey=""/>
+        <code/>
+        <specialtyCode/>
+        <jobTitle/>
+        <organisation/>
+        <email/>
+    </credentials>
+    <applications>
+        <iso-13606:EHR_Extract id="">
+            <!--
+            <iso-13606:Folder id=""/>
+            -->
+        </iso-13606:EHR_Extract>
+    </applications>
+    <rbac>
+        <!-- Set as 'careTeam' to restrict to patients in user's care team(s) -->
+        <restrictPatientAccess value="" displayName="All Patients"/>
+        <!--
+        <role displayName="" value=""/>
+        -->
+    </rbac>
+</user>

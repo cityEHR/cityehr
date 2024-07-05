@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    database-parameters.xml
+    
+    Parameters which configure the cityEHR database cluster.
+    The default version is loaded on first logon to a new installation (comes preloaded in the local database)
+    
+    This configuration is for expreimental use only. Full implementation is due in cityEHR release 2.0
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<parameters type="database" xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" date="" version="">
+
+
+    <!-- === deployedDatabases =======================================================================     
+         Configures the physical database clusters used for the cityEHR logical (system) databases
+            ehr
+            patientstore
+         
+         Contents are replaced by build-database-parameters action in databaseAccessLayer-model.
+         Each physical cluster is defined in system-paramters and consists of one or more nodesets.
+         The physical nodes in the cluster are generated from the nodesets.
+         
+         One physicalCluster element is built for every physicalCluster defined in the deployed logical databases.
+         There is one (and only one) logical database deployed for each system (currently ehr and patientstore are the only systems).
+         
+         So if there are two logical databases 
+         
+         This example is used as the template - it is needed here, but the actual values are not used (those are set by build-database-parameters)
+           - physicalCluster template is inserted from the system-parameters
+           - only the templates for node and btu are used from database-parameters
+           
+         For the physicalCluster:
+            All nodes in the cluster must be accessed using the same method, as defined by the prefix and suffix for URL and URN
+            URLs are used for access in XForms, URNs for access in pipelines.
+            The physicalDatabaseLocation is the root of the database, used for every node and for all logical databases deployed on the cluster
+            The indexLocation is the database location of the index, used for every node in the cluster.
+         
+         For the node:
+            id is the concatenation of host and port (can be blank, for built-in database) and must be unique within the physicalCluster.
+            host and port are combined with the physicalCluster urlPrefix and urlSuffix to generate the databaseURL and likewise for databaseURN
+            btuLocation is the concatenation of the physicalDatabaseLocation for the cluster and the logicalDatabaseLocation of the logicalDatabase 
+    
+         -->
+    <deployedDatabases>
+        <physicalCluster id="builtin-basicEHR" displayName="Built-in Database" cityEHR:edit="fixed pinned" system="ehr" urlPrefix=""
+            urlSuffix="/exist/rest" urnPrefix="xmldb:exist://" urnSuffix="" physicalDatabaseLocation="/db" indexLocation="/db/system/config" status="">
+            <node id="" host="" port="" databaseVersion="" databaseURL="/exist/rest" databaseURN="xmldb:exist://" btuLocation="/db/ehr" status="">
+                <btu id="" type="kernel"/>
+                <btu id="" type="empi"/>
+                <btu id="" type="patient"/>
+                <btu id="" type="auditlog"/>
+            </node>
+        </physicalCluster>
+        <physicalCluster id="builtin-basicPatientStore" displayName="Built-in Database" cityEHR:edit="fixed pinned" system="patientstore" urlPrefix=""
+            urlSuffix="/exist/rest" urnPrefix="xmldb:exist://" urnSuffix="" physicalDatabaseLocation="/db" indexLocation="/db/system/config" status="">
+            <node id="" host="" port="" databaseVersion="" databaseURL="/exist/rest" databaseURN="xmldb:exist://" btuLocation="/db/patientstore"
+                status=""/>
+        </physicalCluster>
+    </deployedDatabases>
+
+
+
+    <!-- Enterprise Master Patient Index.
+     This example is used as the template - it is needed here, but the actual values are not used.
+     The attributes value (patient identifier) and extension (for the application) are used so that the same index can be used as for CDA -->
+    <empi>
+        <patient application="#ISO-13606:EHR_Extract-cityEHR" id="" extension="26262772" btu="2018-04-30T14:28:19-system.admin-5"/>
+        <patient application="#ISO-13606:EHR_Extract-cityEHR" id="" extension="82489540" btu="2018-04-30T14:28:20-system.admin-6"/>
+        <patient application="#ISO-13606:EHR_Extract-cityEHR" id="" extension="90252-05" btu="2018-04-30T14:28:18-system.admin-4"/>
+    </empi>
+
+
+</parameters>

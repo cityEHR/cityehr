@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRSDSDialog.xhtml
+    
+    Dialog to display data entry for supplementary data sets (SDS).
+    
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- SDS dialogue.
+     Display the supplementary data set for a node in a class hierarchy.
+     The SDS has been set in xxf:instance('control-instance')/suppDataSet -->
+<xxf:dialog id="SDS-dialog" appearance="full" level="modal" close="false" draggable="true" visible="false" class="container"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <xf:label>
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Forms/sdsLabel"/>
+        <xf:output ref="xxf:instance('control-instance')/suppDataSet/classNodeDisplayName"/>
+    </xf:label>
+    
+    <xxf:variable name="focus"
+        select="xxf:instance('control-instance')/suppDataSet/focus"/>
+    <xxf:variable name="sdsEntry"
+        select="xxf:instance('form-instance')//cda:entryRelationship[@cityEHR:focus=$focus]/cda:observation"/>
+
+    <!-- supplementary data set selection -->
+    <!-- $elementStyle must be set so that the supplementary data set can be rendered with equally spaced layout -->
+    <xxf:variable name="labelWidth" select="if (exists($sdsEntry/@cityEHR:labelWidth)) then $sdsEntry/@cityEHR:labelWidth else 0"/>
+    <xxf:variable name="width" select="round($labelWidth div 2)"/>
+    <xxf:variable name="elementStyle" select="if ($width gt 0) then concat('width: ',$width,'em;') else ''"/>
+    
+    <!-- Controls -->
+    <xhtml:p>
+        <!-- OK - Close the SDS dialog -->
+        <xf:trigger>
+            <xf:label class="button">OK</xf:label>
+ 
+            <xf:action ev:event="DOMActivate">
+                <xxf:hide ev:event="DOMActivate" dialog="SDS-dialog"/>
+            </xf:action>
+        </xf:trigger>
+    </xhtml:p>
+    <!-- Render the elements in the supplementary data set for user input.
+         Entries are rendered as SimpleEntry only -->
+    <xhtml:div class="ScrollingContainer">
+        <xhtml:ul class="suppDataSet">
+            <xhtml:li class="suppDataSetTitle">
+                <xf:output
+                    ref="$sdsEntry/cda:code[@codeSystem='cityEHR']/@displayName"
+                />
+            </xhtml:li>
+            <xf:repeat nodeset="$sdsEntry/cda:value">
+                <xhtml:li class="Ranked">
+                    <xhtml:ul>
+                        <!-- Value may have child elements if it is a cluster -->
+                        <xf:repeat nodeset="if (exists(./cda:value)) then ./cda:value else .">
+                            <!-- value variable is used in cityEHRRenderFormElement.xhtml -->
+                            <xxf:variable name="value" select="."/>
+                            <!-- The layout depends on whether this element is in a cluster, or not -->
+                            <xxf:variable name="layoutClass" select="if ($value/parent::*/name()='value') then 'Unranked' else 'Ranked'"/>
+                            <xhtml:li class="{$layoutClass}">
+                                <!-- context variable is used in cityEHRRenderFormElement.xhtml -->
+                                <xxf:variable name="context" select="'SimpleEntry'"/>
+                                <xi:include href="cityEHRRenderFormElement.xhtml"/>
+                            </xhtml:li>
+                        </xf:repeat>
+                        <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+                    </xhtml:ul>
+                </xhtml:li>
+            </xf:repeat>
+            <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+        </xhtml:ul>
+    </xhtml:div>
+</xxf:dialog>

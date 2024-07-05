@@ -1,0 +1,249 @@
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRWireframe.xhtml
+    
+    Display user interface wireframe
+    Click on any pane label to return to the cityEHRAdmin page
+    
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+
+    <!-- ========= HTML Head - Includes the Xforms Model ========= 
+        ========================================================= -->
+    <xhtml:head>
+
+        <!-- Try this to force compatibility mode -->
+        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
+
+        <!-- HTML Title is the displayName of the current application -->
+        <xhtml:title>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+        </xhtml:title>
+
+        <!-- Stylesheet -->
+        <xhtml:link rel="stylesheet" type="text/css"
+            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
+
+
+        <!-- ========= System Parameters ===================================================== 
+             ================================================================================= -->
+        <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
+            ================================================================================== -->
+        <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Session model contains stuff for handling of user sessions ============ 
+            ================================================================================== -->
+        <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Audit log model contains stuff for audit of user actions ============== 
+            ================================================================================== -->
+        <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Page navigation model contains stuff for navigation between pages =====
+        ====================================================================================== -->
+        <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Configuration model contains standard configuration of the page ======= 
+            ================================================================================== -->
+        <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= Main model contains stuff specific to this page ========= 
+            =================================================================== -->
+        <xf:model id="main-model"/>
+    </xhtml:head>
+
+
+    <!-- ========================== HTML Body   ================== 
+         ========================================================= -->
+    <xhtml:body class="cityEHRBase">
+        <!-- Fixed Header Information -->
+        <xhtml:div id="ehrHeader">
+            <!-- Patient label pane -->
+            <xhtml:div id="patientLabel">
+                <xhtml:div class="controlPanel">
+                    <xf:trigger class="wireframePane" appearance="minimal">
+                        <xf:label
+                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='patientLabel']/@displayName"/>
+                        <xf:action ev:event="DOMActivate">
+                            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                <xxf:context name="page" select="'cityEHRAdmin'"/>
+                            </xf:dispatch>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:div>
+            </xhtml:div>
+
+
+            <!-- System-level Navigation Pane -->
+            <xhtml:div id="systemNavigation">
+                <xhtml:div class="controlPanel">
+                    <xf:trigger class="wireframePane" appearance="minimal">
+                        <xf:label
+                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='systemNavigation']/@displayName"/>
+                        <xf:action ev:event="DOMActivate">
+                            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                <xxf:context name="page" select="'cityEHRAdmin'"/>
+                            </xf:dispatch>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:div>
+            </xhtml:div>
+            <!-- Logo Pane -->
+            <xhtml:div id="logo">
+                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+            </xhtml:div>
+        </xhtml:div>
+        <!-- === Level 2 /3 =================================== 
+            ehrContent
+                Contains
+                    ehrNavigation
+                    ehrView
+                    ehrInfo
+            ==================================================
+        -->
+        <xhtml:div id="ehrContent">
+            <!-- =========================================================
+                ehrNavigation - navigation around the EHR
+                    Contains
+                        navigationType
+                        navigationDisplay
+                ========================================================= -->
+
+            <xhtml:div id="ehrNavigation">
+                <xhtml:div id="navigationType">
+                    <xhtml:div id="navigationTypeControls">
+                        <xf:trigger class="wireframePane" appearance="minimal">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='ehrNavigationType']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                    <xxf:context name="page" select="'cityEHRAdmin'"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+                </xhtml:div>
+
+                <xhtml:div id="navigationDisplay" class="navigation">
+                    <xhtml:br />
+                    <xhtml:br />
+                    <xhtml:br />
+                    <xf:trigger class="wireframePane" appearance="minimal">
+                        <xf:label
+                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='ehrNavigationDisplay']/@displayName"/>
+                        <xf:action ev:event="DOMActivate">
+                            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                <xxf:context name="page" select="'cityEHRAdmin'"/>
+                            </xf:dispatch>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:div>
+
+            </xhtml:div>
+
+
+            <!-- =========================================================
+                EHR View 
+                Contains
+                    viewType
+                    viewControls
+                    viewDisplay
+                ========================================================= -->
+            <xhtml:div id="ehrView">
+
+                <!-- View Type - select the type of ehr view 
+                    ===================================================================== -->
+                <xhtml:div id="viewType">
+
+                    <!-- Record Navigation Controls
+                         Move about within the patient record
+                    -->
+                    <xhtml:div id="viewTypeControls">
+                        <xf:trigger class="wireframePane" appearance="minimal">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='viewTypeControls']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                    <xxf:context name="page" select="'cityEHRAdmin'"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+
+                </xhtml:div>
+
+                <!-- View Controls - contains controls for the current displayed view content 
+                    ===================================================================== -->
+                <xhtml:div id="viewControls">
+                    <xhtml:div class="viewControlsHeader">
+                        <xf:trigger class="wireframePane" appearance="minimal">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='viewControls']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                    <xxf:context name="page" select="'cityEHRAdmin'"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+                </xhtml:div>
+
+
+                <!-- View Display - contains display of the currently selected composition 
+                    ===================================================================== -->
+                <xhtml:div id="viewDisplay">
+                    <xhtml:br />
+                    <xhtml:br />
+                    <xhtml:br />
+                    <xf:trigger class="wireframePane" appearance="minimal">
+                        <xf:label
+                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='viewDisplay']/@displayName"/>
+                        <xf:action ev:event="DOMActivate">
+                            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                <xxf:context name="page" select="'cityEHRAdmin'"/>
+                            </xf:dispatch>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:div>
+            </xhtml:div>
+
+        </xhtml:div>
+        <!-- Fixed footer -->
+        <xhtml:div id="sessionInfo">
+            <xhtml:div class="footerItem">
+                <xf:trigger class="wireframePane" appearance="minimal">
+                    <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRWireframe/pane[@id='sessionInfo']/@displayName"/>
+                    <xf:action ev:event="DOMActivate">
+                        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                            <xxf:context name="page" select="'cityEHRAdmin'"/>
+                        </xf:dispatch>
+                    </xf:action>
+                </xf:trigger>
+            </xhtml:div>
+        </xhtml:div>
+    </xhtml:body>
+</xhtml:html>

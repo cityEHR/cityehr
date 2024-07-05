@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    storedLetterTemplateListXQuery.xml
+    
+    XQuery to return a list of stored letter templates for an applicaiton
+    Context is the letterTemplate collection in the application systemConfiguration
+    
+    The list is returned without the binary content that is stored in letterTemplateFile
+    Instead just the empty stub of letterTemplateFile is returned for each letterTemplate
+    
+    The <filter/> element can be set to return templates associated with a specific (or all) composition(s)
+       
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<query xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace xsi="http://www.w3.org/2001/XMLSchema-instance";
+        
+        for $letterTemplate in //letterTemplate<filter/>
+        let $letterTemplateFile :=  $letterTemplate/letterTemplateFile
+        return 
+             &lt;letterTemplate value="{$letterTemplate/@value}" displayName="{$letterTemplate/@displayName}">
+              {$letterTemplate/compositions}
+              &lt;letterTemplateFile  xsi:type="xs:base64Binary" path="{$letterTemplateFile/@path}" name="{$letterTemplateFile/@name}" content-type="{$letterTemplateFile/@content-type}"/>
+          &lt;/letterTemplate>
+</query>
+

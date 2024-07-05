@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    auditLogModel.xml
+    
+    Xforms model containing stuff for audit of user actions.
+    This model is loaded for every page (including cityEHRSignOn).
+    
+    The audit log is stored for each application in /auditlog/application/[applicationId].
+    Then by user in [userId] collections.
+    
+    The audit log for the current session is stored by [sessionId] in the sessions collection, so at:
+        /auditlog/applications/[applicationId]/[userId]/sessions/[sessionId]
+        
+    The values of applicationId, userId and sessionId are already set in view-parameters.
+    
+
+    The audit log is recorded for the session if auditLogRecording is set as 'true'.
+    The auditLogRecording parameter is set in system-parameters and can be toggled on/off there.
+    Its value is then set in the session-parameters when the session starts, so that any session is either fully audited, or not.
+    So any changes to auditLogRecording in system-parameters only takes effect for subsequent new sessions.
+    
+    A new audit log is started by start-auditLog and resumed by resume-auditLog actions.
+    These are invoked by the start-new-session or resume-session actions in cityEHRSignOn.
+    Then as each page loads configuration-model (every page except cityEHRSignOn), the resume-session action is invoked.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="auditLog-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Audit log for this session -->
+    <xf:instance id="auditLog-instance">
+        <auditLog xmlns="" userId="not set" sessionId="not set" applicationIRI="not set" specialtyIRI="not set" ipAddress="not set" start="not set"
+            finish="not set"/>
+    </xf:instance>
+
+    <!-- Control of the auditLog -->
+    <xf:instance id="auditLogControl-instance">
+        <control xmlns="">
+            <!-- Status is set when audit log is loaded or saved -->
+            <status/>
+            <!-- Template for the auditLog -->
+            <auditLog xmlns="" userId="" sessionId="" applicationIRI="" specialtyIRI="" ipAddress="" start="" finish=""/>
+            <!-- Template for an auditLog entry -->
+            <auditLogEntry time="" page="" model="" action="" resourceId="" patientId=""/>
+
+            <clientIPAddress>unknown</clientIPAddress>
+            <!-- Template for the notificationLog -->
+            <notificationLog xmlns="" notificationId="" notificationType="" sessionId="" time="" action=""/>
+            <!-- User audit log database location -->
+            <auditlogStorageLocation/>
+        </control>
+    </xf:instance>
+
+
+    <!-- Application defined action eo set up parameters to define the auditLog.      
+         The values of applicationId, userId and sessionId are already set in view-parameters.
+         auditlogStorageLocation is set to /auditlog/applications/[applicationId]/[userId]/sessions/[sessionId]
+    -->
+    <xf:action ev:event="set-auditLog-parameters">
+        <!-- Application auditLog -->
+        <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditlogStorageLocation"
+            value="concat('/auditlog/applications/',xxf:instance('view-parameters-instance')/applicationId,'/',xxf:instance('view-parameters-instance')/userId,'/sessions/',xxf:instance('view-parameters-instance')/sessionId)"
+        />
+    </xf:action>
+
+    <!-- Application defined action to write an entry to the audit log and save it         
+         The parameters for auditLogEntry must already be set (through start-auditLog or resume-auditLog)
+         The auditLogEntry is cleared once it has been written.
+         
+         write-auditLog can be invoked from any action in cityEHR,to record user activity.
+         
+         It is also invoked from three actions in this auditLog-model:
+         
+         start-auditLog  - invoked in start-new-session in cityEHRSignOn page.
+         resume-auditLog - invoked in configurationModel when each page (other than cityEHRSignOn) loads.
+                           Also in cityEHRSignOn if the previous session was not quit and the user has selected to resume.
+         end-auditLog    - invoked by quit-session in pageNavigationModel when the user quits cityEHR
+         
+         The auditLog-instance will already have been loaded in resume-auditLog when write-auditLog is invoked.
+         Or there is no existing auditLog-instance to load when write-auditLog is invoked from start-auditlog.
+         Either way, there is no need to load the auditLog-instance in write-auditLog
+       -->
+    <xf:action ev:event="write-auditLog">
+        <xxf:variable name="model" select="event('model')"/>
+        <xxf:variable name="action" select="event('action')"/>
+        <xxf:variable name="resourceId" select="event('resourceId')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xf:setvalue ref="xxf:instance('auditLogControl-instance')/status" value="''"/>
+
+        <!-- Only write an entry if auditLogRecording for the session is set as true. -->
+        <xf:action if="xxf:instance('session-parameters-instance')/auditLogRecording='true'">
+
+            <!-- Set auditLogEntry attribites from parameters passed to write-auditLog -->
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@model" value="$model"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@action" value="$action"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@resourceId" value="$resourceId"/>
+
+            <!-- Set auditLogEntry attributes from view-parameters -->
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@time" value="current-dateTime()"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@page"
+                value="xxf:instance('view-parameters-instance')/page"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@patientId"
+                value="xxf:instance('view-parameters-instance')/patientId"/>
+
+
+            <!-- Add auditLogEntry to the log -->
+            <xf:insert context="xxf:instance('auditLog-instance')" origin="xxf:instance('auditLogControl-instance')/auditLogEntry"/>
+
+            <!-- Save the auditLog.
+                 This will set the status if there is a problem. -->
+            <xf:dispatch name="save-auditLog" target="auditLog-model"/>
+        </xf:action>
+
+        <!-- Set the return status -->
+        <xf:setvalue ref="$status" value="xxf:instance('auditLogControl-instance')/status"/>
+    </xf:action>
+
+    <!-- Application defined action to save the session audit log        
+         Sets the status if the audit log cannot be saved
+    -->
+    <xf:action ev:event="save-auditLog">
+        <!-- Set audit log parameters -->
+        <xf:dispatch name="set-auditLog-parameters" target="auditLog-model"/>
+
+        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="xxf:instance('auditLogControl-instance')/auditlogStorageLocation"/>
+            <xxf:context name="resource" select="xxf:instance('auditLog-instance')"/>
+            <xxf:context name="status" select="xxf:instance('auditLogControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+    <!-- Application defined action to start the session audit log.
+         But only if auditLogRecording is true, otherwise do nothing.
+         This action is invoked in start-new-session in cityEHRSignOn page.
+         Returns the status as auditLog-started or auditLog-not-recording.
+    -->
+    <xf:action ev:event="start-auditLog">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Set the initial status.
+             If auditLogRecording is false, or the auditLog is started successfully, then the status will be returned as blank (i.e. success) -->
+        <xf:setvalue ref="xxf:instance('auditLogControl-instance')/status" value="''"/>
+
+        <!-- auditLogRecording is true.
+             So attempt to start the auditLog.
+             If anything goes wrong, the status will be set to the error code -->
+        <xf:action if="xxf:instance('session-parameters-instance')/auditLogRecording='true'">
+
+            <!-- Set parameters for the auditLog location -->
+            <xf:dispatch name="set-auditLog-parameters" target="auditLog-model"/>
+
+            <!-- Clear the auditLog (the log from the last session may have been loaded) -->
+            <xf:insert nodeset="xxf:instance('auditLog-instance')" origin="xxf:instance('auditLogControl-instance')/auditLog"/>
+
+            <!-- Set the parameters for the new auditLog -->
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@userId" value="xxf:instance('view-parameters-instance')/userId"/>
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@applicationIRI"
+                value="xxf:instance('view-parameters-instance')/applicationIRI"/>
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@specialtyIRI"
+                value="xxf:instance('view-parameters-instance')/specialtyIRI"/>
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@sessionId" value="xxf:instance('view-parameters-instance')/sessionId"/>
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@ipAddress" value="xxf:instance('auditLog-instance')/clientIPAddress"/>
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@start" value="current-dateTime()"/>
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@finish" value="''"/>
+
+            <!-- Make an entry in the new auditLog.
+                <auditLogEntry time="" page="" model="" action=""/>
+            -->
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@time" value="current-dateTime()"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@page"
+                value="xxf:instance('view-parameters-instance')/page"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@composition"
+                value="xxf:instance('view-parameters-instance')/compositionIRI"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@model" value="'auditLogModel'"/>
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/auditLogEntry/@action" value="'start-audit-log'"/>
+
+            <!-- Write the entry to the auditLog.
+                 This will set the status if there is a problem -->
+            <xf:dispatch name="write-auditLog" target="auditLog-model">
+                <xxf:context name="model" select="'auditLog-model'"/>
+                <xxf:context name="action" select="'start-audit-log'"/>
+                <xxf:variable name="status" select="xxf:instance('auditLogControl-instance')/status"/>
+            </xf:dispatch>
+
+        </xf:action>
+
+        <!-- Set the return status -->
+        <xf:setvalue ref="$status" value="xxf:instance('auditLogControl-instance')/status"/>
+    </xf:action>
+
+    <!-- Application defined action to resume the session audit log      
+         But only if auditLogRecording is true, otherwise do nothing.
+         Also check that the sessionId is set (it should be, but there would be a big problem if not).
+         The applicationId, userId and sessionId are already set in view-parameters.
+         Sets the auditlogStorageLocation for use by subsequent audit log actions.
+         This action is invoked in configurationModel when each page (other than cityEHRSignOn) loads.
+         Also in cityEHRSignOn if the previous session was not quit and the user has selected to resume.
+    -->
+    <xf:action ev:event="resume-auditLog">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Set the initial status -->
+        <xf:setvalue ref="xxf:instance('auditLogControl-instance')/status" value="''"/>
+
+        <!-- sessionId is not set -->
+        <xf:action if="xxf:instance('view-parameters-instance')/sessionId = ''">
+            <xf:setvalue ref="xxf:instance('auditLogControl-instance')/status" value="'cannot-resume-auditLog-for-bad-session'"/>
+        </xf:action>
+
+        <!-- sessionId is set and auditLogRecording is turned on in session-paramsters  -->
+        <xf:action
+            if="xxf:instance('view-parameters-instance')/sessionId != '' and xxf:instance('session-parameters-instance')/auditLogRecording='true'">
+
+            <!-- Update recentPatients if this is a patient-specific page -->
+            <xf:action if="xxf:instance('view-parameters-instance')/patientId != ''">
+                <!-- TBD -->
+            </xf:action>
+
+            <!-- Set audit log parameters -->
+            <xf:dispatch name="set-auditLog-parameters" target="auditLog-model"/>
+
+            <!-- Load the auditLog.
+                 This will set the status is there is a problem. -->
+            <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="xxf:instance('auditLogControl-instance')/auditlogStorageLocation"/>
+                <xxf:context name="resource" select="xxf:instance('auditLog-instance')"/>
+                <xxf:context name="status" select="xxf:instance('auditLogControl-instance')/status"/>
+            </xf:dispatch>
+
+            <!-- The audit log was opened correctly
+                 Make an entry in the auditLog.
+                    <auditLogEntry time="" page="" model="" action=""/>
+                -->
+            <xf:action if="xxf:instance('auditLogControl-instance')/status =''">
+                <!-- Write the entry to the auditLog.
+                     This will set the status if there is a problem -->
+                <xf:dispatch name="write-auditLog" target="auditLog-model">
+                    <xxf:context name="model" select="'auditLog-model'"/>
+                    <xxf:context name="action" select="'resume-auditLog'"/>
+                    <xxf:context name="status" select="xxf:instance('auditLogControl-instance')/status"/>
+                </xf:dispatch>
+            </xf:action>
+        </xf:action>
+
+        <!-- Set the return status -->
+        <xf:setvalue ref="$status" value="xxf:instance('auditLogControl-instance')/status"/>
+    </xf:action>
+
+
+    <!-- Application defined action to end the session audit log       
+         This is invoked when the application quits using quit-session in pageNavigationModel
+    -->
+    <xf:action ev:event="end-auditLog">
+        <!-- Only need to do this if configured to record audit log -->
+        <xf:action if="xxf:instance('session-parameters-instance')/auditLogRecording='true'">
+
+            <!-- Make final entry in the new auditLog.
+                <auditLogEntry time="" page="" model="" action=""/>
+            -->
+            <!-- Set parameters of the auditLog. -->
+            <xf:setvalue ref="xxf:instance('auditLog-instance')/@finish" value="current-dateTime()"/>
+
+            <!-- Write the entry to the auditLog.
+                 This will set the status if there is a problem -->
+            <xf:dispatch name="write-auditLog" target="auditLog-model">
+                <xxf:context name="model" select="'auditLog-model'"/>
+                <xxf:context name="action" select="'end-auditLog'"/>
+                <xxf:context name="status" select="xxf:instance('auditLogControl-instance')/statu"/>
+            </xf:dispatch>
+
+        </xf:action>
+    </xf:action>
+
+
+    <!-- ========= Handle list of recent patients from audit log ========= 
+         ================================================================= -->
+
+    <!-- List of patients from audit log -->
+    <xf:instance id="patientAuditList-instance">
+        <patientIdList xmlns=""/>
+    </xf:instance>
+
+    <!-- Get the list of most recent patients visited by this user.
+         List is returned from query to the auditLog.
+         Note that this query will fail if there is no session audit log for the user (i.e. audit has never been switched on with this user).
+         So don't set an error message, since this failure is expected in some cases. -->
+    <xf:instance id="getPatientAuditListXQuery-instance" src="oxf:/apps/ehr/xquery/getPatientAuditListXQuery.xml"/>
+
+
+    <!-- Application defined action to get the list of recent patients accessed by the current user.
+         Run against all sessions audited for the user.
+         Need to set the maximum patients returned (bacause there may be a lot of them).
+         The list of patients is returned in patientAuditList-instance
+         -->
+    <xf:action ev:event="get-patientAuditList">
+        <!-- Set storageLocation -->
+        <xxf:variable name="applicationAuditlogLocation"
+            select="oncat('/auditlog/applications/',xxf:instance('view-parameters-instance')/applicationId,'/',xxf:instance('view-parameters-instance')/userId,'/sessions"/>
+
+        <!-- Run query to get patient list from audit log-->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$applicationAuditlogLocation"/>
+            <xxf:context name="maxResults"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/maxRecentPatientsResults"/>
+            <xxf:context name="query" select="xxf:instance('getPatientAuditListXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('patientAuditList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('auditLogControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- ========= View Audit Log - task in cithEHRAdmin ========= 
+         ========================================================= -->
+
+    <!-- List of sessions from audit log -->
+    <xf:instance id="auditLogSessionList-instance">
+        <auditLogSessionList xmlns=""/>
+    </xf:instance>
+
+
+    <!-- Get the list of audited sessions for a user.
+        List is returned from query to the auditLog.
+        Note that this query will fail if there is no session audit log for the user (i.e. audit has never been switched on with this user).
+        So don't set an error message, since this failure is expected in some cases. -->
+    <xf:instance id="getUserAuditSessionsXQuery-instance" src="oxf:/apps/ehr/xquery/getUserAuditSessionsXQuery.xml"/>
+
+
+    <!-- Application defined action to get the list of audited sessions for specified application and user.
+         auditlogStorageLocation is set to /auditlog/applications/[applicationId]/[userId]/sessions/[sessionId]
+         Can be filtered by the patientId.
+         Set the maximum number of sessions returned in the search, then perform it.
+         Result is returned in auditLogSessionList-instance
+    -->
+    <xf:action ev:event="get-auditLog-for-user">
+        <xxf:variable name="applicationId" select="event('applicationId')"/>
+        <xxf:variable name="userId" select="event('userId')"/>
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="maxSessions" select="event('maxSessions')"/>
+
+        <!-- Clear the auditLogSessionList-instance - in case there are no sessions for the userId, in which case the query fails -->
+        <xf:delete nodeset="xxf:instance('auditLogSessionList-instance')/*"/>
+
+        <!-- Set storageLocation -->
+        <xxf:variable name="applicationAuditlogLocation" select="concat('/auditlog/applications/',$applicationId)"/>
+        <xxf:variable name="storageLocation"
+            value="if ($userId !='') then concat($applicationAuditlogLocation,'/',$userId,'/sessions') else $applicationAuditlogLocation"/>
+
+        <!-- Set the patient filter -->
+        <xf:setvalue ref="xxf:instance('getUserAuditSessionsXQuery-instance')/whereClause"
+            value="if ($patientId='') then '' else concat('[starts-with(auditLogEntry/@patientId,''',$patientId,''')]')"/>
+
+        <!-- Run the query -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$storageLocation"/>
+            <xxf:context name="maxResults" select="$maxSessions"/>
+            <xxf:context name="query" select="xxf:instance('getUserAuditSessionsXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('auditLogSessionList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('auditLogControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- ========= Set up model when it is first loaded ========= 
+         ======================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Not doing anything here - actions are invokded from configurationModel -->
+    </xf:action>
+
+
+</xf:model>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cohortSearchResults.xml
+    
+    html template for printing cohort search results
+    The structure here is assumed in building the search results:
+        table with id attrbute = results
+        three columns: id, description, count
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<html>
+    <head>
+        <meta name="externalId" content=""/>
+        <meta name="headerText" content=""/>
+        <meta name="footerText" content=""/>
+    </head>
+    <body>
+        <p id="header">
+            <span id="cohortName"/>
+            <span id="searchPrintPrefix"/>
+            <span id="user"/>
+            <span id="searchPrintSuffix"/>
+            <span id="dateTime"/>
+            <hr/>
+        </p>
+        <table id="results">
+            <!-- Specify relative column widths.
+                 These are used to set fixed column widths in conversion to xsl:fo-->
+            <col width="10"/>
+            <col width="80"/>
+            <col width="10"/>
+            
+            <!-- Header displayNames get replaced by headers in view-parameters -->
+            <thead>
+                <tr>
+                    <th>Ref</th>
+                    <th>Search Term</th>
+                    <th>Cohort</th>
+                </tr>
+            </thead>
+            <!-- Rows are inserted here using the first row as a template -->
+            <tbody>
+                <tr>
+                    <td/>
+                    <td/>
+                    <td/>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+</html>

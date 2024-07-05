@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cohortSetModel.xml
+    
+    Xforms model containing parameters needed for managing information about a cohort of patients.
+    The patient cohort is generally made up of one page of search results (patient search, cohort search or clinic list)
+    Except when a whole cohort is assembled to generate statistics or to export.
+    
+    This model handles the patient-cohort-instance that contains the full cohort set and page-cohort-instance for the current page
+    These hold patient-info elements that are cusomised to hold info for patients, appointments, etc
+    
+    Used to control display of cohorts to user in cityEHRPatientList-Selection.xhtml
+        
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="cohortSet-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Parameters for control of the patient list-->
+    <xf:instance id="cohortSetControl-instance">
+        <control xmlns="">
+
+            <!-- List of patients in the cohort.
+                 String of patientIds, separated by @@@ (or config of it)
+                 If the patient cohort is constrained (e.g. user can only access careTeam patients) 
+                 then the filtering must be done before patientCohort is set -->
+            <patientCohort cohortName=""/>
+
+            <!-- List of CDA entryIRIs/elementIRIs which hold the patientInfo required for the cohort.
+                 This list is derived from the entry attributes specified in the patientInfo in the parameters instance -->
+            <entryList/>
+            <elementList/>
+
+            <!-- The list of entryIRIs that are used as reference data columns in spreadsheet export.
+                 They are demoted by referenceData='true' in the patientInfo configuration -->
+            <referenceDataList/>
+
+            <!-- Placeholders for return of calculated elements in the patientInfo.
+                 The values of these elements are set after the patientInfo has been returned.
+                 What they are and how they are set is page-specific
+                 The place holder here is a single string that can be inserted into the query -->
+            <calculatedItemPlaceHolders/>
+
+            <!-- The patientInfo element is inserted into the control-instance from the configuration in view-parameters.
+                 The form must be as specified below, but the actual content depends on which type of cohort is being handled
+                 There are different configurations for patient search, cohort search and clinic list
+            -->
+            <!--
+            <patientInfo>
+                <item displayName="" entry="#ISO-13606:Entry:Surname"
+                    element="#ISO-13606:Element:String" calculated=""/>
+            </patientInfo>
+            -->
+
+            <!-- Details of the current cohort/page -->
+            <records>0</records>
+            <pages>0</pages>
+            <currentPage>0</currentPage>
+            <resultsPerPage>10</resultsPerPage>
+            <startRecord>0</startRecord>
+            <endRecord>0</endRecord>
+            <recordCount>odd</recordCount>
+
+            <!-- Messages -->
+            <cohortMessage/>
+
+            <!-- The patientId when a selection is made in the list. -->
+            <selectedPatientId/>
+
+        </control>
+    </xf:instance>
+
+
+    <!-- ========= Patient Cohort =================================================== 
+        The set of patients in a cohort with their full details for display/selection.
+        This cohort is usually just for the current page being displayed.
+        Unless it is created for calculating statistics or exporting/printing the entire cohort.
+        ================================================================================ -->
+
+    <xf:instance id="getPatientCohortXQuery-instance" src="oxf:/apps/ehr/xquery/getPatientCohortXQuery.xml"/>
+
+    <!-- Cohort instances instantiated from the getPatientCohortXQuery search
+         Contains the patient info as a set of patientInfo elements.
+         These contain cda:entry elements holding the data from the CDA Header
+         
+            patient-cohort-instance holds the full patient cohort
+            page-cohort-instance holds the current page of the patient cohort
+            recentPatient-cohort-instance holds the list of recent patients (patient search)
+            inPatient-cohort-instance holds the list of in-patients (patient search)
+            careTeamPatient-cohort-instance holds the list of patients in the current care team (patient search)
+         -->
+    <xf:instance id="patient-cohort-instance">
+        <exist:result>
+            <patientSet/>
+        </exist:result>
+    </xf:instance>
+
+    <xf:instance id="page-cohort-instance">
+        <exist:result/>
+    </xf:instance>
+
+    <xf:instance id="inPatient-cohort-instance">
+        <exist:result/>
+    </xf:instance>
+
+    <xf:instance id="recentPatient-cohort-instance">
+        <exist:result/>
+    </xf:instance>
+
+
+    <xf:instance id="careTeamPatient-cohort-instance">
+        <exist:result/>
+    </xf:instance>
+
+    <!-- Query instance - parameters get set as required -->
+    <xf:instance id="patientCohortQuery-instance">
+        <exist:query start="1" max="-1">
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+    <!-- Query to get patient cohort info uses patientCohortQuery-instance with parameters set to find patient info.
+         Settings depend on which cohort set is being returned -->
+
+    <!-- Full cohort -->
+    <xf:submission id="patient-cohort-submission" ref="xxf:instance('patientCohortQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/records" method="post" replace="instance"
+        instance="patient-cohort-instance">
+        <!-- Cohort was loaded successfully -->
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Set up the calculated items in the cohort -->
+            <xf:dispatch name="set-calculated-values" target="cohortSet-model">
+                <xxf:context name="patientCohort" select="xxf:instance('patient-cohort-instance')//patientSet"/>
+            </xf:dispatch>
+        </xf:action>
+        <!-- Error -->
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError">submitError</xf:setvalue>
+            <!--
+            <xf:message ref="xxf:instance('patientCohortQuery-instance')"/>
+            -->
+        </xf:action>
+    </xf:submission>
+
+    <!-- Current page of the cohort -->
+    <xf:submission id="page-cohort-submission" ref="xxf:instance('patientCohortQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/records" method="post" replace="instance"
+        instance="page-cohort-instance">
+        <!-- Set up the calculated items in the cohort -->
+        <xf:action ev:event="xforms-submit-done">
+            <xf:dispatch name="set-calculated-values" target="cohortSet-model">
+                <xxf:context name="patientCohort" select="xxf:instance('page-cohort-instance')/patientSet"/>
+            </xf:dispatch>
+        </xf:action>
+        <!-- Error -->
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError">submitError</xf:setvalue>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Cohort of in-patients -->
+    <xf:submission id="inPatient-cohort-submission" ref="xxf:instance('patientCohortQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/records" method="post" replace="instance"
+        instance="inPatient-cohort-instance">
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError">submitError</xf:setvalue>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Cohort of recent patients -->
+    <xf:submission id="recentPatient-cohort-submission" ref="xxf:instance('patientCohortQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/records" method="post" replace="instance"
+        instance="recentPatient-cohort-instance">
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError">submitError</xf:setvalue>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Cohort of care team patients -->
+    <xf:submission id="careTeamPatient-cohort-submission" ref="xxf:instance('patientCohortQuery-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/records" method="post" replace="instance"
+        instance="careTeamPatient-cohort-instance">
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError">submitError</xf:setvalue>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to clear the cohort. -->
+    <xf:action ev:event="clear-cohort">
+        <!-- Clear the patient-cohort-instance -->
+        <xf:delete nodeset="xxf:instance('patient-cohort-instance')/*"/>
+        <!-- Clear the cohort page -->
+        <xf:dispatch name="clear-cohort-page" target="cohortSet-model"/>
+    </xf:action>
+
+    <!-- Application defined action to clear the cohort page. -->
+    <xf:action ev:event="clear-cohort-page">
+        <!-- Reset the cohort -->
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/patientCohort" value="''"/>
+        <xf:delete nodeset="xxf:instance('page-cohort-instance')/*"/>
+
+        <!-- Reset the controls -->
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/records" value="0"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/pages" value="0"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/currentPage" value="0"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/startRecord" value="0"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/endRecord" value="0"/>
+    </xf:action>
+
+
+    <!-- Application defined action to create the cohort-instance 
+         and initialize the cohortSetControl-instance with the number of records and pages
+         The cohort set is passed as a parameter, either as a sequence of patient ids, as a string joined with the resultSeparator, or as a cohort-instance.
+         This is normalised to a string (fullCohortString) and a sequence (fullCohort)
+         Access controls are then applied to produce the restrictedCohort, which is displayed to the user
+         -->
+    <xf:action ev:event="initialize-cohort-set">
+        <xxf:variable name="patientCohort" select="event('patientCohort')"/>
+        <xxf:variable name="cohortName" select="event('cohortName')"/>
+
+        <xxf:variable name="fullCohortString"
+            select="if ($patientCohort castable as xs:string) then $patientCohort 
+            else if (exists($patientCohort/cohortPatientString) and $patientCohort/cohortPatientString castable as xs:string) then $patientCohort/cohortPatientString
+            else if (exists($patientCohort)) then string-join($patientCohort,xxf:instance('view-parameters-instance')/resultSeparator) 
+            else ''"/>
+
+        <xxf:variable name="fullCohort" select="tokenize($fullCohortString,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+        <xxf:variable name="fullCohortCount" select="count($fullCohort)"/>
+
+        <!-- Apply access controls before recording the cohort set.
+             Controls are applied if the user only has access to patients in theor care team -->
+
+        <!-- Accessible patients will only be found if xxf:instance('user-instance')/rbac/restrictPatientAccess/@value='careTeam' -->
+        <xxf:variable name="accessiblePatients" select="xxf:instance('careTeamPatients-instance')/patient/@id"/>
+        <!-- If the user is restricted to access only patients in their care team(s)
+            Then need to restrict the patients in the cohort set -->
+        <xxf:variable name="restrictedCohort"
+            select="if (xxf:instance('user-instance')/rbac/restrictPatientAccess/@value!='careTeam') then $fullCohort else for $p in $fullCohort return if ($p=$accessiblePatients) then $p else ()"/>
+        <xxf:variable name="restrictedCohortCount" select="count($restrictedCohort)"/>
+
+        <!-- Set message for cohort display.
+             There are only two cases where a message is shown:
+                There are patients in fullCohort, but restrictedCohort is empty.
+                There are patients in fullCohort, but less patients in restrictedCohort.
+                
+                Note that additional messages may be displayed in the context that the cohort is displayed (e.g. patientSearch, cohortSearch, etc)
+        -->
+        <xxf:variable name="restrictedCohortMessage"
+            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/restrictedCohortMessage"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/cohortMessage"
+            value="if (exists($fullCohort) and not(exists($restrictedCohort))) then xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/emptyRestrictedCohortMessage
+            else if ($restrictedCohortCount lt $fullCohortCount) then concat($restrictedCohortMessage/@prefix,$restrictedCohortCount,$restrictedCohortMessage/@connector,$fullCohortCount,$restrictedCohortMessage/@suffix) 
+            else ''"/>
+
+        <!-- Set the cohort -->
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/patientCohort"
+            value="string-join($restrictedCohort,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/records" value="$restrictedCohortCount"/>
+
+        <!-- Initialise cohort page display -->
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/pages"
+            value="if (xxf:instance('cohortSetControl-instance')/records=0) then 0 else ceiling(xxf:instance('cohortSetControl-instance')/records div xxf:instance('cohortSetControl-instance')/resultsPerPage)"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/currentPage"
+            value="if (xxf:instance('cohortSetControl-instance')/records=0) then 0 else 1"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/startRecord"
+            value="max((0,(xxf:instance('cohortSetControl-instance')/resultsPerPage*((xxf:instance('cohortSetControl-instance')/currentPage)-1))+1))"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/endRecord"
+            value="min( ( xxf:instance('cohortSetControl-instance')/records, (xxf:instance('cohortSetControl-instance')/startRecord + xxf:instance('cohortSetControl-instance')/resultsPerPage)-1 ))"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load a page of the patient cohort.
+         xxf:instance('cohortSetControl-instance')/currentPage must already be set to the page that is to be loaded
+         If records is zero then there is nothing to load
+    -->
+    <xf:action ev:event="load-cohort-page">
+        <xf:action if="xxf:instance('cohortSetControl-instance')/records!='0'">
+            <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/startRecord"
+                value="max((0,(xxf:instance('cohortSetControl-instance')/resultsPerPage*((xxf:instance('cohortSetControl-instance')/currentPage)-1))+1))"/>
+            <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/endRecord"
+                value="min( ( xxf:instance('cohortSetControl-instance')/records, (xxf:instance('cohortSetControl-instance')/startRecord + xxf:instance('cohortSetControl-instance')/resultsPerPage)-1 ))"/>
+
+            <!-- Tokenise the cohort and select the range for the current page -->
+            <xxf:variable name="patientCohort"
+                select="tokenize(xxf:instance('cohortSetControl-instance')/patientCohort,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+            <xxf:variable name="patientCohortPage"
+                select="$patientCohort[position() &gt;= xxf:instance('cohortSetControl-instance')/startRecord and position() &lt;= xxf:instance('cohortSetControl-instance')/endRecord]"/>
+
+            <!-- Set parameters in query -->
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/patientIdList"
+                value="concat('''',string-join($patientCohortPage,''','''),'''')"/>
+
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/entryList"
+                value="concat('''',xxf:instance('cohortSetControl-instance')/entryList,'''')"/>
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/elementList"
+                value="concat('''',xxf:instance('cohortSetControl-instance')/elementList,'''')"/>
+
+            <!-- Set placeholders in the query return for any calculated items -->
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/calculatedItemPlaceHolders"
+                value="xxf:instance('cohortSetControl-instance')/calculatedItemPlaceHolders"/>
+
+            <!-- Query to get the patientInfo -->
+            <xf:setvalue ref="xxf:instance('patientCohortQuery-instance')/exist:text"
+                value="xxf:instance('getPatientCohortXQuery-instance')"/>
+            <xf:send submission="page-cohort-submission"/>
+
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set parameters in the getPatientCohortXQuery for finding the full cohort.
+         The cohort is passed in as a string, with patient ids separated by @@@ (or whatever separator is defined.
+         This means that the full cohort can be passed, or a cohort restricted by access control
+         Used to set the query in xform and also for pipeline processing.
+         calculatedItemPlaceHolders is cleared, but may get reset when used with load-cohort
+         dataSetEntryList is cleared but may get reset when used with export-data
+    -->
+    <xf:action ev:event="set-getPatientCohortXQuery-parameters">
+        <xxf:variable name="patientCohort" select="event('patientCohort')"/>
+        <xxf:variable name="dataSetEntryList" select="event('dataSetEntryList')"/>
+        <xxf:variable name="longitudinalDataOutput" select="event('longitudinalDataOutput')"/>
+
+        <!-- Set patientIdList -->
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/patientIdList"
+            value="concat('''',replace($patientCohort,xxf:instance('view-parameters-instance')/resultSeparator,''','''),'''')"/>
+        <!-- Set entryList and elementList (for finding demographics) -->
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/entryList"
+        value="concat('''',xxf:instance('cohortSetControl-instance')/entryList,'''')"/>
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/elementList"
+            value="concat('''',xxf:instance('cohortSetControl-instance')/elementList,'''')"/>
+        <!-- Set referenceDataList -->
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/referenceDataList"
+            value="concat('''',xxf:instance('cohortSetControl-instance')/referenceDataList,'''')"/>
+
+        <!-- Set entryIds for data set (if one is set) -->
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/dataSetEntryList" value="$dataSetEntryList"/>
+
+        <!-- Set effectiveTime (currentData or allData) 
+             and currentDataSelector - for currentData select first data entry, otherwise no selector for allData -->
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/longitudinalDataOutput" value="$longitudinalDataOutput"/>
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/currentDataSelector"
+            value="if ($longitudinalDataOutput='currentData') then '[1]' else if ($longitudinalDataOutput='firstData') then '[last()]' else ''"/>
+
+        <!-- Clear placeholders in the query return for any calculated items -->
+        <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/calculatedItemPlaceHolders" value="''"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the full patient cohort.
+         Cohort must already be set (using initialize-cohort-set)
+         If records is zero then there is nothing to load
+         The patient-cohort-submission also sets any calculated values
+        -->
+    <xf:action ev:event="load-cohort">
+        <!-- Set query parameters -->
+        <xf:action if="xxf:instance('cohortSetControl-instance')/records!='0'">
+            <!-- Set query parameters -->
+            <xf:dispatch name="set-getPatientCohortXQuery-parameters" target="cohortSet-model">
+                <xxf:context name="patientCohort" select="xxf:instance('cohortSetControl-instance')/patientCohort"/>
+                <xxf:context name="dataSetEntryList" select="''"/>
+            </xf:dispatch>
+            <!-- Reset placeholders in the query return for any calculated items -->
+            <xf:setvalue ref="xxf:instance('getPatientCohortXQuery-instance')/calculatedItemPlaceHolders"
+                value="xxf:instance('cohortSetControl-instance')/calculatedItemPlaceHolders"/>
+            <!-- Query to get the patientInfo -->
+            <xf:setvalue ref="xxf:instance('patientCohortQuery-instance')/exist:text"
+                value="xxf:instance('getPatientCohortXQuery-instance')"/>
+            <xf:send submission="patient-cohort-submission"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to set calculated values in a cohort-instance.
+         The cohort is passed as an instance containing a set of patientInfo elements
+         This needs to set all calculated values in any of the pages using patientInfo
+         if the current page doesn't have a particular value, then its just ignored.
+         This action is called within the page-cohort-submission and patient-cohort-submission -->
+    <xf:action ev:event="set-calculated-values">
+        <xxf:variable name="patientCohort" select="event('patientCohort')"/>
+
+        <xf:action xxf:iterate="$patientCohort/patientInfo">
+            <xxf:variable name="patientInfo" select="."/>
+
+            <!-- patientId - used on all pages -->
+            <xf:setvalue ref="patientId" value="$patientInfo/@patientId"/>
+
+            <!-- age - used in cityEHRCohortSearch  
+                 Use birthTime as found in the registration event(s)
+                 Only need this if both birthTime and age exist in the patientInfo -->
+            <xxf:variable name="birthTimeEntry" select="xxf:instance('application-parameters-instance')/patientRegistration/birthTime/@entry"/>
+            <xxf:variable name="birthTimeElement" select="xxf:instance('application-parameters-instance')/patientRegistration/birthTime/@element"/>
+            <!-- Note that there may be more than one cda:entry in the patientInfo.
+                 These are ordered by effectiveTime - take the first one that isn't empty -->
+            <xxf:variable name="birthTime"
+                select="($patientInfo/cda:entry[descendant::cda:id/@extension=$birthTimeEntry]/descendant::cda:value[@extension=$birthTimeElement][@value!='']/@value)[1]"/>
+
+            <xf:action if="exists($patientInfo/age) and $birthTime castable as xs:date">
+                <xxf:variable name="ageYears" select="year-from-date(current-date())-year-from-date(xs:date($birthTime))"/>
+                <xxf:variable name="ageMonths" select="month-from-date(current-date())-month-from-date(xs:date($birthTime))"/>
+                <xxf:variable name="ageDays" select="day-from-date(current-date())-day-from-date(xs:date($birthTime))"/>
+                <xxf:variable name="ageAdjust"
+                    select="if ($ageMonths>0) then 0  
+                        else if ($ageMonths=0 and $ageDays>=0) then 0 else -1"/>
+                <xxf:variable name="age" select="$ageYears+$ageAdjust"/>
+
+                <xf:setvalue ref="$patientInfo/age" value="$age"/>
+            </xf:action>
+
+        </xf:action>
+    </xf:action>
+
+
+    <!-- ======= Action to print a cohort ======= 
+         Application defined action
+         Submit the patient-cohort-instance to the print pipeline
+         The patient-cohort-instance has already been loaded with the required cohort, returned from xquery
+         The root document of the instance is exist:text, containing patientSet (returned from search)
+         ================================================ -->
+    <xf:action ev:event="print-cohort">
+        <!-- Set meta data in the patient-cohort-instance.
+             Placeholders for these are returned in the query that finds the patient-cohort-instance -->
+        <xf:setvalue ref="xxf:instance('patient-cohort-instance')/patientSet/@applicationIRI"
+            value="xxf:instance('view-parameters-instance')/applicationIRI"/>
+        <xf:setvalue ref="xxf:instance('patient-cohort-instance')/patientSet/@externalId"
+            value="xxf:instance('view-parameters-instance')/externalId"/>
+        <xf:setvalue ref="xxf:instance('patient-cohort-instance')/patientSet/@headerText"
+            value="concat(xxf:instance('cohortSetControl-instance')/patientCohort/@cohortName,'  (',xxf:instance('cohortSetControl-instance')/records,')')"/>
+        <xf:setvalue ref="xxf:instance('patient-cohort-instance')/patientSet/@footerText"
+            value="concat(xxf:instance('view-parameters-instance')/externalId,' / ',xxf:instance('user-instance')/credentials/username)"/>
+
+        <!-- Add header information to the cohort list.
+             This will become the first line in the table and displayed as the header -->
+        <xf:insert context="xxf:instance('patient-cohort-instance')" nodeset="patientSet/patientInfo"
+            origin="xxf:instance('cohortSetControl-instance')/patientInfo" at="1" position="before"/>
+
+        <!-- Submit cohort to print pipeline -->
+        <xf:send submission="printCohort-submission"/>
+    </xf:action>
+
+    <!-- Submit the patient-cohort-instance to the print pipeline 
+         which runs the transform to HTML, then XSL-FO and returns the PDF to the browser.
+    -->
+    <xf:submission id="printCohort-submission" ref="xxf:instance('patient-cohort-instance')" method="post" action="/ehr/cityEHRPrintCohort/"
+        replace="all" xxf:show-progress="false">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Not doing anything here -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='printCohort-submission']"/>
+        </xf:action>
+    </xf:submission>
+
+    <!-- ======= Action to select a patient ======= 
+        Application defined action - one of several ways of doing this.
+        Trying to get one method that works with IE8, Orbeon 4, etc
+        Called on selectedPatient for hidden input (id = selectedPatient) bound to selectedPatientId in cityEHRPatientList-Selection.xhtml
+        ================================================ -->
+
+    <xf:action ev:event="select-patient">
+        <xxf:variable name="selectedPatientId" select="event('selectedPatientId')"/>
+
+        <!-- Set patientId so that audit trail can be set in user-instance -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/patientId" value="$selectedPatientId"/>
+
+        <!-- Load default page for patient specific view -->
+        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+            <xxf:context name="page" select="xxf:instance('application-parameters-instance')/pageTransition/patientFolderURL/@value"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- === Set up model when it is ready  
+        ======================================= -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Set configuration of patientInfo in the cohortSetControl-instance.
+             This is what is displayed in the patient selection list -->
+        <xf:insert context="xxf:instance('cohortSetControl-instance')"
+            origin="xxf:instance('application-parameters-instance')/patientCohorts/patientInfo[@page=xxf:instance('view-parameters-instance')/page]"/>
+
+        <!-- Set list of events for return as patientInfo - entryList and elementList.
+             The entryList/elementList must have matching members (i.e. are the same length) -->
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/entryList"
+            value="string-join(xxf:instance('cohortSetControl-instance')/patientInfo/item/@entry[.!=''],''',''')"/>
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/elementList"
+            value="string-join(xxf:instance('cohortSetControl-instance')/patientInfo/item[@entry!='']/@element,''',''')"/>
+
+        <!-- Set list of events for reference data in spreadsheet export -->
+        <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/referenceDataList"
+            value="string-join(xxf:instance('cohortSetControl-instance')/patientInfo/item[@referenceData='true']/@entry[.!=''],''',''')"/>
+
+        <!-- Placeholders in the query return for any calculated items -->
+        <xf:action xxf:iterate="xxf:instance('cohortSetControl-instance')/patientInfo/item/@calculated[.!='']">
+            <xxf:variable name="calculatedItem" select="."/>
+            <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/calculatedItemPlaceHolders"
+                value="concat(.,'&lt;',$calculatedItem,'/>')"/>
+        </xf:action>
+    </xf:action>
+
+</xf:model>

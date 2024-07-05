@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    townNames.xml
+    
+    List of town names used to generate test data.
+    These are UK towns/cities where the first teo letters of the name match the postcode prefix
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<townNames>
+    <name>Aberdeen</name>
+    <name>Bath</name>
+    <name>Carlisle</name>
+    <name>Colchester</name>
+    <name>Croydon</name>
+    <name>Dartford</name>
+    <name>Derby</name>
+    <name>Enfield</name>
+    <name>Exeter</name>
+    <name>Gloucester</name>
+    <name>Guildford</name>
+    <name>Harrow</name>
+    <name>Hull</name>
+    <name>Lancaster</name>
+    <name>Luton</name>
+    <name>Newcastle upon Tyne</name>
+    <name>Oldham</name>
+    <name>Oxford</name>
+    <name>Paisley</name>
+    <name>Plymouth</name>
+    <name>Portsmouth</name>
+    <name>Preston</name>
+    <name>Slough</name>
+    <name>Southampton</name>
+    <name>Stoke-on-Trent</name>
+    <name>Taunton</name>
+    <name>Truro</name>
+    <name>Twickenham</name>
+    <name>Warrington</name>
+    <name>York</name>   
+</townNames>

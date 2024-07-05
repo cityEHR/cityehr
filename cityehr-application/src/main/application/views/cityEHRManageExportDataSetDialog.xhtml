@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRManageExportDataSetDialog.xhtml
+    
+    Dialog to manage export data sets.
+    This is launched from cityEHRExportDataDialog.
+    
+    When cityEHRManageExportDataSetDialog opens, cityEHRExportDataDialog is hidden.
+    When cityEHRManageExportDataSetDialog closes, cityEHRExportDataDialog is shown.
+    
+    
+    Uses the configuration from exportDataSetModel
+    Includes the same actions and display that are used in cityEHRAdmin
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<xxf:dialog id="manageExportDataSetDialog" appearance="full" level="modeless" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:xi="http://www.w3.org/2001/XInclude">
+    
+    <!-- Manage EDS Controls -->
+    <xi:include href="cityEHRManageExportDataSetControls.xhtml"/>
+
+    <!-- Manage EDS Display -->
+    <xi:include href="cityEHRManageExportDataSetDisplay.xhtml"/>
+
+    <!-- Debugging -->
+    <!--
+    <xhtml:p class="message">Control:<xhtml:br/>
+        <xf:output
+            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('exportDataSetControl-instance'), 'data')/*, 'html')"
+            mediatype="text/html"/>
+    </xhtml:p>
+    -->
+
+</xxf:dialog>

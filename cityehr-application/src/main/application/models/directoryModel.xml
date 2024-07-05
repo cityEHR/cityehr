@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    directoryModel.xml
+    
+    Handling directories of reference data for entries and elements.
+    Directories are managed for the base model and for each specialty model
+          
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="directory-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- === Control of the directory model === -->
+    <xf:instance id="directoryControl-instance">
+        <control>
+            <status/>
+
+            <specialtyIRI/>
+            <specialtyId/>
+
+            <directoryIRI/>
+            <directoryId/>
+
+            <directory root="" displayName="" type="" key=""/>
+
+            <!-- Template for the entry or element in the current directory -->
+            <template/>
+
+        </control>
+    </xf:instance>
+
+
+    <!-- === Managing Directories ===============================
+         Loading and saving directories
+         ======================================================== -->
+
+
+    <!-- Application defined action to set details of the managed directory.
+         The specialtyIRI and directoryIRI are passed as parameters
+            -->
+    <xf:action ev:event="set-managed-directory">
+        <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+        <xxf:variable name="directoryIRI" select="event('directoryIRI')"/>
+
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/specialtyIRI" value="$specialtyIRI"/>
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/specialtyId" value="replace(substring($specialtyIRI,2),':','-')"/>
+
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/directoryIRI" value="$directoryIRI"/>
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/directoryId" value="replace(substring($directoryIRI,2),':','-')"/>
+
+        <!-- Get the directory in directoryList -->
+        <xxf:variable name="directory" select="xxf:instance('directoryList-instance')/directory[@root=$directoryIRI]"/>
+
+        <!-- Set the parameters of directory in directoryControl-instance -->
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/directory/@root"
+            value="if (exists($directory)) then $directory/@root else ''"/>
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/directory/@displayName"
+            value="if (exists($directory)) then $directory/@displayName else ''"/>
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/directory/@type"
+            value="if (exists($directory)) then $directory/@type else ''"/>
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/directory/@key"
+            value="if (exists($directory)) then $directory/@key else ''"/>
+    </xf:action>
+
+
+
+    <!-- ========= Submissions to get directories for entries and elements ========= 
+         =========================================================================== -->
+
+    <!-- === Queries === -->
+    <xf:instance id="getDirectoryElementsXQuery-instance" src="oxf:/apps/ehr/xquery/getDirectoryElementsXQuery.xml"/>
+    <xf:instance id="getDirectoryEntryXQuery-instance" src="oxf:/apps/ehr/xquery/getDirectoryEntryXQuery.xml"/>
+
+
+    <!-- === Instances === -->
+    <xf:instance id="directoryEntryReturn-instance">
+        <directoryEntrySet/>
+    </xf:instance>
+    <xf:instance id="directoryEntry-instance">
+        <directoryEntrySet entryId="" elementId="" selection="" displayName=""/>
+    </xf:instance>
+    <xf:instance id="directoryElementsReturn-instance">
+        <iso-13606:element/>
+    </xf:instance>
+    <xf:instance id="directoryElements-instance">
+        <iso-13606:element/>
+    </xf:instance>
+
+
+    <!-- ========= Handling directories for entries and elements ========= 
+        ================================================================= -->
+
+    <!-- Application defined action to lookup a directory entry.
+         Only simple cda:observations can be looked up
+         $entry is a cda:observation (entry) from the CDA document
+         $element is the cda:value (element) used as the key for lookup.
+        
+        Checks that the entry and element exist before trying the lookup
+        The entry must be the cda:observation
+        
+        There are two cases:
+            Lookup using a web service
+            Lookup using a stored directory
+            
+        Web services are configured in application-parameters for the application
+        Uses the value of the key element to set the query.
+        Query then returns an entry from the directory.
+        Then sets values in the entry in the same way as for a pre-filled entry.
+              
+    -->
+    <xf:action ev:event="lookup-directory-entry">
+        <xxf:variable name="entry" select="event('entry')"/>
+        <xxf:variable name="keyElement" select="event('keyElement')"/>
+
+        <!-- Clear the directoryEntry-instance before look up.
+             If the look up doesn't return a cda:observation or the lookup value is empty then this will remain empty.
+             The attributes on directoryEntry-instance are used to link the returned entries with the key element.
+             This displays the displayName and selection for multiple entry hits. -->
+        <xf:delete nodeset="xxf:instance('directoryEntry-instance')/*"/>
+        <xf:setvalue ref="xxf:instance('directoryEntry-instance')/@entryId" value="''"/>
+        <xf:setvalue ref="xxf:instance('directoryEntry-instance')/@elementId" value="''"/>
+        <xf:setvalue ref="xxf:instance('directoryEntry-instance')/@selection" value="''"/>
+        <xf:setvalue ref="xxf:instance('directoryEntry-instance')/@displayName" value="''"/>
+
+        <xf:action if="exists($entry) and exists($keyElement)">
+            <!-- Set the entry and key value for lookup.
+                 These must use the extension, not the root, which allows the lookup entry and key value elements to use aliases -->
+            <xxf:variable name="entryIRI" select="$entry/cda:id/@extension"/>
+            <xxf:variable name="elementIRI" select="$keyElement/@extension"/>
+            <xxf:variable name="value" select="normalize-space($keyElement/@value)"/>
+
+            <!-- Entry, element and value must all be OK to process the lookup -->
+            <xf:action if="$entryIRI!='' and $elementIRI!='' and $value!=''">
+
+                <!-- Set attributes for association of the directory look up with the element on the form.
+                     These use the Id (not IRI) formed from the root (not extension) of the entry and element -->
+                <xxf:variable name="entryId" select="substring-after($entry/cda:id/@root,'Entry:')"/>
+                <xxf:variable name="elementId" select="substring-after($keyElement/@root,'Element:')"/>
+                <xf:setvalue ref="xxf:instance('directoryEntry-instance')/@entryId" value="$entryId"/>
+                <xf:setvalue ref="xxf:instance('directoryEntry-instance')/@elementId" value="$elementId"/>
+
+                <!-- The look up is either through a web service or through the stored directory -->
+                <xxf:variable name="webService"
+                    select="xxf:instance('application-parameters-instance')/webServices/service[@entryIRI=$entryIRI]"/>
+
+                <!-- Web service is configured, entryIRI amd elementIRI OK -->
+                <xf:action if="exists($webService)">
+
+                    <!-- Call the web service -->
+                    <xf:dispatch name="call-web-service" target="webService-model">
+                        <xxf:context name="service" select="$webService"/>
+                        <xxf:context name="entry" select="$entry"/>
+                    </xf:dispatch>
+
+                    <!-- The result is now in webServiceReturn-instance.
+                         If there is one or more cda:entry in the result, then insert into directoryEntry-instance (or clear it if no cda:entry). -->
+                    <xf:action xxf:iterate="xxf:instance('webServiceReturn-instance')/descendant-or-self::cda:observation">
+                        <xxf:variable name="directoryEntry" select="."/>
+                        <xf:insert context="xxf:instance('directoryEntry-instance')" origin="$directoryEntry"/>
+                    </xf:action>
+
+                </xf:action>
+
+                <!-- No web service - look up in stored directory.
+                     The directory is either in the specialty or the common model.
+                     Try the specialty first.
+                     Then if no results, try the common model. -->
+                <xf:action if="not(exists($webService))">
+
+                    <!-- Set the entry and key value for lookup.
+                     These must use the extension. not the root, which allows the lookup entry and key value elememnts to use aliases -->
+                    <xf:setvalue ref="xxf:instance('getDirectoryEntryXQuery-instance')/entryIRI" value="$entryIRI"/>
+                    <xf:setvalue ref="xxf:instance('getDirectoryEntryXQuery-instance')/elementIRI" value="$elementIRI"/>
+
+                    <!-- The value to lookup is a list of tokens in the key.
+                         The xpath query then looks for matches(@value,t1,'i') and matches(@value,t2,'i') ...  and matches(@value,tn,'i')
+                         -->
+                    <xxf:variable name="valueTokens" select="tokenize($value,' ')"/>
+                    <!--
+                <xxf:variable name="searchValue" select="string-join($valueTokens,''',''')"/>
+                -->
+                    <xxf:variable name="searchValue"
+                        select="concat('matches(@value,''',string-join($valueTokens,''',''i'') and matches(@value,'''),''',''i'')')"/>
+                    <xf:setvalue ref="xxf:instance('getDirectoryEntryXQuery-instance')/value" value="$searchValue"/>
+
+                    <xxf:variable name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
+                    <xxf:variable name="specialtyId" select="xxf:instance('view-parameters-instance')/specialtyId"/>
+
+                    <xxf:variable name="commonModelIRI"
+                        select="xxf:instance('application-parameters-instance')/application/iso-13606:EHR_Extract/@commonModel"/>
+                    <xxf:variable name="commonModelId" select="replace(substring($commonModelIRI,2),':','-')"/>
+
+                    <xxf:variable name="directoryId" select="$entryId"/>
+
+                    <xxf:variable name="commonModelDirectoryLocation"
+                        select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/',$commonModelId,'/directory')"/>
+                    <xxf:variable name="specialtyDirectoryLocation"
+                        select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/',$specialtyId,'/directory')"/>
+
+                    <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation" select="$specialtyDirectoryLocation"/>
+                        <xxf:context name="query" select="xxf:instance('getDirectoryEntryXQuery-instance')"/>
+                        <xxf:context name="response" select="xxf:instance('directoryEntryReturn-instance')"/>
+                        <xxf:context name="status" select="xxf:instance('directoryControl-instance')/status"/>
+                    </xf:dispatch>
+
+                    <!-- Nothing in the specialty model - try the common model -->
+                    <xf:action if="not(exists(xxf:instance('directoryEntryReturn-instance')/descendant::cda:observation))">
+                        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="storageLocation" select="$commonModelDirectoryLocation"/>
+                            <xxf:context name="query" select="xxf:instance('getDirectoryEntryXQuery-instance')"/>
+                            <xxf:context name="response" select="xxf:instance('directoryEntryReturn-instance')"/>
+                            <xxf:context name="status" select="xxf:instance('directoryControl-instance')/status"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!-- Now set the directoryEntry-instance -->
+                    <xf:action xxf:iterate="xxf:instance('directoryEntryReturn-instance')/descendant::cda:observation">
+                        <xxf:variable name="directoryEntry" select="."/>
+                        <xf:insert context="xxf:instance('directoryEntry-instance')" origin="$directoryEntry"/>
+                    </xf:action>
+                </xf:action>
+
+                <!-- After lookup (by either method) now need to set the entry, and the feedback to the user.
+                     There are three cases:
+                        1) No entries found - set message for display
+                        2) One entry found - just process it
+                        3) More than one entry found - set up user selection -->
+                <xf:action>
+                    <!-- Get the hit that was found.
+                         Currently just processing the first entry returned - TBD handle multiple returns -->
+                    <xxf:variable name="directoryEntryCount" select="count(xxf:instance('directoryEntry-instance')//cda:observation)"/>
+
+                    <!-- 1) No entries found - set message for display -->
+                    <xf:action if="$directoryEntryCount = 0">
+                        <xf:setvalue ref="xxf:instance('directoryEntry-instance')/@displayName"
+                            value="xxf:instance('view-parameters-instance')/staticParameters/directoryLookUp/noMatchFound"/>
+                    </xf:action>
+
+
+                    <!-- 2) One entry found
+                            Reset contents of the entry, if found in the directory.
+                            Note that the entry returned from the directory must match the entry being replaced. -->
+                    <xf:action if="$directoryEntryCount = 1">
+                        <xxf:variable name="directoryEntry" select="xxf:instance('directoryEntry-instance')//cda:observation[1]"/>
+
+                        <xf:dispatch name="set-entry-from-directory" target="directory-model">
+                            <xxf:context name="entry" select="$entry"/>
+                            <xxf:context name="elementIRI" select="$elementIRI"/>
+                            <xxf:context name="directoryEntry" select="$directoryEntry"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!-- 3) More than one entry found - set up user selection -->
+                    <xf:action if="$directoryEntryCount gt 1">
+                        <!-- Insert template for blank selection -->
+                        <xf:insert context="xxf:instance('directoryEntry-instance')" nodeset="cda:observation"
+                            origin="xxf:instance('view-parameters-instance')/staticParameters/directoryLookUp/multipleMatchesFound/cda:observation"
+                            at="1" position="before"/>
+                        <!-- Set to key element -->
+                        <xf:setvalue ref="xxf:instance('directoryEntry-instance')/cda:observation[1]/cda:value/@extension" value="$elementIRI"
+                        />
+                    </xf:action>
+
+                </xf:action>
+
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+    <!-- Application defined action to set the entry from the results returned in the directory look up.
+         Note that the directory entry must match the entry being replaced.
+         The elementIRI is the key element - its value must not be changed, otherwise the directory lookup will re-trigger
+         Don't change the entry in the form - just set any elements that match in the directoryEntry,
+         Either $entry or $directoryEntry may contain clusters, which must be ignored 
+         (i.e. elements must be found/processed regardless of whether they are in a cluster or not) -->
+    <xf:action ev:event="set-entry-from-directory">
+        <xxf:variable name="entry" select="event('entry')"/>
+        <xxf:variable name="elementIRI" select="event('elementIRI')"/>
+        <xxf:variable name="directoryEntry" select="event('directoryEntry')"/>
+
+        <xf:action if="exists($directoryEntry) and $directoryEntry/cda:id/@extension=$entry/cda:id/@extension">
+
+            <!-- The look up is either through a web service or through the stored directory.
+                 For either method, the element values may be transformed before setting -->
+            <xxf:variable name="returnProcessing"
+                select="xxf:instance('application-parameters-instance')/webServices/*[@entryIRI=$entry/cda:id/@extension]/returnProcessing"/>
+
+            <!-- Iterate through elements, resetting value and displayName from the directoryEntry, 
+                 but only if the element exists there and isn't the key element -->
+            <xf:action xxf:iterate="$entry/descendant::cda:value[@extension!=$elementIRI][@value]">
+                <xxf:variable name="element" select="."/>
+                <xxf:variable name="directoryElement" select="$directoryEntry/descendant::cda:value[@extension=$element/@extension][@value]"/>
+
+                <!-- Set the value of the element -->
+                <xf:action if="exists($directoryElement)">
+                    <xf:setvalue ref="$element/@value" value="$directoryElement/@value"/>
+                    <xf:setvalue ref="$element/@displayName" value="$directoryElement/@displayName"/>
+                </xf:action>
+            </xf:action>
+
+            <!-- Now that entries are set, iterate through specified sourceExpressions to set empty values.
+                 This iteration is made through the sourceExpressions, so that the order in which they are applied can be controlled.
+                 The sourceExpression is evaluated to set the element value -->
+            <xf:action xxf:iterate="if (exists($returnProcessing)) then $returnProcessing[1]/process[@sourceExpression!=''] else ()">
+                <xxf:variable name="process" select="."/>
+                <xxf:variable name="processElementIRI" select="$process/@elementIRI"/>
+                <xxf:variable name="sourceExpression" select="$process/@sourceExpression"/>
+
+                <xxf:variable name="value" select="$entry/descendant::cda:value[@extension=$processElementIRI]/@value"/>
+                <!-- Set value from source expression, if specified.
+                     This will crash if the expression is badly formed - so expressions set up in application-parameters need to be tested properly -->
+                <xf:setvalue ref="$value" value="if ($sourceExpression != '') then xxf:evaluate($sourceExpression) else ."/>
+            </xf:action>
+
+            <!-- Finally...
+                 The value returned from the directory may be transformed, depending on settings in the configuration file.
+                 The transformation is applied to both the value and the displayName -->
+            <xf:action xxf:iterate="if (exists($returnProcessing)) then $returnProcessing[1]/process[@transformation!=''] else ()">
+                <xxf:variable name="process" select="."/>
+                <xxf:variable name="processElementIRI" select="$process/@elementIRI"/>
+                <xxf:variable name="transformation" select="$process/@transformation"/>
+                <xxf:variable name="element" select="$entry/descendant::cda:value[@extension=$processElementIRI]"/>
+
+                <!-- Transform value -->
+                <xf:dispatch name="transform-value" target="directory-model">
+                    <xxf:context name="value" select="$element/@value"/>
+                    <xxf:context name="transformation" select="$transformation"/>
+                </xf:dispatch>
+
+                <!-- Transform displayName -->
+                <xf:dispatch name="transform-value" target="directory-model">
+                    <xxf:context name="value" select="$element/@displayName"/>
+                    <xxf:context name="transformation" select="$transformation"/>
+                </xf:dispatch>
+
+            </xf:action>
+
+        </xf:action>
+    </xf:action>
+
+    <!-- Application defined action to set element value or displayName returned from directory lookup
+         Apply transform, if there is one, and set value -->
+    <xf:action ev:event="transform-value">
+        <xxf:variable name="value" select="event('value')"/>
+        <xxf:variable name="transformation" select="event('transformation')"/>
+
+        <!-- Perform transformation, if specified -->
+        <!-- No recognised transformation -->
+        <xf:action if="not($transformation = ('uppercase','lowercase','sentencecase','titlecase','yyyymmdd'))">
+            <xf:setvalue ref="$value" value="."/>
+        </xf:action>
+
+        <!-- uppercase transformation -->
+        <xf:action if="$transformation = 'uppercase'">
+            <xf:setvalue ref="$value" value="upper-case(.)"/>
+        </xf:action>
+
+        <!-- lowercase transformation -->
+        <xf:action if="$transformation = 'lowercase'">
+            <xf:setvalue ref="$value" value="lower-case(.)"/>
+        </xf:action>
+
+        <!-- sentencecase transformation.
+             Change first letter to uppercase, everything else lowercase -->
+        <xf:action if="$transformation = 'sentencecase'">
+            <xf:variable name="firstLetter" select="upper-case(substring($value,1,1))"/>
+            <xf:setvalue ref="$value" value="concat($firstLetter,lower-case(substring(.,2)))"/>
+        </xf:action>
+
+        <!-- titlecase transformation.
+             Change first letter of each word to uppercase, everything else lowercase.
+             Words are separated by any characters defined as XML whitespace (normalize-space makes then all ' ') -->
+        <xf:action if="$transformation = 'titlecase'">
+            <!-- Create word list.
+                 Word separators are space or comma -->
+            <xf:variable name="wordList" select="tokenize(normalize-space(lower-case($value)),' |,')"/>
+
+            <!-- Iterate to join words with uppercase first letter -->
+            <xf:setvalue ref="$value" value="''"/>
+            <xf:action xxf:iterate="$wordList">
+                <xf:variable name="word" select="."/>
+                <xf:variable name="firstLetter" select="upper-case(substring($word,1,1))"/>
+                <xf:setvalue ref="$value" value="concat(.,' ',$firstLetter,substring($word,2))"/>
+            </xf:action>
+
+            <!-- Normalise space to finish -->
+            <xf:setvalue ref="$value" value="normalize-space(.)"/>
+        </xf:action>
+
+        <!-- yyyymmdd transformation to ISO date format -->
+        <xf:action if="$transformation = 'yyyymmdd'">
+            <!-- To transform, returned value must be 8 characters, castable as an integer -->
+            <xf:action if="string-length($value) = 8 and $value castable as xs:integer">
+                <xf:setvalue ref="$value" value="concat(substring(.,1,4),'-',substring(.,5,2),'-',substring(.,7,2))"/>
+            </xf:action>
+
+        </xf:action>
+
+    </xf:action>
+
+
+
+    <!-- Application defined action to load the directoryElements dictionary.
+         This is made in directoryElements-instance.
+         The lookup is made for the list of elementList passed as a parameter 
+         Used by load-directoryElementsForForm and load-directoryElementsForForm
+    
+         Uses the language variant of the directory as defined by the current language of the session (you wish - TBD) -->
+    <xf:action ev:event="load-directoryElements">
+        <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+        <xxf:variable name="directoryElementsList" select="distinct-values(event('directoryElementsList'))"/>
+
+        <xxf:variable name="applicationId" select="xxf:instance('session-parameters-instance')/applicationId"/>
+        <xxf:variable name="specialtyId" select="replace(substring($specialtyIRI,2),':','-')"/>
+        <xxf:variable name="commonModelId" select="xxf:instance('session-parameters-instance')/commonModelId"/>
+
+        <!-- Set specialty in control-instance -->
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/specialtyIRI" value="$specialtyIRI"/>
+        <xf:setvalue ref="xxf:instance('directoryControl-instance')/specialtyId" value="$specialtyId"/>
+
+        <!-- Set up the search to find directory elements -->
+        <xf:setvalue ref="xxf:instance('getDirectoryElementsXQuery-instance')/elementIRIList"
+            value="string-join($directoryElementsList,''',''')"/>
+
+        <!-- First look for elements in the specialty model -->
+        <xxf:variable name="specialtyStorageLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/',$specialtyId,'/directory')"/>
+
+        <!-- Return elements to directoryElements-instance -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$specialtyStorageLocation"/>
+            <xxf:context name="query" select="xxf:instance('getDirectoryElementsXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('directoryElements-instance')"/>
+            <xxf:context name="status" select="xxf:instance('directoryControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Now look for elements in the common model -->
+        <xxf:variable name="commonModelStorageLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/',$commonModelId,'/directory')"/>
+
+        <!-- Return elements to directoryElementsReturn-instance -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$commonModelStorageLocation"/>
+            <xxf:context name="query" select="xxf:instance('getDirectoryElementsXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('directoryElementsReturn-instance')"/>
+            <xxf:context name="status" select="xxf:instance('directoryControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Add common model elements to the directoryElements-instance -->
+        <xf:action xxf:iterate="xxf:instance('directoryElementsReturn-instance')//iso-13606:element">
+            <xxf:variable name="directoryElement" select="."/>
+            <xf:insert context="xxf:instance('directoryElements-instance')/iso-13606:elementCollection" origin="$directoryElement"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the directoryElements dictionary.
+         This is made in directoryElements-instance.
+         The lookup is made for the formInstance passed as a parameter (defined in composition main-model or cda-model)
+    
+         Uses the language variant of the directory as defined by the current language of the session (you wish - TBD) -->
+    <xf:action ev:event="load-directoryElementsForForm">
+        <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+        <xxf:variable name="formInstance" select="event('formInstance')"/>
+
+        <xxf:variable name="cdaBody" select="$formInstance/descendant::cda:structuredBody/cda:component/cda:section"/>
+        <!-- Get the list of enumeratedDirectory elements in this form.
+             This will include elements used in the cityEHR:lookup function which have been added to a hidden entry on the form. -->
+        <xxf:variable name="directoryElementsList"
+            select="distinct-values($cdaBody/descendant::cda:value[@cityEHR:elementType = ('#CityEHR:ElementProperty:enumeratedDirectory','#CityEHR:Property:ElementType:enumeratedDirectory')]/@root)"/>
+
+        <!-- Return elements to directoryElements-instance -->
+        <xf:dispatch name="load-directoryElements" target="directory-model">
+            <xxf:context name="specialtyIRI" select="$specialtyIRI"/>
+            <xxf:context name="directoryElementsList" select="$directoryElementsList"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the directoryElements dictionary.
+         This is made in directoryElements-instance.
+         The lookup is made for the specialty passed as a parameter.
+         Used for selections in cohort search and in cityEHRAdmin -->
+    <xf:action ev:event="load-directoryElementsForDictionary">
+        <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+        <xxf:variable name="dictionary-instance" select="event('dictionary-instance')"/>
+
+        <!-- Get the list of enumeratedDirectory elements in this specialty.
+             This comes from the dictionary-instance (which contains the specialty dictionary). -->
+        <xxf:variable name="directoryElementsList"
+            select="distinct-values($dictionary-instance/iso-13606:elementCollection/iso-13606:element[@cityEHR:elementType = '#CityEHR:ElementProperty:enumeratedDirectory']/@root)"/>
+
+        <!-- Return elements to directoryElements-instance -->
+        <xf:dispatch name="load-directoryElements" target="directory-model">
+            <xxf:context name="specialtyIRI" select="$specialtyIRI"/>
+            <xxf:context name="directoryElementsList" select="$directoryElementsList"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+
+    <!-- ========= Set up model when it is first loaded ========= 
+        =================================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Not doing anything here -->
+    </xf:action>
+
+
+
+</xf:model>

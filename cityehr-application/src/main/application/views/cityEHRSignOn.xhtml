@@ -1,0 +1,2383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRSignOn.xhtml
+    
+    First sign-on page to enter user credentials.
+    
+    This page can be loaded with a vanilla installation and an empty built-in database, in which case it will:
+        Generate system-parameters and database parameters in the built-in database.
+        Create database index(es) for the deployed database cluster
+        
+        Then after confirmation by the user:
+            Generate and store the application-parameters for the default application.
+            Generate and store the information model(s) shipped with the default application (only after the default user has been authenticated)        
+            Set and store the credentials for the default user (only after the default user has been authenticated)
+        
+    The page may also be loaded when a new (possibly empty) database has been deployed 
+    (with system-parameters and database parameters already created in the built-in database)
+   
+    The page has a sequence of three main actions:
+        1) set-default-application-splash (initiated on xforms-ready)
+        2) authenticate-cityEHR-user
+        3) launch-application
+   
+    Start up:
+    When the page first loads there is no user logged on and the 'splash page' for the default application is displayed.
+    Or static spash images if in disabled or recovery mode (when there is no default application).
+    This is achieved through the set-default-application-splash action, invoked on xforms-ready event.
+    
+    The startup process is logged in logging-instance, using the status returned from various models/instances:
+    
+    Parameters passed in the URL:
+        page - cityEHRSignOn (value is fixed in page-flow)
+        errorCode - if there was a fatal error in the application and the user was redirected to the sign-on page with this error code
+        mode - if passed as 'disabled' then forces the application to start in disabled mode (although what is the point of doing this?)
+               if passed as 'recovery' then forces the application to start in recovery mode
+               if passed as 'debug' then forces the application to start in debug mode
+               
+    Loading of this page using an errorCode parameter comes from actions in either the systemParametersModel or configurationModel
+    which are models loaded on every page (except this one loads configurationManagementModel instead of configurationModel). 
+    
+    The start up mode is set as the page is initiated - there are four modes:
+        normal   - everything worked and the user can log on as normal
+        debug   - everything worked and the user can log on as normal, with access to debug information
+        recovery - something went wrong, but system-parameters are readable - the system may be recoverable and/or debugging information can be displayed, after the default user is authenticated.
+        disabled - there is something wrong with the cityEHR installation and the system-parameters are unreadable - the system is not recoverable and the user has no access to do anything.
+ 
+    In normal or debug mode the user is authenticated against users stored in the database, unless there are none (first time system is run) in which case the default user is created and stored.
+    In recovery mode there is no database available and the user is authenticated against the default user specified in view-parameters.
+    In disabled mode there are no system parameters avalable and the user cannot log on - just displays the error message and default logo shipped with the installation.
+    
+    There are three events that trigger disabled mode:
+        system-parameters cannot be accessed in the built-in database and the default cannot be read from disk
+        The system-parameters are malformed (after an update)
+        There is a problem saving system-parameters to the built-in database
+    
+    view-parameters is loaded from disk when session-model is loaded and contains:
+        systemResourcesURL - the URL of the system-parameters in the built-in database
+        databaseParametersURL - the URL of the database-parameters in the built-in database
+        appPath - the URL of the cityEHR application, using oxf: protocol
+        staticFileRoot - the path to the static resources
+        staticFileURL - the URL of the static resources, using oxf: protocol
+        versionNumber - the version number of the cityEHR installation
+    
+    The remaining set up is done when the page is ready, in the set-default-application-splash action:
+    
+    load-system-parameters loads the system parameters from built-in database, using load-system-parameters (defined in systemParameters-model)
+    If this fails then its either the first time the system has run (so no system-parameters in the built-in database) or there is a problem with the built-in database, so it can't be read
+    So fall back to the system-parameters.xml in the ehr distribution.
+    If system-parameters.xml is used and fails to save to the built-in database, then there is an unrecoverable problem, so start in disabled mode.
+    
+    Invoke update-system-parameters (in systemParameters-model) to check system-parameters version vs versionNumber in view-parameters and update, if necessary.
+    (Any update will also regenerate and store the database-parameters).
+    
+    load-database-parameters loads the database-parameters from built-in database, using load-database-parameters (defined in databaseAccessLayer-model)  
+    The logical database for the ehr system is set in the system-parameters, together with the physical database cluster(s) for that logical database.
+    The access parameters for the deployed database cluster(s) are defined in database-parameters
+    These are used to set databaseLocation and storageLocation in view-parameters in start-new-session
+    
+    Invoke check-databases
+    If the deployed database(s) cannot be accessed or are not correctly configured then the session cannot proceed - mode is set to 'recovery'.
+        
+    Set the default application, which is specified in system-parameters, and invoke set-application, which calls load-working-application-parameters.
+    
+    load-working-application-parameters loads application-parameters for the specified application and:
+        If there are no application parameters stored, then build them from default and shipped application parameters
+        If the stored parameters are out of date then rebuild them.
+        Load application images.
+    Then the working-application-parameters are copied to application-parameters instance.
+           
+    The set-default-user action returns details for the default user (defined in view-parameters) and stored in the ehr database.
+    Note that the default user is not authenticated at this stage.
+    If there are no users or the database cannot be read (so default user is not loaded), then defaultUserLoaded is set to 'false'.
+    Otherwise defaultUserLoaded is set to 'true'
+    
+    In recovery mode, authentication is against the default user as defined in view-parameters (i.e. using the userId and password specified in view-parameters).
+    In this case the system admin user gets access to debug tools to check/ammend the database connection parameters.
+    
+    User enters credentials and is authenticated using authenticate-cityEHR-user
+        Authentication against database credentials is made in two stages:
+            1) Query with the userId returns the seedKey for the password encryption userPasswordSeedKeyXQuery
+            2) The password entered by the user is encrypted (if necessary) and used with the userId in userAuthenticationXQuery 
+    
+    If the authentication is successful then the user-instance is loaded and authenticated-user-action is invoked to:
+    
+    Check whether password has expired and needs to be reset, then
+        The list of applications supported for the installation is found from get-applicationList
+        Load the list of applications the user can access to xxf:instance('user-instance')/applications.
+        
+    There are then seven cases, with four actions:
+    
+    1) initialRun - If this is the default user, default application and there are no specialties stored then invoke import-shippedResources to import resources shipped with the installation
+    2) noApplications - If the user does not have any applications that are configured OR 
+    3) singleApplicationDefault - If the user has a single application and this is also the default and the user can access only one specialty then call launch-application to go straight to the home page of that application
+    4) singleApplicationDefaultMultipleSpecialties - If the user has a single application, this the default and user can access more than one specialty OR 
+    5) singleApplication -  If the user has a single application and this is not the default then call set-application so that the splash page for that application is displayed and the user must click again to go to the home page
+    6) multipleApplications - If the user has multiple applications and none is the default then all the user's applications are listed to enter, with the first in the list selected and set-application called to that its splash page displayed
+    7) multipleApplicationsDefault - If the user has multiple applications and one is the default then all the user's applications are listed to enter, with the default selected (splash page remains as the default)
+        
+    When the user has selected the application (calls set-application) and pressed the start button (or one of the direct options above) call launch-application
+    This then calls start-new-session or resume-session, depending on how the previous session was ended.
+    
+    Audit logging depends on auditLogRecording in system-parameters
+    If this is 'true' then the audit log is created (start-new session) or re-opened (resume-session).  
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- ========= HTML Head - Includes the Xforms Model ========= 
+        ========================================================= -->
+    <xhtml:head>
+
+        <!-- Try this to force compatibility mode -->
+        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
+
+        <!-- Stylesheet, force cache refresh with version number -->
+        <xhtml:link rel="stylesheet" type="text/css"
+            href="resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
+
+        <!-- Favicon - small icon in browser tab/menus.
+        Held as binary image in images/favicon element of the configurationControl 
+        This example forces a blank favicon:
+                <xhtml:link  rel="icon" type="image/x-icon" 
+                             href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="/>
+
+        This example has no image data:
+                <xhtml:link rel="shortcut icon" type="image/x-icon" href="data:image/*;base64,"/>        
+        -->
+
+        <xhtml:link rel="shortcut icon" type="image/x-icon" href="data:image/*;base64,{xxf:instance('control-instance')/images/favicon}" />
+
+        <!-- HTML Title is the displayName of the current application -->
+        <xhtml:title>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+        </xhtml:title>
+
+        <!-- ========= System Parameters ===================================================== 
+             ================================================================================= -->
+        <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
+            ================================================================================== -->
+        <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Session model contains stuff for handling of user sessions ============ 
+            ================================================================================== -->
+        <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Audit log model contains stuff for audit of user actions ============== 
+            ================================================================================== -->
+        <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Page navigation model contains stuff for navigation between pages =====
+        ====================================================================================== -->
+        <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Release Notes ========================================================= 
+             ================================================================================= -->
+        <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Applications ==========================================================
+             ================================================================================= -->
+        <xi:include href="../models/applicationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Application configuration =============================================
+            This is in the configuration management model
+            Includes actions for loading, building, rebuilding and storing application parameters
+            ================================================================================== -->
+        <xi:include href="../models/configurationManagementModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Manage parameters =====================================================
+            Contains action for rebuilding system and application parameters
+            ================================================================================== -->
+        <xi:include href="../models/manageParametersModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Processes =====================================================
+            Set up and run multi-action processes
+            ================================================================================== -->
+        <xi:include href="../models/processModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Main model for cityEHRSignOn view =====================================
+             ================================================================================= -->
+        <xf:model id="main-model">
+
+            <!-- === Control of the view === -->
+            <xf:instance id="control-instance">
+                <control id="control-instance" xmlns="">
+                    <status context=""/>
+                    <mode context=""/>
+                    <images/>
+                    <staticWelcomeSplash/>
+                    <databaseVersion/>
+                    <submissionStatus/>
+                    <sessionStatus/>
+                    <passwordStatus/>
+                    <defaultUserLoaded>false</defaultUserLoaded>
+                    <authenticated>false</authenticated>
+                    <authenticationMessage/>
+                    <errorMessage/>
+                    <errorContext/>
+                    <debugInstance/>
+                    <configurationMessage/>
+                    <actionMessage/>
+                    <timeStamp/>
+                    <systemParametersBaseLanguageCode/>
+                    <systemParametersDefaultLanguage/>
+                    <applicationParametersStatus context=""/>
+                    <!-- Application status records one of five states:
+                        noApplications
+                        singleApplicationIsDefault
+                        singleApplicationNotDefault
+                        multipleApplicationsIsDefault
+                        multipleApplicationsNotDefault
+                    -->
+                    <applicationStatus/>
+
+                    <!-- Fix legacy issues in stored credentials.
+                         2015-06-25 - had role@id in place of role@value in rbac until 2015-06-25
+                         2015-06-25 - added restrictPatientAccess to rbac
+                         2016-07-15 - added logonAlias to credentials 
+                         2017-07-03 - added dateSet and seedKey attributes to password (fixed in passwordModel) -->
+                    <legacyFixes>
+                        <role value="" displayName=""/>
+                        <logonAlias/>
+                        <patient id=""/>
+                        <restrictPatientAccess value="" displayName="All Patients"/>
+                        <recentPatients applicationIRI=""/>
+                    </legacyFixes>
+
+                    <!-- Marker to check for the database index -->
+                    <checkDatabaseIndex/>
+
+                    <testFile name=""/>
+
+                </control>
+            </xf:instance>
+
+            <xf:bind nodeset="xxf:instance('control-instance')/staticWelcomeSplash" type="xs:base64Binary"/>
+            <xf:bind nodeset="xxf:instance('control-instance')/images/*" type="xs:base64Binary"/>
+
+
+            <!-- === Testing.
+                 This page can be used for testing.
+                 If mode is set to 'debug' in control-instance then the Test button is displayed.
+                 Pressing the Test button invokes test-action, which can be coded to perform any necessary tests.
+                 ========================================================================= -->
+
+            <!-- test-instance can be set for debugging -->
+            <xf:instance id="test-instance">
+                <test xmlns=""/>
+            </xf:instance>
+
+
+            <xf:instance id="testOption-instance">
+                <testOption xmlns="">
+                    <option value="1" displayName="Option 1"/>
+                    <notAnOption value="2" displayName="Option 2"/>
+                </testOption>
+            </xf:instance>
+
+            <!-- test-action can be coded for any necessary testing -->
+            <xf:action ev:event="test-action">
+                <!--
+                <xxf:show dialog="testDialog"/>
+                -->
+                <!--
+                <xxf:variable name="message" select="event('context')"/>
+-->
+                <!--
+                <xxf:variable name="message" select="if ($booleanString castable as xs:boolean) then 'Pass' else 'Fail'"/>
+                -->
+                <!--
+                <xxf:variable name="booleanString" select="'false'"/>
+                <xxf:variable name="message" select="if (xs:boolean($booleanString) = (true(),false())) then 'Pass' else 'Fail'"/>
+
+                <xf:message ref="$message"/>
+                -->
+                <!--
+                <xf:dispatch name="load-default-configuration" target="main-model"/>
+-->
+                <!--
+                <xf:dispatch name="dal-getStaticResourceList" target="databaseAccessLayer-model">
+                    <xxf:context name="staticResourceLocation" select="'/applications/ISO-13606-EHR_Extract-cityEHR/media'"/>
+                    <xxf:context name="staticResourceList-instance" select="xxf:instance('test-instance')"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+                <xf:action xxf:iterate="xxf:instance('test-instance')//file">
+                    <xxf:variable name="file" select="."/>
+                    <xxf:variable name="fileName" select="tokenize($file/@name,'\.')[1]"/>
+                    <xf:setvalue ref="$file/@name" value="$fileName"/>
+                </xf:action>
+                -->
+                <!--
+                <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                    <xxf:context name="action" select="'confirmId'"/>
+                    <xxf:context name="messageSet" select="('message for you','second message')"/>
+                    <xxf:context name="optionSet" select="xxf:instance('testOption-instance')/*"/>
+                </xf:dispatch>
+-->
+                <!--               
+                <xf:dispatch name="save-systemResource" target="systemParameters-model">
+                    <xxf:context name="systemResource-instance" select="xxf:instance('view-parameters-instance')"/>
+                    <xxf:context name="systemResourceName" select="xxf:instance('view-parameters-instance')/systemResourcesURL/@processExecutionLogRessource"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+                
+                <xf:dispatch name="load-systemResource" target="systemParameters-model">
+                    <xxf:context name="systemResource-instance" select="xxf:instance('processExecutionLog-instance')"/>
+                    <xxf:context name="systemResourceName" select="xxf:instance('view-parameters-instance')/systemResourcesURL/@processExecutionLogRessource"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+-->
+                <!--
+                <xf:dispatch name="import-shippedResources" target="application-model">
+                    <xxf:context name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                    <xxf:context name="completionActionModel" select="'process-model'"/>
+                    <xxf:context name="completionActionName" select="'save-processExecutionLog'"/>
+                </xf:dispatch>
+-->
+                <!--
+
+                <xf:dispatch name="load-default-session-parameters" target="session-model">
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+-->
+                <!--
+                <xf:dispatch name="dal-getStaticResourceList" target="databaseAccessLayer-model">
+                    <xxf:context name="staticResourceLocation" select="'/applications/ISO-13606-EHR_Extract-cityEHR/media'"/>
+                    <xxf:context name="staticResourceList-instance" select="xxf:instance('test-instance')"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+                -->
+                <!--
+                <xf:message ref="matches('abcdefg','^bc','i')"/>               
+                -->
+                <!--
+                <xf:dispatch name="getDatabaseVersion" target="databaseAccessLayer-model">
+                    <xxf:context name="databaseURL" select="'admin@127.1.1.1:8022/db/ehr'"/>
+                </xf:dispatch>
+
+                <xf:dispatch name="check-databases" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+                -->
+            </xf:action>
+
+
+            <!-- === Set the mode during start up (set-default-application-splash action)
+                 Starts in 'normal' by default or 'disabled', 'recovery' or 'debug' if passed in the URL 
+                 Is then reset to 'disabled' or 'recovery' if there is an error.
+                 An error has occurred if the status is not blank.
+                 In this case, reset the mode as specified.
+                 Otherwise just record the log.
+                 ================================================================================= -->
+            <xf:action ev:event="set-mode">
+                <xxf:variable name="mode" select="event('mode')"/>
+                <xxf:variable name="context" select="event('context')"/>
+
+                <xxf:variable name="status" select="xxf:instance('control-instance')/status"/>
+
+                <!-- Log the status -->
+                <xf:dispatch name="record-log" target="main-model">
+                    <xxf:context name="logElement" select="xxf:instance('control-instance')/status"/>
+                    <xxf:context name="context" select="$context"/>
+                </xf:dispatch>
+
+                <!-- Set the mode if the status is not blank (so there is a problem)-->
+                <xf:action if="$status !=''">
+                    <!-- Reset the mode -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/mode" value="$mode"/>
+
+                    <!-- Set the error message -->
+                    <xxf:variable name="message" select="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type=$status]"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/errorMessage" value="if ($message != '') then $message else $status"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/errorContext" value="$context"/>
+
+                    <!-- Log the mode -->
+                    <xf:dispatch name="record-log" target="main-model">
+                        <xxf:context name="logElement" select="xxf:instance('control-instance')/mode"/>
+                        <xxf:context name="context" select="$context"/>
+                    </xf:dispatch>
+                </xf:action>
+
+            </xf:action>
+
+
+            <!-- === Logging instance.
+                 Log the status returned from actions used in the startup    
+                 ========================================================================= -->
+            <xf:instance id="logging-instance">
+                <log/>
+            </xf:instance>
+
+            <xf:action ev:event="record-log">
+                <xxf:variable name="logElement" select="event('logElement')"/>
+                <xxf:variable name="context" select="event('context')"/>
+
+                <xf:setvalue ref="$logElement/@context" value="$context"/>
+                <xf:insert context="xxf:instance('logging-instance')" nodeset="*" origin="$logElement" at="last()" position="after"/>
+            </xf:action>
+
+
+            <!-- ======================================= 
+                 Applications, specialties and languages
+                 ======================================= -->
+
+            <!-- The working application-parameters.
+                 This instance is also declared in configurationModel, but that isn't loaded for the cityEHRSignOn page -->
+            <xf:instance id="application-parameters-instance">
+                <parameters xmlns="" version="" date="" xmlns:iso-13606="http://www.iso.org/iso-13606"
+                    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
+            </xf:instance>
+
+            <!-- Application defined action to set the current application.
+                 Set applicationIRI in view-parameters.
+                 Set applicationId in view-parameters
+                 Load application parameters.
+                 Then set application displayName -->
+            <xf:action ev:event="set-application">
+                <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+
+                <!-- applicationIRI is not set - just set the status -->
+                <xf:action if="$applicationIRI = ''">
+                    <xf:setvalue ref="xxf:instance('control-instance')/status" value="'badApplicationIRI'"/>
+                </xf:action>
+
+                <!-- applicationIRI is set - continue to set up -->
+                <xf:action if="$applicationIRI != ''">
+                    <!-- Status should be blank, but reset here just in case -->
+                    <setvalue ref="xxf:instance('control-instance')/status" value="''"/>
+
+                    <!-- Set applicationIRI and applicationId in view-parameters.
+                         These will get transfered to the session-parameters when load-cityEHR-page is invoked -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/applicationIRI" value="$applicationIRI"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/applicationId"
+                        value="replace(substring(xxf:instance('view-parameters-instance')/applicationIRI,2),':','-')"/>
+
+                    <!-- Load the application parameters for the chosen application, so that the splash page is set correctly.
+                         This will build or rebuild the application parameters as required, but does not save them. 
+                         (Updated application parameters will only be saved once the user has been authenticated and started a session).
+                         The status is set to application-parameters-uptodate | application-parameters-built | application-parameters-rebuilt.
+                         Or an error code. -->
+                    <xf:dispatch name="load-working-application-parameters" target="configurationManagement-model">
+                        <xxf:context name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                        <xxf:context name="status" select="xxf:instance('control-instance')/applicationParametersStatus"/>
+                    </xf:dispatch>
+                    <xf:insert nodeset="xxf:instance('application-parameters-instance')"
+                        origin="xxf:instance('working-application-parameters-instance')"/>
+
+                    <!-- Record log  -->
+                    <xf:dispatch name="record-log" target="main-model">
+                        <xxf:context name="logElement" select="xxf:instance('control-instance')/applicationParametersStatus"/>
+                        <xxf:context name="context" select="'load-working-application-parameters'"/>
+                    </xf:dispatch>
+                    <setvalue ref="xxf:instance('control-instance')/status"
+                        value="if (xxf:instance('control-instance')/applicationParametersStatus=('application-parameters-uptodate','application-parameters-built','application-parameters-rebuilt')) then '' else xxf:instance('control-instance')/applicationParametersStatus"/>
+
+                    <!-- Application displayName - set from application parameters, so has to be done here -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/applicationDisplayName"
+                        value="xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@displayName"/>
+
+                    <!-- Set images in control-instance, for display on splash screen 
+                         The images were loaded from the database by load-working-application-parameters-->
+                    <xf:delete nodeset="xxf:instance('control-instance')/images"/>
+                    <xf:insert context="xxf:instance('control-instance')"
+                        origin="xxf:instance('working-application-parameters-instance')/application/images"/>
+
+                    <!-- Set the logo-instance (used in confirmation dialogs) -->
+                    <xf:setvalue ref="xxf:instance('logo-instance')" value="xs:base64Binary(xxf:instance('control-instance')/images/logo)"/>
+
+                    <!-- Load application logo (from database) -->
+                    <!--
+                    <xf:dispatch name="load-logo" target="pageNavigation-model">
+                        <xxf:context name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
+                        <xxf:context name="logoElement" select="xxf:instance('working-application-parameters-instance')/application/images/logo"/>
+                    </xf:dispatch>
+                    -->
+
+                    <!-- Get list of specialties for the application.
+                         This is done here, so that the list can be checked before setting the specialty in authenticated-user-action.
+                         Note that this may fail if the default application has no specialties loaded -->
+                    <xf:dispatch name="get-specialtyList" target="application-model">
+                        <xxf:context name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+
+                    <!-- Set the language for the application. -->
+                    <xf:dispatch name="set-language" target="main-model"/>
+
+                </xf:action>
+
+            </xf:action>
+
+
+            <!-- Application defined action to set the specialty.
+                 This is done after the user is authenticated, in authenticated-user-action
+                 And then whenever a different application is selected by the authenticated user.
+                 The current application has already been set in set-application, so can use the applicationId set in view-parameters
+                 The specialtyList-instance (applicationSpecialties) was also set already in set-application
+                 
+                 applicationSpecialties is the list of specialties for the current application (may be empty)
+                 userSpecialties is the list of specialties for the user for this application (may be empty)  
+                 applicableSpecialties are the application specialties defined for this user (intersection of applicationSpecialties and userSpecialties - may be empty)
+                 
+                 There are three cases:
+                 1) There are no applicationSpecialties (which excludes (2) and (3)
+                 2) There are applicableSpecialties
+                 3) There are no applicableSpecialties, but there are applicationSpecialties
+                 
+            -->
+            <xf:action ev:event="set-specialty">
+                <xxf:variable name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+
+                <xxf:variable name="defaultApplicationIRI"
+                    select="xxf:instance('system-parameters-instance')/dynamicParameters/defaultApplicationIRI/@value"/>
+
+                <!-- The full list of specialties for the selected application (there may be none) -->
+                <xxf:variable name="applicationSpecialties" select="xxf:instance('specialtyList-instance')/iso-13606:Folder/@id"/>
+
+                <!-- The default specialty for the application should be set in application-parameters-instance.
+                    (But don't assume that it is) -->
+                <xxf:variable name="defaultSpecialty"
+                    select="xxf:instance('application-parameters-instance')/application/iso-13606:EHR_Extract/@defaultSpecialty"/>
+
+                <!-- User specialties for the application (if any) are listed in the user profile. -->
+                <xxf:variable name="userSpecialties"
+                    select="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract[@id=xxf:instance('view-parameters-instance')/applicationIRI]/iso-13606:Folder/@id"/>
+
+                <!-- Application and specialty used in the previous session for this user (may not be applicable). -->
+                <xxf:variable name="previousApplicationIRI" select="xxf:instance('previousSession-parameters-instance')/applicationIRI"/>
+                <xxf:variable name="previousSpecialtyIRI"
+                    select="if ($previousApplicationIRI = $applicationIRI) then xxf:instance('previousSession-parameters-instance')/specialtyIRI else ''"/>
+
+                <!-- Applicable specialties are the application specialties defined for this user (there may be none) -->
+                <xxf:variable name="applicableSpecialties" select="$applicationSpecialties[.= $userSpecialties]"/>
+
+                <!-- (1) If there are no specialties for the application, then set to blank - note that case (2) cannot apply in this scenario.
+                         This is the case when the admin user logs on before any specialties have been loaded for an application.
+                         Or there were no specialties shipped with the default application (unlikely) -->
+                <xf:action if="count($applicationSpecialties) eq 0">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyIRI" value="''"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyId" value="''"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyDisplayName" value="''"/>
+                </xf:action>
+
+                <!-- (2) If user has specialties defined for the application and at least one exists in the specialtyList then trim the list 
+                         and set the previous specialty or default specialty (if they exists in the list) or the first on the list as the selected specialty -->
+                <xf:action if="count($applicableSpecialties) gt 0">
+                    <xf:setvalue ref="xxf:instance('control-instance')/userSpecialties"
+                        value="string-join($applicableSpecialties,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                    <xxf:variable name="defaultUserSpecialty"
+                        select="if ($previousSpecialtyIRI!='' and $previousSpecialtyIRI=$applicableSpecialties) then $previousSpecialtyIRI else if ($defaultSpecialty!='' and $defaultSpecialty=$applicableSpecialties) then $defaultSpecialty else $applicableSpecialties[1]"/>
+
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyIRI" value="$defaultUserSpecialty"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyId"
+                        value="replace(substring(xxf:instance('view-parameters-instance')/specialtyIRI,2),':','-')"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyDisplayName"
+                        value="xxf:instance('specialtyList-instance')/iso-13606:Folder[@id=xxf:instance('view-parameters-instance')/specialtyIRI]/@displayName"
+                    />
+                </xf:action>
+
+                <!-- (3) If there is one or more specialty for the application but none are defined for this user (which includes the case where the user has no specialties)
+                         then use the full specialty list
+                         In this case, set either the default specialty (if it exists in the specialtyList) or the first in the list. -->
+                <xf:action if="count($applicationSpecialties) gt 0 and count($applicableSpecialties) eq 0">
+                    <xxf:variable name="defaultUserSpecialty"
+                        select="if ($previousSpecialtyIRI!='' and $previousSpecialtyIRI=$applicationSpecialties) then $previousSpecialtyIRI else if ($defaultSpecialty!='' and $defaultSpecialty=$applicationSpecialties) then $defaultSpecialty else $applicationSpecialties[1]"/>
+
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyIRI" value="$defaultUserSpecialty"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyId"
+                        value="replace(substring(xxf:instance('view-parameters-instance')/specialtyIRI,2),':','-')"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyDisplayName"
+                        value="xxf:instance('specialtyList-instance')/iso-13606:Folder[@id=xxf:instance('view-parameters-instance')/specialtyIRI]/@displayName"
+                    />
+                </xf:action>
+
+                <!-- Log the set-specialty action -->
+                <xf:dispatch name="record-log" target="main-model">
+                    <xxf:context name="logElement" select="xxf:instance('control-instance')/status"/>
+                    <xxf:context name="context" select="concat('set-specialty ',xxf:instance('view-parameters-instance')/specialtyIRI)"/>
+                </xf:dispatch>
+
+            </xf:action>
+
+            <!-- Application defined action to set the language.
+                 When the page first loads the systemLanguageCode is set, as defined in system-parameters.
+                 set-language is then invoked through set-application when the initial application is set 
+                 And then whenever a different application is selected by the authenticated user.
+            -->
+            <xf:action ev:event="set-language">
+                <xxf:variable name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+
+                <!-- Application base language - set from application parameters -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/baseLanguageCode"
+                    value="lower-case(xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@baseLanguageCode)"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/baseLanguageCode"
+                    value="lower-case(xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@baseLanguageCode)"/>
+
+                <!-- Set default language for the session.
+                     This must be one of the languages defined for the application.
+                         
+                     Language is set in the following order of preference:
+                            If the user is authenticated then use the language from the previous session
+                            Otherwise, use the systemLanguage (which was set in set-default-application-splash)
+                            Otherwise use the base (application) language -->
+                <xxf:variable name="sessionLanguageCode" select="lower-case(xxf:instance('previousSession-parameters-instance')/languageCode)"/>
+                <xxf:variable name="systemLanguageCode" select="lower-case(xxf:instance('view-parameters-instance')/systemLanguageCode)"/>
+                <xxf:variable name="baseLanguageCode" select="lower-case(xxf:instance('view-parameters-instance')/baseLanguageCode)"/>
+                <xxf:variable name="supportedLanguageCodeList"
+                    select="xxf:instance('application-parameters-instance')/languagePacks/language/lower-case(@code)"/>
+
+                <!-- The view-parameters languageCode gets set by the user and is passed to the session -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/languageCode"
+                    value="if ($sessionLanguageCode = $supportedLanguageCodeList) then $sessionLanguageCode else if ($systemLanguageCode = $supportedLanguageCodeList) then $systemLanguageCode else $baseLanguageCode"/>
+
+                <!-- The session-parameters languageCode gets displayed in the footer (even though the session doesn't actually start on this page -->
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/languageCode"
+                    value="xxf:instance('view-parameters-instance')/languageCode"/>
+
+            </xf:action>
+
+
+            <!-- Application defined action to load the default configuration on initialRun.
+                 This is invoked after confirmation by the user in importShippedResources confimration dialog.
+                 Imports the shipped resources for the default application.
+            -->
+            <xf:action ev:event="load-default-configuration">
+
+                <!-- The application has already been set in view-parameters -->
+                <xxf:variable name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+
+                <!-- Run process to import shipped resources for the application.
+                     Scope is not passed as a paramert - defaults to 'full' -->
+                <xf:dispatch name="import-shippedResources" target="application-model">
+                    <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                    <xxf:context name="completionActionModel" select="'main-model'"/>
+                    <xxf:context name="completionActionName" select="'load-default-configuration-complete'"/>
+                </xf:dispatch>
+
+            </xf:action>
+
+
+            <!-- Application defined action invoked after completion of the import-shippedResources process. 
+                 If the import was successful then no action to take
+                 Otherwise display an error message (can't invoke recovery mode because the useer is already authenticated) 
+                 An option may be to log off and report the error (TBD) -->
+            <xf:action ev:event="load-default-configuration-complete">
+                <!-- Get the process status after running import-shippedResources -->
+                <xf:dispatch name="get-processStatus" target="process-model">
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- There was an error in import-shippedResources.
+                     There is no need to do anything here, since the error gets displayed anyway
+                     And the user is not prevented from starting the system.
+                     If we want to prevent the user from continuing then that would need to be done here -->
+                <xf:action if="not(xxf:instance('control-instance')/status='')">
+                    <!-- TBD -->
+                </xf:action>
+
+            </xf:action>
+
+
+
+            <!-- === The application user and authentication ================================================
+                 The user-instance actions for load-user-details and save-user-details are in session-model                                 
+                 ============================================================================================ -->
+
+            <!-- Instance used for entering user credentials,
+                 Just contains the elements input by the user. -->
+            <xf:instance id="user-credentials-instance">
+                <parameters xmlns="">
+                    <userid/>
+                    <password/>
+                    <encryptedPassword seedKey=""/>
+                    <applicationIRI/>
+                    <specialtyIRI/>
+                </parameters>
+            </xf:instance>
+
+            <!-- Instance to hold response from query to find a named user -->
+            <xf:instance id="stored-user-instance">
+                <exist:result/>
+            </xf:instance>
+
+            <!-- Queries to check username and password -->
+            <xf:instance id="userAuthenticationXQuery-instance" src="oxf:/apps/ehr/xquery/userAuthenticationXQuery.xml"/>
+            <xf:instance id="userPasswordSeedKeyXQuery-instance" src="oxf:/apps/ehr/xquery/userPasswordSeedKeyXQuery.xml"/>
+
+            <!-- Application defined action when user was authenticated, but the wrong user credentials were returned.
+                 This should never happen, so set to disabled mode. -->
+            <xf:action ev:event="wrongUserReturned">
+                <!-- Clear credentials (they are hidden, but something has gone badly wrong, so just to be safe) -->
+                <xf:setvalue ref="xxf:instance('user-credentials-instance')/userid" value="''"/>
+                <xf:setvalue ref="xxf:instance('user-credentials-instance')/password" value="''"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="''"/>
+
+                <!-- Set disabled mode - can't continue if this happens -->
+                <xf:setvalue ref="xxf:instance('control-instance')/status" value="'wrong-user-returned'"/>
+                <xf:dispatch name="set-mode" target="main-model">
+                    <xxf:context name="mode" select="'disabled'"/>
+                    <xxf:context name="context" select="'authenticate-cityEHR-user'"/>
+                </xf:dispatch>
+
+            </xf:action>
+
+            <!-- Application defined action on invalid user. -->
+            <xf:action ev:event="invalidUser">
+                <xf:setvalue ref="xxf:instance('user-credentials-instance')/userid" value="''"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="'invalidUsername'"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/actionMessage" value="'actionMessageInvalidUser'"/>
+                <xf:setfocus control="username-input"/>
+            </xf:action>
+
+            <!-- Application defined action on invalid password. -->
+            <xf:action ev:event="invalidPassword">
+                <xf:setvalue ref="xxf:instance('user-credentials-instance')/password" value="''"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="'invalidPassword'"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/actionMessage" value="'actionMessageInvalidPassword'"/>
+                <xf:setfocus control="password-input"/>
+            </xf:action>
+
+            <!-- Application defined action on invalid role (i.e. not system admin in recovery mode). -->
+            <xf:action ev:event="invalidRole">
+                <xf:setvalue ref="xxf:instance('user-credentials-instance')/userid" value="''"/>
+                <xf:setvalue ref="xxf:instance('user-credentials-instance')/password" value="''"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/actionMessage"
+                    value="normalize-space(xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/actionMessageInvalidRole/@displayName)"/>
+                <xf:setfocus control="username-input"/>
+            </xf:action>
+
+
+            <!-- Application defined action to authenticate user.
+                 Authenticates against the defaultUser in view-parameters or the stored users in the database.
+                 The default user is used if defaultUserLoaded was set to false in set-default-user, or if in recovery mode.
+            
+                 If successfully authenticated, calls authenticated-user-action -->
+            <xf:action ev:event="authenticate-cityEHR-user">
+                <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="''"/>
+
+                <!-- Normalize space in the username entered by the user -->
+                <xxf:variable name="userEntered" select="normalize-space(xxf:instance('user-credentials-instance')/userid)"/>
+                <xxf:variable name="passwordEntered" select="xxf:instance('user-credentials-instance')/password"/>
+
+                <!-- No user entered -->
+                <xf:action if="$userEntered=''">
+                    <xf:dispatch name="invalidUser" target="main-model"/>
+                </xf:action>
+
+                <!-- User entered - authenticate with password.
+                     Authenticate against the defaultUser in view-parameters or against user credentials stored in the database -->
+                <xf:action if="$userEntered!=''">
+
+                    <!-- No users in database, or starting in recovery mode.
+                         Authenticate against default user in view-parameters.
+                         Only if the default user does not have a profile stored in the database.
+                         This can be used to recover the login if the default user gets corrupted - change the default in view-parameters.xml and login will work.
+                         Also use this if in recovery mode (because the database cannot be read) -->
+                    <xf:action if="xxf:instance('control-instance')/defaultUserLoaded ='false' or xxf:instance('control-instance')/mode ='recovery'">
+
+                        <xxf:variable name="credentialsValidation"
+                            select="if ($userEntered != xxf:instance('view-parameters-instance')/defaultUser/credentials/userId) then 'invalidUser' 
+                            else if ($passwordEntered != xxf:instance('view-parameters-instance')/defaultUser/credentials/password) then 'invalidPassword'
+                                                                               else 'valid'"/>
+
+                        <!-- Invoke action for invalidUser or invalidPassword. -->
+                        <xf:action if="$credentialsValidation != 'valid'">
+                            <xf:dispatch name="{$credentialsValidation}" target="main-model"/>
+                        </xf:action>
+
+                        <!-- Authenticated if credentials are valid. -->
+                        <xf:action if="$credentialsValidation = 'valid'">
+
+                            <!-- Authenticated, so load the user template and set default values from view-parameters -->
+                            <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+                                <xxf:context name="staticResourceLocation" select="'/templates/user.xml'"/>
+                                <xxf:context name="resource" select="xxf:instance('user-instance')"/>
+                                <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                            </xf:dispatch>
+
+                            <!-- Default user -->
+                            <xxf:variable name="defaultUser" select="xxf:instance('view-parameters-instance')/defaultUser"/>
+                            <!-- Copy details of the default user identity from view-parameters to user-instance -->
+                            <xf:setvalue ref="xxf:instance('user-instance')/@id" value="concat('#CityEHR:User:',$defaultUser/credentials/userId)"/>
+                            <xf:setvalue ref="xxf:instance('user-instance')/credentials/userId" value="$defaultUser/credentials/userId"/>
+                            <xf:setvalue ref="xxf:instance('user-instance')/credentials/username" value="$defaultUser/credentials/username"/>
+                            <!-- Set password from default user (this will encrypt the default password, if passwordPolicy is set to do that) -->
+                            <xf:dispatch name="reset-password" target="session-model">
+                                <xxf:context name="password" select="$defaultUser/credentials/password"/>
+                                <xxf:context name="user-instance" select="xxf:instance('user-instance')"/>
+                            </xf:dispatch>
+                            <!-- Set application for the default user to the one loaded for sign-on -->
+                            <xf:setvalue ref="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract/@id"
+                                value="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                            <!-- rbac -->
+                            <xf:delete nodeset="xxf:instance('user-instance')/rbac/*"/>
+                            <xf:insert context="xxf:instance('user-instance')/rbac" origin="$defaultUser/rbac/*"/>
+
+                            <!-- Action now that the user is authenticated.
+                                 This will save the user-instance once the session starts. -->
+                            <xf:dispatch name="authenticated-user-action" target="main-model"/>
+                        </xf:action>
+
+
+                    </xf:action>
+                    <!-- End action authenticating against default user -->
+
+                    <!-- There are users in the database so...
+                         Authenticate against stored users.
+                         Check $userEntered against userId and logonAlias.
+                    
+                         Two stages to the authentication:
+                            userPasswordSeedKeyXQuery returns <seedKey/> if the userId is valid, otherwise <invalidUser/>
+                            userAuthenticationXQuery returns the <user> element if the userId/password/role is valid, otherwise an element designating the error                           
+                    -->
+                    <xf:action if="xxf:instance('control-instance')/defaultUserLoaded ='true'">
+                        <!-- Storage location is defined by the userId  -->
+                        <xxf:variable name="storageLocation" select="concat('/xmlstore/users/',$userEntered)"/>
+
+                        <!-- Set UserId clause-->
+                        <xf:setvalue ref="xxf:instance('userPasswordSeedKeyXQuery-instance')/whereClause-userid"
+                            value="concat('(credentials/userId,credentials/logonAlias) = ''',$userEntered,'''')"/>
+
+                        <!-- Now submit the query.
+                             Response from userPasswordSeedKeyXQuery is either <invalidUser/> or <seedKey> -->
+                        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="storageLocation" select="$storageLocation"/>
+                            <xxf:context name="query" select="xxf:instance('userPasswordSeedKeyXQuery-instance')"/>
+                            <xxf:context name="response" select="xxf:instance('stored-user-instance')"/>
+                            <xxf:context name="status" select="xxf:instance('control-instance')/submissionStatus"/>
+                        </xf:dispatch>
+
+                        <!-- Query failed or seedkey was not retured for the user -->
+                        <xf:action
+                            if="not(xxf:instance('control-instance')/submissionStatus='' and exists(xxf:instance('stored-user-instance')//seedKey))">
+                            <xf:dispatch name="invalidUser" target="main-model"/>
+                        </xf:action>
+
+                        <!-- Query suceeded and seedkey was retured for the user
+                             Now check userId and password. -->
+                        <xf:action if="xxf:instance('control-instance')/submissionStatus='' and exists(xxf:instance('stored-user-instance')//seedKey)">
+                            <!-- Set UserId clause -->
+                            <xf:setvalue ref="xxf:instance('userAuthenticationXQuery-instance')/whereClause-userid"
+                                value="concat('(credentials/userId,credentials/logonAlias) = ''',$userEntered,'''')"/>
+
+                            <!-- Set encrypted password - sets encryptedPassword parameter -->
+                            <xxf:variable name="seedKey" select="xxf:instance('stored-user-instance')/seedKey"/>
+                            <xf:dispatch name="encrypt-password" target="session-model">
+                                <xxf:context name="password" select="$passwordEntered"/>
+                                <xxf:context name="seedKey" select="$seedKey"/>
+                                <xxf:context name="encryptedPassword" select="xxf:instance('user-credentials-instance')/encryptedPassword"/>
+                            </xf:dispatch>
+
+                            <!-- Set Password clause -->
+                            <xf:setvalue ref="xxf:instance('userAuthenticationXQuery-instance')/returnClause-password"
+                                value="concat('$password = ''',xxf:instance('user-credentials-instance')/encryptedPassword,'''')"/>
+                            <!-- Role - only for recovery mode, user must be system admin role.
+                                 Except authentication is against default credentials in view-parameters when in recovery mode, so don't need this. -->
+                            <xf:setvalue ref="xxf:instance('userAuthenticationXQuery-instance')/returnClause-role"
+                                value="if (xxf:instance('control-instance')/mode='recovery') then '$roles=''#CityEHR:Role:System:Administrator''' else 'true()'"/>
+
+                            <!-- Now submit the query -->
+                            <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                                <xxf:context name="system" select="'ehr'"/>
+                                <xxf:context name="storageLocation" select="$storageLocation"/>
+                                <xxf:context name="query" select="xxf:instance('userAuthenticationXQuery-instance')"/>
+                                <xxf:context name="response" select="xxf:instance('stored-user-instance')"/>
+                                <xxf:context name="status" select="xxf:instance('control-instance')/submissionStatus"/>
+                            </xf:dispatch>
+
+                            <!-- stored-user-instance has result of authentication.
+                                 Its either the user stored in the database (authenticated) or an empty element denoting the reason for failure.
+                                 Note that the result is wrapped in the exist:result element -->
+                            <xxf:variable name="authenticationResult" select="xxf:instance('stored-user-instance')/*/name()"/>
+
+                            <!-- Authenticated user was not returned.
+                                 Invoke the corresponding action (invalidUser, invalidPassword or invalidRole) -->
+                            <xf:action if="$authenticationResult != 'user'">
+                                <xf:dispatch name="{$authenticationResult}" target="main-model"/>
+                            </xf:action>
+
+                            <!-- Authenticated user was returned -->
+                            <xf:action if="$authenticationResult='user'">
+                                <!-- Make extra check that the user returned from authentication query has the correct credentials.
+                                     User id entered must match the stored userId or logonAlias -->
+                                <xf:action if="not(exists(xxf:instance('stored-user-instance')/user/credentials[$userEntered=(userId,logonAlias)]))">
+                                    <xf:dispatch name="wrongUserReturned" target="main-model"/>
+                                </xf:action>
+
+                                <!-- Successfully authenticated -->
+                                <xf:action if="exists(xxf:instance('stored-user-instance')/user/credentials[$userEntered=(userId,logonAlias)])">
+
+                                    <!-- Remove details in user-instance and replace with details of the authenticated user -->
+                                    <xf:delete nodeset="xxf:instance('user-instance')/*"/>
+                                    <xf:insert context="xxf:instance('user-instance')" origin="xxf:instance('stored-user-instance')/user/*"/>
+
+                                    <!-- Legacy user credentials (2014) didn't have id attribute so always set it again -->
+                                    <xxf:variable name="legacyIdAttribute"
+                                        select="concat('#CityEHR:User:',xxf:instance('stored-user-instance')/user/credentials/userId)"/>
+                                    <xf:setvalue ref="xxf:instance('user-instance')/@id" value="$legacyIdAttribute"/>
+
+                                    <!-- Legacy user credentials had role@id in place of role@value in rbac until 2015-06-25 -->
+                                    <xf:action xxf:iterate="xxf:instance('user-instance')/rbac/role[@id]">
+                                        <xxf:variable name="storedRole" select="."/>
+                                        <xxf:variable name="fixedRole" select="xxf:instance('control-instance')/legacyFixes/role"/>
+                                        <!-- Set up fixed role -->
+                                        <xf:setvalue ref="$fixedRole/@value" value="$storedRole/@id"/>
+                                        <xf:setvalue ref="$fixedRole/@displayName" value="$storedRole/@displayName"/>
+                                        <!-- Insert new version of role -->
+                                        <xf:insert context="xxf:instance('user-instance')/rbac" origin="$fixedRole"/>
+                                        <!-- Remove legacy role -->
+                                        <xf:delete nodeset="$storedRole"/>
+                                    </xf:action>
+
+                                    <!-- Legacy user credentials did not support restrictPatientAccess until 2016-06-25 -->
+                                    <xf:action if="not(exists(xxf:instance('user-instance')/rbac/restrictPatientAccess))">
+                                        <xf:insert context="xxf:instance('user-instance')/rbac"
+                                            origin="xxf:instance('control-instance')/legacyFixes/restrictPatientAccess"/>
+                                    </xf:action>
+
+                                    <!-- Legacy user credentials did not support logonAlias until 2016-07-15 -->
+                                    <xf:action if="not(exists(xxf:instance('user-instance')/credentials/logonAlias))">
+                                        <xf:insert context="xxf:instance('user-instance')/credentials"
+                                            origin="xxf:instance('control-instance')/legacyFixes/logonAlias"/>
+                                    </xf:action>
+
+                                    <!-- Action now that the user is authenticated -->
+                                    <xf:dispatch name="authenticated-user-action" target="main-model"/>
+
+                                </xf:action>
+                            </xf:action>
+
+                        </xf:action>
+
+                    </xf:action>
+                    <!-- End action authenticating against stored user -->
+
+                </xf:action>
+                <!-- End action if user was entered -->
+            </xf:action>
+
+
+            <!-- Application defined action for action once the user has been authenticated.
+                 If in recovery mode, then no action is taken (just set the errorMessage).
+                 
+                 Otherwise, check whether the user's password has expired
+                 And take one of five possible actions:
+                 
+                 1) If the is the default user, default application and there are no specialties loaded for the application
+                 2) If the user does not have any applications that are installed
+                    OR If the user has a single application and this is also the default and the user has only one specialty then they pass straight to the home page of that application
+                    UNLESS mode is debug, in which case don't pass straight to home page
+                 3) If the user has a single application, this is the default and the user has more then one specialty then show the list of specialties  
+                 4) If the user has a single application and this is not the default then load its application-parameters (so the splash page for that application is displayed and the user must click again to go to the home page)
+                    OR If the user has multiple applications and none is the default then all the user's applications are listed to enter, with the first in the list selected and its application-parameters loaded (so splash page displayed)
+                 5) If the user has multiple applications and one is the default then all the user's applications are listed to enter, with the default selected (splash page remains as the default)
+                 
+                 -->
+            <xf:action ev:event="authenticated-user-action">
+                <!-- Set the authenticated status -->
+                <xf:setvalue ref="xxf:instance('control-instance')/authenticated" value="'true'"/>
+
+                <!-- Set authenticationMessage for the user -->
+                <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="'authenticationSuccessful'"/>
+
+                <!-- Set the userId (done here, because it is needed for download-xml in recovery and debug modes -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/userId" value="xxf:instance('user-instance')/credentials/userId"/>
+                <xxf:variable name="userId" select="xxf:instance('view-parameters-instance')/userId"/>
+
+                <!-- In recovery mode - just have access to edit system parameters -->
+                <xf:action if="xxf:instance('control-instance')/mode='recovery'">
+                    <xf:setvalue ref="xxf:instance('control-instance')/errorMessage"
+                        value="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/recoveryModeAuthenticatedMessage/@displayName"
+                    />
+                </xf:action>
+
+                <!-- Not in recovery mode, so take action after authentication -->
+                <xf:action if="xxf:instance('control-instance')/mode!='recovery'">
+                    <!-- Load the previous session to previousSession-parameters-instance -->
+                    <xf:dispatch name="load-previous-session-parameters" target="session-model"/>
+
+                    <!-- Check to see whether password has expired.
+                         Other processing based on applicationStatus still happens, 
+                         but the application cannot be launched directly if the password needs to be reset-->
+                    <xf:dispatch name="check-password-validity" target="session-model"/>
+                    <xf:action if="xxf:instance('passwordControl-instance')/status='expired'">
+                        <xxf:show ev:event="DOMActivate" dialog="setPasswordDialog"/>
+                    </xf:action>
+
+                    <!-- Default user is set in view-parameters -->
+                    <xxf:variable name="defaultUserId" select="xxf:instance('view-parameters-instance')/defaultUser/credentials/userId"/>
+
+                    <!-- The application has already been set in view-parameters -->
+                    <xxf:variable name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+
+
+                    <!-- Application status records one of seven states, with four options for action:
+                    (1) initialRun
+                    
+                    2) noApplications OR
+                    3) singleApplicationDefault
+                    
+                    4) singleApplicationDefaultMultipleSpecialties
+                    
+                    5) singleApplication OR 
+                    6) multipleApplications
+                    
+                    7) multipleApplicationsDefault                  
+                    -->
+
+                    <!-- Applications and specialties accessible by this user are in user-instance -->
+                    <xxf:variable name="userDefaultApplication"
+                        select="exists(xxf:instance('user-instance')/applications/iso-13606:EHR_Extract[@id = $applicationIRI])"/>
+                    <xxf:variable name="userDefaultApplicationSpecialties"
+                        select="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract[@id = $applicationIRI]/iso-13606:Folder/@id"/>
+                    <xxf:variable name="userDefaultApplicationSpecialtiesCount" select="count($userDefaultApplicationSpecialties)"/>
+                    <xxf:variable name="userApplicationCount" select="count(xxf:instance('user-instance')/applications/iso-13606:EHR_Extract)"/>
+
+                    <xxf:variable name="supportedLanguageList" select="xxf:instance('application-parameters-instance')/languagePacks/language"/>
+                    <xxf:variable name="singleLanguage"
+                        select="if (exists($supportedLanguageList[2]) and xxf:instance('system-parameters-instance')/dynamicParameters/language/@userSelection='true') then false() else true()"/>
+
+                    <!-- Set the applicationStatus - further actions depend on its setting -->
+                    <!-- noApplications, singleApplication, multipleApplications - number of applications accessible by the user -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/applicationStatus"
+                        value="if ($userApplicationCount = 0) then 'noApplications'
+                    else if ($userApplicationCount = 1) then 'singleApplication'
+                    else 'multipleApplications'"/>
+
+                    <!-- singleApplication, singleApplicationDefaultMultipleSpecialties. singleApplicationDefault - this is a single application
+                         If set as singleApplicationDefault, then the application will start directly -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/applicationStatus"
+                        value="if (.='singleApplication' and $userDefaultApplication and $userDefaultApplicationSpecialtiesCount gt 1) then 'singleApplicationDefaultMultipleSpecialties' else if (.='singleApplication' and $userDefaultApplication and $singleLanguage) then 'singleApplicationDefault' else ."/>
+
+                    <!-- multipleApplicationsDefault, multipleApplications - multiple applications -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/applicationStatus"
+                        value="if (.='multipleApplications' and $userDefaultApplication) then 'multipleApplicationsDefault' else ."/>
+
+                    <!-- initialRun - there was no default user loaded, no soecialties stored -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/applicationStatus"
+                        value="if ((xxf:instance('control-instance')/defaultUserLoaded ='false') and not(exists(xxf:instance('specialtyList-instance')/iso-13606:Folder))) then 'initialRun' else ."/>
+
+
+                    <!-- Debugging - set an explicit applicationStatus to test it out -->
+                    <!--
+                    <xf:setvalue ref="xxf:instance('control-instance')/applicationStatus" value="'initialRun'"/>
+                    -->
+
+                    <!-- === Further actions now depend on the applicationStatus that hs been set === -->
+
+                    <!-- (1) initialRun - first time the system has run.
+                              Load the default models, directories and images from disk.
+                              (Which resets the specialtyList)
+                              But only after confirmation by the user.-->
+                    <xf:action if="xxf:instance('control-instance')/applicationStatus = 'initialRun'">
+                        <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                            <xxf:context name="action" select="'importShippedResources'"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!--    (2) noApplications - User has no valid applications 
+                         OR (3) singleApplicationDefault - User has single application which matches the default and only one (or zero) specialty and no language variants.
+                             Launch the application directly, without presenting the 'Start' button. -->
+                    <xf:action if="xxf:instance('control-instance')/applicationStatus = ('noApplications','singleApplicationDefault')">
+                        <!-- Launch the application, but not if in debug mode or the password has expired -->
+                        <xf:action if="xxf:instance('control-instance')/mode='normal' and xxf:instance('passwordControl-instance')/status!='expired'">
+                            <xf:dispatch name="launch-application" target="main-model"/>
+                        </xf:action>
+                    </xf:action>
+
+                    <!-- (4) singleApplicationDefaultMultipleSpecialties - User has single application which matches the default and multiple specialties.
+                             The user can now select which specialty to set before launching the application -->
+                    <xf:action if="xxf:instance('control-instance')/applicationStatus = 'singleApplicationDefaultMultipleSpecialties'">
+                        <!-- Just set the specialty and language -->
+                        <xf:dispatch name="set-specialty" target="main-model"/>
+                        <xf:dispatch name="set-language" target="main-model"/>
+                    </xf:action>
+
+                    <!--    (5) singleApplication - User has single application which does not match the default
+                         OR (6) multipleApplications - User has multiple applications but none matches the default -->
+                    <xf:action if="xxf:instance('control-instance')/applicationStatus = ('singleApplication','multipleApplications')">
+                        <xxf:variable name="applicationIRI" select="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract[1]/@id"/>
+
+                        <!-- Set the application.
+                             Triggers xforms-value-changed to invoke set-application (includes set-language)
+                             Loads the application-parameters file for this application, so that the splash screen is set correctly -->
+                        <xf:setvalue ref="xxf:instance('user-credentials-instance')/applicationIRI" value="$applicationIRI"/>
+
+                        <!-- Set the specialty -->
+                        <xf:dispatch name="set-specialty" target="main-model"/>
+                    </xf:action>
+
+                    <!-- (7) multipleApplicationsDefault - User has multiple applications and one is the default. 
+                             Just set the specialty -->
+                    <xf:action if="xxf:instance('control-instance')/applicationStatus = 'multipleApplicationsDefault'">
+                        <!-- Just set the specialty and language -->
+                        <xf:dispatch name="set-specialty" target="main-model"/>
+                        <xf:dispatch name="set-language" target="main-model"/>
+                    </xf:action>
+
+                </xf:action>
+
+            </xf:action>
+
+
+            <!-- === The application session === -->
+
+            <!-- Application defined action to launch application for authenticated user.
+                 Set the userId.
+                 Start new session, or ask user whether to resume previous session -->
+            <xf:action ev:event="launch-application">
+
+                <!-- If application-parameters were built/rebuilt then need to save them.
+                     In this case the version attribute is blank. -->
+                <xf:action if="xxf:instance('application-parameters-instance')/@version = ''">
+                    <!-- Store the application-parameters -->
+                    <xf:dispatch name="save-application-parameters" target="configurationManagement-model">
+                        <xxf:context name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
+                        <xxf:context name="parameters-instance" select="xxf:instance('application-parameters-instance')"/>
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Set the specialty, if not already set.
+                     This happens if:
+                            This is the first time the application has run.
+                            The application was launched directly from authenticated-user-action.
+                            The application would have been launched dircetly, but the password needed to be reset. -->
+                <xf:action if="xxf:instance('view-parameters-instance')/specialtyIRI = ''">
+                    <xf:dispatch name="set-specialty" target="main-model"/>
+                </xf:action>
+
+                <!-- Check the previous session for this user (if there is one).
+                     Sets the sessionStatus to resumeSession or newSession -->
+                <xf:dispatch name="check-previous-session" target="main-model"/>
+
+                <!-- User has option to resume session if check-previous-session set status to resumeSession. 
+                     The actionConfirmationDialog has options to resume-session, start-new-session or quit. -->
+                <xf:action if="xxf:instance('control-instance')/sessionStatus='resumeSession'">
+                    <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                        <xxf:context name="action" select="'resumeSession'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Otherwise need to start a new session -->
+                <xf:action if="not(xxf:instance('control-instance')/sessionStatus='resumeSession')">
+                    <xf:dispatch name="start-new-session" target="main-model"/>
+                </xf:action>
+
+
+            </xf:action>
+
+
+            <!-- Application defined action to check the previous session.
+                 Load the session and transfer to previousSession-parameters-instance
+                 Set the sessionStatus to resumeSession or newSession
+                 -->
+            <xf:action ev:event="check-previous-session">
+                <!-- Get parameters from previous session -->
+                <xxf:variable name="previousSessionId" select="xxf:instance('previousSession-parameters-instance')/@sessionId"/>
+                <xxf:variable name="previousVersion" select="xxf:instance('previousSession-parameters-instance')/@version"/>
+                <xxf:variable name="previousPage" select="xxf:instance('previousSession-parameters-instance')/@page"/>
+                <xxf:variable name="previousDebug" select="xxf:instance('previousSession-parameters-instance')/debug"/>
+                <xxf:variable name="previousApplicationIRI" select="xxf:instance('previousSession-parameters-instance')/applicationIRI"/>
+                <xxf:variable name="previousSpecialtyIRI" select="xxf:instance('previousSession-parameters-instance')/specialtyIRI"/>
+                <xxf:variable name="previousLanguageCode" select="xxf:instance('previousSession-parameters-instance')/languageCode"/>
+
+                <!-- Parameters set for the new session.
+                     Debug is set in the control-imstance -->
+                <xxf:variable name="version" select="xxf:instance('view-parameters-instance')/versionNumber/@version"/>
+                <xxf:variable name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                <xxf:variable name="specialtyIRI" select="xxf:instance('view-parameters-instance')/specialtyIRI"/>
+                <xxf:variable name="languageCode" select="xxf:instance('view-parameters-instance')/languageCode"/>
+                <xxf:variable name="debug" select="if (xxf:instance('control-instance')/mode='debug') then true() else false()"/>
+
+                <!-- Set the sessionStatus, depending on the previous session.
+                     The session can be resumed if the previous session still has a sessionId (so was not quit)
+                     Check that the previousPage is not blank (this should never happen, but check anyway)
+                     Debug mode (true or false) must match current logon
+                     And the applicationIRI, specialtyIRI and language match those set for the current logon.
+                     And the system version hasn't changed. -->
+                <xf:setvalue ref="xxf:instance('control-instance')/sessionStatus"
+                    value="if ($previousSessionId!='' and $previousPage!='' and $previousVersion=$version and $previousDebug=$debug and $previousApplicationIRI=$applicationIRI and $previousSpecialtyIRI=$specialtyIRI and $previousLanguageCode=$languageCode) then 'resumeSession' else 'newSession'"/>
+
+            </xf:action>
+
+
+            <!-- Application defined action to start a new session.
+                 Invoked after check-previous-session has set status to newSession
+                 Set the version. sessionId, loginTime and previousLoginTime
+                 Start the auditLog
+                
+                 Get the specified homePage from parameters-instance 
+                 applicationIRI and specialtyIRI have already been set
+                 Note that it is possible that this specialty does not exist, in which case an error message will be displayed on the home page when it is loaded.
+                 Load the home page -->
+            <xf:action ev:event="start-new-session">
+
+                <!-- If there was no default user loaded, then save user credentials in database.
+                     This can only happen the first time that the installtion is run
+                     or if the default user has been changed in view-parameters.
+                     When there is no default user found, there cannot be a previous session, so this check is only needed for start-new-session.
+                     If the default user failed to load because of a database issue, then 'recovery' mode will have been set
+                     and start-new-session could not have been invoked. -->
+                <xf:action if="xxf:instance('control-instance')/defaultUserLoaded ='false'">
+                    <xf:dispatch name="save-user-details" target="session-model"/>
+                </xf:action>
+
+                <!-- Fix legacy log for recent patients.
+                     (Until 2021-02-28 was held in user-instance) -->
+                <xf:action if="exists(xxf:instance('user-instance')/audit)">
+                    <xf:dispatch name="transfer-legacy-recentPatients" target="session-model"/>
+                </xf:action>
+
+                <!-- Load the default session-parameters (again - first loaded in model-construct-done) .
+                     This will replace any session-parameters already loaded for a previous session -->
+                <xf:dispatch name="load-default-session-parameters" target="session-model"/>
+
+                <!-- Set the sessionId - this is passed between pages as an argument through view-parameters.
+                     It must also be set directly in the session-parameters when the new session is initiated.
+                     The sessionId is generated using the xforms digest() function using the current dateTime as the input string -->
+                <xxf:variable name="sessionIdString" select="replace(replace(string(current-dateTime()),':','-'),'\+','*')"/>
+                <xxf:variable name="sessionId" select="digest($sessionIdString, 'MD5', 'hex')"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/sessionId" value="$sessionId"/>
+
+                <!-- Record the session for the user.
+                     Here this records the attribute parameters - version, userId, sessionId, loginTime and previousLoginTime -->
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/@version"
+                    value="xxf:instance('view-parameters-instance')/versionNumber/@version"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/@userId" value="xxf:instance('view-parameters-instance')/userId"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/@sessionId" value="$sessionId"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/@loginTime" value="current-dateTime()"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/@previousLoginTime"
+                    value="xxf:instance('previousSession-parameters-instance')/@loginTime"/>
+
+                <!-- Set the debug parameter in the session.
+                     Depends on the mode for this session. -->
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/debug"
+                    value="if (xxf:instance('control-instance')/mode='debug') then true() else false()"/>
+
+                <!-- Load processExecutionLog if debugging -->
+                <xf:action if="xxf:instance('control-instance')/mode='debug'">
+                    <xf:dispatch name="load-systemResource" target="systemParameters-model">
+                        <xxf:context name="systemResource-instance" select="xxf:instance('processExecutionLog-instance')"/>
+                        <xxf:context name="systemResourceName"
+                            select="xxf:instance('view-parameters-instance')/systemResourcesURL/@processExecutionLogRessource"/>
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Set the auditLogRecording in the session.
+                     This is set in system-parameters, but is transferred to sesssion-parameters so that the setting persists for the session.
+                     If the auditLogRecording is toggled true/false in the system-parameters then this will apply only to subsequent sessions. -->
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/auditLogRecording"
+                    value="xxf:instance('system-parameters-instance')/dynamicParameters/auditLogRecording/@value"/>
+
+                <!-- Start the audit log - will only start if configured to be recording the log (auditLogRecording).
+                     If there is a problem with the auditLog, the status will be set with an error message. -->
+                <xf:dispatch name="start-auditLog" target="auditLog-model">
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- Log status of audit log -->
+                <xf:dispatch name="record-log" target="main-model">
+                    <xxf:context name="logElement" select="xxf:instance('control-instance')/status"/>
+                    <xxf:context name="context"
+                        select="concat('start-auditLog with auditLogRecording ',xxf:instance('session-parameters-instance')/auditLogRecording)"/>
+                </xf:dispatch>
+
+                <!-- Can only load the application home page if the auditLog is OK
+                     Either because it was started successfully or because we are not auditing).
+                     Set the view parameters, which will be transfered to session-parameters when the home page loads. 
+                     Set the home page and invoke load-cityEHR-page
+                -->
+                <xf:action if="xxf:instance('control-instance')/status = ''">
+                    <!-- databaseURL, databaseLocation and storageLocation for single database node are set from database-parameters -->
+                    <xxf:variable name="deployedDatabaseURL"
+                        select="xxf:instance('database-parameters-instance')/deployedDatabases/physicalCluster[@system='ehr']/node[1]/@databaseURL"/>
+                    <xxf:variable name="deployedDatabaseLocation"
+                        select="xxf:instance('database-parameters-instance')/deployedDatabases/physicalCluster[@system='ehr']/node[1]/@btuLocation"/>
+
+                    <!-- These are to support legacy single node deployment until cityEHR 2.0
+                         Note that the conceptual definition of databaseURL and databaseLocation in view-parameters is different from the DAL.
+                         databaseURL is (e.g.) http://admin:@localhost:8080/orbeon/exist/rest/db/orbeon
+                         databaseLocation is (e.g.) http://admin:@localhost:8080/orbeon/exist/rest
+                         storageLocation is (e.g.) /db/orbeon/xmlstore -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/databaseURL"
+                        value="concat($deployedDatabaseURL,$deployedDatabaseLocation)"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/databaseLocation" value="$deployedDatabaseURL"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/storageLocation" value="concat($deployedDatabaseLocation,'/xmlstore')"/>
+
+                    <!-- Application database -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/applicationStorageLocation"
+                        value="concat(xxf:instance('view-parameters-instance')/storageLocation,'/applications/',xxf:instance('view-parameters-instance')/applicationId)"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/applicationDatabaseLocation"
+                        value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('view-parameters-instance')/applicationStorageLocation)"/>
+
+                    <!-- Dictionary handle - always set, although not always needed ***jc Refactor this -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/dictionaryHandle"
+                        value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/dictionary/',xxf:instance('view-parameters-instance')/specialtyId)"/>
+
+                    <!-- User html cache hamdle -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/htmlCacheHandle"
+                        value="concat(xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/htmlCache')"/>
+
+                    <!-- User xml cache hamdle -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/xmlCacheHandle"
+                        value="concat(xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/xmlCache')"/>
+
+                    <!-- User binary cache hamdle -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/binaryCacheHandle"
+                        value="concat(xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
+
+                    <!-- Common information model -->
+                    <xxf:variable name="commonModelIRI"
+                        select="xxf:instance('application-parameters-instance')/application/iso-13606:EHR_Extract/@commonModel"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/commonModelIRI" value="$commonModelIRI"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/commonModelId" value="replace(substring($commonModelIRI,2),':','-')"/>
+
+                    <!-- Set highlight scheme, if there is one -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/highlightScheme"
+                        value="xxf:instance('application-parameters-instance')/highlight/scheme[1]/@value"/>
+
+                    <!-- Set display format parameters  -->
+                    <!-- Date -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/dateDisplayFormat"
+                        value="xxf:instance('application-parameters-instance')/displayFormat/dateDisplayFormat/@value"/>
+                    <!-- DateTime -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/dateTimeDisplayFormat"
+                        value="xxf:instance('application-parameters-instance')/displayFormat/dateTimeDisplayFormat/@value"/>
+                    <!-- Time -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/timeDisplayFormat"
+                        value="xxf:instance('application-parameters-instance')/displayFormat/timeDisplayFormat/@value"/>
+
+                    <!-- Load the home page for the application -->
+                    <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                        <xxf:context name="page" select="xxf:instance('application-parameters-instance')/pageTransition/homePage/@value"/>
+                    </xf:dispatch>
+
+                </xf:action>
+
+                <!-- There was a problem with the auditLog - set the error message -->
+                <xf:action if="xxf:instance('control-instance')/status != ''">
+                    <xf:setvalue ref="xxf:instance('control-instance')/errorMessage"
+                        value="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/failedStartAuditLog/@displayName"/>
+                </xf:action>
+            </xf:action>
+
+
+            <!-- Application defined action to resume a session - invoked from the actionConfirmationDialog (resumeSession)
+                 Parameters of the previous session have been loaded to previousSession-parameters-instance.
+                 check-previous-session has set status to resumeSession, so no need for any further checks that the session can be restored
+                 Copy previous session parameters to session-parameters-instance.
+                 Invoke set-view-parameters to set the view parameters for the new session (will be copied back to session-parameters by load-cityEGR-page)
+                 Write to the auditLog, if auditlog recording is configured. -->
+            <xf:action ev:event="resume-session">
+                <!-- Copy previous session parameters to the current session -->
+                <xf:insert nodeset="xxf:instance('session-parameters-instance')" origin="xxf:instance('previousSession-parameters-instance')"/>
+
+                <!-- Set the view-parameters from session-parameters -->
+                <xf:dispatch name="set-view-parameters" target="session-model"/>
+
+                <!-- Set the sessionId in view-parameters -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/sessionId" value="xxf:instance('session-parameters-instance')/@sessionId"/>
+
+                <!-- Resume auditLog - writes an entry for the cityEHRSignOn page to resume the log, 
+                     but only if audit log recording is set in the previous session.
+                     Note that auditLogRecording may have been switched off/on in the system-parameters since the session that is being resumed.
+                     But the setting is picked up from the resumed session, so that any session is either fully audited or not audited,
+                     depending on the setting of auditLogRecording when the session was started.
+                     If there is a problem with the auditLog, the status will be set.-->
+                <xf:dispatch name="resume-auditLog" target="auditLog-model">
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- Log status of audit log -->
+                <xf:dispatch name="record-log" target="main-model">
+                    <xxf:context name="logElement" select="xxf:instance('control-instance')/status"/>
+                    <xxf:context name="context"
+                        select="concat('resume-auditLog with auditLogRecording ',xxf:instance('session-parameters-instance')/auditLogRecording)"/>
+                </xf:dispatch>
+
+                <!-- Can only load the page for the resumed session if the auditLog is OK
+                     Either because we are not auditing or because it was written successfully -->
+                <xf:action if="xxf:instance('control-instance')/status = ''">
+
+                    <!-- Load the page to resume the session -->
+                    <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                        <xxf:context name="page" select="xxf:instance('session-parameters-instance')/@page"/>
+                    </xf:dispatch>
+                </xf:action>
+
+            </xf:action>
+
+
+            <!-- === Check for users and set up default if necessary 
+                 ======================================================== -->
+
+            <xf:instance id="default-user-instance">
+                <user/>
+            </xf:instance>
+
+            <!-- Set profile for the default user.
+                 Get default user id from view-parameters and load profile from database.
+                 Note that the default user password may have changed, but its id cannot be changed in the database (could be changed in view-parameters)
+                 If the configured ehr database cannot be accessed then the dal actions will fail and the status is set accordingly. -->
+            <xf:action ev:event="set-default-user">
+                <!-- Default user is set in view-parameters -->
+                <xxf:variable name="defaultUserId" select="xxf:instance('view-parameters-instance')/defaultUser/credentials/userId"/>
+
+                <!-- Get default user credentials from the database -->
+                <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="concat('/xmlstore/users/',$defaultUserId,'/credentials')"/>
+                    <xxf:context name="resource" select="xxf:instance('default-user-instance')"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- If the dal-read failed, the default-user-instance will remain empty (this is the only time an attempt is made to load it).
+                     This may be because there are no user details stored (first time this installation has run), or because the database cannot be read.
+                     Either way, the user needs to be authenticated against the default credentials in view-parameters.
+                     Its also possible, although unlikely, that the default-user-instance was found but is malformed.
+                     So the test here is against the structure in default-user-instance, just in case.
+                     -->
+
+                <!-- If default user credentials do not have expected format and/or userId. -->
+                <xf:action if="not(exists(xxf:instance('default-user-instance')/credentials[userId=$defaultUserId]))">
+                    <xf:setvalue ref="xxf:instance('control-instance')/defaultUserLoaded" value="'false'"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="'defaultUserAuthenticationMessage'"/>
+                </xf:action>
+
+                <!-- Default user credentials found and are well-formed.
+                     So there is at least one user in the database. -->
+                <xf:action if="exists(xxf:instance('default-user-instance')/credentials[userId=$defaultUserId])">
+                    <xf:setvalue ref="xxf:instance('control-instance')/defaultUserLoaded" value="'true'"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="'authenticationMessage'"/>
+                </xf:action>
+            </xf:action>
+
+
+            <!-- === Set up the splash screen for the default application =============
+                 This is invoked by the xforms-ready action.
+                 
+                 Set the initial mode, based on parameter passed (or not) in the URL
+                 Load the system parameters
+                 Load the database parameters
+                 
+                -->
+
+            <xf:action ev:event="set-default-application-splash">
+                <!-- Set the initial mode.
+                     Mode can be passed in the URL as 'disabled', 'recovery' or 'debug' - otherwise it defaults to 'normal' -->
+                <xxf:variable name="initialMode"
+                    select="if (xxf:instance('view-parameters-instance')/mode=('disabled','recovery','debug')) then xxf:instance('view-parameters-instance')/mode 
+                    else 'normal'"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/mode" value="$initialMode"/>
+                <xf:dispatch name="record-log" target="main-model">
+                    <xxf:context name="logElement" select="xxf:instance('control-instance')/status"/>
+                    <xxf:context name="context" select="concat('Starting up in mode: ',$initialMode)"/>
+                </xf:dispatch>
+
+                <!-- Load the system-parameters and log status -->
+                <xf:dispatch name="load-system-parameters" target="systemParameters-model">
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+                <!-- This may set the status to an error, but could get handled by build-system-parameters -->
+                <xf:dispatch name="record-log" target="main-model">
+                    <xxf:context name="logElement" select="xxf:instance('control-instance')/status"/>
+                    <xxf:context name="context" select="'load-system-parameters'"/>
+                </xf:dispatch>
+
+                <!-- System parameters failed to load.
+                     Either the first time the installation has run, or there is a terminal problem with the built-in database.
+                     Build the system parameters - will save the default system parameters or set the staus to an error if there is a problem with the built-in database. -->
+                <xf:action if="xxf:instance('control-instance')/status != ''">
+                    <xf:dispatch name="build-system-parameters" target="systemParameters-model">
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                    <!-- If there is still a problem with system-parameters, then we can't continue.
+                         This means the parameters didn't load and couldn't be built.
+                         Set the mode to 'disabled' -->
+                    <xf:dispatch name="set-mode" target="main-model">
+                        <xxf:context name="mode" select="'disabled'"/>
+                        <xxf:context name="context" select="'build-system-parameters'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Load the database-parameters.
+                     But not if there was a problem with system-parameters (mode has been set to 'disabled') -->
+                <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
+                    <xf:dispatch name="load-database-parameters" target="databaseAccessLayer-model">
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                    <!-- If there was a problem with database-parameters, then we can't continue.
+                         Set mode to 'disabled' -->
+                    <xf:dispatch name="set-mode" target="main-model">
+                        <xxf:context name="mode" select="'disabled'"/>
+                        <xxf:context name="context" select="'load-database-parameters'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Check the system-parameters to see if an update is needed.
+                     But not if there was a problem with system-parameters or database-parameters (mode has been set to 'disabled')
+                     Updates the system-parameters and database-parameters if the version number of the installation (in view-parameters) has changed. -->
+                <xf:action
+                    if="xxf:instance('control-instance')/mode != 'disabled' and xxf:instance('system-parameters-instance')/@version != xxf:instance('view-parameters-instance')/versionNumber/@version">
+                    <xf:dispatch name="update-system-parameters" target="systemParameters-model">
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                    <!-- If there was a problem updating system-parameters, then we can't continue -->
+                    <xf:dispatch name="set-mode" target="main-model">
+                        <xxf:context name="mode" select="'disabled'"/>
+                        <xxf:context name="context" select="'update-system-parameters'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Load the default session-parameters.
+                     But not if there was a problem with system-parameters or database-parameters (mode has been set to 'disabled')
+                     The session doesn't actually start until resume-session or start-new-session.
+                     But session-parameters are needed for some actions used during set up and to display information in the footer. -->
+                <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
+                    <xf:dispatch name="load-default-session-parameters" target="session-model">
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                    <!-- If there was a problem loading default session-parameters, then we can't continue -->
+                    <xf:dispatch name="set-mode" target="main-model">
+                        <xxf:context name="mode" select="'disabled'"/>
+                        <xxf:context name="context" select="'load-default-session-parameters'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+
+                <!-- Load the system icons (to iconList-instance) 
+                     This is just done to check the icons exist - if not, then initialize them 
+                     Must be done after the session-parameters have been created -->
+                <xf:dispatch name="load-system-icons" target="systemParameters-model"/>
+                <xf:action if="not(exists(xxf:instance('iconList-instance')/*))">
+                    <xf:dispatch name="initialize-system-icons" target="systemParameters-model"/>
+                </xf:action>
+
+                <!-- Check the database configuration.
+                     This checks the deployed database clusters as specified in database-parameters.
+                     So will use the latest parameters if system-parameters or database-parameters were updated above.
+                     Iterates through each database cluster and checks that each node is accessible.
+                     Then checks that the btu-parameters read from the cluster match the specification in database-parameters.
+                     As a result of the checks, it is confirmed that each node can be accessed, read and queried. -->
+                <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
+                    <xf:dispatch name="check-databases" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                    <!-- If there was a problem found by check-databases, then we can't continue, but we might be able to recover -->
+                    <xf:dispatch name="set-mode" target="main-model">
+                        <xxf:context name="mode" select="'recovery'"/>
+                        <xxf:context name="context" select="'check-databases'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- If system parameters and database-parameters are OK and disabled/recovery mode was not forced in URL.
+                     Then we can continue with the set up.
+                     If any of the remaining set up actions encounters an error, then recovery mode will be set. -->
+
+
+                <!-- Set the default application
+                         Default application is defined in system-parameters                           
+                         Loads the application-parameters for the application from the database
+                         If this fails, the application-parameters are built and then stored
+                         If the application-parameters are out of date, then they are rebuilt and stored in the launch-application action.
+                         If this is the first time the system has run, create the configuration for the default application -->
+                <xxf:variable name="defaultApplicationIRI"
+                    select="xxf:instance('system-parameters-instance')/dynamicParameters/defaultApplicationIRI/@value"/>
+
+                <!-- Set the languageCode found in the default system-parameters, in case they get replaced in load-variant-system-parameters.
+                     This is needed in case the user reverts to the default language, after a variant has been loaded -->
+                <xf:setvalue ref="xxf:instance('control-instance')/systemParametersBaseLanguageCode"
+                    value="lower-case(xxf:instance('system-parameters-instance')/@baseLanguageCode)"/>
+
+                <!-- Set the systemLanguageCode (will get transfered to session-parameters when/if the user starts a session.
+                     This is the language set for the cityEHR installation and can only be changed through the admin page -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemLanguageCode"
+                    value="lower-case(xxf:instance('system-parameters-instance')/dynamicParameters/language/@code)"/>
+
+                <!-- Load the variant system parameters, if necessary, now that we know the language for the session splash screen -->
+                <xf:dispatch name="load-variant-system-parameters" target="systemParameters-model">
+                    <xxf:context name="sessionLanguageCode" select="xxf:instance('view-parameters-instance')/systemLanguageCode"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- Load application list.
+                     The applicationList may be empty the first time the installation is run.
+                     This can happen when a new database cluster is configured.
+                     But the query to get the list will only fail if there is a problem with the database -->
+                <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
+                    <xf:dispatch name="get-applicationList" target="application-model">
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                    </xf:dispatch>
+                    <!-- Set to recovery mode if load failed (something is wrong with the database) -->
+                    <!--
+                         2022-09-21 Note that failure of dal-query currently returns an empty status
+                         This is becasue queries can fail if the collection context does not exist.
+                         And this is currently not handled crrectly -->
+                    <xf:dispatch name="set-mode" target="main-model">
+                        <xxf:context name="mode" select="'recovery'"/>
+                        <xxf:context name="context" select="'get-applicationList'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Set the application for user log in - will trigger xforms-value-changed event that invokes set-application.
+                     If this is the first time the application has run, then set-application will create the configuration for the default application -->
+                <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
+                    <xf:setvalue ref="xxf:instance('user-credentials-instance')/applicationIRI" value="$defaultApplicationIRI"/>
+                </xf:action>
+
+                <!-- Set default-user-instance, if it exists.
+                     If there are any users stored, then the default user should be one of them.
+                     If there are no users, then this is the first session for this installation, or there may be a problem with the database.
+                     defaultUserLoaded will be set to true or false - this action does not set the status -->
+                <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
+                    <xf:dispatch name="set-default-user" target="main-model"/>
+                    <xf:dispatch name="record-log" target="main-model">
+                        <xxf:context name="logElement" select="xxf:instance('control-instance')/defaultUserLoaded"/>
+                        <xxf:context name="context" select="'set-default-user'"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Set the debug mode - if configured in system-parameters.
+                     Only if we've reached this point and mode is still 'normal'.
+                     Need to set the staus first, otherwise set-mode won't reset the mode -->
+                <xf:action
+                    if="xxf:instance('control-instance')/mode = 'normal' and exists(xxf:instance('system-parameters-instance')/dynamicParameters/debug[@value = 'true'])">
+                    <xf:setvalue ref="xxf:instance('control-instance')/mode" value="'debug'"/>
+                </xf:action>
+
+                <!-- Set up for debugging, but only needed for recovery or debug modes -->
+                <xf:action if="xxf:instance('control-instance')/mode =('recovery','debug')">
+                    <!-- Debugging instance (will only be selected if mode is recovery or debug) -->
+                    <xxf:variable name="debugInstance"
+                        select="xxf:instance('view-parameters-instance')/debuggingInformation/debugInstance/option[1]/@value"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/debugInstance" value="$debugInstance"/>
+                </xf:action>
+
+                <!-- Load static splash image, for disabled or recovery mode -->
+                <xf:action if="xxf:instance('control-instance')/mode =('disabled','recovery')">
+                    <xf:dispatch name="set-static-image" target="configurationManagement-model">
+                        <xxf:context name="imageElement" select="xxf:instance('control-instance')/staticWelcomeSplash"/>
+                        <xxf:context name="imageLocation" select="xxf:instance('control-instance')/mode"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- Set up action message.
+                     Depends on the mode. -->
+                <xf:setvalue ref="xxf:instance('control-instance')/actionMessage"
+                    value="if (xxf:instance('control-instance')/mode='disabled') then 'actionMessageDisabled' else if (xxf:instance('control-instance')/mode='recovery') then 'actionMessageRecovery' else 'actionMessage'"/>
+
+                <!-- Authentication message has already been set in set-default-user
+                     But override this if now in recovery mode. -->
+                <xf:action if="xxf:instance('control-instance')/mode='recovery'">
+                    <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage" value="'defaultUserAuthenticationMessage'"/>
+                </xf:action>
+            </xf:action>
+
+
+            <!-- === Set up view when model is first loaded =============
+                 ======================================================== -->
+            <xf:action ev:event="xforms-model-construct-done">
+                <!-- Not doing anything here - see xforms-ready -->
+            </xf:action>
+
+
+            <!-- === Set up view when form is ready  
+                ======================================= -->
+            <xf:action ev:event="xforms-ready">
+                <!-- Set up the splash screen for the default application.
+                     This is done here so that any values set will trigger xf:value-changed events -->
+                <xf:dispatch name="set-default-application-splash" target="main-model"/>
+
+                <!-- Set focus to the username input -->
+                <xf:setfocus control="username-input"/>
+
+                <!-- See if a message parameter was passed. -->
+                <!--
+                <xxf:variable name="sessionRedirectMessage"
+                    select="xxf:get-request-parameter('message')"/>
+                <xf:action if="$sessionRedirectMessage!=''">
+                    <xf:setvalue ref="xxf:instance('control-instance')/errorMessage"
+                        value="concat(xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='session-redirected'],' ',$sessionRedirectMessage)"
+                    />
+                </xf:action>
+            -->
+
+                <!-- Find IP address of client, doesn't work -->
+                <!--
+            <xxf:variable name="headerFieldList"
+                select="('X-Forwarded-For',
+                'Proxy-Client-IP',
+                'WL-Proxy-Client-IP',
+                'HTTP_X_FORWARDED_FOR',
+                'HTTP_X_FORWARDED',
+                'HTTP_X_CLUSTER_CLIENT_IP',
+                'HTTP_CLIENT_IP',
+                'HTTP_FORWARDED_FOR',
+                'HTTP_FORWARDED',
+                'HTTP_VIA',
+                'REMOTE_ADDR',
+                'X-Forwarded-Host',
+                'X-Forwarded-For',
+                'Origin',
+                'User-Agent',
+                'X-FORWARDED-FOR')"/>
+            <xf:action xxf:iterate="$headerFieldList">
+                <xxf:variable name="headerField" select="."/>
+                <xf:message ref="concat($headerField,xxf:get-request-header($headerField))"/>
+            </xf:action>
+-->
+
+                <!--
+                <xxf:script>
+                    getIPAddress();
+                </xxf:script>
+-->
+
+            </xf:action>
+        </xf:model>
+
+    </xhtml:head>
+
+
+    <xhtml:body class="cityEHRBase orbeon">
+        <!-- Dialog for testing -->
+        <xxf:dialog id="testDialog" style="z-index: 9999;" appearance="full" level="modal" close="true" draggable="true" visible="false"
+            xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+            xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+            <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+        </xxf:dialog>
+        <!-- View XML dialogue box - can be used for debugging -->
+        <xi:include href="cityEHRViewXMLDialog.xhtml"/>
+        <!-- System parameters dialogue box - used for recovery if database cannot be accessed -->
+        <xi:include href="cityEHRSystemParametersDialog.xhtml"/>
+        <!-- Set password dialogue box - used when password has expired -->
+        <xi:include href="cityEHRSetPasswordDialog.xhtml"/>
+        <!-- Defect in displaying the log-instance when the cityEHRActionConfirmationDialog is pulled in with xi:include -->
+        <!-- Action confirmation dialogue -->
+        <!--
+        <xi:include href="cityEHRActionConfirmationDialog.xhtml"/>
+        -->
+        <xxf:dialog id="actionConfirmationDialog" style="z-index: 9999;" appearance="full" level="modal" close="false" draggable="true"
+            visible="false" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+            xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+            <xhtml:div class="dialogue">
+                <xxf:variable name="activeDialogue" select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
+                <xxf:variable name="logo" select="xxf:instance('logo-instance')"/>
+
+                <!-- The header -->
+                <xhtml:table>
+                    <xhtml:tbody>
+                        <xhtml:tr>
+                            <xhtml:td class="dialogueTitle">
+                                <xf:output
+                                    ref="xxf:instance('system-parameters-instance')/actionConfirmationDialogue/dialogueMessageLabel/@displayName"/>
+                                <xf:output ref="$activeDialogue/title/@displayName"/>
+                            </xhtml:td>
+                            <xhtml:td class="dialogueTitle" align="right">
+                                <xf:output ref="$logo" mediatype="image/*"/>
+                            </xhtml:td>
+                        </xhtml:tr>
+                    </xhtml:tbody>
+                </xhtml:table>
+
+                <!-- Messages are output in the order they are found -->
+                <xf:repeat nodeset="$activeDialogue/message[@displayName!='']">
+                    <xxf:variable name="message" select="."/>
+                    <xhtml:p>
+                        <xf:output ref="$message/@displayName"/>
+                    </xhtml:p>
+                </xf:repeat>
+
+                <!-- Selection - uses the selection element that must be present in the dialogue
+             If not, then this doesn't get shown -->
+                <xhtml:p>
+                    <xf:output ref="if (exists($activeDialogue/selection)) then $activeDialogue/selection/@displayName else ''"/>
+                    <xf:select1 ref="if (exists($activeDialogue/selection)) then $activeDialogue/selection/@value else ()" appearance="full">
+                        <xf:itemset ref="$activeDialogue/selection/*">
+                            <xf:value ref="./@value"/>
+                            <xf:label ref="./@displayName"/>
+                        </xf:itemset>
+                    </xf:select1>
+                </xhtml:p>
+
+
+                <!-- Triggers for actions -->
+                <xf:repeat id="actionConfirmationDialog-repeat" nodeset="$activeDialogue/action">
+                    <xf:trigger class="button" appearance="minimal">
+                        <xf:label ref="./@label"/>
+                        <xf:action ev:event="DOMActivate">
+                            <!-- Invoke the action specified for the trigger 
+                         If a selection is configured for the dialogue, then pass as context to the action -->
+                            <xf:dispatch name="{./@event}" target="{./@model}">
+                                <xxf:context name="context" select="$activeDialogue/selection/@value"/>
+                            </xf:dispatch>
+                            <xxf:hide dialog="actionConfirmationDialog"/>
+                        </xf:action>
+                    </xf:trigger>
+                </xf:repeat>
+
+            </xhtml:div>
+        </xxf:dialog>
+        <!-- === Sign on
+             The sign on display is centred in the sign-on window 
+             Contains:
+                 Banner image for the selected application
+                 Details of message, input and controls, plus splash images for the selected application
+                 Info read from the application-parameters file of the current application
+                 
+             The displayed inputs, controls and graphics depend on:
+                 No user authenticated
+                 User authenticated (but can access more than one application)
+                 The currently selected application
+                 === -->
+        <xhtml:div id="cityEHRSignOn">
+
+            <!-- Banner -->
+            <xhtml:div id="signOnBanner" class="signOnBlock">
+                <xf:output ref="xxf:instance('control-instance')/images/welcomeLogo" mediatype="image/*"/>
+            </xhtml:div>
+
+
+            <!-- Sign on details - this is where the action happens.
+                 Has two signOnContent divs, side-by-side, each 50% width of signOnBlock:
+                    signOnCredentials   Enter sign on credentials
+                    signOnSplash        Display application splash graphics
+            -->
+            <xhtml:div id="signOnDetails" class="signOnBlock">
+                <!-- Displat text from the system-parameters (which may be language-specific) -->
+                <xxf:variable name="signOnParameters" select="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn"/>
+
+                <!-- Show stuff when user is authenticated -->
+                <xxf:variable name="showAuthenticated" select="if (xxf:instance('control-instance')/authenticated='false') then 'hidden' else ''"/>
+                <xxf:variable name="showNotAuthenticated" select="if (xxf:instance('control-instance')/authenticated='false') then '' else 'hidden'"/>
+
+                <!-- Show stuff in disabled/recovery/normal mode -->
+                <xxf:variable name="showDisabledMode" select="if (xxf:instance('control-instance')/mode='disabled') then '' else 'hidden'"/>
+                <xxf:variable name="showRecoveryMode" select="if (xxf:instance('control-instance')/mode='recovery') then '' else 'hidden'"/>
+                <xxf:variable name="showNormalMode" select="if (xxf:instance('control-instance')/mode='normal') then '' else 'hidden'"/>
+                <xxf:variable name="showNormalDebugMode" select="if (xxf:instance('control-instance')/mode=('normal','debug')) then '' else 'hidden'"/>
+
+                <!-- Hide stuff in disabled/recovery mode -->
+                <xxf:variable name="hideDisabledMode" select="if (xxf:instance('control-instance')/mode='disabled') then 'hidden' else ''"/>
+                <xxf:variable name="hideRecoveryMode" select="if (xxf:instance('control-instance')/mode='recovery') then 'hidden' else ''"/>
+
+                <!-- Show stuff when debugging.
+                     Because in recovery or debug mode  -->
+                <xxf:variable name="showDebugging" select="if (xxf:instance('control-instance')/mode=('recovery','debug')) then '' else 'hidden'"/>
+
+                <!-- Hide when directly launching application after authentication (pnly in normal mode - not if debugging) -->
+                <xxf:variable name="hideDirectLaunch"
+                    select="if (xxf:instance('control-instance')/applicationStatus = ('noApplications','singleApplicationDefault') and $showDebugging ='hidden') then 'hidden' else ''"/>
+
+                <!-- Applications that this user can access.
+                     These are the applications listed in the applicationList-instance that match an application in the user profile.
+                     If there are none, then use default set in system-parameters -->
+                <xxf:variable name="userApplicationIRIs" select="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract/@id"/>
+                <xxf:variable name="userApplications"
+                    select="xxf:instance('applicationList-instance')/iso-13606:EHR_Extract[@id=$userApplicationIRIs]"/>
+                <xxf:variable name="accessibleApplications"
+                    select="if (exists($userApplications)) then $userApplications else xxf:instance('applicationList-instance')/iso-13606:EHR_Extract[@id=xxf:instance('view-parameters-instance')/applicationIRI]"/>
+
+                <!-- Show stuff when there are multiple applications (only when user is authenticated) -->
+                <xxf:variable name="showMultipleApps" select="if ($accessibleApplications[2]) then '' else 'hidden'"/>
+                <xxf:variable name="showSingleApp" select="if ($showMultipleApps='' or $hideDirectLaunch='') then 'hidden' else ''"/>
+                <xxf:variable name="showLaunchingApp" select="if ($hideDirectLaunch='hidden') then '' else 'hidden'"/>
+
+                <!-- User specialties for the application (if any) are listed in the user profile. -->
+                <xxf:variable name="userSpecialties"
+                    select="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract[@id=xxf:instance('view-parameters-instance')/applicationIRI]/iso-13606:Folder/@id"/>
+                <!-- Applicable specialties are the application specialties defined for this user (there may be none) -->
+                <xxf:variable name="applicableSpecialties" select="xxf:instance('specialtyList-instance')/iso-13606:Folder[@id=$userSpecialties]"/>
+
+                <xxf:variable name="showMultipleSpecialties" select="if (exists($applicableSpecialties[2])) then '' else 'hidden'"/>
+                <xxf:variable name="showSingleSpecialty"
+                    select="if ($showMultipleSpecialties='hidden' and exists($applicableSpecialties[1])) then '' else 'hidden'"/>
+
+                <!-- Select the language for the session.
+                     Only if system-parameters language/@userSelection.is true and the application has more than one language available -->
+                <xxf:variable name="supportedLanguageList" select="xxf:instance('application-parameters-instance')/languagePacks/language"/>
+                <xxf:variable name="showLanguages"
+                    select="if (exists($supportedLanguageList[2]) and xxf:instance('system-parameters-instance')/dynamicParameters/language/@userSelection='true') then '' else 'hidden'"/>
+
+                <!-- Enter sign on credentials.
+                         Contains four sections:
+                                Messages
+                                Instructions
+                                User input (username, password, select application) 
+                                Controls -->
+
+                <xhtml:div class="signOnContent signOnCredentials">
+                    <!-- Messages - there are three (potential) lines of messages:
+                                        Error messages
+                                        Mode messages
+                                        Progress messages
+                        -->
+                    <xhtml:div>
+                        <!-- Error Messages - only shown if errorMessage has been set -->
+                        <xxf:variable name="errorMessage" select="normalize-space(xxf:instance('control-instance')/errorMessage)"/>
+                        <xxf:variable name="errorMessageClass" select="if ($errorMessage='') then 'hidden' else 'signOnMessageContainer'"/>
+                        <xhtml:div class="{$errorMessageClass}">
+                            <xf:output class="error" ref="$errorMessage"/>
+                            <xf:output class="error" ref="xxf:instance('control-instance')/errorContext"/>
+                        </xhtml:div>
+
+                        <!-- Mode Messages (not needed for normal mode).
+                             Include the errorContext, if set -->
+                        <xxf:variable name="modeMessageClass"
+                            select="if (xxf:instance('control-instance')/mode=('disabled','recovery','debug')) then 'signOnMessageContainer' else 'hidden'"/>
+                        <xxf:variable name="modeMessageTypeClass"
+                            select="if (xxf:instance('control-instance')/mode=('disabled','recovery')) then 'error' else 'alert'"/>
+
+                        <xhtml:div class="{$modeMessageClass}">
+                            <xf:output class="{$modeMessageTypeClass}"
+                                ref="if (xxf:instance('control-instance')/mode='disabled') then xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/disabledModeMessage/@displayName
+                                else if (xxf:instance('control-instance')/mode='recovery') then xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/recoveryModeMessage/@displayName
+                                else if (xxf:instance('control-instance')/mode='debug') then xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/debugModeMessage/@displayName
+                            else ''"
+                            />
+                        </xhtml:div>
+
+                        <!-- Progress messages - from processExecutionLog in process-model -->
+                        <xxf:variable name="processExecutionStatus" select="xxf:instance('processExecutionLog-instance')/@status"/>
+                        <xxf:variable name="progressMessage" select="normalize-space(xxf:instance('processExecutionLog-instance')/@progressDisplay)"/>
+                        <xxf:variable name="progressMessageDisplay"
+                            select="if ($processExecutionStatus= ('waiting','completed')) then 'hidden' else 'signOnMessageContainer'"/>
+                        <xxf:variable name="progressMessageClass" select="if ($processExecutionStatus = 'aborted') then 'error' else 'alert'"/>
+                        <xhtml:div class="{$progressMessageDisplay}">
+                            <xf:output class="{$progressMessageClass}" ref="$progressMessage"/>
+                        </xhtml:div>
+
+                    </xhtml:div>
+
+                    <!-- Instructions -->
+                    <xhtml:div class="signOnInstructions">
+                        <xhtml:span class="{$showNotAuthenticated}">
+                            <xf:output class="signOnMessage"
+                                ref="normalize-space($signOnParameters/*[name()=xxf:instance('control-instance')/configurationMessage]/@displayName)"/>
+                            <xf:output class="signOnMessage"
+                                ref="normalize-space($signOnParameters/*[name()=xxf:instance('control-instance')/authenticationMessage]/@displayName)"/>
+                            <xf:output class="signOnMessage"
+                                ref="normalize-space($signOnParameters/*[name()=xxf:instance('control-instance')/actionMessage]/@displayName)"/>
+                        </xhtml:span>
+                        <xhtml:span class="{$showAuthenticated}">
+                            <xf:output class="signOnHeadline"
+                                ref="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/welcomeLabel/@displayName,xxf:instance('user-instance')/credentials/username)"/>
+                            <xf:output class="signOnMessage"
+                                ref="normalize-space($signOnParameters/*[name()=xxf:instance('control-instance')/authenticationMessage]/@displayName)"
+                            />
+                        </xhtml:span>
+                    </xhtml:div>
+
+                    <!-- User input
+                         If mode is 'disabled' then nothing can be done -->
+                    <xxf:variable name="signOnInputClass"
+                        select="if (xxf:instance('control-instance')/mode='disabled') then 'hidden' else 'signOnInput'"/>
+                    <xhtml:div class="{$signOnInputClass}">
+                        <!-- Enter user credentials -->
+                        <xhtml:span class="{$showNotAuthenticated}">
+                            <!-- Username -->
+                            <xf:input ref="xxf:instance('user-credentials-instance')/userid" id="username-input"
+                                xxf:size="{xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/usernameInput/@size}">
+                                <xf:hint appearance="minimal"
+                                    ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/usernameInput/@displayName"/>
+                                <xf:action ev:event="DOMActivate">
+                                    <xf:dispatch name="authenticate-cityEHR-user" target="main-model"/>
+                                </xf:action>
+                            </xf:input>
+                            <!-- Password -->
+                            <xf:secret ref="xxf:instance('user-credentials-instance')/password" id="password-input"
+                                xxf:size="{xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/passwordInput/@size}">
+                                <xf:hint appearance="minimal"
+                                    ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/passwordInput/@displayName"/>
+                                <xf:action ev:event="DOMActivate">
+                                    <xf:dispatch name="authenticate-cityEHR-user" target="main-model"/>
+                                </xf:action>
+                            </xf:secret>
+                        </xhtml:span>
+
+                        <!-- Applications and specialties are only shown when the user has been authenticated.
+                             And only in normal or debug mode (not in recovery mode).
+                             -->
+                        <xhtml:span class="{$showAuthenticated}  {$showNormalDebugMode}">
+                            <!-- Direct launch of the application after authentication -->
+                            <xhtml:span class="{$showLaunchingApp}">
+                                <xf:output class="signOnMessage"
+                                    ref="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/launchInstruction/@displayName,xxf:instance('view-parameters-instance')/applicationDisplayName)"
+                                />
+                            </xhtml:span>
+                            <!-- Select or show application, not if directLaunch -->
+                            <xhtml:span class="{$showSingleApp} {$hideDirectLaunch}">
+                                <xf:output class="signOnMessage"
+                                    ref="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/logOnInstruction/@displayName,xxf:instance('view-parameters-instance')/applicationDisplayName)"
+                                />
+                            </xhtml:span>
+                            <xhtml:span class="{$showMultipleApps}  {$hideDirectLaunch}">
+                                <xf:output class="signOnMessage"
+                                    ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/multipleAppsAuthorised/@displayName"/>
+                                <xf:select1 ref="xxf:instance('user-credentials-instance')/applicationIRI">
+                                    <xf:itemset nodeset="$accessibleApplications">
+                                        <xf:label ref="./@displayName"/>
+                                        <xf:value ref="./@id"/>
+                                    </xf:itemset>
+                                    <xf:action ev:event="xforms-value-changed">
+                                        <!-- Reset error message -->
+                                        <xf:setvalue ref="xxf:instance('control-instance')/errorMessage" value="''"/>
+                                        <!-- Set the application -->
+                                        <xf:dispatch name="set-application" target="main-model">
+                                            <xxf:context name="applicationIRI" select="xxf:instance('user-credentials-instance')/applicationIRI"/>
+                                        </xf:dispatch>
+                                        <!-- Set the specialty -->
+                                        <xf:dispatch name="set-specialty" target="main-model"/>
+                                        <!-- Set focus of UI -->
+                                        <xf:setfocus control="logon-button"/>
+                                    </xf:action>
+                                </xf:select1>
+                            </xhtml:span>
+                            <!-- Select or show specialty -->
+                            <!-- Show the single specialty -->
+                            <xhtml:span class="{$showSingleSpecialty}">
+                                <xf:output class="signOnMessage"
+                                    ref="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/specialtyLabel/@displayName,xxf:instance('view-parameters-instance')/specialtyDisplayName)"
+                                />
+                            </xhtml:span>
+                            <!-- Select from multiple specialties -->
+                            <xhtml:span class="{$showMultipleSpecialties}">
+                                <xf:output class="signOnMessage"
+                                    ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/multipleSpecialties/@displayName"/>
+                                <xf:select1 ref="xxf:instance('view-parameters-instance')/specialtyIRI">
+                                    <xf:itemset nodeset="$applicableSpecialties">
+                                        <xf:label ref="@displayName"/>
+                                        <xf:value ref="@id"/>
+                                    </xf:itemset>
+                                    <xf:action ev:event="xforms-value-changed">
+                                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyDisplayName"
+                                            value="xxf:instance('specialtyList-instance')/iso-13606:Folder[@id=xxf:instance('view-parameters-instance')/specialtyIRI]/@displayName"/>
+                                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/specialtyId"
+                                            value="replace(substring(xxf:instance('view-parameters-instance')/specialtyIRI,2),':','-')"/>
+                                    </xf:action>
+                                </xf:select1>
+                            </xhtml:span>
+                            <!-- Select the language for the session.
+                                 Only if system-parameters language/@userSelection.is true and the application has more than one language available -->
+                            <xhtml:span class="{$showLanguages}">
+                                <xf:output class="signOnMessage"
+                                    ref="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/languageLabel/@displayName"/>
+                                <!-- List of languages supported by this application -->
+                                <xf:select1 ref="xxf:instance('view-parameters-instance')/languageCode">
+                                    <xf:itemset nodeset="$supportedLanguageList">
+                                        <xf:label ref="concat(./@code,' - ',./@displayName)"/>
+                                        <xf:value ref="lower-case(./@code)"/>
+                                    </xf:itemset>
+                                    <!-- Load variant system parameters or default system parameters, as necessary -->
+                                    <xf:action ev:event="xforms-value-changed">
+                                        <!-- Set the session language code, so that it appears in the footer -->
+                                        <xf:setvalue ref="xxf:instance('session-parameters-instance')/languageCode"
+                                            value="xxf:instance('view-parameters-instance')/languageCode"/>
+                                        <!-- Compare user setting with the base language set for the system-parameters -->
+                                        <xxf:variable name="systemParametersBaseLanguageCode"
+                                            select="xxf:instance('control-instance')/systemParametersBaseLanguageCode"/>
+                                        <!-- User has selected a variant language -->
+                                        <xf:action if="not(xxf:instance('view-parameters-instance')/languageCode = $systemParametersBaseLanguageCode)">
+                                            <xf:dispatch name="load-variant-system-parameters" target="systemParameters-model">
+                                                <xxf:context name="sessionLanguageCode" select="xxf:instance('view-parameters-instance')/languageCode"/>
+                                                <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                                            </xf:dispatch>
+                                        </xf:action>
+                                        <!-- User has selected the base language for the system parameters.
+                                             Can only happen if a variant language had previously been selected. 
+                                        
+                                             Or load the default if the variant parameters don't exist (load-variant-system-parameters returned 'false')-->
+                                        <xf:action
+                                            if="xxf:instance('view-parameters-instance')/languageCode = $systemParametersBaseLanguageCode or xxf:instance('control-instance')/status='false'">
+                                            <xf:dispatch name="load-system-parameters" target="systemParameters-model">
+                                                <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                                            </xf:dispatch>
+                                        </xf:action>
+                                        <!-- Now reload the application-parameters, so that the correct language variant is used ***jc error - this model is not loaded
+                                             Uses the applicationId, languageCode and baseLanguageCode set in the session-parameters
+                                             Will abort-session if parameters can't be loaded. -->
+                                        <xf:dispatch name="load-application-parameters" target="configuration-model"/>
+                                    </xf:action>
+                                </xf:select1>
+                            </xhtml:span>
+                        </xhtml:span>
+
+
+                        <!-- Select instance to display for debugging - only shown when the user has been authenticated.
+                             And only if debugging (including in recovery mode).
+                        -->
+                        <xhtml:span class="signOnMessage {$showAuthenticated} {$showDebugging}">
+                            <xf:select1 ref="xxf:instance('control-instance')/debugInstance">
+                                <xf:label ref="xxf:instance('view-parameters-instance')/debuggingInformation/debugInstance/@displayName"/>
+                                <xf:itemset nodeset="xxf:instance('view-parameters-instance')/debuggingInformation/debugInstance/option">
+                                    <xf:label ref="./@displayName"/>
+                                    <xf:value ref="./@value"/>
+                                </xf:itemset>
+                                <xf:action ev:event="xforms-value-changed">
+                                    <!-- Not doing anything here - wait until user presses the debug button -->
+                                </xf:action>
+                            </xf:select1>
+                        </xhtml:span>
+
+                    </xhtml:div>
+
+                    <!-- Controls -->
+                    <xxf:variable name="signOnControlsClass"
+                        select="if (xxf:instance('control-instance')/mode='disabled') then 'hidden' else 'signOnControls'"/>
+
+                    <xhtml:div class="{$signOnControlsClass}">
+                        <!-- Authenticate - when not already authenticated  -->
+                        <xhtml:span class="{$showNotAuthenticated}">
+                            <xxf:variable name="action"
+                                select="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/action[@type='authenticate']"/>
+                            <xf:trigger class="signOnButton" appearance="minimal" xxf:modal="true">
+                                <xf:label ref="$action/@displayName"/>
+                                <xf:hint ref="$action/@hint"/>
+                                <xf:action ev:event="DOMActivate">
+                                    <xf:dispatch name="authenticate-cityEHR-user" target="main-model"/>
+                                </xf:action>
+                            </xf:trigger>
+                        </xhtml:span>
+
+                        <!-- Launch selected application  - not in recovery mode, disabled mode or if directLaunch -->
+                        <xhtml:span class="{$showAuthenticated} {$hideDirectLaunch} {$hideDisabledMode} {$hideRecoveryMode}">
+                            <xxf:variable name="action"
+                                select="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/action[@type='launch']"/>
+                            <xf:trigger class="signOnButton" appearance="minimal" xxf:modal="true">
+                                <xf:label ref="$action/@displayName"/>
+                                <xf:hint ref="$action/@hint"/>
+                                <xf:action ev:event="DOMActivate">
+                                    <xf:dispatch name="launch-application" target="main-model"/>
+                                </xf:action>
+                            </xf:trigger>
+                        </xhtml:span>
+
+                        <!-- View debugging information.
+                             Only when authenticated
+                             And only when debugging, not for directLaunch -->
+                        <xhtml:span class="{$showAuthenticated} {$showDebugging} {$hideDirectLaunch}">
+                            <xxf:variable name="action"
+                                select="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/action[@type='debug']"/>
+                            <xf:trigger class="signOnButton" appearance="minimal">
+                                <xf:label ref="$action/@displayName"/>
+                                <xf:hint ref="$action/@hint"/>
+                                <xf:action ev:event="DOMActivate">
+                                    <!-- Display the formatted XML  -->
+                                    <xxf:variable name="debugInstance" select="xxf:instance('control-instance')/debugInstance"/>
+                                    <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                                        <xxf:context name="title" select="$debugInstance"/>
+                                        <xxf:context name="displayXML" select="xxf:instance($debugInstance)"/>
+                                    </xf:dispatch>
+                                </xf:action>
+                            </xf:trigger>
+                        </xhtml:span>
+
+                        <!-- Recover - edit system paramsters.
+                             Only show this if there is a database error (recovery mode)
+                             And must be authenticated -->
+                        <xhtml:span class="{$showAuthenticated} {$showRecoveryMode}">
+                            <xxf:variable name="action"
+                                select="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/action[@type='recover']"/>
+                            <xf:trigger class="signOnButton" appearance="minimal">
+                                <xf:label ref="$action/@displayName"/>
+                                <xf:hint ref="$action/@hint"/>
+                                <xf:action ev:event="DOMActivate">
+                                    <!-- Copy system-parameters to managed-parameters, set status, then show the dialog.
+                                         When editMode is 'recovery', only the coreParameters can be edited -->
+                                    <xf:dispatch name="load-system-parameters-for-edit" target="systemParameters-model">
+                                        <xxf:context name="displayMode" select="'dialog'"/>
+                                        <xxf:context name="editMode" select="'recovery'"/>
+                                    </xf:dispatch>
+                                    <xxf:show ev:event="DOMActivate" dialog="systemParametersDialog"/>
+                                </xf:action>
+                            </xf:trigger>
+                        </xhtml:span>
+
+                        <!-- Test button - Invoke test action, if debug mode is set -->
+                        <xhtml:span class="{$showAuthenticated} {$showDebugging} {$hideDirectLaunch}">
+                            <xxf:variable name="action"
+                                select="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/action[@type='test']"/>
+                            <xf:trigger class="signOnButton" appearance="minimal">
+                                <xf:label ref="$action/@displayName"/>
+                                <xf:hint ref="$action/@hint"/>
+                                <!-- Invoke test action here - change the code to do this. -->
+                                <xf:action ev:event="DOMActivate">
+                                    <xf:dispatch name="test-action" target="main-model"/>
+                                </xf:action>
+                            </xf:trigger>
+                        </xhtml:span>
+
+                        <!-- Quit button - Reload this sign on page (not if directLaunch) -->
+                        <xhtml:span class="{$showAuthenticated}  {$hideDirectLaunch}">
+                            <xxf:variable name="action"
+                                select="xxf:instance('system-parameters-instance')/staticParameters/cityEHRSignOn/action[@type='quit']"/>
+                            <xf:trigger class="signOnButton" appearance="minimal">
+                                <xf:label ref="$action/@displayName"/>
+                                <xf:hint ref="$action/@hint"/>
+                                <!-- Invoke quit-session to reload the cityEHRSignOn page -->
+                                <xf:action ev:event="DOMActivate">
+                                    <xf:dispatch name="quit-session" target="pageNavigation-model"/>
+                                </xf:action>
+                            </xf:trigger>
+                        </xhtml:span>
+
+                    </xhtml:div>
+                </xhtml:div>
+
+                <!-- Display application splash graphics.
+                     These are displayed side by side.
+                     The static splash image is displayed in recovery or disabled mode. -->
+                <xxf:variable name="splashImageClass"
+                    select="if (xxf:instance('control-instance')/mode=('disabled','recovery')) then 'hidden' else 'splashImage'"/>
+                <xxf:variable name="staticSplashImageClass"
+                    select="if (xxf:instance('control-instance')/mode=('disabled','recovery')) then 'splashImage' else 'hidden'"/>
+
+                <xhtml:div class="signOnContent signOnSplash">
+
+                    <xhtml:span class="{$staticSplashImageClass}">
+                        <xf:output ref="xxf:instance('control-instance')/staticWelcomeSplash" mediatype="image/*"/>
+                    </xhtml:span>
+                    <xhtml:span class="{$splashImageClass}">
+                        <xf:output ref="xxf:instance('control-instance')/images/welcomeSplash-1" mediatype="image/*"/>
+                    </xhtml:span>
+                    <xhtml:span class="{$splashImageClass}">
+                        <xf:output ref="xxf:instance('control-instance')/images/welcomeSplash-2" mediatype="image/*"/>
+                    </xhtml:span>
+                </xhtml:div>
+
+            </xhtml:div>
+
+            <!-- Display information about the selected application.
+                 At present is just for displaying the cityEHR accreditation -->
+            <xhtml:div id="signOnInfo" class="signOnBlock">
+                <xhtml:ul>
+                    <xf:repeat nodeset="xxf:instance('application-parameters-instance')/accreditation/line">
+                        <xxf:variable name="line" select="."/>
+                        <xhtml:li>
+                            <xf:output ref="$line/@displayName"/>
+                        </xhtml:li>
+                    </xf:repeat>
+
+                    <!-- Test of xf:group in Orbeon 4.
+                         Only xforms controls are put out of scope - HTML always displays
+                    <xhtml:li class="banner">
+                        <xf:group ref="xxf:instance('control-instance')/test[@show='true']"> group element is true </xf:group>
+                        <xf:group ref="xxf:instance('control-instance')/test[@show!='true']"> group element is false </xf:group>
+                    </xhtml:li>
+                    -->
+                    <!--
+                    <xhtml:li>
+                        <xf:output ref="xxf:instance('control-instance')/treeTest/descendant::level-2/ancestor::*/@attribute"/>
+                    </xhtml:li>
+                    -->
+                </xhtml:ul>
+
+                <!-- Debug xxf:sort 
+                <xhtml:p>
+                    <xxf:variable name="valueSet"
+                        select="xxf:instance('control-instance')/observation/value | xxf:instance('control-instance')/observation | (a,b) | ()"/>
+                    <xxf:variable name="filteredValueSet" select="$valueSet[descendant::value/@value]"/>
+                    <xf:repeat
+                        nodeset="xxf:sort($filteredValueSet[descendant::value/@value],(descendant::value/@value)[1],'text','descending')">
+                        <xf:output class="message" ref="@id"/>
+                        <xhtml:br/>
+                    </xf:repeat>
+                </xhtml:p>
+                -->
+
+                <!-- Debugging -->
+                <!--
+                    <xf:output class="message" ref="concat('User id attribute:',xxf:instance('user-instance')/@id)"/>
+                -->
+
+
+                <!-- Test of casting sequence -->
+                <!--
+                <xf:output class="message" ref="if ((for $t in ('1.1','2','3') return $t castable as xs:integer) = false()) then 'false' else 'true'"/>
+                -->
+
+            </xhtml:div>
+
+            <!-- Debugging -->
+            <!--
+            <p class="message">Date comparison<br/>
+                <xf:output ref="if ('2017-01-20' gt '') then 'greater' else 'failed'"/>
+                <xf:output ref="if ('2017-01-20' lt '') then ' / less' else ' / failed'"/>
+            </p>
+            -->
+
+            <!--
+            <p class="message">Authentication query<br/>
+                <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('query-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+            </p>
+            -->
+            <!--
+            <xhtml:div class="ScrollingContainer">
+                <xhtml:p class="message">Response instance<br/>
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('stored-user-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                </xhtml:p>
+            </xhtml:div>
+-->
+
+            <!--
+            <xhtml:div class="ScrollingContainer">
+                <xhtml:p class="message">Default user instance<br/>
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('default-user-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                </xhtml:p>
+            </xhtml:div>
+            -->
+            <!--
+            <p class="message">User instance<br/>
+                <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('user-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+            </p>
+            -->
+            <!--
+			<p class="message">Specialty List instance<br/>
+                <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('specialtyList-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+            </p>
+            -->
+            <!--
+            <p class="message">parameters-instance<br/>
+                <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('application-parameters-instance')/application, 'data')/*, 'html')" mediatype="text/html"/>
+            </p>
+-->
+        </xhtml:div>
+        <!-- Fixed footer -->
+        <xi:include href="cityEHRFooter.xhtml"/>
+    </xhtml:body>
+
+</xhtml:html>

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRCohortAnalysisDialog.xhtml
+    
+    Select data items for analysis for a cohort.
+    Calculates max, min, sum, average for selected data items
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<xxf:dialog id="cohortAnalysisDialog" width="950" height="700" appearance="full" level="modal" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <xf:label class="stripTitle"
+        ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/cohortAnalysisDialog/title"/>
+
+    <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/cohortAnalysisDialog/description/@prefix"/>
+    <xf:output ref="xxf:instance('cohort-search-instance')/cohortPatientCount"/>
+    <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/cohortAnalysisDialog/description/@suffix"/>
+
+    <xf:trigger id="cancel-cohortAnalysisDialog" class="button" appearance="minimal">
+        <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/cohortAnalysisDialog/acknowledgeLabel"/>
+        <xxf:hide ev:event="DOMActivate" dialog="cohortAnalysisDialog"/>
+    </xf:trigger>
+
+    <xhtml:table>
+        <!-- Display headers -->
+        <xhtml:thead>
+            <xhtml:tr>
+                <!-- Button to add new parameter -->
+                <xhtml:td>
+                    <xxf:variable name="type" select="'add'"/>
+                    <xxf:variable name="label"
+                        select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/cohortAnalysisDialog/addLabel"/>
+                    <xxf:variable name="icon"
+                        select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+                    <!-- Add button -->
+                    <xf:trigger appearance="minimal">
+                        <xf:label>
+                            <xhtml:img src="{$icon}" alt=""/>
+                        </xf:label>
+                        <xf:hint ref="$label"/>
+                        <!-- Add new parameter -->
+                        <xf:action ev:event="DOMActivate">
+                            <xf:insert context="xxf:instance('cohort-search-instance')/cohortAnalysis"
+                                origin="xxf:instance('control-instance')/cohortAnalysis/parameter"/>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:td>
+                <!-- Display parameter headers.
+                     observation, scope operation, value -->
+                <xxf:variable name="parameterHeadings"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/cohortAnalysisDialog/parameterHeadings/parameter"/>
+                <xhtml:td>
+                    <xf:output ref="$parameterHeadings[@type='observation']/@displayName"/>
+                </xhtml:td>
+                <xhtml:td>
+                    <xf:output ref="$parameterHeadings[@type='scope']/@displayName"/>
+                </xhtml:td>
+                <xhtml:td>
+                    <xf:output ref="$parameterHeadings[@type='operation']/@displayName"/>
+                </xhtml:td>
+                <xhtml:td>
+                    <xf:output ref="$parameterHeadings[@type='value']/@displayName"/>
+                </xhtml:td>
+            </xhtml:tr>
+        </xhtml:thead>
+
+        <!-- Display parameters -->
+        <xhtml:tbody>
+            <xf:repeat nodeset="xxf:instance('cohort-search-instance')/cohortAnalysis/parameter">
+                <xxf:variable name="parameter" select="."/>
+                <xhtml:tr>
+                    <!-- Button to remove parameter -->
+                    <xhtml:td>
+                        <xxf:variable name="type" select="'remove'"/>
+                        <xxf:variable name="label"
+                            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/cohortAnalysisDialog/removeLabel"/>
+                        <xxf:variable name="icon"
+                            select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+                        <!-- Remove button -->
+                        <xf:trigger appearance="minimal">
+                            <xf:label>
+                                <xhtml:img src="{$icon}" alt=""/>
+                            </xf:label>
+                            <xf:hint ref="$label"/>
+                            <!-- Remove parameter -->
+                            <xf:action ev:event="DOMActivate">
+                                <xf:delete nodeset="$parameter"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:td>
+                    <!-- Observation - select entry and element.
+                         For scope of count | distinctCount all entries/elements are selectable
+                         For all other values of scope, only elements of numeric type are selectable.
+                         observationSet holds sorted set of cda:observation -->
+                    <xhtml:td>
+                        <!-- Observations for selection -->
+                        <xxf:variable name="searchableObservations"
+                            select="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry[@cityEHR:cohortSearch=('#CityEHR:EntryProperty:Searchable','#CityEHR:EntryProperty:PrimarySearch')]/cda:component/cda:observation[cda:id/@root=cda:id/@extension]"/>
+                        <xxf:variable name="inScopeObservations"
+                            select="if ($parameter/@scope=('count','distinctCount')) then $searchableObservations else $searchableObservations[descendant::cda:value/@xsi:type=('xs:integer','xs:double')]"/>
+                        <xxf:variable name="observationSet" select="xxf:sort($inScopeObservations,cda:code[@codeSystem='cityEHR']/@displayName,'text', 'ascending')"/>
+                        <!-- Elements for selection -->
+                        <xxf:variable name="inScopeElements" select="$observationSet[cda:id/@extension=$parameter/@entry]/descendant::cda:value"/>
+                        <xxf:variable name="elementSet"
+                            select="if ($parameter/@scope=('count','distinctCount')) then $inScopeElements else $inScopeElements[@xsi:type=('xs:integer','xs:double')]"/>
+
+                        <!-- Select entry -->
+                        <xf:select1 ref="$parameter/@entry">
+                            <xf:itemset nodeset="$observationSet">
+                                <xf:label
+                                    ref="if (cda:code[@codeSystem='cityEHR']/@displayName != '') then cda:code[@codeSystem='cityEHR']/@displayName else substring-after(cda:id/@extension,'#ISO-13606:Entry:')"/>
+                                <xf:value ref="cda:id/@extension"/>
+                            </xf:itemset>
+                            <!-- Set up the element selection, clear results and reset operation -->
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:setvalue ref="$parameter/@element" value="$elementSet[1]/@extension"/>
+                                <xf:delete nodeset="$parameter/result"/>
+                                <xf:setvalue ref="$parameter/@operation" value="''"/>
+                            </xf:action>
+                        </xf:select1>
+                        <!-- Select element.
+                             For scope of count | distinctCount all elements are selectable
+                             For all other values of scope, only elements of numeric type are selectable.-->
+                        <xf:select1 ref="$parameter/@element">
+                            <xf:itemset nodeset="$elementSet">
+                                <xf:label
+                                    ref="if (@cityEHR:elementDisplayName != '') then @cityEHR:elementDisplayName else substring-after(@extension,'#ISO-13606:Element:')"/>
+                                <xf:value ref="@extension"/>
+                            </xf:itemset>
+                            <!-- Clear results and reset operation -->
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:delete nodeset="$parameter/result"/>
+                                <xf:setvalue ref="$parameter/@operation" value="''"/>
+                            </xf:action>
+                        </xf:select1>
+                    </xhtml:td>
+
+                    <!-- Scope.
+                         Can be one of all | currentData | firstData | count | distinctCount -->
+                    <xhtml:td>
+                        <xf:select1 ref="$parameter/@scope">
+                            <xf:itemset
+                                nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/searchScope/options/item">
+                                <xf:label ref="./@displayName"/>
+                                <xf:value ref="./@value"/>
+                            </xf:itemset>
+                            <!-- reset parameter
+                                 needed because entry and/or element may now be out of scope
+                                 and the result of an operation depends on the scope -->
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:dispatch name="reset-cohortAnalysis-parameter" target="main-model">
+                                    <xxf:context name="parameter" select="$parameter"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:select1>
+                    </xhtml:td>
+
+                    <!-- Operation -->
+                    <xhtml:td>
+                        <xf:select1 ref="$parameter/@operation">
+                            <xf:itemset nodeset="xxf:instance('control-instance')/cohortAnalysis/operation/option">
+                                <xf:label ref="./@displayName"/>
+                                <xf:value ref="./@value"/>
+                            </xf:itemset>
+                            <!-- Run query whenever operation is set to non-empty value -->
+                            <xf:action ev:event="xforms-value-changed" if="$parameter/@operation != ''">
+                                <xf:dispatch name="run-cohortAnalysis-query" target="main-model">
+                                    <xxf:context name="parameter" select="$parameter"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:select1>
+                    </xhtml:td>
+
+                    <!-- Value (result)
+                         Lay results out as a two column table -->
+                    <xhtml:td align="right">
+                        <xhtml:table>
+                            <xhtml:tbody>
+                                <xf:repeat nodeset="$parameter/result">
+                                    <xxf:variable name="result" select="."/>
+                                    <xhtml:tr>
+                                        <xhtml:td align="left">
+                                            <xf:output ref="$result/@category"/>
+                                        </xhtml:td>
+                                        <xhtml:td align="right">
+                                            <xf:output ref="$result/@value"/>
+                                        </xhtml:td>
+                                    </xhtml:tr>
+                                </xf:repeat>
+                            </xhtml:tbody>
+                        </xhtml:table>
+                    </xhtml:td>
+
+                </xhtml:tr>
+            </xf:repeat>
+        </xhtml:tbody>
+    </xhtml:table>
+
+
+
+</xxf:dialog>

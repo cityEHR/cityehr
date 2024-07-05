@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    directpryEntryTemplate.xml
+    
+    Template for directory of an Entry to be stored in the xmlstore.
+    The entries inserted in this template are iso-13606:entry elements. containing cda:component (same format as a dictionary)
+          
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<EHR_Extract cityEHR:applicationIRI="" cityEHR:specialtyIRI="" cityEHR:type="entry" cityEHR:root="" cityEHR:key="" cityEHR:languageCode="" xmlns="http://www.iso.org/iso-13606" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
+    <entryCollection>
+    <!-- Entries are inserted here - one entry for each item in the directory -->
+    </entryCollection>
+</EHR_Extract>

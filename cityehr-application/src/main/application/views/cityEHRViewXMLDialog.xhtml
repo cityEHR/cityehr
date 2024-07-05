@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRViewXMLDialog.xhtml
+    
+    Modal dialog box that shows formatted XML
+    Invoked by display-formatted-xml action in pageNavigationModel
+    Shows displayXML-instance which is set up by the display-formatted-xml action
+    
+    Clears displayXML when the dialog is closed.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- == View XML dialogue box == 
+    level="modal" means it blocks the interface.
+    level="modeless" means it floats until removed. -->
+<xxf:dialog id="viewXML" appearance="full" level="modeless" close="false" draggable="true" visible="false" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:svg="http://www.w3.org/2000/svg">
+
+    <!-- Note that variables can't be used in xf:label, so need to use xxf:instance('pageNavigationControl-instance')/displayXML directly -->
+    <xf:label class="stripTitle">
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRViewXMLDialog/displayName"/>
+        <xf:output
+            ref="if (xxf:instance('pageNavigationControl-instance')/displayXML/@displayName!='') then concat(' - ',xxf:instance('pageNavigationControl-instance')/displayXML/@displayName) else ''"
+        />
+    </xf:label>
+
+    <xhtml:div>
+        <xxf:variable name="displayXML" select="xxf:instance('pageNavigationControl-instance')/displayXML"/>
+        <xhtml:p>
+            <!-- Download XML -->
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRViewXMLDialog/downloadButton"/>
+                </xf:label>
+                <!-- Export the displayXML that is shown in the dialog -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                        <xxf:context name="export-instance" select="xxf:instance('displayXML-instance')"/>
+                        <xxf:context name="exportName" select="''"/>
+                        <xxf:context name="exportType" select="if ($displayXML/@displayName='') then 'xml' else $displayXML/@displayName"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:trigger>
+
+            <!-- Close dialog -->
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRViewXMLDialog/closeButton"/>
+                </xf:label>
+                <!-- Clear displayXML and close dialog -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="$displayXML/@displayName" value="''"/>
+                    <xf:delete nodeset="xxf:instance('displayXML-instance')/*"/>
+                    <xxf:hide dialog="viewXML"/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:p>
+
+        <!-- Display formatted XML
+             Or SVG images using xmlns="http://www.w3.org/2000/svg" -->
+        <xhtml:div class="ScrollingContainer">
+            <xxf:variable name="svgDisplay" select="xxf:instance('displayXML-instance')[name()='svg:svg' or namespace-uri()='http://www.w3.org/2000/svg']"/>
+            <xxf:variable name="formattedXML"
+                select="if (exists($svgDisplay)) then () else if (exists(xxf:instance('displayXML-instance'))) then xxf:serialize( xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('displayXML-instance'), 'data')/*, 'html') else ''"/>
+            <xhtml:pre>
+                <xf:output ref="$formattedXML" mediatype="text/html"/>
+            </xhtml:pre>
+            <xf:output ref="if (exists($svgDisplay)) then xxf:serialize($svgDisplay, 'html') else ''" mediatype="text/html"/>
+        </xhtml:div>
+
+    </xhtml:div>
+</xxf:dialog>

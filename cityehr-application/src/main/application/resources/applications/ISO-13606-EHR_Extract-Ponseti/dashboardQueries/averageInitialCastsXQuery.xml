@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        averageInitialCastsXQuery.xml
+        
+        Dashboard query to get average casts in initial casting phase in various time intervals
+        Average is found from the total number of patients who had a cast in initial phase
+        Context is the application collection, which will contain a records collection if there are any patients
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        declare namespace xdb="http://exist-db.org/xquery/xmldb";
+ 
+        let $castDateList := 
+           for $document in //cda:value[@extension='#ISO-13606:Element:CastingPhase'][@value='']/ancestor::cda:ClinicalDocument
+           return &lt;cast patientId="{$document/descendant::cda:patientRole/@extension}" date="{$document/descendant::cda:observation[cda:id/@extension='#ISO-13606:Entry:CastDate']/cda:value[@extension='#ISO-13606:Element:BaseTime']/@value}"/>     
+        
+        let $patientList := distinct-values($castDateList/@patientId)
+        let $patientCount := count($patientList)   
+        
+        let $castAverage := if ($patientCount=0) then 0 else count($castDateList) div $patientCount
+        
+        let $today := current-date()
+        let $date30Days := xs:string($today - xs:dayTimeDuration('P30D'))
+        let $date3Months := xs:string($today - xs:yearMonthDuration('P3M'))
+        let $date12Months := xs:string($today - xs:yearMonthDuration('P12M'))
+        
+
+        let $cast30Days := $castDateList[@date gt $date30Days]
+        let $cast30DaysPatientCount := count(distinct-values($cast30Days/@patientId))
+        let $cast30DaysCount := count($cast30Days)
+        let $cast30DaysAverage := if ($cast30DaysPatientCount=0) then 0 else $cast30DaysCount div $cast30DaysPatientCount
+
+        let $cast3Months := $castDateList[@date gt $date3Months]
+        let $cast3MonthsPatientCount := count(distinct-values($cast3Months/@patientId))
+        let $cast3MonthsCount := count($cast3Months)
+        let $cast3MonthsAverage := if ($cast3MonthsPatientCount=0) then 0 else $cast3MonthsCount div $cast3MonthsPatientCount        
+
+        let $cast12Months := $castDateList[@date gt $date12Months]   
+        let $cast12MonthsPatientCount := count(distinct-values($cast12Months/@patientId))
+        let $cast12MonthsCount := count($cast12Months)
+        let $cast12MonthsAverage := if ($cast12MonthsPatientCount=0) then 0 else $cast12MonthsCount div $cast12MonthsPatientCount        
+        
+        
+        return
+        &lt;queryResults>
+        &lt;total value="{$castAverage}"/>
+                &lt;category displayName="Casts"/>
+                &lt;category displayName="Last 30 days" value="{$cast30DaysAverage}"/>
+                &lt;category displayName="Last 3 months"  value="{$cast3MonthsAverage}"/>
+                &lt;category displayName="Last 12 months"  value="{$cast12MonthsAverage}"/>
+        &lt;/queryResults>
+</query>

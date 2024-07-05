@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRViewCDAHTMLDialog.xhtml
+    
+    Modal dialog box that shows formatted HTML for a CDA document.
+    Shows control-instance/formatted-xml so this must be set up in the view that includes the dialogue to show the XML instance required
+    
+    If the action is confirmed then it is invoked, otherwise the dialog closes with no action.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- == View XML dialogue box == 
+    level="modal" means it blocks the interface.
+    level="modeless" means it floats until removed. -->
+<xxf:dialog id="viewCDAHTML" appearance="full" level="modeless" close="false" draggable="true" visible="false" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xf:label class="stripTitle">
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRviewCDAHTMLDialog/displayName"/> 
+    </xf:label>
+    <xf:trigger>
+        <xf:label>
+            <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRviewCDAHTMLDialog/closeButton"/>
+        </xf:label>
+        <xxf:hide ev:event="DOMActivate" dialog="viewCDAHTML"/>
+    </xf:trigger>
+    <xhtml:div class="ScrollingContainer">
+        <xf:output ref="xxf:instance('control-instance')/formatted-xml" mediatype="text/html"/>
+    </xhtml:div>
+</xxf:dialog>

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRRenderImageMapEntry.xhtml
+    Module to render a CityEHR form entry
+    Included in cityEHRRenderFormSection.xhtml
+        
+        The following variables must be set up in the including context:
+        
+        $entryClass - the class on the <div> containing the entry
+        $entry - the entry in the CDA model
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<xhtml:div class="{$entryClass}" 
+    xmlns:xf="http://www.w3.org/2002/xforms" 
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" 
+    xmlns:ev="http://www.w3.org/2001/xml-events" 
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" 
+    xmlns:exforms="http://www.exforms.org/exf/1-0" 
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" 
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" 
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" 
+    xmlns:xi="http://www.w3.org/2001/XInclude" 
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" 
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" 
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:cda="urn:hl7-org:v3" 
+    xmlns:iso-13606="http://www.iso.org/iso-13606" 
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr" 
+    >
+
+
+    <xi:include href="oxf:/xbl/cityEHR/imagemap/imagemap.xbl" xxi:omit-xml-base="1"/>
+
+    <!-- === Simple entry - imagemap rendition ======
+         Include image map components 
+    
+            <cityEHR:imagemap
+                width="400" height="600"
+                svg="rheumatology-diagnosis-das28.svg"
+                href="rheumatology-diagnosis-das28.png">
+    
+                <xf:input name="ElbowRightSwollen-3" ref="instance()/value1"/>
+                <xf:input name="valueb" ref="instance()/value2"/>
+                <xf:input name="valuec" ref="instance()/value3"/>  
+            </cityEHR:imagemap>
+     -->
+
+    <!-- Can't do this as it ref '$entry' are at of scope it seems to work if data is in instance('control-instance')//
+    <xf:group ref="$entry[@cityEHR:rendition='#CityEHR:EntryProperty:ImageMap']/cda:observation">
+-->   
+    
+    <xf:group>
+        
+        
+        <xxf:variable name="observation" select="."/>
+        <xxf:variable name="entryId" select="$observation/cda:id/@extension"/>
+<!--
+            <xf:repeat nodeset="$observation/cda:value">
+                <xf:input name="{./@extension}" label="{./@extension}" ref="./@value"/>
+            </xf:repeat>
+-->
+        
+
+        <cityEHR:imagemap id="das28">
+            <xf:input id="DAS5thDIPRightSwollen" ref="$observation/cda:value[1]/@value"/>
+            <xf:input id="DAS5thDIPRightTender" ref="$observation/cda:value[2]/@value"/>
+            <xf:input id="DAS5thPIPRightSwollen" ref="$observation/cda:value[3]/@value"/>
+            <xf:input id="DAS5thPIPRightTender" ref="$observation/cda:value[4]/@value"/>
+            <xf:input id="DAS5thMCPRightSwollen" ref="$observation/cda:value[5]/@value"/>
+            <xf:input id="DAS5thMCPRightTender" ref="$observation/cda:value[6]/@value"/>
+            <xf:input id="DAS4thDIPRightSwollen" ref="$observation/cda:value[7]/@value"/>
+            <xf:input id="DAS4thDIPRightTender" ref="$observation/cda:value[8]/@value"/>
+            <xf:input id="DAS4thPIPRightSwollen" ref="$observation/cda:value[9]/@value"/>
+            <xf:input id="DAS4thPIPRightTender" ref="$observation/cda:value[10]/@value"/>
+            <xf:input id="DAS4thMCPRightSwollen" ref="$observation/cda:value[11]/@value"/>
+            <xf:input id="DAS4thMCPRightTender" ref="$observation/cda:value[12]/@value"/>
+            <xf:input id="DAS3rdDIPRightSwollen" ref="$observation/cda:value[13]/@value"/>
+            <xf:input id="DAS3rdDIPRightTender" ref="$observation/cda:value[14]/@value"/>
+            <xf:input id="DAS3rdPIPRightSwollen" ref="$observation/cda:value[15]/@value"/>
+            <xf:input id="DAS3rdPIPRightTender" ref="$observation/cda:value[16]/@value"/>
+            <xf:input id="DAS3rdMCPRightSwollen" ref="$observation/cda:value[17]/@value"/>
+            <xf:input id="DAS3rdMCPRightTender" ref="$observation/cda:value[18]/@value"/>
+            <xf:input id="DAS2ndDIPRightSwollen" ref="$observation/cda:value[19]/@value"/>
+            <xf:input id="DAS2ndDIPRightTender" ref="$observation/cda:value[20]/@value"/>
+            <xf:input id="DAS2ndPIPRightSwollen" ref="$observation/cda:value[21]/@value"/>
+            <xf:input id="DAS2ndPIPRightTender" ref="$observation/cda:value[22]/@value"/>
+            <xf:input id="DAS2ndMCPRightSwollen" ref="$observation/cda:value[23]/@value"/>
+            <xf:input id="DAS2ndMCPRightTender" ref="$observation/cda:value[24]/@value"/>
+            <xf:input id="DAS1stIPRightSwollen" ref="$observation/cda:value[25]/@value"/>
+            <xf:input id="DAS1stIPRightTender" ref="$observation/cda:value[26]/@value"/>
+            <xf:input id="DAS1stMCPRightSwollen" ref="$observation/cda:value[27]/@value"/>
+            <xf:input id="DAS1stMCPRightTender" ref="$observation/cda:value[28]/@value"/>
+            <xf:input id="DASWristRightSwollen" ref="$observation/cda:value[31]/@value"/>
+            <xf:input id="DASWristRightTender" ref="$observation/cda:value[32]/@value"/>
+            <xf:input id="DASElbowRightSwollen" ref="$observation/cda:value[33]/@value"/>
+            <xf:input id="DASElbowRightTender" ref="$observation/cda:value[34]/@value"/>
+            <xf:input id="DASShoulderRightSwollen" ref="$observation/cda:value[35]/@value"/>
+            <xf:input id="DASShoulderRightTender" ref="$observation/cda:value[36]/@value"/>
+            <xf:input id="DASAcromioclavicularRightSwollen" ref="$observation/cda:value[37]/@value"/>
+            <xf:input id="DASAcromioclavicularRightTender" ref="$observation/cda:value[38]/@value"/>
+            <xf:input id="DASSternoclavicularRightSwollen" ref="$observation/cda:value[39]/@value"/>
+            <xf:input id="DASSternoclavicularRightTender" ref="$observation/cda:value[40]/@value"/>
+            <xf:input id="DASTemporomandibularRightSwollen" ref="$observation/cda:value[41]/@value"/>
+            <xf:input id="DASTemporomandibularRightTender" ref="$observation/cda:value[42]/@value"/>
+            <xf:input id="DASTemporomandibularLeftSwollen" ref="$observation/cda:value[43]/@value"/>
+            <xf:input id="DASTemporomandibularLeftTender" ref="$observation/cda:value[44]/@value"/>
+            <xf:input id="DASAcromioclavicularLeftSwollen" ref="$observation/cda:value[45]/@value"/>
+            <xf:input id="DASAcromioclavicularLeftTender" ref="$observation/cda:value[46]/@value"/>
+            <xf:input id="DASSternoclavicularLeftSwollen" ref="$observation/cda:value[47]/@value"/>
+            <xf:input id="DASSternoclavicularLeftTender" ref="$observation/cda:value[48]/@value"/>
+            <xf:input id="DASShoulderLeftSwollen" ref="$observation/cda:value[49]/@value"/>
+            <xf:input id="DASShoulderLeftTender" ref="$observation/cda:value[50]/@value"/>
+            <xf:input id="DASElbowLeftSwollen" ref="$observation/cda:value[51]/@value"/>
+            <xf:input id="DASElbowLeftTender" ref="$observation/cda:value[52]/@value"/>
+            <xf:input id="DASWristLeftSwollen" ref="$observation/cda:value[53]/@value"/>
+            <xf:input id="DASWristLeftTender" ref="$observation/cda:value[54]/@value"/>
+            <xf:input id="DAS1stMCPLeftSwollen" ref="$observation/cda:value[55]/@value"/>
+            <xf:input id="DAS1stMCPLeftTender" ref="$observation/cda:value[56]/@value"/>
+            <xf:input id="DAS1stIPLeftSwollen" ref="$observation/cda:value[57]/@value"/>
+            <xf:input id="DAS1stIPLeftTender" ref="$observation/cda:value[58]/@value"/>
+            <xf:input id="DAS2ndMCPLeftSwollen" ref="$observation/cda:value[59]/@value"/>
+            <xf:input id="DAS2ndMCPLeftTender" ref="$observation/cda:value[60]/@value"/>
+            <xf:input id="DAS2ndPIPLeftSwollen" ref="$observation/cda:value[61]/@value"/>
+            <xf:input id="DAS2ndPIPLeftTender" ref="$observation/cda:value[62]/@value"/>
+            <xf:input id="DAS2ndDIPLeftSwollen" ref="$observation/cda:value[63]/@value"/>
+            <xf:input id="DAS2ndDIPLeftTender" ref="$observation/cda:value[64]/@value"/>
+            <xf:input id="DAS3rdMCPLeftSwollen" ref="$observation/cda:value[65]/@value"/>
+            <xf:input id="DAS3rdMCPLeftTender" ref="$observation/cda:value[66]/@value"/>
+            <xf:input id="DAS3rdPIPLeftSwollen" ref="$observation/cda:value[67]/@value"/>
+            <xf:input id="DAS3rdPIPLeftTender" ref="$observation/cda:value[68]/@value"/>
+            <xf:input id="DAS3rdDIPLeftSwollen" ref="$observation/cda:value[69]/@value"/>
+            <xf:input id="DAS3rdDIPLeftTender" ref="$observation/cda:value[70]/@value"/>
+            <xf:input id="DAS4thMCPLeftSwollen" ref="$observation/cda:value[71]/@value"/>
+            <xf:input id="DAS4thMCPLeftTender" ref="$observation/cda:value[72]/@value"/>
+            <xf:input id="DAS4thPIPLeftSwollen" ref="$observation/cda:value[73]/@value"/>
+            <xf:input id="DAS4thPIPLeftTender" ref="$observation/cda:value[74]/@value"/>
+            <xf:input id="DAS4thDIPLeftSwollen" ref="$observation/cda:value[75]/@value"/>
+            <xf:input id="DAS4thDIPLeftTender" ref="$observation/cda:value[76]/@value"/>
+            <xf:input id="DAS5thMCPLeftSwollen" ref="$observation/cda:value[77]/@value"/>
+            <xf:input id="DAS5thMCPLeftTender" ref="$observation/cda:value[78]/@value"/>
+            <xf:input id="DAS5thPIPLeftSwollen" ref="$observation/cda:value[79]/@value"/>
+            <xf:input id="DAS5thPIPLeftTender" ref="$observation/cda:value[80]/@value"/>
+            <xf:input id="DAS5thDIPLeftSwollen" ref="$observation/cda:value[81]/@value"/>
+            <xf:input id="DAS5thDIPLeftTender" ref="$observation/cda:value[82]/@value"/>
+            <xf:input id="DAS5thMTPRightSwollen" ref="$observation/cda:value[82]/@value"/>
+            <xf:input id="DAS5thMTPRightTender" ref="$observation/cda:value[83]/@value"/>
+            <xf:input id="DAS5thIPRightSwollen" ref="$observation/cda:value[84]/@value"/>
+            <xf:input id="DAS5thIPRightTender" ref="$observation/cda:value[85]/@value"/>
+            <xf:input id="DAS4thMTPRightSwollen" ref="$observation/cda:value[86]/@value"/>
+            <xf:input id="DAS4thMTPRightTender" ref="$observation/cda:value[87]/@value"/>
+            <xf:input id="DAS4thIPRightSwollen" ref="$observation/cda:value[88]/@value"/>
+            <xf:input id="DAS4thIPRightTender" ref="$observation/cda:value[89]/@value"/>
+            <xf:input id="DAS3rdMTPRightSwollen" ref="$observation/cda:value[90]/@value"/>
+            <xf:input id="DAS3rdMTPRightTender" ref="$observation/cda:value[91]/@value"/>
+            <xf:input id="DAS3rdIPRightSwollen" ref="$observation/cda:value[92]/@value"/>
+            <xf:input id="DAS3rdIPRightTender" ref="$observation/cda:value[93]/@value"/>
+            <xf:input id="DAS2ndMTPRightSwollen" ref="$observation/cda:value[94]/@value"/>
+            <xf:input id="DAS2ndMTPRightTender" ref="$observation/cda:value[95]/@value"/>
+            <xf:input id="DAS2ndIPRightSwollen" ref="$observation/cda:value[96]/@value"/>
+            <xf:input id="DAS2ndIPRightTender" ref="$observation/cda:value[97]/@value"/>
+            <xf:input id="DAS1stMTPRightSwollen" ref="$observation/cda:value[98]/@value"/>
+            <xf:input id="DAS1stMTPRightTender" ref="$observation/cda:value[99]/@value"/>
+            <xf:input id="DAS1stIPFootRightSwollen" ref="$observation/cda:value[100]/@value"/>
+            <xf:input id="DAS1stIPFootRightTender" ref="$observation/cda:value[101]/@value"/>
+            <xf:input id="DASAnkleRightSwollen" ref="$observation/cda:value[102]/@value"/>
+            <xf:input id="DASAnkleRightTender" ref="$observation/cda:value[103]/@value"/>
+            <xf:input id="DASKneeRightSwollen" ref="$observation/cda:value[104]/@value"/> 
+            <xf:input id="DASKneeRightTender" ref="$observation/cda:value[105]/@value"/>
+            <xf:input id="DASHipRightSwollen" ref="$observation/cda:value[106]/@value"/>
+            <xf:input id="DASHipLeftSwollen" ref="$observation/cda:value[107]/@value"/>
+            <xf:input id="DASKneeLeftSwollen" ref="$observation/cda:value[108]/@value"/>
+            <xf:input id="DASKneeLeftTender" ref="$observation/cda:value[109]/@value"/>
+            <xf:input id="DASAnkleLeftSwollen" ref="$observation/cda:value[110]/@value"/>
+            <xf:input id="DASAnkleLeftTender" ref="$observation/cda:value[111]/@value"/>
+            <xf:input id="DAS1stMTPLeftSwollen" ref="$observation/cda:value[112]/@value"/>
+            <xf:input id="DAS1stMTPLeftTender" ref="$observation/cda:value[113]/@value"/>
+            <xf:input id="DAS1stIPFootLeftSwollen" ref="$observation/cda:value[114]/@value"/>
+            <xf:input id="DAS1stIPFootLeftTender" ref="$observation/cda:value[115]/@value"/>
+            <xf:input id="DAS2ndMTPLeftSwollen" ref="$observation/cda:value[116]/@value"/>
+            <xf:input id="DAS2ndMTPLeftTender" ref="$observation/cda:value[117]/@value"/>
+            <xf:input id="DAS2ndIPLeftSwollen" ref="$observation/cda:value[118]/@value"/>
+            <xf:input id="DAS2ndIPLeftTender" ref="$observation/cda:value[119]/@value"/>
+            <xf:input id="DAS3rdMTPLeftSwollen" ref="$observation/cda:value[120]/@value"/>
+            <xf:input id="DAS3rdMTPLeftTender" ref="$observation/cda:value[121]/@value"/>
+            <xf:input id="DAS3rdIPLeftSwollen" ref="$observation/cda:value[122]/@value"/>
+            <xf:input id="DAS3rdIPLeftTender" ref="$observation/cda:value[123]/@value"/>
+            <xf:input id="DAS4thMTPLeftSwollen" ref="$observation/cda:value[124]/@value"/>
+            <xf:input id="DAS4thMTPLeftTender" ref="$observation/cda:value[125]/@value"/>
+            <xf:input id="DAS4thIPLeftSwollen" ref="$observation/cda:value[126]/@value"/>
+            <xf:input id="DAS4thIPLeftTender" ref="$observation/cda:value[127]/@value"/>
+            <xf:input id="DAS5thMTPLeftSwollen" ref="$observation/cda:value[128]/@value"/>
+            <xf:input id="DAS5thMTPLeftTender" ref="$observation/cda:value[129]/@value"/>
+            <xf:input id="DAS5thIPLeftSwollen" ref="$observation/cda:value[130]/@value"/>
+            <xf:input id="DAS5thIPLeftTender" ref="$observation/cda:value[131]/@value"/>
+        </cityEHR:imagemap>  
+ 
+        
+    </xf:group>
+    <!-- end of simple entry -->
+
+    <xhtml:p class="LayoutFooter"/>
+</xhtml:div>

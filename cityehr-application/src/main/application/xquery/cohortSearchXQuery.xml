@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cohortSearchXQuery.xml
+    
+    XQuery to run a search and return the cohort of patientIds
+    The <whereClause> finds a cda:value, cda:effectiveTime or cda:author
+    The value of the hit is returned in the @value
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    
+    let $age := years-from-duration(xs:date(current-date()) - xs:date(substring($document/descendant::cda:birthTime/@value,1,10)))
+    **********************************************************************************************************
+-->
+<query>
+    xquery version "1.0"; 
+    declare namespace cda="urn:hl7-org:v3"; 
+    
+    
+    declare function local:patientAge($birthTimeString as xs:string?, $baseTimeString as xs:string?) as xs:string
+    {
+    
+    let $birthTime := substring($birthTimeString,1,10)
+    let $baseTime := substring($baseTimeString,1,10)
+    
+    return 
+    if ($birthTime castable as xs:date and $baseTime castable as xs:date) then 
+
+    let $ageYears := year-from-date($baseTime) - year-from-date($birthTime)
+    let $ageMonths := month-from-date($baseTime) - month-from-date($birthTime)
+    let $ageDays := day-from-date($baseTime) - day-from-date($birthTime)
+    
+    let $ageMonthsAdjust := if ($ageDays lt 0) then 1 else 0
+    let $ageYearsAdjust := if ($ageMonths - $ageMonthsAdjust lt 0) then 1 else 0
+    
+    return xs:string($ageYears - $ageYearsAdjust)
+
+    else ''
+    
+    };
+    
+    
+    for $value in <whereClause/><effectiveTimeClause/>
+    <letClause/>
+    let $document := $value/ancestor::cda:ClinicalDocument
+    
+    <effectiveTimeLetClause>let $effectiveTime := ''</effectiveTimeLetClause>
+    <ageLetClause>let $age := ''</ageLetClause>
+
+    return
+    &lt;patient id="{$document/descendant::cda:patientRole/cda:id/@extension}" effectiveTime="{$effectiveTime}" age="{$age}" value="{$value/@value}">
+    <returnClause/>
+    &lt;/patient>
+    
+</query>

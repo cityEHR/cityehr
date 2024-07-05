@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    users.xml
+    Standard format for list of users to be set up in the cityEHR runtime system.
+    
+    Files in this format can be uploaded to the xmlstore using the utility on the Admin page of cityEHR.
+    
+    Each individual <user> element creates a collection called <userid> in the top-level users collection of xmlstore
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+    **********************************************************************************************************
+-->
+<users xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <user id="#CityEHR:User:student.01">
+        <credentials>
+            <userId>student.01</userId>
+            <logonAlias/>
+            <username>Student 01</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.02">
+        <credentials>
+            <userId>student.02</userId>
+            <logonAlias/>
+            <username>Student 02</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.03">
+        <credentials>
+            <userId>student.03</userId>
+            <logonAlias/>
+            <username>Student 03</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.04">
+        <credentials>
+            <userId>student.04</userId>
+            <logonAlias/>
+            <username>Student 04</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.05">
+        <credentials>
+            <userId>student.05</userId>
+            <logonAlias/>
+            <username>Student 05</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.06">
+        <credentials>
+            <userId>student.06</userId>
+            <logonAlias/>
+            <username>Student 06</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.07">
+        <credentials>
+            <userId>student.07</userId>
+            <logonAlias/>
+            <username>Student 07</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.08">
+        <credentials>
+            <userId>student.08</userId>
+            <logonAlias/>
+            <username>Student 08</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.09">
+        <credentials>
+            <userId>student.09</userId>
+            <logonAlias/>
+            <username>Student 09</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.10">
+        <credentials>
+            <userId>student.10</userId>
+            <logonAlias/>
+            <username>Student 10</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.11">
+        <credentials>
+            <userId>student.11</userId>
+            <logonAlias/>
+            <username>Student 11</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.12">
+        <credentials>
+            <userId>student.12</userId>
+            <logonAlias/>
+            <username>Student 12</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.13">
+        <credentials>
+            <userId>student.13</userId>
+            <logonAlias/>
+            <username>Student 13</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.14">
+        <credentials>
+            <userId>student.14</userId>
+            <logonAlias/>
+            <username>Student 14</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+
+    <user id="#CityEHR:User:student.15">
+        <credentials>
+            <userId>student.15</userId>
+            <logonAlias/>
+            <username>Student 15</username>
+            <password dateSet="" seedKey=""/>
+            <code/>
+            <specialtyCode/>
+            <jobTitle/>
+            <organisation/>
+            <email/>
+        </credentials>
+        <applications>
+            <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                <iso-13606:Folder id="#ISO-13606:Folder:FeatureDemo"/>
+            </iso-13606:EHR_Extract>
+        </applications>
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" id="#CityEHR:Role:System:Administrator"/>
+            <role displayName="Consultant" id="#CityEHR:Role:Consultant"/>
+        </rbac>
+    </user>
+</users>

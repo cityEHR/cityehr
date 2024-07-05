@@ -1,0 +1,9 @@
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+
+for $document in collection()<whereClause-event/><whereClause-id/><whereClause-given/><whereClause-family/><whereClause-administrativeGenderCode/><whereClause-birthTimeFrom/><whereClause-birthTimeTo/>
+        let $patientId := $document/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:id       
+        <orderByClause/>
+        return $patientId
+</query>

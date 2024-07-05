@@ -1,0 +1,129 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRInformation.xhtml
+    
+    Standard div for displaying read-only information.
+    Included in every patient view.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:div id="ehrInfo" class="{xxf:instance('view-parameters-instance')/ehrInfoLayout}" style="{concat('width: ',xxf:instance('view-parameters-instance')/ehrInfoLayout/@size,'px;')}" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    <xhtml:div id="infoType">
+        <!-- Button to hide ehrInfo -->
+        <xhtml:div id="collapseInfo">
+            <xf:trigger appearance="minimal" class="layoutControl">
+                <xf:label
+                    ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseInfo']/@displayName"/>
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/ehrInfoLayout" value="'hidden'"/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:div>
+        
+        <!-- Button to increase ehrInfo width -->
+        <xhtml:div id="maximiseView">
+            <xxf:variable name="ehrInfoLayout" select="xxf:instance('view-parameters-instance')/ehrInfoLayout"/>
+            <xxf:variable name="maximiseViewClass" select="if ($ehrInfoLayout!='hidden' and $ehrInfoLayout/@size lt $ehrInfoLayout/@max) then 'layoutControl' else 'hidden'"/>
+            <xf:trigger appearance="minimal" class="{$maximiseViewClass}">
+                <xf:label
+                    ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='maximiseView']/@displayName"/>
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="$ehrInfoLayout/@size" value="if (. lt $ehrInfoLayout/@max) then (. + $ehrInfoLayout/@increment) else ."/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:div>
+        
+        <!-- Button to decrease ehrInfo width -->
+        <xhtml:div id="minimiseView">
+            <xxf:variable name="ehrInfoLayout" select="xxf:instance('view-parameters-instance')/ehrInfoLayout"/>
+            <xxf:variable name="minimiseViewClass" select="if ($ehrInfoLayout/@size gt $ehrInfoLayout/@min) then 'layoutControl' else 'hidden'"/>
+            <xf:trigger appearance="minimal" class="{$minimiseViewClass}">
+                <xf:label
+                    ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='minimiseView']/@displayName"/>
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="$ehrInfoLayout/@size" value="if ($ehrInfoLayout/@size gt $ehrInfoLayout/@min) then . - $ehrInfoLayout/@increment else ."/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:div>
+    </xhtml:div>
+    <xhtml:div id="infoDisplay">
+        
+        <!-- Show information associated with clinical coding -->
+        
+        <xxf:variable name="codeList" select="xxf:instance('form-instance')/descendant::cda:code[@codeSystem!='cityEHR'][@cityEHR:visibility=('','true')]/@code"/>       
+        <xxf:variable name="knowledgeSources"  select="distinct-values(xxf:instance('knowledgeMap-instance')/rdf:Description/@rdf:about)"/>
+            
+        <!-- rdf:about URL -->
+        <xf:repeat nodeset="$knowledgeSources">
+            <xxf:variable name="source" select="."/>
+        <xf:trigger appearance="minimal">
+            <xf:label ref="$source"/>
+            <xf:action ev:event="DOMActivate">
+                <xf:load resource="{$source}" show="new"/>
+            </xf:action>
+        </xf:trigger>
+        
+        <xhtml:br/>
+        
+        <!-- The knowledge source embedded in iframe -->
+            <xhtml:iframe width="560" height="315" src="{$source}" frameborder="0"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"/>    
+        </xf:repeat>
+        
+        
+        <!-- Show information associated with entries -->
+        <!--
+        <xxf:variable name="informationURL" select="'https://wiki.archlinux.org/'"/>
+        <xhtml:iframe src="{$informationURL}"/>
+        -->
+        <xxf:variable name="informationItemList" select="xxf:instance('information-instance')/informationItem"/>
+        <xf:repeat nodeset="$informationItemList" id="infoItem-repeat">
+            <xxf:variable name="informationItem" select="."/>
+            <xxf:variable name="itemId" select="$informationItem/itemId"/>
+            <xxf:variable name="itemDisplayName" select="$informationItem/displayName"/>
+            
+            <!-- This containing span helps Orbeon's repeat to produce HTML that doesn't interfere with our own CSS -->
+            <xhtml:span class="informationItem">
+                
+                <xxf:variable name="informationItemClass" select="if ($itemId=xxf:instance('informationControl-instance')/currentItemId) then 'collapse' else 'expand'"/>
+                
+                <xf:trigger class="informationItemSelect" appearance="minimal">
+                    <xf:label ref="concat(xxf:instance('view-parameters-instance')/staticParameters/informationItem/prefix[@action=$informationItemClass],$itemDisplayName)"/>
+                    
+                    <!-- Action when item is selected -->
+                    <xf:action ev:event="DOMActivate">
+                        <xxf:variable name="selectedItem" select="$informationItemList[index('infoItem-repeat')]"/>
+                        <xxf:variable name="selectedItemId" select="$selectedItem/itemId"/>
+                        <!-- Set to new item, or reset to blank if already selected -->
+                        <xf:setvalue ref="xxf:instance('informationControl-instance')/currentItemId" value="if (xxf:instance('informationControl-instance')/currentItemId=$selectedItemId) then '' else $selectedItemId"/>
+                        <xf:setvalue ref="xxf:instance('informationControl-instance')/formattedInformation" value="xxf:serialize(xxf:instance('information-instance')/informationItem[itemId=$selectedItemId]/content/*, 'html')"/>             
+                    </xf:action>
+                    
+                </xf:trigger>
+                
+                <!-- Show the contents for the currently selected item -->
+                <xxf:variable name="informationItemContentClass" select="if ($itemId=xxf:instance('informationControl-instance')/currentItemId) then 'informationItemContent' else 'hidden'"/>
+                <xhtml:span class="{$informationItemContentClass}">
+                    <!-- Display the formatted content -->
+                    <xf:output ref="xxf:instance('informationControl-instance')/formattedInformation" mediatype="text/html"/>
+                </xhtml:span>
+            </xhtml:span>
+            
+        </xf:repeat>
+        
+    </xhtml:div>
+</xhtml:div>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        viewFolderXQuery.xml
+        
+        XQuery to return a list of compositions of specified type(s)
+        Context is the patient record
+        Result is the set of compositions for a folder type view
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+<query xml:space="preserve"> 
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $resource in collection()
+        let $effectiveTime := data($resource/cda:ClinicalDocument/cda:effectiveTime/@value[1]) 
+        let $eventId := $resource/cda:ClinicalDocument/cda:typeId/@extension <letClause/>
+        <whereClause/> 
+        order by $effectiveTime descending 
+        return $resource 
+</query>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    resourceCountXQuery.xml
+    
+    XQuery to return the number of resources stored in the current collection
+    constrained by resourceFilter
+    
+    /* finds the document element of every resource in the collection or any sub-collection
+    
+    So with blank resourceFilter, returns a count of all documents stored in a collection, including in its sub-collections
+    
+    This is an XML document which is read by the cityEHR 
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    
+    **********************************************************************************************************
+-->
+<query xml:space="preserve">
+     count(/*<resourceFilter/>)
+</query>
+

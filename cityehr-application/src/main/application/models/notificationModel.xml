@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    notificationModel.xml
+    
+    Handling notifications
+    Can be annotations of recorded events or actions in care pathways
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="notification-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- ========= Create New Action Notifications and Save notification for an action ========= 
+         ======================================================================================= -->
+
+    <xf:instance id="notificationsControl-instance">
+        <control xmlns="">
+            <status/>
+            <!-- Location of notifications.
+                 Set as the general location by default when the model loads.
+                 But can be reset to patient-specific location when used in the summary view for a patient -->
+            <notificationLocation/>
+
+            <!-- Current notification contains <notification> element
+                 with the same model returned from xquery to get notifications.
+                 The handle includes the full database path starting at databaseLocation -->
+            <currentNotification>
+                <!-- The whole notification element gets replaced by return from xquery.
+                     But the handle is used in compositionMainModel for save/delete of notifications in triggers, 
+                     so needs to be in this template definition -->
+                <notification>
+                    <handle/>
+                </notification>
+            </currentNotification>
+            <!-- Current action has details of the action and the subject document from the current notification.
+                 Used in pathways and InTray-->
+            <currentAction>
+                <subjectCompositionTypeIRI/>
+                <subjectHandle/>
+                <subjectHandleId/>
+                <displayName/>
+            </currentAction>
+        </control>
+    </xf:instance>
+
+    <!-- Application defined action to load the action notification template -->
+    <xf:instance id="action-notification-template-instance">
+        <cda:ClinicalDocument xmlns="urn:hl7-org:v3">
+            <!-- Template content loaded from templates/notificationCDA.xml -->
+        </cda:ClinicalDocument>
+    </xf:instance>    
+    
+    <xf:action ev:event="load-action-notification-template">
+        <!-- Load the template from static resources -->
+        <xxf:variable name="notificationTemplateLocation" select="'/templates/notificationCDA.xml'"/>
+        <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="$notificationTemplateLocation"/>
+            <xxf:context name="resource" select="xxf:instance('action-notification-template-instance')"/>
+            <xxf:context name="status" select="xxf:instance('notificationsControl-instance')/status"/>
+        </xf:dispatch>
+        
+        <!-- Template was loaded.
+             Set the parameters in the CDA Header using details of current record.
+                Here we set:
+                effectiveTime (already set in current-form/effectiveTime)
+                id (already set in parameters-instance/id)
+                prefix (i.e. Mr, Mrs, etc)
+                family (name)
+                given (names)
+                birthTime
+                administrativeGenderCode
+                
+                Plus the providerOrganization code for the healthcare provider organisation.
+        -->
+        <xf:action if="xxf:instance('notificationsControl-instance')/status =''">
+         <!-- effectiveTime - not set here, just on save
+                <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:effectiveTime/@value" value=""/>
+            -->
+            <!-- id -->
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:recordTarget/cda:patientRole/cda:id/@extension"
+                value="xxf:instance('view-parameters-instance')/patientId"/>
+            <!-- family -->
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:family"
+                value="xxf:instance('patient-instance')/cdaheader/family"/>
+            <!-- given -->
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:given"
+                value="xxf:instance('patient-instance')/cdaheader/given"/>
+            <!-- prefix -->
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:prefix"
+                value="xxf:instance('patient-instance')/cdaheader/prefix"/>
+            <!-- birthTime -->
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:birthTime/@value"
+                value="xxf:instance('patient-instance')/cdaheader/birthTime"/>
+            <!-- administrativeGenderCode -->
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:administrativeGenderCode/@displayName"
+                value="xxf:instance('patient-instance')/cdaheader/administrativeGenderCode"/>
+            <!-- providerOrganization -->
+            <xf:setvalue
+                ref="xxf:instance('action-notification-template-instance')/cda:recordTarget/cda:patientRole/cda:providerOrganization/cda:id/@extension"
+                value="xxf:instance('application-parameters-instance')/patientRegistration/providerOrganization/@value"/>          
+        </xf:action>
+        
+        <!-- Failed to load template -->
+        <xf:action if="not(xxf:instance('notificationsControl-instance')/status ='')">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedLoadNotificationTemplateSubmission']"/>
+        </xf:action>
+        
+    </xf:action>
+    
+
+    <!-- Submission to save the action notification.
+         The currentNotification/notification/handle has been set up to include the application database location -->
+    <xf:submission id="save-action-notification-submission"
+        ref="xxf:instance('action-notification-template-instance')"
+        action="{xxf:instance('notificationsControl-instance')/currentNotification/notification/handle}"
+        validate="false" method="put" replace="none" f:url-type="resource"
+        includenamespacesprefixes="">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >success</xf:setvalue>
+         
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(.,' Error saving notification: ',event('error-type'))"/>
+        </xf:action>
+    </xf:submission>
+
+
+    <!-- ========= Load a notification ========= 
+         The handle for the notification is in notificationControl-instance.
+         This handle has been returned from the document-uri in a query, so doesn't include the databaseLocation
+         ======================================= -->
+
+    <!-- The XML document for the current notification -->
+    <xf:instance id="notification-instance">
+        <notification/>
+    </xf:instance>
+
+    <xf:submission id="load-notification-submission" serialization="none"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('notificationsControl-instance')/currentNotification/notification/handle}"
+        validate="false" method="get" replace="instance" instance="notification-instance"
+        f:url-type="resource">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >success</xf:setvalue>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >failed</xf:setvalue>
+            <!-- Must fail silently, since we try two different URLs -->
+            <!--
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(.,' Error loading notification: ',event('error-type'),xxf:instance('notificationsControl-instance')/currentNotification/notification/handle)"/>
+ -->
+
+ </xf:action>
+    </xf:submission>
+
+
+    <!-- ========= Delete a notification ========= 
+    ======================================= -->
+
+    <!-- Application defined action to delete a set of notifications.
+         Only to be used after the user has confirmed. -->
+    <xf:action ev:event="delete-notificationList">
+        <xxf:variable name="notificationList" select="event('notificationList')"/>
+
+        <!-- Iterate through notifications to delete them -->
+        <xf:action xxf:iterate="$notificationList">
+            <xxf:variable name="notification" select="."/>
+            <!-- Set handle -->
+            <xf:setvalue
+                ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
+                value="$notification/handle"/>
+            <!-- Delete notification -->
+            <xf:dispatch name="delete-notification" target="notification-model"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to delete a notification.
+         The notification has been set up in currentNotification/notification/handle
+         First check that the notification exists by loading it - ensures that we don't accidentally delete the wrong thing.
+         The delete-notification must fail silently, since it may be invoked for notifications which no longer exist. -->
+    <xf:action ev:event="delete-notification">
+        <!-- Load the notification composition.
+             This loads the currently selected notification to notification-instance -->
+        <xf:send submission="load-notification-submission" target="notification-model"/>
+        <!-- Get components of the handle -->
+        <xxf:variable name="handleComponents"
+            select="reverse(tokenize(xxf:instance('notificationsControl-instance')/currentNotification/notification/handle,'/'))"/>
+        <!-- Check that the notification was loaded, then delete it -->
+        <xf:action
+            if="xxf:instance('notificationsControl-instance')/status='success' and $handleComponents[1]=xxf:instance('notification-instance')/cda:id/@extension">
+            <xf:send submission="delete-notification-submission" target="notification-model"/>
+        </xf:action>
+    </xf:action>
+
+    <xf:submission id="delete-notification-submission"
+        ref="xxf:instance('notification-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('notificationsControl-instance')/currentNotification/notification/handle}"
+        method="delete" replace="none" serialization="none"/>
+
+
+    <!-- ======= Save a notification (action or annotation). =====================
+         The currentNotification/notification/handle has been returned from database query 
+         so does not include the database location 
+         This one is used in admin task to redirectNotifications ============== -->
+    <xf:submission id="save-notification-submission"
+        ref="xxf:instance('notification-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('notificationsControl-instance')/currentNotification/notification/handle}"
+        validate="false" method="put" replace="none" f:url-type="resource"
+        includenamespacesprefixes="">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >success</xf:setvalue>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(.,' Error saving notification: ',event('error-type'))"/>
+        </xf:action>
+    </xf:submission>
+
+
+
+    <!-- ========= Get set of notifications for given criteria ========= 
+         The criteria can be for a given user/group/role
+         and/or for a given pathway
+         ================================================================ -->
+
+    <xf:instance id="getNotificationsXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getNotificationsXQuery.xml"/>
+
+    <!-- The xquery to submit, instantiated with the selection criteria -->
+    <xf:instance id="notifications-query-instance">
+        <exist:query start="1" max="1000">
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+    <!-- Instances to hold lists of notifications for actions and annonations -->
+    <xf:instance id="notification-actions-instance">
+        <notification/>
+    </xf:instance>
+
+    <xf:instance id="notification-annotations-instance">
+        <notification/>
+    </xf:instance>
+
+
+    <!-- Submit XQuery to get the annotations notifications return in notifications-annotations-instance.
+         Uses the annotationNotificationLocation which is the general location (default) or can be patient-specific -->
+    <xf:submission id="load-notifications-annotations-submission"
+        ref="xxf:instance('notifications-query-instance')"
+        action="{xxf:instance('notificationsControl-instance')/notificationLocation}"
+        method="post" replace="instance" instance="notification-annotations-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >success</xf:setvalue>
+            <xf:action
+                if="number(xxf:instance('notification-annotations-instance')/@exist:hits) gt number(xxf:instance('notification-annotations-instance')/@exist:count)">
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                    value="xxf:instance('view-parameters-instance')/notifications/maxNotificationsMessage"
+                />
+            </xf:action>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(.,' Error submitting query.')"/>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Submit XQuery to get the actions notifications return in notifications-actions-instance.
+         Uses the actionNotificationLocation which is the general location (default) or can be patient-specific-->
+    <xf:submission id="load-notifications-actions-submission"
+        ref="xxf:instance('notifications-query-instance')"
+        action="{xxf:instance('notificationsControl-instance')/notificationLocation}"
+        method="post" replace="instance" instance="notification-actions-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >success</xf:setvalue>
+            <xf:action
+                if="number(xxf:instance('notification-actions-instance')/@exist:hits) gt number(xxf:instance('notification-actions-instance')/@exist:count)">
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                    value="xxf:instance('view-parameters-instance')/notifications/maxNotificationsMessage"
+                />
+            </xf:action>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(.,' Error submitting query.')"/>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to load notifications
+         The notificationType variable is annotation or notification (the two types of notification)
+         The actorList variable is the set of actors that are the target of the notification
+         Any additional filter criteria must be supplied using the pattern:
+            /ancestor::cda:ClinicalDocument/descendant::...
+           -->
+    <xf:action ev:event="load-notifications-list">
+        <xxf:variable name="notificationType" select="event('notificationType')"/>
+        <xxf:variable name="actorList" select="event('actorList')"/>
+        <xxf:variable name="filterCriteria" select="event('filterCriteria')"/>
+
+        <!-- Notification for specified actors (user, role, care team) -->
+        <xxf:variable name="actorListMatch"
+            select="if ($actorList='') then '' else concat('[cda:id/@extension = (''',$actorList,''')]')"/>
+        <xf:setvalue ref="xxf:instance('getNotificationsXQuery-instance')/actorCriteria"
+            value="$actorListMatch"/>
+
+        <!-- Additional filter criteria have already been set in the variable passed in -->
+        <xf:setvalue ref="xxf:instance('getNotificationsXQuery-instance')/filterCriteria"
+            value="if ($filterCriteria != '') then concat('/ancestor-or-self::cda:ClinicalDocument',$filterCriteria) else ''"/>
+
+        <!-- Search for the correct type of notification (annotation or notification) -->
+        <xxf:variable name="notificationIRI"
+            select="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification[@type=$notificationType]/@typeIRI"/>
+
+        <!-- Selector on effectiveTime only needed to prevent rouge notifications (with no effectiveTime) appearing in the results -->
+        <xf:setvalue
+            ref="xxf:instance('getNotificationsXQuery-instance')/notificationTypeCriteria"
+            value="concat('/ancestor-or-self::cda:ClinicalDocument[data(cda:typeId/@extension) eq ''',$notificationIRI,'''][data(cda:effectiveTime/@value) ne '''']')"/>
+
+        <!-- Set the query, now that parameters have been set -->
+        <xf:setvalue ref="xxf:instance('notifications-query-instance')/exist:text"
+            value="xxf:instance('getNotificationsXQuery-instance')"/>
+
+        <!-- Maximum search results -->
+        <xf:setvalue ref="xxf:instance('notifications-query-instance')/@max"
+            value="xxf:instance('view-parameters-instance')/notifications/maxNotifications"/>
+
+        <!-- Load annotations -->
+        <xf:action if="$notificationType = 'annotation'">
+            <xf:send submission="load-notifications-annotations-submission"
+                target="notification-model"/>
+        </xf:action>
+
+        <!-- Load notifications -->
+        <xf:action if="$notificationType='notification'">
+            <xf:send submission="load-notifications-actions-submission"
+                target="notification-model"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set the notification lists.
+         Loads action notifications and annotations -->
+    <xf:action ev:event="load-notifications">
+        <xxf:variable name="actorList" select="event('actorList')"/>
+        <xxf:variable name="filterCriteria" select="event('filterCriteria')"/>
+        
+        <!-- Submit queries to get list of annotations (notification-annotations-instance)
+            and action notifications (notification-actions-instance) -->
+        <xf:dispatch name="load-notifications-list" target="notification-model">
+            <xxf:context name="notificationType" select="'annotation'"/>
+            <xxf:context name="actorList" select="$actorList"/>
+            <xxf:context name="filterCriteria" select="$filterCriteria"/>
+        </xf:dispatch>
+
+        <xf:dispatch name="load-notifications-list" target="notification-model">
+            <xxf:context name="notificationType" select="'notification'"/>
+            <xxf:context name="actorList" select="$actorList"/>
+            <xxf:context name="filterCriteria" select="$filterCriteria"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+  
+    
+    <!-- ======= Get subject composition for an action and save it ===== 
+         =============================================================== -->
+
+    <xf:instance id="action-composition-instance">
+        <cda:ClinicalDocument xmlns="urn:hl7-org:v3">
+            <!-- Template loaded from xmlstore -->
+        </cda:ClinicalDocument>
+    </xf:instance>
+    
+    <xf:instance id="getCompositionTemplateXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getCompositionTemplateXQuery.xml"/>
+
+
+    <xf:instance id="getComposition-query-instance">
+        <exist:query>
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+    <!-- Submit XQuery to get the action-composition-instance.
+         This instance is cda:ClinicalDocument inside exist:result since it is returned from the query-->
+    <xf:submission id="load-action-composition-submission"
+        ref="xxf:instance('getComposition-query-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/systemConfiguration/{xxf:instance('view-parameters-instance')/specialtyId}/compositions"
+        method="post" replace="instance" instance="action-composition-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >success</xf:setvalue>
+
+            <!-- Now set up the action-composition-instance -->
+            <!-- Set the parameters in the CDA Header using details of current record.
+                Here we set:
+                effectiveTime (already set in current-form/effectiveTime)
+                id (already set in parameters-instance/id)
+                prefix (i.e. Mr, Mrs, etc)
+                family (name)
+                given (names)
+                birthTime
+                administrativeGenderCode
+                
+                Plus the providerOrganization code for the healthcare provider organisation.
+            -->
+
+            <!-- effectiveTime - not set here, just on save
+                <xf:setvalue ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:effectiveTime/@value" value=""/>
+            -->
+            <!-- id -->
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:id/@extension"
+                value="xxf:instance('view-parameters-instance')/patientId"/>
+            <!-- family -->
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:family"
+                value="xxf:instance('patient-instance')/cdaheader/family"/>
+            <!-- given -->
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:given"
+                value="xxf:instance('patient-instance')/cdaheader/given"/>
+            <!-- prefix -->
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:prefix"
+                value="xxf:instance('patient-instance')/cdaheader/prefix"/>
+            <!-- birthTime -->
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:patient/cda:birthTime/@value"
+                value="xxf:instance('patient-instance')/cdaheader/birthTime"/>
+            <!-- administrativeGenderCode -->
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:patient/cda:administrativeGenderCode/@displayName"
+                value="xxf:instance('patient-instance')/cdaheader/administrativeGenderCode"/>
+            <!-- providerOrganization -->
+            <xf:setvalue
+                ref="xxf:instance('action-composition-instance')/cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:providerOrganization/cda:id/@extension"
+                value="xxf:instance('application-parameters-instance')/patientRegistration/providerOrganization/@value"/>
+
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedLoadActionComposition']"/>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to get the action composition template.
+         Set template query and run submission.
+         CDA document is then in action-composition-instance. -->
+    <xf:action ev:event="load-action-composition-template">
+        <xxf:variable name="compositionIRI" select="event('compositionIRI')"/>
+        
+        <xf:setvalue ref="xxf:instance('getCompositionTemplateXQuery-instance')/typeId" value="$compositionIRI"/>
+        <xf:setvalue ref="xxf:instance('getComposition-query-instance')/exist:text" value="xxf:instance('getCompositionTemplateXQuery-instance')"/>
+        
+        <xf:send submission="load-action-composition-submission" target="notification-model"/>
+    </xf:action>
+
+
+
+    <!-- Submission to save the action composition.
+         Make sure the cda:ClinicalDocument is saved (inside exist:result)-->
+    <xf:submission id="save-action-composition-submission"
+        ref="xxf:instance('action-composition-instance')"
+        action="{xxf:instance('notificationsControl-instance')/currentAction/subjectHandle}"
+        validate="false" method="put" replace="none" f:url-type="resource"
+        includenamespacesprefixes="">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >success</xf:setvalue>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/status"
+                >failed</xf:setvalue>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSaveActionComposition']"/>
+        </xf:action>
+    </xf:submission>
+
+
+    <!-- ========= Set up model when it is first loaded ========= 
+        ========================================================= -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Set default location for notifications.
+            This gets reset if looking for patient-specific notifications (in cityEHRFolder-Views)-->
+        <xf:setvalue
+            ref="xxf:instance('notificationsControl-instance')/notificationLocation"
+            value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data')"/>
+    </xf:action>
+
+
+
+</xf:model>

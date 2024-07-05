@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<!-- ====================================================================
+    cityEHRlanguagePack.xml
+    OWL/XML ontology with base assertions for a language pack.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    ==================================================================== -->
+<!--
+<!DOCTYPE Ontology [
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY xml "http://www.w3.org/XML/1998/namespace" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+-->
+
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+    xml:base="http://www.openhealthinformatics.org/cityEHR.owl"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    ontologyIRI="http://www.openhealthinformatics.org/cityEHR.owl">
+    <Prefix name="x2" IRI="http://schemas.microsoft.com/office/excel/2003/xml"/>
+    <Prefix name="ss" IRI="urn:schemas-microsoft-com:office:spreadsheet"/>
+    <Prefix name="o" IRI="urn:schemas-microsoft-com:office:office"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="c" IRI="urn:schemas-microsoft-com:office:component:spreadsheet"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="cda" IRI="urn:hl7-org:v3"/>
+    <Prefix name="x" IRI="urn:schemas-microsoft-com:office:excel"/>
+    <Prefix name="xsi" IRI="http://www.w3.org/2001/XMLSchema-instance"/>
+    <Prefix name="office2003Spreadsheet" IRI="urn:schemas-microsoft-com:office:spreadsheet"/>
+    <Prefix name="" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Prefix name="html" IRI="http://www.w3.org/TR/REC-html40"/>
+    <Annotation>
+        <AnnotationProperty abbreviatedIRI="rdfs:cityEHR"/>
+        <Literal datatypeIRI="http://www.openhealthinformatics.org"
+            >cityEHR (c) 2013-21 John Chelsom</Literal>
+    </Annotation>
+    <Annotation>
+        <AnnotationProperty abbreviatedIRI="rdfs:importedFromFile"/>
+        <Literal datatypeIRI="http://www.openhealthinformatics.org">Not
+            known</Literal>
+    </Annotation>
+
+    <!-- Classes / individuals are asserted to identify the application
+         The $applicationIRI is set when the language pack is created from the template.-->
+
+    <Declaration>
+        <Class IRI="#ISO-13606:EHR_Extract"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="$applicationIRI"/>
+    </Declaration>
+    <ClassAssertion>
+        <Class IRI="#ISO-13606:EHR_Extract"/>
+        <NamedIndividual IRI="$applicationIRI"/>
+    </ClassAssertion>
+
+
+    <!-- Language assertion identifies the language pack.
+         This is made with a data property assertion on the EHR_Extract.
+         The $applicationIRI and $languageCode get replaced when the language pack is created from the template -->
+    <Declaration>
+        <DataProperty IRI="#hasLanguage"/>
+    </Declaration>
+
+    <DataPropertyAssertion>
+        <DataProperty IRI="#hasLanguage"/>
+        <NamedIndividual IRI="$applicationIRI"/>
+        <Literal xml:lang="$languageCode" datatypeIRI="rdf:PlainLiteral">$languageCode</Literal>
+    </DataPropertyAssertion>
+    
+    
+    <!-- Base language assertion identifies the base language.
+         This is made with a data property assertion on the EHR_Extract.
+         The $applicationIRI and $baseLanguageCode get replaced when the language pack is created from the template -->
+    <Declaration>
+        <DataProperty IRI="#hasBaseLanguage"/>
+    </Declaration>
+    
+    <DataPropertyAssertion>
+        <DataProperty IRI="#hasBaseLanguage"/>
+        <NamedIndividual IRI="$applicationIRI"/>
+        <Literal xml:lang="$baseLanguageCode" datatypeIRI="rdf:PlainLiteral">$baseLanguageCode</Literal>
+    </DataPropertyAssertion>
+
+
+</Ontology>

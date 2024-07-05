@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    annotationModel.xml
+    
+    Handling annotations
+    These are flags against recorded events
+    
+    stored-annotations-instance - holds the set of annotations that have already been saved to the xmlstore
+    annotations-instance - holds new annotations made by the use, but not yet saved
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="annotation-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- ========= Create New Annotations and Save Annotations for an event ========= 
+         ============================================================================ -->
+
+
+    <xf:instance id="annotationsControl-instance">
+        <control xmlns="">
+            <saveHandle/>
+            <status/>
+        </control>
+    </xf:instance>
+
+
+    <!-- === New annotations ==========================  -->
+
+    <xf:instance id="annotations-instance">
+        <annotations>
+            <!-- Is filled with annotations elements following the template in parameters-instance
+            -->
+        </annotations>
+    </xf:instance>
+
+    <xf:bind nodeset="xxf:instance('annotations-instance')/annotation">
+        <xf:bind nodeset="descendant::*[@type='xs:date']/@value" type="xs:date"/>
+        <xf:bind nodeset="descendant::*[@type='xs:dateTime']/@value" type="xs:dateTime"/>
+        <xf:bind nodeset="descendant::*[@type='xs:time']/@value" type="xs:time"/>
+        <xf:bind nodeset="descendant::*[@type='xs:string']/@value" type="xs:string"/>
+        <xf:bind nodeset="descendant::*[@type='xs:integer']/@value" type="xs:integer"/>
+        <xf:bind nodeset="descendant::*[@type='xs:double']/@value" type="xs:double"/>
+        <xf:bind nodeset="descendant::*[@type='xs:boolean']/@value" type="xs:boolean"/>
+        <xf:bind nodeset="descendant::*[@type='memo']/@value" type="xs:string"/>
+    </xf:bind>
+
+    <!-- Application defined action to add an annotation to the annotations-instance -->
+    <xf:action ev:event="add-annotation">
+        <xxf:variable name="eventStorageId" select="event('eventStorageId')"/>
+
+        <!-- Use the annotation template from view-parameters -->
+        <xxf:variable name="annotationTemplate" select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/annotation"/>
+
+        <!-- Insert the new annotation -->
+        <xf:insert context="xxf:instance('annotations-instance')" nodeset="annotation" origin="$annotationTemplate" at="1" position="before"/>
+        <xxf:variable name="newAnnotation" select="xxf:instance('annotations-instance')/annotation[1]"/>
+
+        <!-- Set the annotation id -->
+        <xxf:variable name="currentTime" select="current-dateTime()"/>
+        <xxf:variable name="timeStamp" select="replace(replace(string($currentTime),':','-'),'\+','*')"/>
+        <xxf:variable name="idSeparator" select="xxf:instance('view-parameters-instance')/idSeparator"/>
+        <xf:setvalue ref="$newAnnotation/id"
+            value="concat($timeStamp,$idSeparator,'CityEHR-Annotation',$idSeparator,$eventStorageId,$idSeparator,xxf:instance('user-instance')/credentials/userId)"/>
+
+        <!-- Set default values -->
+        <xf:setvalue ref="$newAnnotation/authorTime/@value" value="$currentTime"/>
+        <xf:setvalue ref="$newAnnotation/author/@displayName" value="xxf:instance('user-instance')/credentials/username"/>
+        <xf:setvalue ref="$newAnnotation/effectiveTime/@value" value="current-date()"/>
+        <xf:action xxf:iterate="$newAnnotation/parameterSet/parameter[option]">
+            <xxf:variable name="parameter" select="."/>
+            <xf:setvalue ref="$parameter/@value" value="$parameter/option[1]/@value"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to save annotations as HL7 CDA -->
+    <xf:action ev:event="save-annotations">
+        <xxf:variable name="currentEvent" select="event('currentEvent')"/>
+
+        <!-- Iterate through all new annotations.
+             Set the notification CDA and store in the xmlstore -->
+        <xf:action xxf:iterate="xxf:instance('annotations-instance')/annotation">
+            <xxf:variable name="annotation" select="."/>
+            <xxf:variable name="annotationHandleId" select="$annotation/id"/>
+
+            <!-- Can only save if the annotationHandleId is set (which it will be) -->
+            <xf:action if="$annotationHandleId!=''">
+                <!-- Get the annotation template (done on each iteration to make sure its empty)
+                 The CDA Header is set on load. -->
+                <xf:dispatch name="load-annotation-template" target="annotation-model"/>
+
+                <!-- Set values in the template-annotation-instance. -->
+                <xf:dispatch name="set-annotation-details" target="annotation-model">
+                    <xxf:context name="cdaTemplate" select="xxf:instance('annotation-template-instance')"/>
+                    <xxf:context name="annotation" select="$annotation"/>
+                    <xxf:context name="annotationHandleId" select="$annotationHandleId"/>
+                    <xxf:context name="currentEvent" select="$currentEvent"/>
+                </xf:dispatch>
+
+                <!-- Store the annotation -->
+                <xxf:variable name="storageLocation"
+                    select="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/records/',xxf:instance('view-parameters-instance')/patientId,'/',$annotationHandleId)"/>
+                <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="$storageLocation"/>
+                    <xxf:context name="resource" select="xxf:instance('annotation-template-instance')"/>
+                    <xxf:context name="status" select="xxf:instance('annotationsControl-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- If there was a problem saving -->
+                <xf:action if="xxf:instance('annotationsControl-instance')/status !=''">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                        value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSaveAnnotationSubmission']"/>
+                </xf:action>
+
+                <!-- Create a notification, if required -->
+                <xf:action if="$annotation/notification/@value != ''">
+                    <!-- Get the action notification template (done on each iteration to make sure its empty).
+                         The CDA Header is set on load. -->
+                    <xf:dispatch name="load-action-notification-template" target="notification-model"/>
+                        
+                    <!-- Set values in the action-notification-template-instance. -->
+                    <xf:dispatch name="set-annotation-details" target="annotation-model">
+                        <xxf:context name="cdaTemplate" select="xxf:instance('action-notification-template-instance')"/>
+                        <xxf:context name="annotation" select="$annotation"/>
+                        <xxf:context name="annotationHandleId" select="$annotationHandleId"/>
+                    </xf:dispatch>
+
+                    <!-- Store the notification -->
+                    <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
+                        value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$annotationHandleId)"/>
+                    <xf:send submission="save-action-notification-submission" target="notification-model"/>
+                </xf:action>
+
+            </xf:action>
+        </xf:action>
+        <!-- End of iteration through new annotations -->
+
+        <!-- Now delete the new annotations (they are all saved now) -->
+        <xf:delete nodeset="xxf:instance('annotations-instance')/annotation"/>
+    </xf:action>
+
+
+    <!-- ===  HL7 CDA Annotations ==========================  -->
+
+    <!-- Submission to load the annotation template -->
+    <!-- This one loads the default -->
+    <xf:instance id="annotation-template-instance">
+        <cda:ClinicalDocument xmlns="urn:hl7-org:v3">
+            <!-- Template content loaded from templates/annotationCDA.xml -->
+        </cda:ClinicalDocument>
+    </xf:instance>
+
+    <!-- Application defined action to load the HL7 CDA annotation template -->
+    <xf:action ev:event="load-annotation-template">
+        <!-- Load the template from static resources -->
+        <xxf:variable name="annotationTemplateLocation" select="'/templates/annotationCDA.xml'"/>
+        <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="$annotationTemplateLocation"/>
+            <xxf:context name="resource" select="xxf:instance('annotation-template-instance')"/>
+            <xxf:context name="status" select="xxf:instance('annotationsControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Annotation template was loaded - now set up the annotations instance 
+              Set the parameters in the CDA Header using details of current record.
+                Here we set:
+                effectiveTime (already set in current-form/effectiveTime)
+                id (already set in parameters-instance/id)
+                prefix (i.e. Mr, Mrs, etc)
+                family (name)
+                given (names)
+                birthTime
+                administrativeGenderCode
+                
+                Plus the providerOrganization code for the healthcare provider organisation.-->
+        <xf:action if="xxf:instance('annotationsControl-instance')/status =''">
+            <!-- effectiveTime - not set here, just on save
+                <xf:setvalue ref="xxf:instance('annotation-template-instance')/cda:effectiveTime/@value" value=""/>
+            -->
+            <!-- id -->
+            <xf:setvalue ref="xxf:instance('annotation-template-instance')/cda:recordTarget/cda:patientRole/cda:id/@extension"
+                value="xxf:instance('view-parameters-instance')/patientId"/>
+            <!-- family -->
+            <xf:setvalue ref="xxf:instance('annotation-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:family"
+                value="xxf:instance('patient-instance')/cdaheader/family"/>
+            <!-- given -->
+            <xf:setvalue ref="xxf:instance('annotation-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:given"
+                value="xxf:instance('patient-instance')/cdaheader/given"/>
+            <!-- prefix -->
+            <xf:setvalue ref="xxf:instance('annotation-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:prefix"
+                value="xxf:instance('patient-instance')/cdaheader/prefix"/>
+            <!-- birthTime -->
+            <xf:setvalue ref="xxf:instance('annotation-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:birthTime/@value"
+                value="xxf:instance('patient-instance')/cdaheader/birthTime"/>
+            <!-- administrativeGenderCode -->
+            <xf:setvalue
+                ref="xxf:instance('annotation-template-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:administrativeGenderCode/@displayName"
+                value="xxf:instance('patient-instance')/cdaheader/administrativeGenderCode"/>
+            <!-- providerOrganization -->
+            <xf:setvalue
+                ref="xxf:instance('annotation-template-instance')/cda:recordTarget/cda:patientRole/cda:providerOrganization/cda:id/@extension"
+                value="xxf:instance('application-parameters-instance')/patientRegistration/providerOrganization/@value"/>
+        </xf:action>
+
+        <!-- Failed to load template -->
+        <xf:action if="not(xxf:instance('annotationsControl-instance')/status ='')">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedLoadAnnotationTemplateSubmission']"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Set annotation details in template CDA document.
+     The template is either an annotation or a notification.
+     The typeId/@extension is reset to #CityEHR:Notification for notifications (typeId/@root is #CityEHR:Notification)-->
+    <xf:action ev:event="set-annotation-details">
+        <xxf:variable name="cdaTemplate" select="event('cdaTemplate')"/>
+        <xxf:variable name="annotation" select="event('annotation')"/>
+        <xxf:variable name="annotationHandleId" select="event('annotationHandleId')"/>
+        <xxf:variable name="currentEvent" select="event('currentEvent')"/>
+
+        <!-- The effectiveTime of the annotation.
+            This is the time at which the annotation will appear in the In-Tray (can be different from the time it was created) -->
+        <xf:setvalue ref="$cdaTemplate/cda:effectiveTime/@value" value="$annotation/effectiveTime/@value"/>
+
+        <!-- The id of the annotation. Root is the IRI for annotation, already set in the template -->
+        <xf:setvalue ref="$cdaTemplate/cda:id/@extension" value="$annotationHandleId"/>
+
+        <!-- Set the typeId - extension is always #CityEHR:Annotation, but root remains as set in the template (#CityEHR:Notification or #CityEHR:Annotation).
+             To ensure this. reset extension to #CityEHR:Annotation (so it is changed if the template is for notification -->
+        <xxf:variable name="annotationIRI"
+            select="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification[@type='annotation']/@typeIRI"/>
+        <xf:setvalue ref="$cdaTemplate/cda:typeId/@extension" value="$annotationIRI"/>
+
+        <!-- Author of the annotation -->
+        <xf:action>
+            <xf:setvalue ref="$cdaTemplate/cda:author/cda:time/@value" value="$annotation/authorTime/@value"/>
+
+            <xf:setvalue ref="$cdaTemplate/cda:author/cda:assignedAuthor/cda:id/@extension" value="xxf:instance('user-instance')/credentials/userId"/>
+            <xf:setvalue ref="$cdaTemplate/cda:author/cda:assignedAuthor/cda:assignedPerson/cda:name"
+                value="xxf:instance('user-instance')/credentials/username"/>
+        </xf:action>
+
+        <!-- Annotation is documentationOf the event 
+            Note that the storageId should be the same as the cda:id/@extension in the event CDA, but may not be -->
+        <xf:action>
+            <xf:setvalue ref="$cdaTemplate/cda:documentationOf/cda:serviceEvent/cda:typeId/@root" value="$currentEvent/compositionTypeIRI"/>
+            <xf:setvalue ref="$cdaTemplate/cda:documentationOf/cda:serviceEvent/cda:typeId/@extension" value="$currentEvent/compositionId"/>
+            <xf:setvalue ref="$cdaTemplate/cda:documentationOf/cda:serviceEvent/cda:id/@extension" value="$currentEvent/storageId"/>
+            <xf:setvalue ref="$cdaTemplate/cda:documentationOf/cda:serviceEvent/cda:code/@displayName" value="$currentEvent/displayName"/>
+        </xf:action>
+
+        <!-- Notification - only if notification/@value has been set
+            Participant is the notification/notifyActor.
+            associatedEntity records the target of the notification.
+            functionCode records the type of notification - this may get reset to 'acknowledged' by a user in the InTray -->
+        <xf:action if="$annotation/notification/@value != ''">
+            <xf:setvalue ref="$cdaTemplate/cda:participant/cda:functionCode/@value" value="$annotation/notification/@value"/>
+            <xf:setvalue ref="$cdaTemplate/cda:participant/cda:functionCode/@displayName" value="$annotation/notification/@displayName"/>
+            <xf:setvalue ref="$cdaTemplate/cda:participant/cda:associatedEntity/cda:id/@root" value="$annotation/notification/@value"/>
+            <xf:setvalue ref="$cdaTemplate/cda:participant/cda:associatedEntity/cda:id/@extension" value="$annotation/notifyActor/@value"/>
+            <xf:setvalue ref="$cdaTemplate/cda:participant/cda:associatedEntity/cda:code/@displayName" value="$annotation/notifyActor/@displayName"/>
+        </xf:action>
+
+        <!-- The annotation parameters are recorded as values in the first (should be only) cda:observation in the template
+             Iterate through the parameters to set them all. 
+             The template for inserting cda:value is the first (and should be only) value in the template -->
+        <xxf:variable name="cdaObservationTemplate" select="$cdaTemplate//cda:observation[1]"/>
+        <xxf:variable name="cdaValueTemplate" select="$cdaObservationTemplate/cda:value[1]"/>
+        <xf:action xxf:iterate="$annotation/parameterSet/parameter">
+            <xxf:variable name="annotationElement" select="."/>
+            <xxf:variable name="annotationElementId" select="$annotationElement/@id"/>
+            <xxf:variable name="annotationElementType" select="$annotationElement/@type"/>
+
+            <xf:setvalue ref="$cdaValueTemplate/@root" value="concat('#ISO-13606:Element:CityEHR:Annotation:',$annotationElementId)"/>
+            <xf:setvalue ref="$cdaValueTemplate/@extension" value="concat('#ISO-13606:Element:CityEHR:Annotation:',$annotationElementId)"/>
+            <xf:setvalue ref="$cdaValueTemplate/@xsi:type" value="if ($annotationElementType='memo') then 'xs:string' else $annotationElementType"/>
+            <xf:setvalue ref="$cdaValueTemplate/@cityEHR:elementDisplayName" value="$annotationElement/@label"/>
+            <xf:setvalue ref="$cdaValueTemplate/@value" value="$annotationElement/@value"/>
+            <xf:setvalue ref="$cdaValueTemplate/@displayName" value="$annotationElement/@displayName"/>
+
+
+            <xf:insert context="$cdaObservationTemplate" nodeset="cda:value" origin="$cdaValueTemplate" at="last()"/>
+        </xf:action>
+
+        <!-- Now delete the template cda:value before the annotation is saved -->
+        <xf:delete nodeset="$cdaValueTemplate"/>
+
+    </xf:action>
+
+
+    <!-- ========= Stored annotations ========= 
+         ========================================================== -->
+
+    <xf:instance id="getAnnotationsXQuery-instance" src="oxf:/apps/ehr/xquery/getAnnotationsXQuery.xml"/>
+
+    <xf:instance id="stored-annotations-instance">
+        <annotations/>
+    </xf:instance>
+    
+    <!-- Application defined action to get stored annotations for a composition.
+         The compositionId is passed as a parameter 
+    
+         Set up and run query to get the stored annotations.
+         The annotation for this event (compositionId) has the following in its CDA Header:
+                    <cda:documentationOf>
+                        <cda:serviceEvent classCode="">
+                        <cda:id extension="compositionId"/>
+                        </cda:serviceEvent>
+                    </cda:documentationOf>    
+    -->
+    <xf:action ev:event="get-storedAnnotations">
+        <xxf:variable name="compositionId" select="event('compositionId')"/>
+        
+        <!-- Set up the query to find compositions -->
+        <xf:setvalue ref="xxf:instance('getAnnotationsXQuery-instance')/whereClause"
+            value="concat('[cda:documentationOf/cda:serviceEvent/cda:id/@extension=''',$compositionId,''']')"/>
+        <xxf:variable name="storageLocation"
+            select="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/records/',xxf:instance('view-parameters-instance')/patientId)"/>
+        
+        <!-- Run query to get compositions -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$storageLocation"/>
+            <xxf:context name="query" select="xxf:instance('getAnnotationsXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('stored-annotations-instance')"/>
+            <xxf:context name="status" select="xxf:instance('annotationsControl-instance')/status"/>
+        </xf:dispatch>  
+        
+    </xf:action>
+
+
+    <!-- ========= Set up model when it is first loaded ========= 
+        =================================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Not doing anything here -->
+    </xf:action>
+
+
+
+</xf:model>

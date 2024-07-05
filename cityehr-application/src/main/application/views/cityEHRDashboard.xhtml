@@ -1,0 +1,177 @@
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRDashboard.xhtml
+    
+    Run pre-configured queries and display in dashboard view.
+    
+    Queries for each application/specialty are specified in application-parameters
+    The XQuery files are found in resources/<applicationId>/dashboardQueries/<queryFileName>
+    Or the default location resources/dashboardQueries/<queryFileName>
+    
+    The results from dashboard queries are of the form:
+    
+    <queryResults>
+        <total value="X">
+        <category displayName="N" value="Y"/>
+        <category displayName="M" value="Z"/>
+        ...
+    </queryResults>
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:svg="http://www.w3.org/2000/svg">
+
+    <xhtml:head>
+
+        <!-- Try this to force compatibility mode -->
+        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10"/>
+
+        <!-- HTML Title is the displayName of the current application -->
+        <xhtml:title>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+        </xhtml:title>
+
+        <!-- Stylesheet -->
+        <xhtml:link rel="stylesheet" type="text/css" href="../resources/styles/cityEHRSkin.css" media="screen"/>
+
+
+        <!-- ========= System Parameters ===================================================== 
+             ================================================================================= -->
+        <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
+            ================================================================================== -->
+        <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- ========= Session model contains stuff for handling of user sessions ============ 
+            ================================================================================== -->
+        <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- ========= Audit log model contains stuff for audit of user actions ============== 
+            ================================================================================== -->
+        <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- ========= Page navigation model contains stuff for navigation between pages =====
+        ====================================================================================== -->
+        <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- ========= Configuration model contains standard configuration of the page ======= 
+            ================================================================================== -->
+        <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
+        
+
+        <!-- ========= Release Notes ========= 
+            ============================================================================ -->
+        <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
+
+
+    </xhtml:head>
+
+
+    <!-- ========= Body of HTML Page ====================================== 
+        Contains the basic framework of divs that are standard across pages in the cityEHR
+        The onload action is needed because SVG charts do not render unless they are generated after the page has loaded.
+        =================================================================== -->
+
+    <xhtml:body class="cityEHRBase">
+
+        <!-- Fixed Header Information -->
+        <xhtml:div id="ehrHeader">
+            <xhtml:div id="patientLabel" class="hidden"/>
+            <xhtml:div id="systemNavigation">
+                <!-- System-level Navigation Pane -->
+                <xi:include href="cityEHRNavigation.xhtml"/>
+            </xhtml:div>
+            <!-- Logo Pane -->
+            <xhtml:div id="logo">
+                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+            </xhtml:div>
+        </xhtml:div>
+
+
+        <!-- === Level 2 /3 =================================== 
+            ehrContent - content in the EHR
+            Contains
+                ehrNavigation
+                ehrView
+                ehrInfo
+            ==================================================
+        -->
+        <xhtml:div id="ehrContent">
+
+            <!-- EHR Navigation there is none for this view -->
+
+            <xhtml:div id="ehrNavigation">
+                <xhtml:div id="navigationType"/>
+                <xhtml:div id="navigationDisplay"/>
+            </xhtml:div>
+
+            <xhtml:div id="ehrView">
+                <xhtml:div id="viewType">
+                    <xhtml:span class="ViewTitle">
+                        <xf:output
+                            ref="concat(xxf:instance('view-parameters-instance')/applicationDisplayName,' - ',xxf:instance('view-parameters-instance')/staticParameters/cityEHRDashboard/pageDisplayName)"
+                        />
+                    </xhtml:span>
+                </xhtml:div>
+
+                <xhtml:div id="viewControls">
+                    <!-- Display messages on status, errors, etc -->
+                    <xf:output
+                        ref="if (xxf:instance('view-parameters-instance')/systemError!='') then concat(xxf:instance('view-parameters-instance')/systemError/@displayName,xxf:instance('view-parameters-instance')/systemError) else ''"
+                        class="error"/>
+                    <xf:output
+                        ref="if (xxf:instance('view-parameters-instance')/systemStatus!='') then concat(xxf:instance('view-parameters-instance')/systemStatus/@displayName,xxf:instance('view-parameters-instance')/systemStatus) else ''"
+                        class="status"/>
+                </xhtml:div>
+
+                <!-- Dashboard content is generated in cityEHRDashboard.xpl -->
+                <xhtml:div id="viewDisplay">
+                    <xi:include href="input:dashboardContent" xxi:omit-xml-base="true"/>
+                </xhtml:div>
+
+            </xhtml:div>
+
+            <!-- EHR Info
+                Contains    infoType, infoDisplay 
+                ===================================================================== -->
+            <!--
+            <xhtml:div id="ehrInfo">
+                <xhtml:div id="infoType"> </xhtml:div>
+                <xhtml:div id="infoDisplay"> </xhtml:div>
+            </xhtml:div>
+-->
+
+        </xhtml:div>
+
+
+        <!-- Fixed footer -->
+
+        <xi:include href="cityEHRFooter.xhtml"/>
+
+        <!--
+        <xhtml:script>
+            window.onload = function () { ORBEON.xforms.Document.dispatchEvent('main-model','generate-dashboard-query-charts');}
+        </xhtml:script>
+        -->
+
+    </xhtml:body>
+</xhtml:html>

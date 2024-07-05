@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRTermContextDialog.xhtml
+    
+    Modal dialog box that shows the context for a term in the information model(s) for an application.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- == View XML dialogue box == 
+    level="modal" means it blocks the interface.
+    level="modeless" means it floats until removed. -->
+<xxf:dialog id="termContextDialog" appearance="full" level="modeless" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+
+    <!-- Note that variables can't be used in xf:label, so need to use xxf:instance('pageNavigationControl-instance')/displayXML directly -->
+    <xf:label class="stripTitle">
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRTermContextDialog/displayName"/>
+    </xf:label>
+
+    <xhtml:div>
+        <xhtml:p>
+            <!-- Close dialog -->
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRTermContextDialog/closeButton"/>
+                </xf:label>
+                <!-- Clear displayXML and close dialog -->
+                <xf:action ev:event="DOMActivate">
+                    <xxf:hide dialog="termContextDialog"/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:p>
+
+        <!-- Display formatted XML
+         displayXML should contain a single XML node to format and display.
+         But don't assume this -->
+        <xhtml:div class="ScrollingContainer">
+<xhtml:p>Term context info</xhtml:p>
+        </xhtml:div>
+
+    </xhtml:div>
+</xxf:dialog>

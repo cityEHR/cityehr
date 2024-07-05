@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    dictionaryModel.xml
+    
+    Xforms model for managing the specialty dictionary
+        
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="dictionary-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Control of the dictionary -->
+    <xf:instance id="dictionaryControl-instance">
+        <control xmlns="">
+            <dictionaryHandle/>
+            <status/>
+        </control>
+    </xf:instance>
+
+    <!-- Dictionary instances -->
+    <xf:instance id="dictionary-instance">
+        <dictionary xmlns=""/>
+    </xf:instance>
+
+    <xf:instance id="commonModelDictionary-instance">
+        <dictionary xmlns=""/>
+    </xf:instance>
+
+    <!-- Binding for media uploaded to dictionary elements -->
+    <xf:bind
+        nodeset="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@xsi:type='xs:base64Binary'][@cityEHR:elementType!='#CityEHR:ElementProperty:patientMedia']"
+        type="xs:base64Binary"/>
+
+
+    <!-- Application defined action to load dictionary for a specialty or class model
+         Dictionary is loaded to dictionary-instance -->
+    <xf:action ev:event="load-dictionary">
+        <xxf:variable name="applicationIRISpecified" select="event('applicationIRI')"/>
+        <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+        <xxf:variable name="dictionaryIRISpecified" select="event('dictionaryIRI')"/>
+        <xxf:variable name="languageCodeSpecified" select="event('languageCode')"/>
+        <xxf:variable name="baseLanguageCodeSpecified" select="event('baseLanguageCode')"/>
+
+        <xxf:variable name="applicationIRI"
+            select="if (not(exists($applicationIRISpecified)) or $applicationIRISpecified='') then xxf:instance('view-parameters-instance')/applicationIRI else $applicationIRISpecified"/>
+        <xxf:variable name="dictionaryIRI"
+            select="if (not(exists($dictionaryIRISpecified)) or $dictionaryIRISpecified='') then $specialtyIRI else $dictionaryIRISpecified"/>
+
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+        <xxf:variable name="specialtyId" select="replace(substring($specialtyIRI,2),':','-')"/>
+        <xxf:variable name="dictionaryId" select="replace(substring($dictionaryIRI,2),':','-')"/>
+
+        <xxf:variable name="languageCode"
+            select="if (not(exists($languageCodeSpecified)) or $languageCodeSpecified='') then '' else $languageCodeSpecified"/>
+        <xxf:variable name="baseLanguageCode"
+            select="if (not(exists($baseLanguageCodeSpecified)) or $baseLanguageCodeSpecified='') then '' else $baseLanguageCodeSpecified"/>
+
+        <xxf:variable name="languageVariantLocation"
+            select="if ($languageCode!='' and $baseLanguageCode!='' and $languageCode != $baseLanguageCode) then concat('/variants/',$languageCode) else ''"/>
+
+        <xxf:variable name="dictionaryLocation"
+            select="concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/dictionary/',$dictionaryId)"/>
+
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$dictionaryLocation"/>
+            <xxf:context name="resource" select="xxf:instance('dictionary-instance')"/>
+            <xxf:context name="status" select="xxf:instance('dictionaryControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load dictionary for the common model specialty.
+         Dictionary is loaded to commonModelDictionary-instance -->
+    <xf:action ev:event="load-commonModelDictionary">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="commonModelIRI" select="event('commonModelIRI')"/>
+
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+        <xxf:variable name="commonModelId" select="replace(substring($commonModelIRI,2),':','-')"/>
+
+        <xxf:variable name="dictionaryLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/',$commonModelId,'/dictionary/',$commonModelId)"/>
+
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$dictionaryLocation"/>
+            <xxf:context name="resource" select="xxf:instance('commonModelDictionary-instance')"/>
+            <xxf:context name="status" select="xxf:instance('dictionaryControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- ==================== Loading media  ====================
+         ======================================================== -->
+
+    <xf:instance id="media-instance">
+        <media/>
+    </xf:instance>
+
+    <!-- Application defined action to load all media for a composition.
+         The composition is passed as the composition-instance parameter.
+         Media are set as the content of displayName attribute in the associated cda:values.
+         Media are loaded for the application (shared between specialty models) -->
+    <xf:action ev:event="load-compositionMedia">
+        <xxf:variable name="applicationIRI"
+            select="if (not(exists(event('applicationIRI'))) or event('applicationIRI')='') then xxf:instance('view-parameters-instance')/applicationIRI else event('applicationIRI')"/>
+        <xxf:variable name="composition-instance" select="event('composition-instance')"/>
+
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+
+        <xxf:variable name="mediaElementList"
+            select="$composition-instance//cda:entry[@cityEHR:rendition=('#CityEHR:EntryProperty:Image', '#CityEHR:Property:Rendition:Image')]//cda:value"/>
+
+        <xf:action xxf:iterate="$mediaElementList">
+            <xxf:variable name="mediaElement" select="."/>
+
+            <!-- Load the image from the database, set the mediaElement -->
+            <xf:dispatch name="load-mediaElement" target="dictionary-model">
+                <xxf:context name="mediaElement" select="$mediaElement"/>
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+            </xf:dispatch>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set a media value element.
+         The mediaElement is passed as a parameter
+         If applicationIRI is not passed, then use the current applicationIRI (view-parameters)
+         Locate media in the database and load into media-instance.
+         Then set mediaElement displayName
+         -->
+    <xf:action ev:event="load-mediaElement">
+        <xxf:variable name="mediaElement" select="event('mediaElement')"/>
+        <xxf:variable name="applicationIRI"
+            select="if (not(exists(event('applicationIRI'))) or event('applicationIRI')='') then xxf:instance('view-parameters-instance')/applicationIRI else event('applicationIRI')"/>
+
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+
+
+        <!-- Clear the value of the media-instance, in case it doesn't load.
+             (It won't load if it hasn't previously been configured) -->
+        <xf:setvalue ref="xxf:instance('media-instance')" value="''"/>
+        <xf:delete nodeset="xxf:instance('media-instance')/*"/>
+
+        <!-- Set the mediaName -->
+        <xxf:variable name="elementIRI" select="$mediaElement/@root"/>
+        <xxf:variable name="elementId" select="substring-after($elementIRI,'#ISO-13606:Element:')"/>
+        <xxf:variable name="value" select="$mediaElement/@value"/>
+
+        <!-- Get the media from xmlstore -->
+        <xf:action if="$elementId != '' and $value !=''">
+            <xxf:variable name="mediaFilenameSeparator" select="xxf:instance('view-parameters-instance')/mediaFilenameSeparator"/>
+            <xxf:variable name="mediaName" select="concat($elementId,$mediaFilenameSeparator,$value)"/>
+
+            <xxf:variable name="mediaLocation" select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/media/',$mediaName)"/>
+
+            <!-- Load the image from the database -->
+            <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="$mediaLocation"/>
+                <xxf:context name="resource" select="xxf:instance('media-instance')"/>
+                <xxf:context name="status" select="xxf:instance('dictionaryControl-instance')/status"/>
+            </xf:dispatch>
+
+            <!-- Now set the image as binary value of mediaFile
+                 With its height and width
+                 If the image was loaded -->
+
+            <xf:action if="xxf:instance('media-instance') !=''">
+                <xf:setvalue ref="$mediaElement/@displayName"
+                    value="if (xxf:instance('media-instance') castable as xs:base64Binary) then xs:base64Binary(xxf:instance('media-instance')) else ''"/>
+                <xf:setvalue ref="$mediaElement/@cityEHR:height" value="xxf:instance('media-instance')/@height"/>
+                <xf:setvalue ref="$mediaElement/@cityEHR:width" value="xxf:instance('media-instance')/@width"/>
+            </xf:action>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to clear the media in the dictionary-instance.
+         The binary images are stored separately in the xmlstore, so don't need them in the dictionary
+         Iterate through each media element in the dictionary-instance.
+         Set content of the media element to blank
+         (2021-10-14 - This isn't currently used anywhere, since dictionary is never saved apart from when it is first generated in import-informationModel)
+    -->
+    <xf:action ev:event="clear-dictionaryMedia">
+        <xxf:variable name="dictionary-instance" select="event('dictionary-instance')"/>
+
+        <!-- Get all media elements -->
+        <xxf:variable name="mediaElementList"
+            select="$dictionary-instance/iso-13606:elementCollection/iso-13606:element[@xsi:type='xs:base64Binary'][@cityEHR:elementType!='#CityEHR:ElementProperty:patientMedia']"/>
+
+        <!-- Clear binary content of media elements -->
+        <xf:action xxf:iterate="$mediaElementList">
+            <xxf:variable name="mediaElement" select="."/>
+
+            <xf:setvalue ref="$mediaElement" value="''"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- ================== Letter templates  ===================
+         ======================================================== -->
+
+    <xf:instance id="storedLetterTemplateListXQuery-instance" src="oxf:/apps/ehr/xquery/storedLetterTemplateListXQuery.xml"/>
+
+    <xf:instance id="storedLetterTemplateList-instance">
+        <letterTemplateList>
+            <!--
+            <letterTemplate id="1" displayName="Letter template"  errorMessage="">
+                <compositions all="true"/>
+                <letterTemplateFile xsi:type="xs:base64Binary" path="" name="" content-type=""/>
+            </letterTemplate>
+            -->
+        </letterTemplateList>
+    </xf:instance>
+    <xf:bind nodeset="xxf:instance('storedLetterTemplateList-instance')/letterTemplate/compositions/@all" type="xs:boolean"/>
+    
+    <xf:instance id="letterTemplate-instance">
+        <letterTemplate/>
+    </xf:instance>
+    
+    <!-- Binary instance is needed when the wordprocessor file is passed to the extractTemplateVariables pipeline.
+         And when it is stored in binaryCache -->
+    <xf:instance id="letterTemplateBinary-instance">
+        <letterTemplate xsi:type="xs:base64Binary"/>
+    </xf:instance>
+    <xf:bind nodeset="xxf:instance('letterTemplateBinary-instance')" type="xs:base64Binary"/>
+    
+
+    <!-- Application defined action to get the list of stored templates.
+         Used in cityEHRAdmin and cityEHRFolder-Letters, etc.
+         If compositionIRI is passed, then set the filter to return templates associated with this composition.
+         Gets the storedLetterTemplateList in storedLetterTemplateList-instance -->
+    <xf:action ev:event="get-storedLetterTemplateList">
+        <xxf:variable name="compositionIRI" select="if (exists(event('compositionIRI'))) then event('compositionIRI') else ''"/>
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+
+        <!-- Set the filter -->
+        <xf:setvalue ref="xxf:instance('storedLetterTemplateListXQuery-instance')/filter"
+            value="if ($compositionIRI='') then '' else concat('[compositions/@all=''true'' or compositions/composition/@compositionIRI=''',$compositionIRI,''']')"/>
+
+        <xxf:variable name="letterTemplateLocation" select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/letterTemplates')"/>
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$letterTemplateLocation"/>
+            <xxf:context name="query" select="xxf:instance('storedLetterTemplateListXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('storedLetterTemplateList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('applicationControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the content for a letter template.
+         letterTemplate is of the form used in storedLetterTemplateList - with just the stub of letterTemplateFile
+         The full letterTemplate is loaded from the xmlstore and the content is set in the template instance -->
+    <xf:action ev:event="load-letterTemplateContent">
+        <xxf:variable name="letterTemplate" select="event('letterTemplate')"/>
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+        
+        <xxf:variable name="templateLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/letterTemplates/',$letterTemplate/@value)"/>
+        
+        <!-- Load the letterTemplate from the database -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$templateLocation"/>
+            <xxf:context name="resource" select="xxf:instance('letterTemplate-instance')"/>
+            <xxf:context name="status" select="xxf:instance('applicationControl-instance')/status"/>
+        </xf:dispatch>
+        
+        <!-- Set content, if it was loaded -->
+        <xf:action if="exists(xxf:instance('letterTemplate-instance')/letterTemplateFile)">
+            <xf:setvalue ref="$letterTemplate/letterTemplateFile" value="xxf:instance('letterTemplate-instance')/letterTemplateFile"/>
+        </xf:action>
+        
+    </xf:action>
+
+
+    <!-- ========= Set up model when it is first loaded ========= 
+         ======================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Not doing anything here -->
+    </xf:action>
+</xf:model>

@@ -1,0 +1,60 @@
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        getPatientCohortRecordsXQuery.xml
+        
+        XQuery to return the full set of CDA documents in the record of each patient in a specified cohort
+        Context of the query is the records collection
+        
+        This is an XML document which is read by the cityEHR 
+        Any XML elements (i.e. <queryParameters>) are replaced before the query is submitted
+        
+        <patientIdList/> is the list of patient ids, separated by commas
+        
+        The context of this query is the records collection which contains a set of child collections, named for each patientId
+        So the query does get-child-collections for those collections where the name matches a patientId in <patientIdList/>
+        
+        Returns the full set of ClinicalDocument elements for each matching patientId
+                
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        declare namespace xmldb="http://exist-db.org/xquery/xmldb";
+        declare namespace iso-13606="http://www.iso.org/iso-13606";
+        
+        declare variable $path := util:collection-name(collection()[1]);
+        declare variable $pathComponents := tokenize($path,'/');
+        declare variable $count := count($pathComponents);
+        declare variable $root := string-join($pathComponents[position() ne $count],'/');
+               
+               &lt;export xmlns="http://openhealthinformatics.org/ehr">
+        {
+        for $patientId in (<patientIdList/>)
+        let $collectionPath := concat($root,'/',normalize-space($patientId))
+        
+        return 
+        if (xmldb:collection-available($collectionPath)) then
+        &lt;EHR_Extract xmlns="http://www.iso.org/iso-13606" patientId="{$patientId}">
+              {collection($collectionPath)/cda:ClinicalDocument}
+        &lt;/EHR_Extract>    
+
+        else ()
+        }
+        &lt;/export>
+        
+</query>
+

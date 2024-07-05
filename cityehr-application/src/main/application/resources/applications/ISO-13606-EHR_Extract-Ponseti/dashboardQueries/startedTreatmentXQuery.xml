@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        startedTreatmentXQuery.xml
+        
+        Dashboard query to get count of patients starting treatment in various time intervals
+        Treatment is started with the first cast
+        Context is the application collection, which will contain a records collection if there are any patients
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        declare namespace xdb="http://exist-db.org/xquery/xmldb";
+ 
+        let $castDateList := 
+           for $castDate in //cda:observation[cda:id/@extension='#ISO-13606:Entry:CastDate']/cda:value[@extension='#ISO-13606:Element:BaseTime']/@value
+              order by $castDate descending
+              return &lt;cast patientId="{$castDate/ancestor::cda:ClinicalDocument/descendant::cda:patientRole/@extension}" date="{$castDate}"/>     
+        
+        let $patientList := distinct-values($castDateList/@patientId)
+        let $count := count($patientList)   
+        
+        let $firstCastDateList := 
+                for $patientId in $patientList return $castDateList[@patientId=$patientId][1]
+        
+        let $today := current-date()
+        let $date30Days := xs:string($today - xs:dayTimeDuration('P30D'))
+        let $date3Months := xs:string($today - xs:yearMonthDuration('P3M'))
+        let $date12Months := xs:string($today - xs:yearMonthDuration('P12M'))
+        
+        let $started30Days := count($firstCastDateList[@date gt $date30Days])
+        let $started3Months := count($firstCastDateList[@date gt $date3Months])
+        let $started12Months := count($firstCastDateList[@date gt $date12Months])
+        
+        
+        return
+        &lt;queryResults>
+        &lt;total value="{$count}"/>
+                &lt;category displayName="Patients"/>
+                &lt;category displayName="Last 30 days" value="{$started30Days}"/>
+                &lt;category displayName="Last 3 months"  value="{$started3Months}"/>
+                &lt;category displayName="Last 12 months"  value="{$started12Months}"/>
+        &lt;/queryResults>
+</query>

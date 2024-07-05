@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRViewChartDialog.xhtml
+    
+    Modal dialog box that shows formatted XML in 
+    Shows pageNavigationControl-instance/displayXML which is set up by the export-xmlCache action in pageNavigationModel
+    
+    Clears displayXML when the dialog is closed.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+<!-- == View chart dialogue box == 
+             level="modal" means it blocks the interface.
+             level="modeless" means it floats until removed.
+          
+          These only apply if appearance="full" -->
+<xxf:dialog id="viewChartDialog" appearance="full" level="modeless" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xf:label class="stripTitle" ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/chartLabel"/>
+    <!--
+            <xxf:variable name="showDataControlsClass"
+                select="if (exists(xxf:instance('control-instance')/current-chart/variables/variable)) then '' else 'hidden'"/>
+-->
+    <xxf:variable name="showDataControlsClass"
+        select="if (exists(xxf:instance('control-instance')/current-chart/variables/variable)) then '' else ''"/>
+    <!-- This control panel is similar to the one in the viewDisplay.
+                 Except that 
+                     <xf:dispatch name="generate-chart" target="main-model"/>
+                 is added to the actions.
+                 Also it doesn't have the shadow class. -->
+    <xhtml:ul>
+        <xhtml:li class="Unranked">
+            <xhtml:ul class="chartLegend">
+                <xhtml:li class="legendTitle"></xhtml:li>
+                
+                <!-- The legend lists timeseries first, then interval plots -->
+                <xxf:variable name="variableList" select="xxf:instance('control-instance')/current-chart/variables/variable"/>
+                <xxf:variable name="timeSeriesVariables" select="if (exists($variableList)) then $variableList[@plotType='timeseries'] else ()"/>
+                <xxf:variable name="intervalVariables" select="if (exists($variableList)) then $variableList[@plotType='interval'] else ()"/>
+                
+                <xxf:variable name="plotGraphs" select="xxf:instance('control-instance')/current-chart/plotGraphs"/>
+                
+                <!-- One legend entry for each variable -->
+                <xf:repeat nodeset="$timeSeriesVariables | $intervalVariables">
+                        <xxf:variable name="variable" select="."/>
+                        <xxf:variable name="plotColour" select="$variable/@plotColour"/>
+                    <xxf:variable name="plotType" select="$variable/@plotType"/>
+                        
+                        <!-- The id of the chartContainer is one of:
+                                        the variable value  - for single timeseries plots
+                                        the scale - for combined timeseries plots
+                                        'interval' - for interval plots
+                                        
+                                        Navigation only works charts drawn as separate HTML elements
+                                      -->
+                        <xxf:variable name="crossRefSuffix"
+                            select="if ($plotGraphs='combined' and $plotType='timeseries') then $variable/@scale
+                            else if ($plotGraphs='combined' and $plotType='interval') then 'interval' else $variable/@variableValueDisplayName"/>
+                        <xxf:variable name="crossRefId"
+                            select="concat(xxf:instance('control-instance')/current-chart/idRoot,$crossRefSuffix)"/>
+                        <xhtml:li class="legendItem">
+                            <xhtml:a href="#" onclick="javascript:scrollToElement('{$crossRefId}')">
+                                <xhtml:span style="background-color:{$plotColour}; color:{$plotColour};">--</xhtml:span>
+                                <xf:output ref="concat(' ',$variable/@variableElementDisplayName)"/>
+                            </xhtml:a>
+                        </xhtml:li>
+                </xf:repeat>
+            </xhtml:ul>
+        </xhtml:li>
+        
+        <xhtml:li class="Unranked">
+            <!-- Controls -->
+            <xhtml:ul class="controlPanel">
+                <xhtml:li class="controlPanelGroup">
+                    <!-- Close dialogue -->
+                    <xf:trigger class="button">
+                        <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/closeLabel"/>
+                        <xxf:hide ev:event="DOMActivate" dialog="viewChartDialog"/>
+                    </xf:trigger>
+                    <!-- Refresh chart -->
+                    <xf:trigger class="button">
+                        <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/refreshLabel"/>
+                        <xf:action ev:event="DOMActivate">
+                            <xf:dispatch name="generate-chart" target="main-model"/>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:li>
+                <!-- Only show graph controls if there are data to plot -->
+                <xhtml:li class="controlPanelGroup {$showDataControlsClass}">
+                    <!-- Start time of the plot -->
+                    <xhtml:span class="controlItem">
+                        <xhtml:span class="label">
+                            <xf:output
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/startTime/@displayName"
+                            />
+                        </xhtml:span>
+                        <xf:input ref="xxf:instance('control-instance')/current-chart/startTime">
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:dispatch name="set-chart-parameters" target="main-model"/>
+                                <xf:dispatch name="generate-chart" target="main-model"/>
+                            </xf:action>
+                            <!--
+                                    <xf:action ev:event="DOMActivate">
+                                        <xf:dispatch name="generate-chart" target="main-model"/>
+                                    </xf:action>
+                                    -->
+                        </xf:input>
+                    </xhtml:span>
+                    <!-- Setting the time interval of the charts -->
+                    <xhtml:span class="controlItem">
+                        <xhtml:span class="label">
+                            <xf:output
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/interval/@displayName"
+                            />
+                        </xhtml:span>
+                        <!-- Select the intervalUnits and interval-->
+                        <xxf:variable name="intervalUnitsOptions"
+                            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/intervalUnits/option"/>
+                        <xxf:variable name="selectedIntervalUnitsOption"
+                            select="$intervalUnitsOptions[@value = xxf:instance('control-instance')/current-chart/intervalUnits]"/>
+                        <xxf:variable name="intervalOptionRange"
+                            select="if (exists($selectedIntervalUnitsOption) and $selectedIntervalUnitsOption/@range castable as xs:integer) then $selectedIntervalUnitsOption/@range else 20"/>
+                        <xxf:variable name="intervalOptions"
+                            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/interval/option[xs:integer(@value) le xs:integer($intervalOptionRange)]"/>
+                        <!-- Size of the interval.
+                                    Is limited to the range of the currently selected intervalUnits -->
+                        <xf:select1 ref="xxf:instance('control-instance')/current-chart/interval">
+                            <xf:itemset nodeset="$intervalOptions">
+                                <xf:label ref="./@displayName"/>
+                                <xf:value ref="./@value"/>
+                            </xf:itemset>
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:dispatch name="set-chart-parameters" target="main-model"/>
+                                <xf:dispatch name="generate-chart" target="main-model"/>
+                            </xf:action>
+                            <!--
+                                        <xf:action ev:event="DOMActivate">
+                                        <xf:dispatch name="generate-chart" target="main-model"/>
+                                        </xf:action>
+                                    -->
+                        </xf:select1>
+                        <!-- Units of the interval -->
+                        <xf:select1 ref="xxf:instance('control-instance')/current-chart/intervalUnits">
+                            <xf:itemset nodeset="$intervalUnitsOptions">
+                                <xf:label ref="./@displayName"/>
+                                <xf:value ref="./@value"/>
+                            </xf:itemset>
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:dispatch name="set-chart-parameters" target="main-model"/>
+                                <xf:dispatch name="generate-chart" target="main-model"/>
+                            </xf:action>
+                            <!--
+                                        <xf:action ev:event="DOMActivate">
+                                        <xf:dispatch name="generate-chart" target="main-model"/>
+                                        </xf:action>
+                                    -->
+                        </xf:select1>
+                    </xhtml:span>
+                    <!-- Setting the way the plots are combined on the set of charts -->
+                    <xhtml:span class="controlItem">
+                        <xhtml:span class="label">
+                            <xf:output
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotGraphs/@displayName"
+                            />
+                        </xhtml:span>
+                        <xf:select1 ref="xxf:instance('control-instance')/current-chart/plotGraphs">
+                            <xf:itemset
+                                nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotGraphs/option">
+                                <xf:label ref="."/>
+                                <xf:value ref="./@value"/>
+                            </xf:itemset>
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:dispatch name="set-chart-parameters" target="main-model"/>
+                                <xf:dispatch name="generate-chart" target="main-model"/>
+                            </xf:action>
+                        </xf:select1>
+                    </xhtml:span>
+                    <!-- Setting the layout of the plots (tiled or stacked) -->
+                    <xhtml:span class="controlItem">
+                        <xhtml:span class="label">
+                            <xf:output
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotLayout/@displayName"
+                            />
+                        </xhtml:span>
+                        <xf:select1 ref="xxf:instance('control-instance')/current-chart/plotLayout">
+                            <xf:itemset
+                                nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotLayout/option">
+                                <xf:label ref="."/>
+                                <xf:value ref="./@value"/>
+                            </xf:itemset>
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:dispatch name="set-chart-parameters" target="main-model"/>
+                                <xf:dispatch name="generate-chart" target="main-model"/>
+                            </xf:action>
+                        </xf:select1>
+                    </xhtml:span>
+                    <!-- Setting the display of the y-Axis legend -->
+                    <xhtml:span class="controlItem">
+                        <xhtml:span class="label">
+                            <xf:output
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/yAxisLegend/@displayName"
+                            />
+                        </xhtml:span>
+                        <xf:select1 ref="xxf:instance('control-instance')/current-chart/yAxisLegend">
+                            <xf:itemset
+                                nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/yAxisLegend/option">
+                                <xf:label ref="."/>
+                                <xf:value ref="./@value"/>
+                            </xf:itemset>
+                            <xf:action ev:event="xforms-value-changed">
+                                <xf:dispatch name="set-chart-parameters" target="main-model"/>
+                                <xf:dispatch name="generate-chart" target="main-model"/>
+                            </xf:action>
+                        </xf:select1>
+                    </xhtml:span>
+                </xhtml:li>
+            </xhtml:ul>
+            <!-- End of controls -->
+            <!-- Chart display is a scrolling container of charts -->
+            <xhtml:ul class="chartDisplay">
+                <!-- Just show the set rendtion (could be png | svg) -->
+                <xxf:variable name="displaySVGClass"
+                    select="if (xxf:instance('control-instance')/current-chart/rendition='svg') then '' else 'hidden'"/>
+                <xxf:variable name="displayImageClass"
+                    select="if (xxf:instance('control-instance')/current-chart/rendition='jpg') then '' else 'hidden'"/>
+                
+                <!-- Direct rendering of SVG -->
+                <xhtml:li class="chartSet {$displaySVGClass}">
+                    <xxf:variable name="chartSVG" select="xxf:instance('control-instance')/current-chart/htmlChart"/>
+                    <xf:output ref="if (exists($chartSVG)) then xxf:serialize($chartSVG, 'html') else ''" mediatype="text/html"/>
+                </xhtml:li>
+                
+                <!-- SVG charts
+                             Display each chart in the chart set.
+                             SVG may have been run through Batik to create a png or may be rendered directy as SVG in the browser -->
+                <xhtml:li class="chartSet {$displayImageClass}">
+                    <xxf:variable name="chartImage" select="xxf:instance('control-instance')/current-chart/svgChart/url"/>
+                    <xf:output ref="if (exists($chartImage)) then $chartImage else ''"/>
+                    <!-- img doesn't work yet - will need to if we have image maps -->
+                    <!--
+                            <xf:output ref="$chartImage"/>
+                            <xhtml:img src="{$chartImage}"/>
+                            -->
+                    <!-- Debugging
+                            <xf:output ref="xxf:instance('control-instance')/current-chart/svgChart"/>
+
+                            <xxf:variable name="testImage" select="'cityEHRTemp/test.png'"/>
+                            <xhtml:img src="{$testImage}"/>
+                            <xhtml:map name="chartMap">
+                                <xhtml:area shape="poly" coords="10,10,200,10,200,200,10,200" href="#" title="Hello there!"/>
+                            </xhtml:map>
+                            -->
+                </xhtml:li>
+                
+                <!-- If they are floating -->
+                <xhtml:li class="LayoutFooter"></xhtml:li>
+            </xhtml:ul>
+        </xhtml:li>
+        
+        <!-- Clear floats -->
+        <xhtml:li class="LayoutFooter"></xhtml:li>
+    </xhtml:ul>
+</xxf:dialog>
+

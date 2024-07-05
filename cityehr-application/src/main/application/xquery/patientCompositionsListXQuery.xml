@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        patientCompositionsListXQuery.xml
+        
+        Get list of compositions for a patient.
+        Context of query is the records/patientId collection for the specific patientId required
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        for $resource in collection()<whereClause/>
+        let $compositionHandle := document-uri($resource)
+        let $patientId := data($resource//cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:id[1]/@extension)
+        let $displayName := data($resource//cda:ClinicalDocument/cda:code[@codeSystem='cityEHR']/@displayName)
+        let $compositionId := data($resource//cda:ClinicalDocument/cda:id[1]/@extension)
+        let $compositionTypeIRI := data($resource//cda:ClinicalDocument/cda:typeId[1]/@extension)
+        let $effectiveTime := data($resource//cda:ClinicalDocument/cda:effectiveTime[1]/@value)
+        return
+        &lt;composition> 
+        &lt;handle>{$compositionHandle}&lt;/handle>
+        &lt;patientId>{$patientId}&lt;/patientId>
+        &lt;compositionId>{$compositionId}&lt;/compositionId>
+        &lt;effectiveTime>{$effectiveTime}&lt;/effectiveTime>
+        &lt;displayName>{$displayName}&lt;/displayName>
+        &lt;compositionTypeIRI>{$compositionTypeIRI}&lt;/compositionTypeIRI>
+        &lt;selected/>
+        &lt;/composition>
+</query>
+

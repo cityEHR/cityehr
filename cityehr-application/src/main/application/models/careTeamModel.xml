@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    careTeamModel.xml
+    
+    Xforms model containing stuff for handling care teams.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="careTeam-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Control of care teams -->
+    <xf:instance id="careTeamControl-instance">
+        <control xmlns="">
+            <careTeam>
+                <id/>
+                <displayName/>
+                <handle/>
+                <patientList/>
+                <!-- templates for inserting into careTeam-instance -->
+                <user id=""/>
+                <patient id=""/>
+            </careTeam>
+        </control>
+    </xf:instance>
+
+    <!-- === Queries for care teams. === -->
+
+    <!-- Query instance - text is set from individual queries.
+         Same query instance is used for all care team queries.
+         Note that the number of hits is unlimited - may want to change this depending on performance with many users -->
+    <xf:instance id="careTeam-query-instance">
+        <exist:query start="1" max="1000">
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+
+    <!-- Get list of care teams.
+         Will get replaced by the list of care teams-->
+    <xf:instance id="careTeamList-instance">
+        <exist:result>
+            <!-- <careTeam value="" displayName="" handle=""/> -->
+        </exist:result>
+    </xf:instance>
+
+    <!-- Load the queries from file -->
+    <xf:instance id="careTeamListXQuery-instance"
+        src="oxf:/apps/ehr/xquery/careTeamListXQuery.xml"/>
+
+    <!-- Submission to get list of care teams for this application -->
+    <xf:submission id="careTeamList-submission"
+        ref="xxf:instance('careTeam-query-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/careTeams"
+        method="post" replace="instance" instance="careTeamList-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Not doing anything on success -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <!-- This query will fail is there are no care teams, so don't report error -->
+            <!-- Can set this for debugging -->
+            <!--
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedCTLQuery']"
+            />
+            -->
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to get the list of care teams for the current user.
+            User is set in user-instance
+            Set up query parameters
+            Submit query
+        -->
+    <xf:action ev:event="getCareTeamsForUser">
+        <!-- Set the userIRI -->
+        <xf:setvalue ref="xxf:instance('careTeamListXQuery-instance')/userIRI"
+            value="xxf:instance('user-instance')/@id"/>
+        <!-- Set up the query text for eXist -->
+        <xf:setvalue ref="xxf:instance('careTeam-query-instance')/exist:text"
+            value="xxf:instance('careTeamListXQuery-instance')"/>
+        <!-- Now submit the search -->
+        <xf:send submission="careTeamList-submission"/>
+    </xf:action>
+
+
+    <!-- === Users for the care team === -->
+
+    <!-- Get list of users for set of care teams.
+         Will get replaced by the list of users-->
+    <xf:instance id="careTeamUsers-instance">
+        <exist:result>
+            <user id=""/>
+        </exist:result>
+    </xf:instance>
+
+    <!-- Load the queries from file -->
+    <xf:instance id="getCareTeamUsersXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getCareTeamUsersXQuery.xml"/>
+
+    <!-- Submission to get list of users for a set of care teams -->
+    <xf:submission id="careTeamUsers-submission"
+        ref="xxf:instance('careTeam-query-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/careTeams"
+        method="post" replace="instance" instance="careTeamUsers-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Not doing anything on success -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedCTUsersQuery']"
+            />
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to get the list of users for a set of care teams.
+        Care teams are in careTeamList-instance
+        Set up query parameters
+        Submit query
+    -->
+    <xf:action ev:event="getCareTeamUsers">
+        <!-- Get list of Care Teams -->
+        <xf:setvalue ref="xxf:instance('getCareTeamUsersXQuery-instance')/careTeamList"
+            value="concat('(''',string-join(xxf:instance('careTeamList-instance')/careTeam/@value,''','''),''')')"/>
+        <!-- Set up the query text for eXist -->
+        <xf:setvalue ref="xxf:instance('careTeam-query-instance')/exist:text"
+            value="xxf:instance('getCareTeamUsersXQuery-instance')"/>
+        <!-- Now submit the search -->
+        <xf:send submission="careTeamUsers-submission"/>
+    </xf:action>
+
+
+
+    <!-- Get selection list of users.
+         This gets the list of users with their current user name as the displayName
+         Will get replaced by the list of users-->
+    <xf:instance id="userSelection-instance">
+        <exist:result>
+            <user value="" displayName=""/>
+        </exist:result>
+    </xf:instance>
+
+    <!-- Load the queries from file -->
+    <xf:instance id="userSelectionListXQuery-instance"
+        src="oxf:/apps/ehr/xquery/userSelectionListXQuery.xml"/>
+
+    <!-- Submission to get list of users with their user name as the displayName -->
+    <xf:submission id="userSelectionList-submission"
+        ref="xxf:instance('careTeam-query-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('view-parameters-instance')/storageLocation}/users"
+        method="post" replace="instance" instance="userSelection-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Not doing anything on success -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedUserSelectionListQuery']"
+            />
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to get the selection list of users for 
+         If a list is passed as the input parameter, then this is used
+         If no list is passed as input, then use the set of care team users.
+         Care team users are in careTeamUsers-instance
+         If there are no care team users (i.e. the current user is not a member of any care team) then default to the current user
+         Set up query parameters
+         Submit query
+    -->
+    <xf:action ev:event="getUserSelectionList">
+        <xxf:variable name="userListInput" select="event('userListInput')"/>
+        
+        <!-- Set list of Care Team users -->
+        <xxf:variable name="userList"
+            select="if (exists($userListInput)) then  $userListInput else if (exists(xxf:instance('careTeamUsers-instance')/user)) then xxf:instance('careTeamUsers-instance')/user/@id else xxf:instance('user-instance')/@id"/>
+
+        <xf:setvalue ref="xxf:instance('userSelectionListXQuery-instance')/UserIRIList"
+            value="concat('(''',string-join($userList,''','''),''')')"/>
+        <!-- Set up the query text for eXist -->
+        <xf:setvalue ref="xxf:instance('careTeam-query-instance')/exist:text"
+            value="xxf:instance('userSelectionListXQuery-instance')"/>
+        <!-- Now submit the search -->
+        <xf:send submission="userSelectionList-submission"/>
+    </xf:action>
+
+
+    <!-- === Patients for the care team === -->
+
+    <!-- Get list of patients for set of care teams.
+         Will get replaced by the list of patients -->
+    <xf:instance id="careTeamPatients-instance">
+        <exist:result>
+            <!--          
+            <patient id=""/>
+            -->
+        </exist:result>
+    </xf:instance>
+
+    <!-- Load the queries from file -->
+    <xf:instance id="getCareTeamPatientsXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getCareTeamPatientsXQuery.xml"/>
+
+    <!-- Submission to get list of patients for a set of care teams -->
+    <xf:submission id="careTeamPatients-submission"
+        ref="xxf:instance('careTeam-query-instance')"
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/careTeams"
+        method="post" replace="instance" instance="careTeamPatients-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Not doing anything on success -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedCTPatientsQuery']"
+            />
+        </xf:action>
+    </xf:submission>
+
+    <!-- Application defined action to get the list of patients for a set of care teams.
+         Care teams are in careTeamList-instance
+         Set up query parameters
+         Submit query
+    -->
+    <xf:action ev:event="getCareTeamPatients">
+        <!-- Get list of Care Teams -->
+        <xf:setvalue ref="xxf:instance('getCareTeamPatientsXQuery-instance')/careTeamList"
+            value="concat('(''',string-join(xxf:instance('careTeamList-instance')/careTeam/@value,''','''),''')')"/>
+        <!-- Set up the query text for eXist -->
+        <xf:setvalue ref="xxf:instance('careTeam-query-instance')/exist:text"
+            value="xxf:instance('getCareTeamPatientsXQuery-instance')"/>
+        <!-- Now submit the search -->
+        <xf:send submission="careTeamPatients-submission"/>
+    </xf:action>
+
+
+
+
+    <!-- === Loading the care team === -->
+
+    <!-- Instance for the care team.
+         The selection attribute is bound to xs:boolean so that the patients can be seleceted. -->
+    <xf:instance id="careTeam-instance">
+        <careTeam>
+            <!-- Gets replaced by template or by instance from the xmlstore -->
+        </careTeam>
+    </xf:instance>
+    <xf:bind nodeset="xxf:instance('careTeam-instance')/patient/@selected" type="xs:boolean"/>
+
+
+    <!-- === Application defined action to load the current care team from the xmlstore === -->
+    <xf:action ev:event="load-careTeam">
+        <xf:action if="xxf:instance('careTeamControl-instance')/careTeam/handle!=''">
+            <xf:send submission="load-careTeam-submission"/>
+        </xf:action>
+    </xf:action>
+
+    <!-- Load care team from xmlstore -->
+    <xf:submission id="load-careTeam-submission" serialization="none"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('careTeamControl-instance')/careTeam/handle}"
+        validate="false" method="get" replace="instance" instance="careTeam-instance"
+        f:url-type="resource">
+        <!-- Loaded successfully - set the patient list -->
+        <xf:action ev:event="xforms-submit-done">
+            <xxf:variable name="patientList"
+                select="distinct-values(xxf:instance('careTeam-instance')/patient/@id)"/>
+            <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/patientList"
+                value="string-join($patientList,xxf:instance('view-parameters-instance')/resultSeparator)"
+            />
+        </xf:action>
+        <!-- Error - reset all parameters -->
+        <xf:action ev:event="xforms-submit-error">
+
+            <xf:dispatch name="reset-careTeam" target="careTeam-model"/>
+
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedCTLoad']"
+            />
+        </xf:action>
+    </xf:submission>
+
+    <!-- Load new care team from template -->
+    <xf:submission id="load-careTeam-template-submission"
+        resource="{xxf:instance('view-parameters-instance')/staticFileURL}/templates/careTeam.xml"
+        method="get" validate="false" replace="instance" instance="careTeam-instance">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Set up the template with the current user as its default member -->
+            <xf:setvalue ref="xxf:instance('careTeam-instance')/user/@id"
+                value="xxf:instance('user-instance')/@id"/>
+            <!-- Reset id, handle, displayName and patientList -->
+            <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/id"
+                value="''"/>
+            <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/handle"
+                value="''"/>
+            <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/displayName"
+                value="''"/>
+            <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/patientList"
+                value="''"/>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(.,xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedCTTemplateLoad'],event('error-type'))"
+            />
+        </xf:action>
+    </xf:submission>
+
+    <!-- Save care team to xmlstore -->
+    <xf:submission id="save-careTeam-submission" ref="xxf:instance('careTeam-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('careTeamControl-instance')/careTeam/handle}"
+        method="put" replace="none" f:url-type="resource" includenamespacesprefixes=""
+        validate="false">
+        <xf:action ev:event="xforms-submit-done">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="''"/>
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="concat(xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedCTSave'],' ',xxf:instance('careTeamControl-instance')/careTeam/handle)"
+            />
+        </xf:action>
+    </xf:submission>
+
+
+    <!-- Delete care team from xmlstore -->
+    <xf:submission id="delete-careTeam-submission" ref="xxf:instance('careTeam-instance')"
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('careTeamControl-instance')/careTeam/handle}"
+        method="delete" validate="false" replace="none" serialization="none">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- Not doing anything here -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedCTDelete']"
+            />
+        </xf:action>
+    </xf:submission>
+
+    <!-- === Application defined action to delete current care team.
+             Deletes the care team and then resets the care teams for the current user
+             make sure the care team handle is properly set, otherwise could delete more than we bargained for
+        === -->
+    <xf:action ev:event="delete-careTeam">
+        <xxf:variable name="careTeamHandle"
+            select="xxf:instance('careTeamControl-instance')/careTeam/handle"/>
+        <xxf:variable name="careTeamHandleComponents"
+            select="reverse(tokenize($careTeamHandle,'/'))"/>
+        <xxf:variable name="careTeamIdComponents"
+            select="reverse(tokenize(xxf:instance('careTeamControl-instance')/careTeam/id,':'))"/>
+
+        <xf:action
+            if="count($careTeamHandleComponents) gt 3 and ends-with($careTeamHandleComponents[1],$careTeamIdComponents[1])">
+            <xf:send submission="delete-careTeam-submission" target="careTeam-model"/>
+            <xf:dispatch name="initialiseCareTeamsForUser" target="careTeam-model"/>
+        </xf:action>
+        <xf:action
+            if="not(count($careTeamHandleComponents) gt 3 and ends-with($careTeamHandleComponents[1],$careTeamIdComponents[1]))">
+            <!-- Its an error -->
+        </xf:action>
+    </xf:action>
+
+    <!-- === Application defined action to set details of current care team.
+             Then load it
+             The careTeamId is passed in as the context variable
+        === -->
+    <xf:action ev:event="set-careTeam">
+        <xxf:variable name="careTeamId" select="event('careTeamId')"/>
+        <xxf:variable name="selectedCareTeam"
+            select="xxf:instance('careTeamList-instance')/careTeam[@value=$careTeamId]"/>
+        <!-- Only set the care team parameters if the selected one exists.
+             This handles the case where careTeamId is reset to '' (e.g. when the last care team is deleted in cityEHRAdmin)-->
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/id"
+            value="$careTeamId"/>
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/displayName"
+            value="if (exists($selectedCareTeam)) then $selectedCareTeam/@displayName else ''"/>
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/handle"
+            value="if (exists($selectedCareTeam)) then $selectedCareTeam/@handle else ''"/>
+
+        <!-- Load the care team, if it exists.
+             This also sets the patientList parameter.
+             And clears the care team if the handle was invalid -->
+        <xf:action if="exists($selectedCareTeam)">
+            <xf:dispatch name="load-careTeam" target="careTeam-model"/>
+        </xf:action>
+
+        <!-- Clear the care team instance, if it doesn't exist -->
+        <xf:action if="not(exists($selectedCareTeam))">
+            <xf:dispatch name="reset-careTeam" target="careTeam-model"/>
+        </xf:action>
+    </xf:action>
+
+    <!-- === Application defined action to reset (clear) details of current care team.
+        Clears the careTeam-instance and the careTeamControl-instanc
+        === -->
+    <xf:action ev:event="reset-careTeam">
+        <xf:delete nodeset="xxf:instance('careTeam-instance')/*"/>
+        <xf:setvalue ref="xxf:instance('careTeam-instance')/@id" value="''"/>
+        <xf:setvalue ref="xxf:instance('careTeam-instance')/@displayName" value="''"/>
+
+        <!-- Reset id, handle, displayName and patientList -->
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/id" value="''"/>
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/handle"
+            value="''"/>
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/displayName"
+            value="''"/>
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/patientList"
+            value="''"/>
+    </xf:action>
+
+
+
+    <!-- === Application defined action to initialise care teams for the current user.
+        User is set in user-instance
+        Get the list of care teams for the user.
+        Set selected care team to first on the list
+        Or reset parameters if there are no care teams
+        === -->
+    <xf:action ev:event="initialiseCareTeamsForUser">
+
+        <!-- Get the list of care teams for the user. -->
+        <xf:dispatch name="getCareTeamsForUser" target="careTeam-model"/>
+
+        <!-- Set the current care team (if one exists in the list).
+             Setting the id triggers xforms-value-changed in care team selection to set displayName, handle and load the care team -->
+        <xf:action if="exists(xxf:instance('careTeamList-instance')/careTeam)">
+            <xxf:variable name="careTeamId"
+                select="xxf:instance('careTeamList-instance')/careTeam[1]/@value"/>
+            <xf:dispatch name="set-careTeam" target="careTeam-model">
+                <xxf:context name="careTeamId" select="$careTeamId"/>
+            </xf:dispatch>
+        </xf:action>
+        <!-- Reset parameters if there are no care teams -->
+        <xf:action if="not(exists(xxf:instance('careTeamList-instance')/careTeam))">
+            <xf:dispatch name="reset-careTeam" target="careTeam-model"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- === Application defined action to assign a patient to a care team.
+             patientId (as a string) is passed as context
+             Insert the element if it doesn't already exist in the care team
+        === -->
+    <xf:action ev:event="assign-patient">
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xf:action
+            if="$patientId != '' and not(xxf:instance('careTeam-instance')/patient/@id = $patientId)">
+
+            <!-- Insert new patient -->
+            <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/patient/@id"
+                value="$patientId"/>
+            <xf:insert context="xxf:instance('careTeam-instance')"
+                origin="xxf:instance('careTeamControl-instance')/careTeam/patient"/>
+
+            <!-- Regenerate patientList -->
+            <xxf:variable name="patientList"
+                select="distinct-values(xxf:instance('careTeam-instance')/patient/@id)"/>
+            <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/patientList"
+                value="string-join($patientList,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+
+            <!-- Save the care team -->
+            <xf:send submission="save-careTeam-submission" target="careTeam-model"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- === Application defined action to remove a patient from a care team.
+             patientId (as a string)  is passed as context
+         === -->
+    <xf:action ev:event="remove-patient">
+        <xxf:variable name="patientId" select="event('patientId')"/>
+
+        <!-- Remove the patient -->
+        <xf:delete nodeset="xxf:instance('careTeam-instance')/patient[@id = $patientId]"/>
+
+        <!-- Regenerate patientList -->
+        <xxf:variable name="patientList"
+            select="distinct-values(xxf:instance('careTeam-instance')/patient/@id)"/>
+        <xf:setvalue ref="xxf:instance('careTeamControl-instance')/careTeam/patientList"
+            value="string-join($patientList,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+
+        <!-- Save the care team -->
+        <xf:send submission="save-careTeam-submission" target="careTeam-model"/>
+    </xf:action>
+
+
+</xf:model>

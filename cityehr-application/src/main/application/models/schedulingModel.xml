@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    schedulingModel.xml
+    
+    Handling scheduling and booking
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="scheduling-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- ========= Create New Annotations and Save Annotations for an event ========= 
+    ================================================================================ -->
+
+    <!-- Control of scheduling -->
+    <xf:instance id="schedulingControl-instance">
+        <control xmlns="">
+            <status/>
+            
+            <clinic id="" specialty="" displayName="" startTime="" endTime="">
+                <!-- clinic inserted from template -->
+            </clinic>
+            
+            
+        </control>
+    </xf:instance>
+    
+    <!-- Control instance bindings -->
+    <xf:bind nodeset="xxf:instance('schedulingControl-instance')/clinic">
+        <xf:bind nodeset="@startTime" type="xs:time"/>
+     
+    </xf:bind>
+    
+    
+    <!-- =================== Monthly Schedule =================== 
+         ======================================================== -->
+
+    <!-- Monthly Schedule instances-->
+    <xf:instance id="templateSchedule-instance" src="oxf:/apps/ehr/resources/templates/monthlySchedule.xml"/>
+    <xf:instance id="workingSchedule-instance">
+        <monthlySchedule id="" displayName=""/>
+    </xf:instance>
+
+    <!-- Application defined action to generate a schedule -->
+    <xf:action ev:event="generate-schedule">
+        <xxf:variable name="schedule" select="event('schedule')"/>
+        <xxf:variable name="scheduleDate" select="event('scheduleDate')"/>
+
+        <!-- Check the input parameters before proceding -->
+        <xf:action if="exists($schedule) and $scheduleDate castable as xs:date">
+
+            <!-- Templates for the monthly schedule -->
+            <xxf:variable name="templateSchedule" select="xxf:instance('templateSchedule-instance')"/>
+            <xxf:variable name="monthlySchedule" select="xxf:instance('view-parameters-instance')/scheduling/monthlySchedule"/>
+            
+            <!-- Get the month for the schedule -->
+            <xxf:variable name="scheduleDateMonth" select="month-from-date($scheduleDate)"/>
+
+            <!-- Clear the schedule -->
+            <xf:delete nodeset="$schedule/*"/>
+
+            <!-- Get the day of the week (1-7) for the first day of the schedule.
+             format-date returns 1 for Monday, 7 for Sunday.
+             Can then match the position of this day in the monthlySchedule to get the offset
+             From the offset can set the startDate for the schedule -->
+            <xxf:variable name="startDayOfWeek" select="format-date($scheduleDate, '[F1]')"/>
+            <xxf:variable name="startDayOffset" select="$monthlySchedule/day[@number=$startDayOfWeek]/count(preceding-sibling::*)"/>
+            <xxf:variable name="startDayOffsetDuration" select="concat('P',$startDayOffset,'D')"/>
+            <xxf:variable name="startDate" select="xs:date($scheduleDate) - xs:dayTimeDuration($startDayOffsetDuration)"/>
+
+
+            <!-- Insert weeks into the schedule.
+                 There are a maximum of 6 weeks in a schedule, depending on the month and starting day of the week -->
+            <xf:action xxf:iterate="1 to 6">
+                <xxf:variable name="weekCount" select="."/>
+                <xxf:variable name="weekOffset" select="($weekCount - 1) * 7"/>
+                <xxf:variable name="weekOffsetDuration" select="concat('P',xs:string($weekOffset),'D')"/>
+                <xxf:variable name="weekStartDate" select="xs:date($startDate) + xs:dayTimeDuration($weekOffsetDuration)"/>
+
+                <!-- Add another week to the schedule if weekStartDate is in the schedule month
+                     Or if this is the first week (which may start the month previously) -->
+                <xxf:variable name="weekStartDateMonth" select="month-from-date($weekStartDate)"/>
+
+                <xf:action if="$weekCount = 1 or $weekStartDateMonth = $scheduleDateMonth">
+                    <xf:insert context="$schedule" origin="$templateSchedule/week" nodeset="*" at="last()" position="after"/>
+                    <xxf:variable name="week" select="$schedule/week[last()]"/>
+                    <xf:setvalue ref="$week/@number" value="$weekCount"/>
+
+                    <!-- Set days for the week -->
+                    <xf:action xxf:iterate="1 to 7">
+                        <xxf:variable name="dayCount" select="."/>
+                        <xxf:variable name="dayOffset" select="$dayCount -1"/>
+                        <xxf:variable name="dayOffsetDuration" select="concat('P',xs:string($dayOffset),'D')"/>
+                        <xxf:variable name="weekDayDate" select="xs:date($weekStartDate) + xs:dayTimeDuration($dayOffsetDuration)"/>
+                        <xxf:variable name="weekDayDateMonth" select="month-from-date($weekDayDate)"/>
+                        
+                        <!-- Set the date and active status -->
+                        <xf:setvalue ref="$week/day[position()=$dayCount]/@date" value="$weekDayDate"/>
+                        <xf:setvalue ref="$week/day[position()=$dayCount]/@active" value="if ($weekDayDateMonth = $scheduleDateMonth) then 'true' else 'false'"/>
+                    </xf:action>
+                </xf:action>
+
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- =================== Clinic Schedule ==================== 
+         ======================================================== -->
+    
+    <!-- Clinic Schedule instance-->
+    <xf:instance id="templateClinicSchedule-instance" src="oxf:/apps/ehr/resources/templates/clinicSchedule.xml"/>
+
+    <!-- Clinic instance-->
+    <xf:instance id="templateClinic-instance" src="oxf:/apps/ehr/resources/templates/clinic.xml"/>
+    
+    
+    <!-- Application defined action to reset the clinic.
+         Replaces the clinic in the control, with the (empty) template -->
+    <xf:action ev:event="reset-clinic">
+        <!-- Insert a new clinicSchedule from the template -->
+        <xf:delete nodeset="xxf:instance('schedulingControl-instance')/clinic"/>
+        <xf:insert context="xxf:instance('schedulingControl-instance')" origin="xxf:instance('templateClinic-instance')"/>
+             
+    </xf:action>
+    
+    <!-- Application defined action to generate a clinic.
+         Takes a clinic schedule as input and constructs a clinic instance -->
+    <xf:action ev:event="generate-clinic">
+        <xxf:variable name="clinic" select="event('clinic')"/>
+        <xxf:variable name="clinicSchedule" select="event('ClinicSchedule')"/>
+        
+        <xf:message ref="'generate the clinic'"/>
+    </xf:action>
+      
+    <!-- Application defined action to generate a clinic.
+         Takes a clinic schedule and clinic templae input
+         Write clinics to xmlstore - one instance of the clinic for each scheduled date  -->
+    <xf:action ev:event="schedule-clinics">
+        <xxf:variable name="clinic" select="event('clinic')"/>
+        <xxf:variable name="clinicSchedule" select="event('ClinicSchedule')"/>
+        
+        <xf:message ref="'schedule the clinic'"/>
+    </xf:action>
+    
+    
+
+    <!-- ========= Set up model when it is first loaded ========= 
+         ======================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Not doing anything here -->
+    </xf:action>
+
+
+
+</xf:model>

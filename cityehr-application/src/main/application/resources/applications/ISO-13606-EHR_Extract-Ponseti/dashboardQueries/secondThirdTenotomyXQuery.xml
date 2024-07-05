@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        firstTenotomyXQuery.xml
+        
+        Dashboard query to get count of patients starting treatment in various time intervals
+        Treatment is started with the first cast
+        Context is the application collection, which will contain a records collection if there are any patients
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+        **********************************************************************************************************
+-->
+
+<query>
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        declare namespace xdb="http://exist-db.org/xquery/xmldb";
+ 
+        let $tenotomyList := 
+        for $operationDate in //cda:value[@extension='#ISO-13606:Element:#ISO-13606:Element:Procedure'][@value=('2nd Tenotomy','3rd Tenotomy')]/../cda:value[@extension='#ISO-13606:Element:#ISO-13606:Element:OperationDate']/@value
+            order by $operationDate descending
+            return &lt;operation patientId="{$operationDate/ancestor::cda:ClinicalDocument/descendant::cda:patientRole/@extension}" date="{$operationDate}"/>     
+        
+        let $patientList := distinct-values($tenotomyList/@patientId)
+        let $count := count($patientList)   
+        
+        let $tenotomyDateList := 
+            for $patientId in $patientList return $tenotomyList[@patientId=$patientId][1]
+        
+        let $today := current-date()
+        let $date30Days := xs:string($today - xs:dayTimeDuration('P30D'))
+        let $date3Months := xs:string($today - xs:yearMonthDuration('P3M'))
+        let $date12Months := xs:string($today - xs:yearMonthDuration('P12M'))
+        
+        let $tenotomy30Days := count($tenotomyDateList[@date gt $date30Days])
+        let $tenotomy3Months := count($tenotomyDateList[@date gt $date3Months])
+        let $tenotomy12Months := count($tenotomyDateList[@date gt $date12Months])
+        
+        
+        return
+        &lt;queryResults>
+        &lt;total value="{$count}"/>
+                &lt;category displayName="Patients"/>
+                &lt;category displayName="Last 30 days" value="{$tenotomy30Days}"/>
+                &lt;category displayName="Last 3 months"  value="{$tenotomy3Months}"/>
+                &lt;category displayName="Last 12 months"  value="{$tenotomy12Months}"/>
+        &lt;/queryResults>
+</query>

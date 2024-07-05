@@ -1,0 +1,2553 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    view-parameters.xml
+    
+    Parameters passed between views in the cityEHR and/or set during interaction with the view.
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<parameters type="view" xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+
+    <!-- systemResourcesURL
+        Holds the URL of the system-parameters in the local (built-in) database.
+        The @localPrefix is appended to the path to give the URL of system-parameters in the local (built-in) database
+        This path is also the location where system-parameters will be stored in the standalone database, if one is configured.
+        System parameters are stored in three locations on each save operation: the storageLocation, the storageLocation with language stamp and the archiveLocation (with date stamp), 
+    -->
+    <systemResourcesURL localPrefix="/exist/rest" storageLocation="/db/cityEHR/configuration/" archiveLocation="archive/" separator="-"
+        systemParametersResource="system-parameters" iconResource="system-icons" processExecutionLogRessource="processExecutionLog"/>
+
+    <!-- databaseParametersURL
+         Holds the URL of the database-parameters in the local (built-in) database.
+         Can be specified directly, because these parameters are only ever held in one location in the local database -->
+    <databaseParametersURL databaseLocation="/exist/rest/db/cityEHR/configuration/database-parameters"/>
+
+    <!-- Version is used for (re) building parameters.
+         Release is overridden by value in application-parameters -->
+    <versionNumber displayName="Version Number - " version="V1.7-2024-05-09-01" release="1"
+        notSupportedMessage="Not supported in this version of cityEHR: ">
+        <releaseNotes>
+            <!-- Contains a set of HTML elements that are used as default release notes if none are found.
+                 Release notes are stored in <version>.xml in resources/releaseNotes.
+                 Note that the .xml extension must be used so that the submission to load does not accept html resource type -->
+            <p>No release notes available.</p>
+            <p>Please consult the System Administrator for information about this release.</p>
+        </releaseNotes>
+    </versionNumber>
+
+
+    <!-- Locations in the cityEHR distribution
+         These locations use the oxf: prefix and are the fixed values for the base cityEHR installation.
+         They can be used in pipelines where http: is not supported as well as for loading files and resources from fixed locations.
+         -->
+    <staticFileLocation>/resources</staticFileLocation>
+    <staticFileRoot>/ehr/resources</staticFileRoot>
+    <staticFileURL>oxf:/apps/ehr/resources</staticFileURL>
+    <userResourcesURL>oxf:/apps/ehr/resources/userResources</userResourcesURL>
+    <appPath>oxf:/apps/ehr</appPath>
+    <annotationTemplateURL>oxf:/apps/ehr/resources/templates/annotationCDA.xml</annotationTemplateURL>
+    <wordTemplateURL>oxf:/apps/ehr/resources/templates/letterTemplate.odt</wordTemplateURL>
+    <attachmentTemplateURL>oxf:/apps/ehr/resources/templates/attachmentTemplate.docx</attachmentTemplateURL>
+    <exportCohortDataODFTemplateURL>/resources/templates/exportCohortData-Stub.ods</exportCohortDataODFTemplateURL>
+    <exportCohortDataMSTemplateURL>/resources/templates/exportCohortData-Stub.xlsx</exportCohortDataMSTemplateURL>
+    <informationModelSpreadsheetTemplateURL type="Specialty" format="odf-spreadsheet"
+        >/userResources/informationModelTemplates/informationModel-specialty.ods</informationModelSpreadsheetTemplateURL>
+    <informationModelSpreadsheetTemplateURL type="Class" format="odf-spreadsheet"
+        >/userResources/informationModelTemplates/informationModel-class.ods</informationModelSpreadsheetTemplateURL>
+
+
+
+    <!-- Parameters for pipeline to create database back ups.
+         The backupDirectory must be accessible from the server, otherwise backup will fail -->
+    <backupPipeline>
+        <backupDirectory>C:/backup</backupDirectory>
+        <databaseRoot/>
+        <storageLocation/>
+    </backupPipeline>
+
+    <!-- database URL, without any location -->
+    <databaseURL/>
+
+    <!-- Location of xmlstore, relative to the exist database location
+         Set dynamically from xmlstore/@storageLocation -->
+    <storageLocation/>
+
+    <!-- Location of the exist database
+         Set dynamically from parameters in xmlstore
+        http://username:password@existurl/exist/rest
+        http://admin:@localhost:8080/orbeon/exist/rest      Local database shipped with Orbeon
+        http://admin:@localhost:8080/exist2/rest            Local database running under Tomcat
+        http://admin:@localhost:8022/exist/rest             Standalone database on port 8022
+        http://cityehr.org/exist2/rest                      Running under tomcat on remote URL
+       -->
+    <databaseLocation/>
+
+    <!-- Database storage locations set dynamically for the application
+        applicationStorageLocation - the storage location for the application, relative to the database location
+        applicationDatabaseLocation - the concatenation of the databaseLocation and applicationStorageLocation
+        
+        applicationDatabaseLocation is made as follows:
+        http://$databasePassword@$databaseLocation$applicationStorageLocation
+    -->
+    <applicationStorageLocation>applicationStorageLocation</applicationStorageLocation>
+    <applicationDatabaseLocation>applicationDatabaseLocation</applicationDatabaseLocation>
+
+
+    <!-- Database search control
+        fullTextPredicate is 'matches' for eXist 1.7 and ft:query for eXist 2.0 and above
+      -->
+
+    <databaseSearchControl>
+        <!-- eXist 1.4, 1.7, 2.0 and any without range or lucene index -->
+        <databaseSearch databaseVersion="1.4 1.4.1dev 1.7 2.0">
+            <fullTextPredicate>matches</fullTextPredicate>
+            <luceneStart>^</luceneStart>
+            <luceneEnd>$</luceneEnd>
+        </databaseSearch>
+
+        <!-- eXist 2.1 -->
+        <databaseSearch databaseVersion="2.1">
+            <fullTextPredicate>ft:query</fullTextPredicate>
+            <luceneStart>^</luceneStart>
+            <luceneEnd>$</luceneEnd>
+        </databaseSearch>
+
+        <!-- eXist 2.2 onwards is default - uses range and lucene indexes -->
+        <databaseSearch databaseVersion="default">
+            <fullTextPredicate>ft:query</fullTextPredicate>
+            <luceneStart>^</luceneStart>
+            <luceneEnd>$</luceneEnd>
+        </databaseSearch>
+    </databaseSearchControl>
+
+
+    <!-- === Page information used for navigation
+             Type of composition associated with views used for editing or viewing.
+             Until 2017 these locations were used when information models were imported 
+             This information is also used to find where action compositions are stored in care pathways -->
+    <pageInformation>
+        <page page="cityEHRFolder-Views" compositionTypeIRI="#CityEHR:View" showViewNavigationItemList="true" emptyViewMessage=""/>
+        <!--
+        <page page="cityEHRRegistration" compositionTypeIRI="#CityEHR:Form" showViewNavigationItemList="false"
+            emptyViewMessage="No registration form found for this application." savedViewMessage=""/>
+            -->
+        <page page="cityEHRFolder-Forms" compositionTypeIRI="#CityEHR:Form" showViewNavigationItemList="true"
+            emptyViewMessage="Select a form to enter data for this patient."
+            savedViewMessage="Select a saved form to resume entering data for this patient."/>
+        <page page="cityEHRFolder-Letters" compositionTypeIRI="#CityEHR:Letter" showViewNavigationItemList="true"
+            emptyViewMessage="Select a template to create a letter for this
+            patient."
+            savedViewMessage="Select a saved letter to resume entering data for this patient."/>
+        <page page="cityEHRFolder-Pathways" compositionTypeIRI="#CityEHR:Pathway" showViewNavigationItemList="true"
+            emptyViewMessage="Select a template to create a care pathway for this
+            patient."
+            savedViewMessage="Select a saved pathway to resume entering data for this patient."/>
+        <page page="cityEHRFolder-Orders" compositionTypeIRI="#CityEHR:Order" showViewNavigationItemList="false"
+            emptyViewMessage="Select a template to create an order for this
+            patient."
+            savedViewMessage="Select a saved order to resume entering data for this patient."/>
+    </pageInformation>
+
+
+    <!-- === Information and features used for debugging
+          -->
+    <debuggingInformation displayName="View debugging information">
+        <debugInstance displayName="Debug Info: ">
+            <option value="logging-instance" displayName="Startup Log"/>
+            <option value="system-parameters-instance" displayName="System Parameters"/>
+            <option value="database-parameters-instance" displayName="Database Parameters"/>
+            <option value="databaseVersion-instance" displayName="Database Version"/>
+            <option value="session-parameters-instance" displayName="Session Parameters"/>
+            <option value="previousSession-parameters-instance" displayName="Previous Session Parameters"/>
+            <option value="view-parameters-instance" displayName="View Parameters"/>
+            <option value="application-parameters-instance" displayName="Application Parameters"/>
+            <option value="working-application-parameters-instance" displayName="Working Application Parameters"/>
+            <option value="default-application-parameters-instance" displayName="Default Application Parameters"/>
+            <option value="stored-application-parameters-instance" displayName="Stored Application Parameters"/>
+            <option value="combined-application-parameters-instance" displayName="Combined (Default) Application Parameters"/>
+            <option value="application-image-instance" displayName="Application Image"/>
+            <option value="user-instance" displayName="User Instance"/>
+            <option value="default-user-instance" displayName="Default User Instance"/>
+            <option value="stored-user-instance" displayName="Stored User Instance"/>
+            <option value="applicationList-instance" displayName="Application List Instance"/>
+            <option value="specialtyList-instance" displayName="Specialty List Instance"/>
+            <option value="informationModel-instance" displayName="Information Model Instance"/>
+            <option value="commonInformationModel-instance" displayName="Common Information Model Instance"/>
+            <option value="processControl-instance" displayName="Process Control Instance"/>
+            <option value="processExecutionLog-instance" displayName="Process Execution Log"/>
+            <option value="defaultInformationModelList-instance" displayName="Default Information Model List"/>
+            <option value="composition-instance" displayName="Composition Instance"/>
+            <option value="compositionSet-instance" displayName="Composition Set Instance"/>
+            <option value="directoryList-instance" displayName="Directory List Instance"/>
+            <option value="shippedMediaList-instance" displayName="Shipped Media List Instance"/>
+            <option value="applicationControl-instance" displayName="Application Control Instance"/>
+            <option value="control-instance" displayName="Control Instance"/>
+            <option value="processExecutionLog-instance" displayName="Process Execution Log"/>
+            <option value="test-instance" displayName="Test Instance"/>
+        </debugInstance>
+    </debuggingInformation>
+
+    <!-- === System document IRIs
+        These are used to record system events in the patient record.
+        Merge, unmerge, archive, unarchive, supersede, etc
+        === -->
+    <systemCompositions>
+        <composition compositionIRI="#CityEHR:Merge" displayName="Merge Records" operation="merge"/>
+        <composition compositionIRI="#CityEHR:Unmerge" displayName="Unmerge Records" operation="unmerge"/>
+        <composition compositionIRI="#CityEHR:Archive" displayName="Archive Record" operation="archive"/>
+        <composition compositionIRI="#CityEHR:Unarchive" displayName="Restore Record" operation="unarchive"/>
+    </systemCompositions>
+
+    <!-- === Function codes for CDA documents
+             These are inserted into cda:author to record the actions of the author
+             <cda:functionCode code="" codeSystem="" codeSystemName="" displayName=""/>
+             === -->
+    <functionCodes>
+        <cda:functionCode code="#CityEHR:Action:Acknowledge" codeSystem="cityEHR" codeSystemName="" displayName="Acknowledge"/>
+        <cda:functionCode code="#CityEHR:Action:Save" codeSystem="cityEHR" codeSystemName="" displayName="Save"/>
+        <cda:functionCode code="#CityEHR:Action:Publish" codeSystem="cityEHR" codeSystemName="" displayName="Publish"/>
+    </functionCodes>
+
+    <!-- === Notifications === -->
+    <notifications>
+        <!-- Maximum notifications returned in xquery -->
+        <maxNotifications>5000</maxNotifications>
+        <maxNotificationsMessage>Notifications exceed configured maximum - contact your system administrator</maxNotificationsMessage>
+        <!-- Notification types - these are set in the cityEHR ontology architecture.
+             The order determines the order they are listed in the InTray-->
+        <notificationTypes displayName="Notification Type ">
+            <notification type="annotation" typeIRI="#CityEHR:Annotation" displayName="Annotation" typeDisplayName="Annotations"/>
+            <notification type="notification" typeIRI="#CityEHR:Notification" displayName="Action" typeDisplayName="Actions"/>
+        </notificationTypes>
+        <!-- Notification actions - for selecting the actor for a notification -->
+        <notificationActions label="Action" value="" displayName="">
+            <option displayName="No notification" value=""/>
+            <option displayName="Notify User" value="#CityEHR:User"/>
+            <option displayName="Notify Care Team" value="#CityEHR:CareTeam"/>
+            <option displayName="Notify Role" value="#CityEHR:Role"/>
+        </notificationActions>
+        <!-- Notification actions - for selecting the actor for redirecting a notification -->
+        <notificationRedirectActions label="Action" value="" displayName="">
+            <option displayName="Existing notification" value=""/>
+            <option displayName="Notify User" value="#CityEHR:User"/>
+            <option displayName="Notify Care Team" value="#CityEHR:CareTeam"/>
+            <option displayName="Notify Role" value="#CityEHR:Role"/>
+        </notificationRedirectActions>
+        <effectiveTime displayName="Effective " from="between " to=" and "/>
+        <authorTime displayName="Created " from="between   " to=" and "/>
+        <serviceEvent displayName="Action " connector=" in "/>
+    </notifications>
+
+    <!-- === Scheduling === -->
+    <scheduling>
+        <monthlySchedule>
+            <day number="1" displayName="Monday" active="true" bookable="true"/>
+            <day number="2" displayName="Tuesday" active="true" bookable="true"/>
+            <day number="3" displayName="Wednesday" active="true" bookable="true"/>
+            <day number="4" displayName="Thursday" active="true" bookable="true"/>
+            <day number="5" displayName="Friday" active="true" bookable="true"/>
+            <day number="6" displayName="Saturday" active="false" bookable="true"/>
+            <day number="7" displayName="Sunday" active="false" bookable="true"/>
+        </monthlySchedule>
+        <excludedDayLabel>Non-bookable: </excludedDayLabel>
+    </scheduling>
+
+
+    <!-- === General parameters used across all applications === -->
+    <resultSeparator>@@@</resultSeparator>
+    <pathSeparator>/</pathSeparator>
+    <idSeparator>-</idSeparator>
+    <commandSeparator>_</commandSeparator>
+    <valueClassPrefix>V-</valueClassPrefix>
+    <commandAndClassSeparator>///</commandAndClassSeparator>
+    <commandListSeparator>@@@</commandListSeparator>
+    <labelPadder>.</labelPadder>
+    <mediaFilenameSeparator>-xxx-</mediaFilenameSeparator>
+
+    <!-- The page set as the next to go to when a system navigation button is pressed.
+         The value is set by appending to the specified home. -->
+    <gotoPage home="/ehr/"/>
+
+
+    <!-- Parameters passed between any view, set from the URL. -->
+    <page/>
+    <userId/>
+    <sessionId/>
+    <errorCode/>
+    <mode/>
+    <test/>
+
+    <!-- Additional parameters passed in RESTful API in the URL.
+         (applicationId is also used in the API, but defined below) -->
+    <password/>
+    <command/>
+    <patientId/>
+    <compositionId/>
+    <mime/>
+
+    <applicationIRI/>
+    <specialtyIRI/>
+    <commonModelIRI/>
+    <careSettingIRI/>
+    <demographicsCheck/>
+
+
+    <!-- Date display and input.
+         Are used when view-parameters are passed to pipelines or transformations.
+         These are set in start-new-session from the corresponding values in application-parameters (so are then application specific) -->
+    <dateDisplayFormat>[D01]-[MNn,*-3]-[Y0001]</dateDisplayFormat>
+    <dateTimeDisplayFormat>[H01]:[m01]:[s01] on [D01]-[MNn,*-3]-[Y0001]</dateTimeDisplayFormat>
+    <timeDisplayFormat>[H01]:[m01]:[s01]</timeDisplayFormat>
+
+
+    <!-- Additional parameters passed between patient specific views 
+         compositionStatus of 'none' is used in the cityEHRFolder-Forms view to make sure that no attempt is made to load the composition
+         compositionStatus can also be set to 'saved' or 'new'
+         compositionHandle and formCacheHandle need values 'blank' so that submissions in the cityEHRFolder-Forms pipeline fail gracefully
+         
+         Note that compositionHandle, formCacheHandle and dictionaryHandle use the full database path, including password.
+         We don't want to pass these in URLs so need to refactor to remove them
+      -->
+    <compositionStatus>none</compositionStatus>
+    <compositionHandle>blank</compositionHandle>
+    <compositionType>forms</compositionType>
+    <compositionTypeIRI>#CityEHR:Form</compositionTypeIRI>
+    <compositionIRI>#CityEHR:Form:Registration</compositionIRI>
+    <savedCompositionId/>
+    <formCacheHandle>blank</formCacheHandle>
+    <dictionaryHandle>blank</dictionaryHandle>
+    <externalId/>
+    <highlightScheme/>
+
+    <!-- Parameters passed to view control actions (including actions from cityEHRAdmin) -->
+    <resourceHandle/>
+    <resourceDirectory/>
+    <resourcePattern/>
+    <languagePackHandle/>
+    <baseLanguagePackHandle/>
+    <resourceFileExtension/>
+    <transformationXSL/>
+    <resourceURL/>
+    <exportQuery/>
+    <templateURL/>
+    <runXqueryContext/>
+    <runXqueryQueryText/>
+
+    <!-- Parameters set dynamically for various views.
+         Any values shown here are for example only - all get set dynamically when needed -->
+    <applicationId>ISO-13606-EHR_Extract-cityEHR</applicationId>
+    <applicationDisplayName/>
+    <applicationLogo/>
+    <applicationFavicon/>
+    <specialtyId/>
+    <specialtyDisplayName/>
+    <commonModelId/>
+    <systemLanguageCode/>
+    <baseLanguageCode/>
+    <languageCode/>
+    <pageDisplayName/>
+    <pageLoadTime displayName="Page load time: "/>
+    <classIRI/>
+    <systemStatus displayName=""/>
+    <informationModelId>ISO-13606-EHR_Extract</informationModelId>
+    <informationModelType/>
+    <informationModelDisplay/>
+    <viewHistory/>
+    <compositionDisplay>current</compositionDisplay>
+    <targetHandle/>
+    <sourceHandle/>
+    <sourceType default="application/*"/>
+    <mergeHandle/>
+    <htmlCacheHandle/>
+    <xmlCacheHandle/>
+    <binaryCacheHandle/>
+
+
+    <!-- showViewNavigationItemList is true | false - toggles whether view navigation items are initially expanded, or not.
+         The initial value is set for particular pages, if specified in the pageInformation -->
+    <showViewNavigationItemList>false</showViewNavigationItemList>
+    <viewNavigationType/>
+    <!-- View display is portrait|landscape -->
+    <viewDisplayLayout>portrait</viewDisplayLayout>
+    <!-- ehrInfolayout is hidden or blank (i.e. '') -->
+    <ehrInfoLayout size="300" min="300" max="600" increment="50">hidden</ehrInfoLayout>
+
+
+    <!-- List values in xs:boolean elements that are to be displayed in views.
+         If a boolean is recorded as anything else, then it doesn't count as being recorded (will stiil get displayed as whatever value is set) -->
+    <displayBoolean>
+        <!-- This shows check boxes
+        <value value="true">&#10003;</value>
+        <value value="false">&#10007;</value>
+        -->
+        <value value="true" checkbox="&#x2611;">Yes</value>
+        <value value="false" checkbox="&#x2610;">No</value>
+    </displayBoolean>
+
+    <!-- HTML pipleine.
+        e.g. getEventDisplay.xpl
+        -->
+    <htmlPipeline>
+        <errorMessage>An error has occurred creating the HTML view.</errorMessage>
+    </htmlPipeline>
+
+    <!-- Print pipleine.
+         e.g. cityEHRPrintCachedHTML.xpl
+         Text for header and footer, used in XSLT transformation (HTML2FO-Module.xsl)-->
+    <printPipeline>
+        <errorMessage>An error has occurred creating the paginated view.</errorMessage>
+        <printText>
+            <text type="errorMessage" displayName="There was an error in the print pipeline."/>
+            <text type="pagePrefix" displayName="Page "/>
+            <text type="pageConjunction" displayName=" of "/>
+            <text type="pageSuffix" displayName=""/>
+        </printText>
+    </printPipeline>
+
+
+    <!-- Transformations.
+    The specified transformation should exist as a .xsl in the xslt folder -->
+    <!--
+    <transformations>
+        <transformation context="exportModel" type="class">OWL2GraphML</transformation>
+        <transformation context="exportModel" type="specialty"/>
+        <transformation context="exportModel" type="specialtyODF">OWL2ODFSpreadsheet</transformation>
+    </transformations>
+    -->
+
+    <!-- Export pipeline.
+         Values for allowableCharacterString and characterSelectionKey are default.
+         Actual values are filled from parameters specified in application-parameters
+         The allowable values for anonymisationType are defined in cityEHRExportDataDialog -->
+    <exportPipeline>
+        <queryContext/>
+        <queryText/>
+        <exportDataFormat>ms-spreadsheet</exportDataFormat>
+        <spreadsheetFormat>singleSheet</spreadsheetFormat>
+        <anonymisation>
+            <anonymisationType>anonymised</anonymisationType>
+            <allowableCharacterString>1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</allowableCharacterString>
+            <seedKey>ythaAhsPJSDKL18mqnscj</seedKey>
+            <anonymiseElements>
+                <anonymise entry="#ISO-13606:Entry:HospitalNumber" element="#ISO-13606:Element:HospitalNumber"/>
+                <anonymise entry="#ISO-13606:Entry:NHSNumber" element="#ISO-13606:Element:String"/>
+                <anonymise entry="#ISO-13606:Entry:Forename" element="#ISO-13606:Element:String"/>
+                <anonymise entry="#ISO-13606:Entry:Surname" element="#ISO-13606:Element:String"/>
+            </anonymiseElements>
+        </anonymisation>
+        <demographicsDisplayName>demographics</demographicsDisplayName>
+        <dataSetDisplayName>data</dataSetDisplayName>
+        <patientIdDisplayName>patientId</patientIdDisplayName>
+        <effectiveTimeDisplayName>effectiveTime</effectiveTimeDisplayName>
+        <idSeparator>-</idSeparator>
+    </exportPipeline>
+
+
+    <!-- Default user credentials (set if the system starts with no users in database).
+         Loads the default user from resources/templates/user.xml
+         Then sets the values of parameters contained in defaultUser -->
+    <defaultUser>
+        <!-- The credentials in user.xml contains more than the list here.
+             Only the elements that need to be set in the default user are included here.
+             The userId is also used to set the id attribute for the user element (e.g. #CityEHR:User:admin) -->
+        <credentials>
+            <userId>admin</userId>
+            <username>cityEHR Administrator</username>
+            <password dateSet="">password</password>
+        </credentials>
+        <!-- The role defined here is used as the generic system admin role.
+             Changing this role will lock out all existing administrators.
+             If there are no other users with this role then only the defaut user can log in with system admin rights. -->
+        <rbac>
+            <restrictPatientAccess value="" displayName="All Patients"/>
+            <role displayName="System Administrator" value="#CityEHR:Role:System:Administrator"/>
+        </rbac>
+    </defaultUser>
+
+    <!-- === Password policy.
+         security/maxAttempts - maximum password attempts (if castable as an integer)
+         security/forceReset - true = user must reset password if requested
+         security/encryption - true = stored password is encrypted using the seedKey (plus dateTime, so seedKey can be blank)
+         duration/@value must be castable as xs:dayTimeDuration ( e.g. P90D )- if not, passwords do not expire
+    -->
+    <passwordPolicy>
+        <resetLabel>Reset Password</resetLabel>
+        <resetButton>Reset</resetButton>
+        <cancelButton>Cancel</cancelButton>
+        <enterPassword label1="Enter new password" label2="Re-enter password"/>
+        <security maxAttempts="" forceReset="false" encryption="true" seedKey="iu2rhrurkjr"/>
+        <duration displayName="Your password has expired." value=""/>
+        <minLength displayName="Mininmum 8 characters">8</minLength>
+        <maxLength displayName="Maximum 12 characters">12</maxLength>
+        <allowedCharacters displayName="Must contain ">
+            <pattern displayName="one or more letters" value="[a-zA-Z]+"/>
+            <pattern displayName="one or more digits" value="[0-9]+"/>
+            <pattern displayName="one or more of £$%@_-!" value="[£$%@_\-!]+"/>
+        </allowedCharacters>
+        <matchPasswords displayName="Passwords must match"/>
+    </passwordPolicy>
+
+
+
+    <!-- === In progress dialogue.
+        The activeDialogue is set to the dialogue to be displayed.
+        Each inProgress dialogue in cityEHR has an entry here, which defines:
+        The dialogue identifier
+        The display headline (title) for the dialogue
+        The message to display while processing
+        === -->
+    <staticInProgressDialogue>
+        <activeDialogue>inProgressId</activeDialogue>
+        <dialogueNotFound>Working....</dialogueNotFound>
+        <dialogue id="inProgressId">
+            <title>Working..</title>
+            <message>Please wait while processing...</message>
+            <action model="main-model" event="application-defined-event"/>
+        </dialogue>
+    </staticInProgressDialogue>
+
+    <!-- === System error messages.
+         systemError is set on error and is displayed in the viewControls
+         === -->
+    <systemError displayName="System Error: " acknowledgeLabel="OK"/>
+    <systemErrorList>
+        <systemError type="template"/>
+        <systemError type="failedSaveSystemParameters">Failed to configure system parameters - please contact your system administrator.</systemError>
+        <systemError type="failedLoadDefaultSystemParameters">Failed to load default system parameters - please contact your system
+            administrator.</systemError>
+        <systemError type="malformedSystemParameters">System parameters are corrupted - please contact your system administrator.</systemError>
+        <systemError type="badCollectionURL">Specified database collection does not exist.</systemError>
+        <systemError type="failedDatabaseBackupPipeline">Database back up failed.</systemError>
+        <systemError type="errorReindexingDatabase">Error re-indexing database: </systemError>
+        <systemError type="failedDefaultConfigLoad">Failed to load default configuration.</systemError>
+        <systemError type="failedConfigLoad">Failed to load system configuration from database.</systemError>
+        <systemError type="failedGetApplicationList">Failed to get list of applications..</systemError>
+        <systemError type="failedImportShippedResources">Failed to import shipped resources..</systemError>
+        <systemError type="failedSaveUserSession">Failed to save session information.</systemError>
+        <systemError type="failedLoadUserSession">Failed to load session information.</systemError>
+        <systemError type="failedSaveUser">Failed to save user details.</systemError>
+        <systemError type="failedLoadingUserTemplate">Error loading user template.</systemError>
+        <systemError type="failedLoadingUserInstance">Failed to load user details.</systemError>
+        <systemError type="session-redirected">You have been redirected to the home page.</systemError>
+        <systemError type="failed-session-validation">Session timed out or encountered an error.</systemError>
+        <systemError type="bad-parameters-in-URL">Requested URL contained bad parameters.</systemError>
+        <systemError type="failedSubmissionToGetPatientDemographics">Error submitting patient demographics query.</systemError>
+        <systemError type="failedSubmissionToSetPatientDemographics">Error setting patient demographics.</systemError>
+        <systemError type="failed-load-user-details">Failed to load details for requested user.</systemError>
+        <systemError type="failed-to-load-audit-log">Failed to load audit log.</systemError>
+        <systemError type="failed-to-save-audit-log">Failed to save audit log.</systemError>
+        <systemError type="submitQuery">Error submitting query.</systemError>
+        <systemError type="badPageParameters">Page navigation parameters are not set correctly.</systemError>
+        <systemError type="failedToLoadEDS">Failed to load EDS from </systemError>
+        <systemError type="failedToLoadEDSTemplate">Failed to load EDS template from resources/templates</systemError>
+        <systemError type="exportLanguagePack">Failed to export language pack.</systemError>
+        <systemError type="failedCTLoad">Failed to load care team.</systemError>
+        <systemError type="failedCTSave">Failed to save care team.</systemError>
+        <systemError type="failedCTDelete">Failed to remove care team from xmlstore.</systemError>
+        <systemError type="failedCTTemplateLoad">Failed to load care team template from resources/templates</systemError>
+        <systemError type="failedCTLQuery">Failed query to find list of care teams.</systemError>
+        <systemError type="failedCTUsersQuery">Failed query to find list of care team users.</systemError>
+        <systemError type="failedCTPatientsQuery">Failed query to find list of care team patients.</systemError>
+        <systemError type="failedUserSelectionListQuery">Failed query to get selection list for users.</systemError>
+        <systemError type="failedPublishForm">Failed submission to store published composition.</systemError>
+        <systemError type="failedCountSubmission">Failed submission to count database resources.</systemError>
+        <systemError type="failedCollectionCountSubmission">Failed submission to count collection contents.</systemError>
+        <systemError type="failedStoreResource">Failed submission to store resource.</systemError>
+        <systemError type="failedGetLatestEntry">Failed submission to get value of latest entry.</systemError>
+        <systemError type="failedFormsSubmission">Failed submission to get list of forms for current specialty.</systemError>
+        <systemError type="failedpatientCompositionsSubmission">Failed submission to get list of compositions for patient.</systemError>
+        <systemError type="failedLoadAnnotationTemplateSubmission">Failed submission to load annotation template.</systemError>
+        <systemError type="failedSaveAnnotationSubmission">Failed submission to save annotation.</systemError>
+        <systemError type="failedLoadNotificationTemplateSubmission">Failed submission to load notification template.</systemError>
+        <systemError type="failedpatientEventsSubmission">Failed submission to get list of compositions for patient.</systemError>
+        <systemError type="failedLoadActionComposition">Failed submission to load action composition.</systemError>
+        <systemError type="failedSaveActionComposition">Failed submission to save action composition.</systemError>
+        <systemError type="failedpatientEventLoad">Failed to load composition for patient.</systemError>
+        <systemError type="failedGetResourceHandlesSubmission">Failed submission to get list of resource handles for patient.</systemError>
+        <systemError type="failedLoadFormSubmission">Failed submission to load composition.</systemError>
+        <systemError type="failedSaveFormSubmission">Failed submission to save composition.</systemError>
+        <systemError type="failedLoadDataDictionary">Failed to load data dictionary for specialty.</systemError>
+        <systemError type="failedEnumeratedClassValuesQuery">Failed to submit query to get list of enumerated class values.</systemError>
+        <systemError type="failedEnumeratedClassHierarchyQuery">Failed to submit query to get enumerated class hierarchy.</systemError>
+        <systemError type="failedGetDictionaryElementsQuery">Submitting query to get list of dictionary elements.</systemError>
+        <systemError type="failedGetDictionaryEntryQuery">Submitting query to get dictionary entry.</systemError>
+        <systemError type="failedSaveCohortSearch">Failed to save cohort search</systemError>
+        <systemError type="failedSubmitCohortSearch">Failed to submit cohort search</systemError>
+        <systemError type="failedSubmitCurrentEntrySearch">Failed to submit current entry search</systemError>
+        <systemError type="failedPrintCDASubmission">Failed submission to print CDA document.</systemError>
+        <systemError type="failedPrintHTMLSubmission">Failed submission to print HTML.</systemError>
+        <systemError type="failedSaveHTMLCacheSubmission">Failed submission to save HTML cache.</systemError>
+        <systemError type="failedExportPatientSetSubmission">Failed submission to export patient set.</systemError>
+        <systemError type="failedExportCohortDataSubmission">Failed submission to export cohort data.</systemError>
+        <systemError type="failedSetDatabaseParameters">Failed to set database parameters.</systemError>
+        <systemError type="failedPatientSearchQuery">Error submitting patient search query.</systemError>
+        <systemError type="failedPatientSetQuery">Error submitting patient set query.</systemError>
+        <systemError type="failedLoadLanguagePackTemplateSubmission">Failed to load language pack template.</systemError>
+        <systemError type="failedLoadMergeTemplateSubmission">Failed to load patient merge template.</systemError>
+        <systemError type="failedToRemoveSourceRecord">Failed to remove source record after merge.</systemError>
+        <systemError type="failedGetDatabaseVersionSubmission">Error retrieving version.</systemError>
+        <systemError type="badApplyLanguagePackParameters">Parameters not set correctly for applying language pack.</systemError>
+    </systemErrorList>
+
+
+    <!-- === For gender specific replacement of pronouns in text.
+         Note that 'hers' is not handled (e.g. this bag is hers) 
+         === -->
+    <patientPronouns>
+        <pronouns gender="#CityEHR:Gender:Male">
+            <text pronoun="he" displayName="he"/>
+            <text pronoun="He" displayName="He"/>
+            <text pronoun="him" displayName="him"/>
+            <text pronoun="Him" displayName="Him"/>
+            <text pronoun="his" displayName="his"/>
+            <text pronoun="His" displayName="His"/>
+        </pronouns>
+        <pronouns gender="#CityEHR:Gender:Female">
+            <text pronoun="he" displayName="she"/>
+            <text pronoun="He" displayName="She"/>
+            <text pronoun="him" displayName="her"/>
+            <text pronoun="Him" displayName="Her"/>
+            <text pronoun="his" displayName="her"/>
+            <text pronoun="His" displayName="Her"/>
+        </pronouns>
+        <pronouns gender="#CityEHR:Gender:Other">
+            <text pronoun="he" displayName="he/she"/>
+            <text pronoun="He" displayName="He/She"/>
+            <text pronoun="him" displayName="him/her"/>
+            <text pronoun="Him" displayName="Him/Her"/>
+            <text pronoun="his" displayName="his/her"/>
+            <text pronoun="His" displayName="His/Her"/>
+        </pronouns>
+    </patientPronouns>
+
+
+    <!-- === Process execution.
+         Processes executed as a sequence of actions, with incremental feedback on progress.
+         Controlled by actions defined in the process-model
+         === -->
+    <processExecution>
+        <!-- Import a set of resources that shipped with the current application.
+             Invokes sub-processes to 
+                import-informationModel  -->
+        <process name="import-shippedResources" model="application-model" displayName="Import models">
+            <action name="importShippedResources-importModel" displayName="Importing shipped information models" context="file">
+                <process name="import-informationModel"/>
+            </action>
+            <action name="importShippedResources-importLanguagePacks" displayName="Importing shipped language packs" context="languagePackFile"/>
+            <action name="importShippedResources-importDirectory" displayName="Importing shipped directories" context="directoryFile"/>
+            <action name="importShippedResources-importMedia" displayName="Importing shipped media" context="mediaFile"/>
+            <action name="importShippedResources-importImageMaps" displayName="Importing shipped umage maps" context="imageMapFile"/>
+            <action name="importShippedResources-importLetterTemplates" displayName="Importing shipped letter templates" context="letterTemplateFile"/>
+            <action name="importShippedResources-resetSpecialtyList" displayName="Resetting list of specialties"/>
+        </process>
+
+        <!-- Import an information model -->
+        <process name="import-informationModel" model="application-model">
+            <action name="importInformationModel-verify" displayName="Verifying information model"/>
+            <action name="importInformationModel-merge" displayName="Merging with base or existing model"/>
+            <action name="importInformationModel-save" displayName="Saving information model"/>
+            <action name="importInformationModel-generateDictionary" displayName="Generating data dictionary"/>
+            <action name="importInformationModel-createCompositions" displayName="Creating compositions"/>
+            <action name="importInformationModel-rebuildDirectories" displayName="Rebuilding directories"/>
+            <action name="importInformationModel-updateLanguagePacks" displayName="Updating language packs"/>
+            <action name="importInformationModel-clearFormCache" displayName="Clearing form cache"/>
+        </process>
+
+        <!-- Check expressions before importing an information model -->
+        <process name="check-expressions" model="application-model">
+            <action name="importInformationModel-verify" displayName="Verifying information model"/>
+            <action name="importInformationModel-merge" displayName="Merging with base or existing model"/>
+            <action name="importInformationModel-check" displayName="Checking expressions"/>
+        </process>
+
+        <!-- Create a new application 
+             Invokes sub-processes to 
+                import-informationModel  -->
+        <process name="create-application" model="application-model">
+            <action name="createApplication-saveParameters" displayName="Saving application parameters"/>
+            <action name="createApplication-import" displayName="Importing shipped information models" context="file">
+                <process name="import-informationModel"/>
+            </action>
+            <action name="createApplication-importLanguagePacks" displayName="Importing language packs shipped with application"
+                context="languagePackFile"/>
+            <action name="createApplication-importDirectories" displayName="Importing directories shipped with application" context="directoryFile"/>
+            <action name="createApplication-importMedia" displayName="Importing media shipped with application" context="mediaFile"/>
+            <action name="createApplication-setApplicationList" displayName="Resetting application list"/>
+            <action name="createApplication-setUserPermissions" displayName="Setting up user permissions"/>
+        </process>
+
+        <!-- Apply language pack 
+             Invokes sub-processes to 
+                import-informationModel  -->
+        <process name="apply-languagePack" model="application-model">
+            <action name="applyLanguagePack-applyToModel" displayName="Applying language pack to model" context="informationModel">
+                <process name="import-informationModel"/>
+            </action>
+        </process>
+
+        <!-- Generate test data -->
+        <process name="generate-test-data" model="main-model">
+            <action name="generate-test-record" displayName="Generating text record" context="cdaHeader"/>
+        </process>
+    </processExecution>
+
+
+    <!-- === RESTful API.
+         Definitaion of API commands and parameters
+         Called with the URL /ehr/api/command/?parameter1=value1&parameter2=value2...
+         === -->
+    <cityEHRapi>
+        <command name="authenticate">
+            <description/>
+            <example>/ehr/api/authenticate/?userId=user&amp;password=secret</example>
+            <cityEHRapiResponse>
+                <sessionId>863fa22fd0253e00333d96bb4417973a</sessionId>
+            </cityEHRapiResponse>
+            <cityEHRapiResponse>
+                <userAuthenticationFailed/>
+            </cityEHRapiResponse>
+            <parameters>
+                <parameter name="userId"/>
+                <parameter name="password"/>
+            </parameters>
+        </command>
+        <command name="getApplicationList">
+            <description/>
+            <example>/ehr/api/getApplicationList/?userId=user&amp;sessionId=863fa22fd0253e00333d96bb4417973a</example>
+            <cityEHRapiResponse>
+                <applicationList/>
+            </cityEHRapiResponse>
+            <parameters>
+                <parameter name="userId"/>
+                <parameter name="sessionId"/>
+            </parameters>
+        </command>
+
+        <command name="getDemographics">
+            <description/>
+            <example>/ehr/api/getDemographics/??userId=user&amp;sessionId=863fa22fd0253e00333d96bb4417973a&amp;applicationId=#ISO-13606:EHR_Extract:cityEHR&amp;patientId=K123456789</example>
+            <cityEHRapiResponse>
+                <entryCollection/>
+            </cityEHRapiResponse>
+            <cityEHRapiResponse>
+                <userAuthenticationFailed/>
+            </cityEHRapiResponse>
+            <parameters>
+                <parameter name="userId"/>
+                <parameter name="sessionId"/>
+                <parameter name="applicationId"/>
+                <parameter name="patientId"/>
+            </parameters>
+        </command>
+
+        <command name="getCompositionList">
+            <description/>
+            <example>/ehr/api/getCompositionList/??userId=user&amp;sessionId=863fa22fd0253e00333d96bb4417973a&amp;applicationId=#ISO-13606:EHR_Extract:cityEHR&amp;patientId=K123456789</example>
+            <cityEHRapiResponse>
+                <compositionCollection/>
+            </cityEHRapiResponse>
+            <cityEHRapiResponse>
+                <userAuthenticationFailed/>
+            </cityEHRapiResponse>
+            <parameters>
+                <parameter name="userId"/>
+                <parameter name="sessionId"/>
+                <parameter name="applicationId"/>
+                <parameter name="patientId"/>
+            </parameters>
+        </command>
+
+        <command name="getComposition">
+            <description> Gets a named composition for a named patient (in a named application) The mime parameter specified the mime type of the
+                response. The following types are supported: application/pdf, application/xml, application/zip </description>
+            <example>/ehr/api/getComposition/??userId=user&amp;sessionId=863fa22fd0253e00333d96bb4417973a&amp;applicationId=#ISO-13606:EHR_Extract:cityEHR&amp;patientId=K123456789&amp;compositionId=2023-10-26T20-52-40.71*01-00-CityEHR-Form-BaseRegistration-admin&amp;mime=application/pdf</example>
+            <cityEHRapiResponse>
+                <compositionCDA/>
+            </cityEHRapiResponse>
+            <cityEHRapiResponse>
+                <userAuthenticationFailed/>
+            </cityEHRapiResponse>
+            <parameters>
+                <parameter name="userId"/>
+                <parameter name="sessionId"/>
+                <parameter name="applicationId"/>
+                <parameter name="patientId"/>
+                <parameter name="compositionId"/>
+                <parameter name="mime"/>
+            </parameters>
+        </command>
+
+        <command name="postComposition">
+            <description/>
+            <example>/ehr/api/postComposition/??userId=user&amp;sessionId=863fa22fd0253e00333d96bb4417973a&amp;applicationId=#ISO-13606:EHR_Extract:cityEHR&amp;patientId=K123456789</example>
+            <cityEHRapiResponse>
+                <compositionId/>
+            </cityEHRapiResponse>
+            <cityEHRapiResponse>
+                <userAuthenticationFailed/>
+            </cityEHRapiResponse>
+            <parameters>
+                <parameter name="userId"/>
+                <parameter name="sessionId"/>
+                <parameter name="applicationId"/>
+                <parameter name="patientId"/>
+            </parameters>
+        </command>
+
+
+    </cityEHRapi>
+
+
+    <!-- === Static parameters for various views.
+             These are defined for the installation and are applicable to all applications running in it.
+             For application-specific configuration see the application-parameters files.
+         === -->
+    <staticParameters>
+        <cityEHRWireframe>
+            <pane id="patientLabel" displayName="Patient Label"/>
+            <pane id="systemNavigation" displayName="System Navigation"/>
+            <pane id="ehrNavigationType" displayName="EHR Navigation Type"/>
+            <pane id="ehrNavigationDisplay" displayName="EHR Navigation"/>
+            <pane id="viewTypeControls" displayName="EHR View Type Controls"/>
+            <pane id="viewControls" displayName="EHR View Controls"/>
+            <pane id="viewDisplay" displayName="EHR View Display"/>
+            <pane id="sessionInfo" displayName="Session Information"/>
+        </cityEHRWireframe>
+
+        <cityEHRFatalError>
+            <errorMessage>A system error occurred - session has been terminated. </errorMessage>
+            <resumeButton>Resume</resumeButton>
+        </cityEHRFatalError>
+
+        <directoryLookUp>
+            <noMatchFound>No match found.</noMatchFound>
+            <multipleMatchesFound>
+                <cda:observation>
+                    <cda:value displayName="-- Select Match --" extension="" value=""/>
+                </cda:observation>
+            </multipleMatchesFound>
+        </directoryLookUp>
+
+        <!-- Controls to show/hide viewNavigation and Info -->
+        <layoutControls>
+            <activator type="expandNavigation" displayName="Show" img=""/>
+            <activator type="collapseNavigation" displayName="Hide" img=""/>
+            <activator type="maximiseView" displayName="More" img=""/>
+            <activator type="minimiseView" displayName="Less" img=""/>
+            <activator type="collapseInfo" displayName="Hide" img=""/>
+            <activator type="expandInfo" displayName="Show" img=""/>
+        </layoutControls>
+
+        <viewNavigationItem>
+            <prefix action="expand">&#9654; </prefix>
+            <prefix action="collapse">&#9660; </prefix>
+            <prefix action="subselect">&#160;&#160;&#160;&#160;&#160;</prefix>
+            <prefix action="select"/>
+        </viewNavigationItem>
+
+        <cityEHRViewXMLDialog>
+            <displayName>XML Document Viewer</displayName>
+            <downloadButton>Download</downloadButton>
+            <closeButton>Close</closeButton>
+        </cityEHRViewXMLDialog>
+
+        <cityEHRViewCDAHTMLDialog>
+            <displayName>Action Source Document Viewer</displayName>
+            <closeButton>Close</closeButton>
+        </cityEHRViewCDAHTMLDialog>
+
+        <cityEHRSystemParametersDialog>
+            <displayName>System Parameters</displayName>
+            <closeButton>Close</closeButton>
+        </cityEHRSystemParametersDialog>
+
+        <cityEHRTermContextDialog>
+            <displayName>Context of Term in Information Model</displayName>
+            <closeButton>Close</closeButton>
+        </cityEHRTermContextDialog>
+
+        <cityEHRManageParametersDisplay>
+            <unspecifiedValue value="" displayName="-- Select Value --"/>
+        </cityEHRManageParametersDisplay>
+
+        <cityEHRAdmin>
+            <pageDisplayName>Administration</pageDisplayName>
+
+            <!-- TBD - Refactor - These direct parameters should be moved into a more specific element -->
+            <uploadStatusLabel>Upload status: </uploadStatusLabel>
+            <importStatusLabel>Import status: </importStatusLabel>
+            <uploadedFile>Uploaded file ready for processing.</uploadedFile>
+            <errorUploadingFile>Failed to upload file for processing.</errorUploadingFile>
+            <loadedData>Load data from file, ready for processing.</loadedData>
+            <failedApplicationQuery>Error submitting query to retrieve list of applications.</failedApplicationQuery>
+            <failedSpecialtyQuery>Error submitting query to retrieve list of specialties.</failedSpecialtyQuery>
+            <failedULQuery>Error submitting query to retrieve list of users for this application.</failedULQuery>
+            <failedEDSLQuery>Error submitting query to retrieve list of export data sets</failedEDSLQuery>
+            <failedCLQuery>Error submitting query to retrieve list of collections.</failedCLQuery>
+            <errorLoadingResource>Error loading resource from xmlstore.</errorLoadingResource>
+            <errorLoadingDictionary>Failed to load data dictionary from </errorLoadingDictionary>
+            <failedKnowledgeMapQuery>Failed to load knowledge maps.</failedKnowledgeMapQuery>
+
+            <fileUpload>
+                <maxFileSize>250000000</maxFileSize>
+                <rootElementLabel>Root Element: </rootElementLabel>
+                <contentsInfoLabel>Uploaded file contains: </contentsInfoLabel>
+                <filenameLabel>Filename: </filenameLabel>
+                <fileTypeLabel>Type: </fileTypeLabel>
+                <fileSizeLabel>Size: </fileSizeLabel>
+                <fileContentLabel>Content: </fileContentLabel>
+                <commonModel>Common information model</commonModel>
+                <uniqueModel>Information model</uniqueModel>
+            </fileUpload>
+            <!-- Status message reports the processing status or progess of the process -->
+            <statusMessage>
+                <message processingProgress="importingResource">Importing </message>
+                <message processingProgress="failedImportingResource">Import failed for </message>
+                <message processingProgress="invalidUserId">User id or logon alias already exists. </message>
+                <message processingProgress="uploadedFileExceedsLimit">Uploaded file exceeds size limit for processing: </message>
+                <message processingProgress="loadedZipManfest">Uploaded file is zip with file count: </message>
+                <message processingProgress="start"> Model loaded for application </message>
+                <message processingProgress="ok"> Importing information model. </message>
+                <message processingProgress="mismatch"> Model context does not match current application for this log on. </message>
+                <message processingProgress="formatNotCurrentlySupported">This format is not supported in this version of cityEHR. </message>
+                <message processingProgress="cannotImportInformationModel"> Cannot import information model due to errors. Please fix and try again. </message>
+                <message processingProgress="importInformationModelBadApplication"> Cannot import information model for wrong application: </message>
+                <message processingProgress="importInformationModelBadLanguage"> Cannot import information model for wrong language: </message>
+                <message processingProgress="cannotImportLanguagePack"> Cannot import language pack - format is incorrect. Please fix and try again. </message>
+                <message processingProgress="convertingGraphToOWLXML">Input model is a graph - converting to OWL/XML.</message>
+                <message processingProgress="convertingSpreadsheetToOWLXML">Input model is a spreadsheet - converting to OWL/XML.</message>
+                <message processingProgress="convertingMindMaptoOWLXML">Input model is a mind map - converting to OWL/XML.</message>
+                <message processingProgress="transformedToOWLXML">Transformed uploaded file to OWL/XML.</message>
+                <message processingProgress="errorTransformingToOWLXML">Error converting uploaded file to OWL/XML.</message>
+                <message processingProgress="badCompositionId">Patient id in composition did not match EHR_Extract</message>
+                <message processingProgress="importedRecord">Imported record for </message>
+                <message processingProgress="importedComposition">Imported composition </message>
+                <message processingProgress="failedImportingComposition">Failed to import composition - check that composition Id is valid </message>
+                <message processingProgress="uploadedFile">Loaded file to: </message>
+                <message processingProgress="errorLoadingData">Failed to load data from file - not a recognised XML type.</message>
+                <message processingProgress="errorOpeningZipData">Failed to load data from file - not a recognised file type.</message>
+                <message processingProgress="errorLoadingZipData">Failed to load data from zip file - does not contain a recognised XML
+                    file.</message>
+                <message processingProgress="textFileNotADL">Text file is not recognised as Archetype Defimition Language.</message>
+                <message processingProgress="loadedXMLData">Data file is XML with root: </message>
+                <message processingProgress="generatingDictionary">Generating and storing data dictionary.</message>
+                <message processingProgress="generatingDictionaryError">Failed to generate data dictionary.</message>
+                <message processingProgress="generatingDictionarySuccess">Generated data dictionary successfully.</message>
+                <message processingProgress="removedSpecialtyCompositions">Removed specialty compositions: </message>
+                <message processingProgress="noSingleExtractInTemplate">Template must contain one EHR_Extract - uploaded file contains </message>
+                <message processingProgress="noRegDocInTemplate">Template record set does not contain registration document.</message>
+                <message processingProgress="noBirthTimeInTemplate">Template record must contain valid bate of birth.</message>
+                <message processingProgress="badDirectoryFormat">Directory does not have required format.</message>
+                <message processingProgress="directoryNotDefined">Directory not defined for this specialty.</message>
+                <message processingProgress="correctEntryDirectoryFormat">Found entry directory for: </message>
+                <message processingProgress="correctElementDirectoryFormat">Found element directory for: </message>
+                <message processingProgress="failedElementDirectoryLoad">Failed to load directory element template from </message>
+                <message processingProgress="failedEntryDirectoryLoad">Failed to load directory entry template from </message>
+                <message processingProgress="exceededMaxDirectorySizeForRebuild">Directory exceeds maximum size to rebuild - reimport directory to
+                    fix</message>
+                <message processingProgress="specialtyModelDirectory">Loaded directory for specialty model.</message>
+                <message processingProgress="commonModelDirectory">Loaded directory for common model.</message>
+                <message processingProgress="recordSetIsMSAcess">Record set is an export from MS Access - converting to HL7 CDA.</message>
+                <message processingProgress="recordSetIsSpreadsheet">Record set is a spreadsheet - converting to HL7 CDA.</message>
+                <message processingProgress="recordSetIsCDA">Records set is HL7 CDA documents</message>
+                <message processingProgress="importingRecordSet">Importing record set (patients/records): </message>
+                <message processingProgress="noRecordsToImport">No records to import (iso-13606:EHR_Extract containing cda:ClinicalDocument)</message>
+                <message processingProgress="importingInformationModel">Importing information model: </message>
+                <message processingProgress="importInformationModelError">Failed to import information model</message>
+                <message processingProgress="importInformationModelSuccess">Information model imported successfully</message>
+                <message processingProgress="failedIMQuery">Error submitting query to retrieve list of information models.</message>
+                <message processingProgress="extractingLanguagePack">Extracting language pack: </message>
+                <message processingProgress="extractingLanguagePackError">Failed to extract language pack</message>
+                <message processingProgress="extractingLanguagePackSuccess">Language pack extracted successfully</message>
+                <message processingProgress="failedLPQuery">Failed query to get list of Language Packs</message>
+                <message processingProgress="resettingSpecialtyIRI">Resetting specialty and loading dictionary: </message>
+                <message processingProgress="rebuildingDirectories">Rebuilding directories for specialty</message>
+                <message processingProgress="updatingDirectory">Updating directory: </message>
+                <message processingProgress="failedDirectoryTemplateLoad">Failed to load template for: </message>
+                <message processingProgress="invalidDirectoryNotSaved">Failed to save invalid directory: </message>
+                <message processingProgress="updateDirectoryOK">Directory updated successfully: </message>
+                <message processingProgress="noPatientsInList">The loaded file is not a valid patient list (patient/@id).</message>
+                <message processingProgress="failedDeleteCollection">Could not delete collection </message>
+                <message processingProgress="convertingSpreadsheetToXML">Converting spreadsheet to XML patientSet</message>
+                <message processingProgress="mergingModels">Merging Models</message>
+                <message processingProgress="loadingCommonModel">Loading common information model for specialty </message>
+                <message processingProgress="loadingCommonModelClass">Loading common information model for class </message>
+                <message processingProgress="mergedCommonModel">Merged Common Model</message>
+                <message processingProgress="noCommonModel">No common model to merge</message>
+                <message processingProgress="mergedRecords">Successfully merged records: </message>
+                <message processingProgress="failedMergedRecords">Failed to merge records: </message>
+                <message processingProgress="unmergedRecords">Successfully unmerged records: </message>
+                <message processingProgress="failedUnmergedRecords">Failed to unmerge records: </message>
+                <message processingProgress="archivedRecordCompositions">Successfully archived compositions for record: </message>
+                <message processingProgress="archivedRecord">Successfully archived record: </message>
+                <message processingProgress="failedArchiveRecord">Failed to archive record: </message>
+                <message processingProgress="unarchivedRecordCompositions">Successfully restored compositions for record: </message>
+                <message processingProgress="unarchivedRecord">Successfully restored record: </message>
+                <message processingProgress="failedUnarchiveRecord">Failed to restore record: </message>
+                <message processingProgress="querySubmissionSuccess">Query submission succeeded in: </message>
+                <message processingProgress="querySubmissionFailed">Query submission failed in: </message>
+                <message processingProgress="querySubmissionPathEmpty">Resource path not specified.</message>
+                <message processingProgress="webServiceTestFailed">Failed call to web service: </message>
+                <message processingProgress="importModelStageStart">Starting stage </message>
+                <message processingProgress="importModelStageComplete">Completed stage </message>
+                <message processingProgress="importModelStage-1">1 (check loaded model) </message>
+                <message processingProgress="importModelStage-2">2 (merge models) </message>
+                <message processingProgress="importModelStage-2a">2a (check expressions) </message>
+                <message processingProgress="importModelStage-3">3 (store information model) </message>
+                <message processingProgress="importModelStage-4">4 (generate dictionary) </message>
+                <message processingProgress="importModelStage-5">5 (generate language pack) </message>
+                <message processingProgress="importModelStage-6">6 (remove existing compositions) </message>
+                <message processingProgress="importModelStage-7">7 (import compositions) </message>
+                <message processingProgress="importModelStage-8">8 (load model dictionary) </message>
+                <message processingProgress="importModelStage-9">9 (copy directories from common model) </message>
+                <message processingProgress="importModelStage-10">10 (generate directories) </message>
+                <message processingProgress="expressionErrors">Errors found in expressions: </message>
+                <message processingProgress="noExpressionErrors">No errors found in expressions.</message>
+                <message processingProgress="blob"/>
+
+            </statusMessage>
+
+            <!-- First used 2017-11-20
+                 Could refactor to move some other parameters here in later releases -->
+            <importInformationModel>
+                <supportedModelFormats displayName="Recognised information model format:">
+                    <format type="owlxml" displayName="OWL/XML ontology"/>
+                    <format type="adl" displayName="OpenEHR ADL format"/>
+                    <format type="adlxml" displayName="OpenEHR ADL XML format"/>
+                    <format type="ods" displayName="Open office spreadsheet (.ods)"/>
+                    <format type="xlsx" displayName="MS office open spreadsheet (.xlsx)"/>
+                    <format type="msxml" displayName="MS Office XML 2003 format (.xml)"/>
+                    <format type="graphML" displayName="Directed Acyclic Graph, graphML format"/>
+                    <format type="mindmap" displayName="Mindmap xml format(.mm)"/>
+                </supportedModelFormats>
+            </importInformationModel>
+
+            <manageInformationModel>
+                <action type="export-lp" label="Export Language Pack" display="inherit" hint="Export language pack to zip file"/>
+                <action type="apply-lp" label="Apply Language Pack" display="inherit" hint="Apply language pack to information model"/>
+                <action type="import-lp" label="Import Language Pack" display="inherit" hint="Import language pack"/>
+                <action type="save-lp" label="Save Language Pack" display="inherit" hint="Save language pack"/>
+                <action type="show-lp" label="Show Language Pack" display="inherit" hint="Show language pack"/>
+                <action type="export" label="Export Ontology" display="inherit" hint="Export ontology model to zip file"/>
+                <action type="exportISO-13606" label="Export ISO-13606" display="inherit" hint="Export ontology as ISO-13606 model to zip file"/>
+                <action type="exportMindMap" label="Export Mind Map" display="inherit" hint="Export model as Mind Map to zip file"/>
+                <action type="exportODFSpreadsheet" label="Export ODF Spreadsheet" display="inherit" hint="Export model as ODF Spreadsheet"/>
+                <action type="reloadResources" label="Reload Shipped Resources" display="inherit" hint="Reload shipped resources for this application"/>
+                <action type="reload" label="Reload Shipped Models" display="inherit" hint="Reload shipped models for this application"/>
+                <action type="delete" label="Delete Specialty" display="inherit" hint="Delete the selected specialty"/>
+                <action type="print" label="Print" display="inherit" hint="Print model summary"/>
+
+                <exportFormat displayName="Export Format">
+                    <option value="ontology" displayName="Ontology OWL/XML"/>
+                    <option value="ISO-13606" displayName="ISO-13606 XML"/>
+                    <option value="mindmap" displayName="Mindmap mm"/>
+                    <option value="spreadsheet" displayName="Spreadsheet ODF"/>
+                </exportFormat>
+
+                <filter displayName="Filter: ">
+                    <option value="letterPicker" displayName="Letter picker"/>
+                    <option value="compositionFilter" displayName="Composition"/>
+                    <option value="userFilter" displayName="User defined"/>
+                    <option value="" displayName="All values"/>
+                </filter>
+
+                <specialtyLabel>Specialty: </specialtyLabel>
+                <selectInformationModelLabel>Information Model: </selectInformationModelLabel>
+                <compositionLabel>Composition: </compositionLabel>
+                <selectViewLabel>Select view: </selectViewLabel>
+                <modelLanguageLabel>Base language: </modelLanguageLabel>
+                <selectLanguageLabel>Applied Language: </selectLanguageLabel>
+                <defaultLanguage displayName="(Not Supported)"/>
+                <showOntologyDetailsLabel>Show ontology summary </showOntologyDetailsLabel>
+                <editLanguagePackLabel>Edit language pack </editLanguagePackLabel>
+                <!-- Specialty selection
+                     used as the default selection
+                     This is the same pattern as the iso-13606:Folder elements returned from the specialtyListXQuery-->
+                <iso-13606:Folder id="" displayName="Summary - All Specialties"/>
+                <!-- Information model summary selection.
+                     Used as the default selection.
+                     This is a subset of the pattern of the informationModel elements returned from the informationModelListXQuery -->
+                <informationModel>
+                    <informationModelType>Summary</informationModelType>
+                    <specialtyDisplayName>All Models</specialtyDisplayName>
+                    <handle/>
+                </informationModel>
+            </manageInformationModel>
+
+            <manageMedia>
+                <entryLabel>Entry: </entryLabel>
+                <addLabel>Add media to database</addLabel>
+                <saveLabel>Save media to database</saveLabel>
+                <reloadLabel>Reload shipped media</reloadLabel>
+                <iso-13606:entry>
+                    <cda:component>
+                        <cda:observation>
+                            <cda:id root="" extension=""/>
+                            <cda:code displayName="-- All Entries --"/>
+                        </cda:observation>
+                    </cda:component>
+                </iso-13606:entry>
+            </manageMedia>
+
+            <manageImageMaps>
+                <entryLabel>Entry: </entryLabel>
+                <saveLabel>Save image maps to database</saveLabel>
+                <reloadLabel>Reload image maps from database</reloadLabel>
+                <reloadShippedLabel>Reload shipped image maps</reloadShippedLabel>
+                <exportButtonLabel>Export image map</exportButtonLabel>
+                <viewButtonLabel>View image map</viewButtonLabel>
+                <listIdsLabel>Id attributes set in this image map</listIdsLabel>
+                <errorMessageList>
+                    <errorMessage type="badFormat" displayName="Uploaded file must be SVG format"/>
+                    <errorMessage type="badImageMapId" displayName="SVG image map id must match the entry id"/>
+                    <errorMessage type="failedSaveImageMapFile" displayName="Failed to save image map file"/>
+                </errorMessageList>
+                <viewImageMapTitle>View Image Map</viewImageMapTitle>
+                <iso-13606:entry>
+                    <cda:component>
+                        <cda:observation>
+                            <cda:id root="" extension=""/>
+                            <cda:code displayName="-- All Entries --"/>
+                        </cda:observation>
+                    </cda:component>
+                </iso-13606:entry>
+            </manageImageMaps>
+
+
+            <!-- Details displayed for the loaded ontology model.
+                 The xpath attribite gets evaluated - these need to be valid xpath expressions, otherwise the page will not load -->
+            <ontologyDetails>
+                <parameter
+                    xpath="xxf:instance('resource-instance')/owl:Annotation[owl:AnnotationProperty/@abbreviatedIRI='rdfs:importedFromFile']/owl:Literal"
+                    >Imported from file: </parameter>
+                <parameter xpath="xxf:instance('control-instance')/informationModelType">Model type: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/*)">Total assertions: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#CityEHR:Error'])">Errors: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#CityEHR:Warning'])">Warnings: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:SubClassOf/owl:Class[2][@IRI='#CityEHR:Class'])">Classes: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#ISO-13606:Folder'])">Folders: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#CityEHR:View'])">Views: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#CityEHR:Form'])">Forms: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#CityEHR:Message'])">Messages: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#ISO-13606:Section'])">Sections: </parameter>
+                <!-- This xpath expression takes a long time to compute, so better to explicitly match the types of entry
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[contains(string-join(xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#ISO-13606:Entry']/owl:Class[1]/@IRI,'@@@'),@IRI)])">Entries: </parameter>
+                -->
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#ISO-13606:Entry'])">Entries: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#ISO-13606:Cluster'])">Clusters: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#ISO-13606:Element'])">Elements: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#CityEHR:Units'])">Units: </parameter>
+                <parameter xpath="count(xxf:instance('resource-instance')/owl:ClassAssertion/owl:Class[@IRI='#CityEHR:Term'])">Terms: </parameter>
+            </ontologyDetails>
+            <ontologyView>
+                <selection/>
+                <options type="Class">
+                    <option displayName="All Nodes" type="nodeList">allNodes</option>
+                    <option displayName="Node IRI List" type="nodeList">nodeIRIs</option>
+                    <option displayName="Node ID List" type="nodeList">nodeIds</option>
+                    <option displayName="Node Display Name List" type="nodeList">nodeDisplayNames</option>
+                    <option displayName="cityEHR Class Browser" type="nodeBrowser">CityEHR</option>
+                    <option displayName="SNOMED Browser" type="nodeBrowser">SNOMED</option>
+                    <option displayName="ICD-10 Browser" type="nodeBrowser">ICD-10</option>
+                    <option displayName="Language Pack" type="languagePack">languagePack</option>
+                </options>
+                <options type="Specialty">
+                    <option displayName="ISO-13606 Browser" type="nodeBrowser">ISO-13606</option>
+                    <option displayName="Data Dictionary" type="nodeList">dataDictionary</option>
+                    <option displayName="Composition Summary" type="nodeList">compositionSummary</option>
+                    <option displayName="Language Pack" type="languagePack">languagePack</option>
+                </options>
+            </ontologyView>
+            <printHeaders>
+                <displayList type="allNodes">
+                    <header>Node IRI</header>
+                    <header>Node Id</header>
+                    <header>Node Display Name</header>
+                </displayList>
+                <displayList type="dataDictionary">
+                    <header>Entries</header>
+                    <header>Elements</header>
+                    <header>Element Values</header>
+                </displayList>
+                <displayList type="classLevelNodes">
+                    <header>Level 1 Nodes</header>
+                    <header>Level 2 Nodes</header>
+                    <header>Level 3 Nodes</header>
+                </displayList>
+                <displayList type="compositionSummary">
+                    <header>Entry / Element</header>
+                    <header>Allowable values</header>
+                    <header>Hint</header>
+                </displayList>
+
+            </printHeaders>
+            <resourceURLLabel>Resource URL: </resourceURLLabel>
+            <generateDictionaryLabel>Generate data dictionary (required) </generateDictionaryLabel>
+            <mergeCommonModelLabel>Merge common model </mergeCommonModelLabel>
+            <mergeExistingModelLabel>Merge existing model </mergeExistingModelLabel>
+            <rebuildDirectoriesLabel>Rebuild directories </rebuildDirectoriesLabel>
+            <checkExpressionsLabel>Check expressions (do not import)</checkExpressionsLabel>
+
+            <rootContext id="/" displayName="-- Root --"/>
+            <documentInsertLabel>Document to insert</documentInsertLabel>
+            <databaseAccessLayer>
+                <databaseLocationLabel>Database location: </databaseLocationLabel>
+                <applicationLabel>Application </applicationLabel>
+                <iso-13606:EHR_Extract id="" displayName="-- No Application --"/>
+                <resultLabel>Result </resultLabel>
+                <submitLabel>Submit XQuery</submitLabel>
+                <resetQueryLabel>Reset query</resetQueryLabel>
+                <viewResultsLabel>View query results</viewResultsLabel>
+                <exportResultsLabel>Export query results </exportResultsLabel>
+                <systemLabel>System </systemLabel>
+                <maxResultsLabel>Max results </maxResultsLabel>
+                <hitsLabel> hits.</hitsLabel>
+                <queryDocumentLabel>XQuery to execute </queryDocumentLabel>
+                <writeDocumentLabel>XML Document to write to database</writeDocumentLabel>
+                <xQueryContextLabel>Context </xQueryContextLabel>
+                <databaseOperation value="query" displayName="Operation">
+                    <option displayName="Query" value="query"/>
+                    <option displayName="Read" value="read"/>
+                    <option displayName="Write" value="write"/>
+                    <option displayName="Delete" value="delete"/>
+                    <option displayName="Clear Cache" value="clear"/>
+                </databaseOperation>
+                <processingAction value="reallocate-compositions" displayName="Perform Action">
+                    <option displayName="Reallocate compositions" value="reallocate-compositions"
+                        hint="Allocate compositions to patient in CDA Header"/>
+                    <option displayName="Fix age elements" value="fix-age-elements" hint="Fix elements of type 'age'"/>
+                    <option displayName="Fix missing demographics" value="fix-missing-demographics" hint="Fix ELFIN demographics that got blanked out"
+                    />
+                </processingAction>
+                <successMessage>Query successful for: </successMessage>
+                <failedMessage>Query failed for: </failedMessage>
+                <defaultQueryDocument>for $resource in collection() let $handle := document-uri($resource) return
+                    &lt;resource>{$handle}&lt;/resource></defaultQueryDocument>
+            </databaseAccessLayer>
+
+            <specialtiesHeader>Specialties</specialtiesHeader>
+            <modelsHeader>Information Models</modelsHeader>
+            <selectSpecialtyLabel>Specialty: </selectSpecialtyLabel>
+            <managedDatabase>
+                <systemLabel>System: </systemLabel>
+                <logicalDatabaseLabel>Logical Database: </logicalDatabaseLabel>
+                <physicalDatabaseLabel>Database: </physicalDatabaseLabel>
+                <physicalClusterNodeLabel>Node: </physicalClusterNodeLabel>
+            </managedDatabase>
+            <browsePhysicalDatabases>
+                <databaseNodeInaccessible>Database cannot be accessed</databaseNodeInaccessible>
+                <maxCollectionItems>1000</maxCollectionItems>
+                <maxCollectionItemsMessage> Returned maximum displayable collection items </maxCollectionItemsMessage>
+                <databaseLocationLabel>Database: </databaseLocationLabel>
+                <databaseVersionLabel>Version: </databaseVersionLabel>
+                <generateManifestButtonLabel>Generate database manifest</generateManifestButtonLabel>
+                <exportManifestButtonLabel>Export manifest</exportManifestButtonLabel>
+                <backupButtonLabel>Backup database</backupButtonLabel>
+                <reindexButtonLabel>Reindex database</reindexButtonLabel>
+                <nameLabel>Name</nameLabel>
+                <typeLabel>Type</typeLabel>
+                <sizeLabel>Size</sizeLabel>
+                <modifiedLabel>Last Modified</modifiedLabel>
+                <showBTUsLabel>Show BTUs </showBTUsLabel>
+                <btuParametersLabel>BTU Parameters</btuParametersLabel>
+                <filterLabel>Filter: </filterLabel>
+                <sortCriteriaLabel>Sort by: </sortCriteriaLabel>
+                <sortDirectionLabel type="ascending">Ascending</sortDirectionLabel>
+                <sortDirectionLabel type="descending">Descending</sortDirectionLabel>
+                <sortCriteria>
+                    <option value="type" displayName="Type"/>
+                    <option value="name" displayName="Name"/>
+                    <option value="size" displayName="Size"/>
+                    <option value="lastModified" displayName="Modified"/>
+                </sortCriteria>
+                <deleteButtonLabel>Delete Resource</deleteButtonLabel>
+                <viewButtonLabel>View resource</viewButtonLabel>
+                <exportButtonLabel>Export resource</exportButtonLabel>
+                <previousButtonLabel>Previous Collection</previousButtonLabel>
+            </browsePhysicalDatabases>
+            <manageSystemParameters>
+                <saveLabel>Save system parameters</saveLabel>
+                <resetLabel>Revert to saved parameters</resetLabel>
+                <saveAndRestartMessage>Database parameters have changed - system will restart after saving.</saveAndRestartMessage>
+                <cancelSaveLabel>Do not save</cancelSaveLabel>
+                <saveAndRestartLabel>Save and restart</saveAndRestartLabel>
+                <resetMessage>Reset parameters to stored version - your changes will be lost.</resetMessage>
+                <cancelResetLabel>Do not reset</cancelResetLabel>
+                <confirmedResetLabel>Reset</confirmedResetLabel>
+                <viewXMLLabel>View system parameters instance</viewXMLLabel>
+                <exportUserResourcesLabel>Download resources</exportUserResourcesLabel>
+                <applicationsLabel>Applications: </applicationsLabel>
+                <versionLabel>Version: </versionLabel>
+                <dateLabel>Date: </dateLabel>
+                <usersLabel>Users: </usersLabel>
+            </manageSystemParameters>
+            <manageApplicationParameters>
+                <applicationParameters displayName="Application parameters for: " fieldLength="20"/>
+                <applicationLabel>Application </applicationLabel>
+                <displayNameLabel>Name: </displayNameLabel>
+                <baseLanguageCodeLabel>Language: </baseLanguageCodeLabel>
+                <versionLabel>Version: </versionLabel>
+                <dateLabel>Date: </dateLabel>
+                <usersLabel>Users: </usersLabel>
+                <specialtyLabel>Specialties: </specialtyLabel>
+                <informationModelLabel>Information Models: </informationModelLabel>
+                <recordLabel>Records: </recordLabel>
+                <compositionLabel>Compositions: </compositionLabel>
+                <viewXMLLabel>View XML application parameters instance</viewXMLLabel>
+                <editLabel>Edit </editLabel>
+                <resetLabel>Revert to saved parameters</resetLabel>
+                <saveLabel>Save application parameters</saveLabel>
+            </manageApplicationParameters>
+            <managedParameters>
+                <selectContextLabel>Parameter Set</selectContextLabel>
+                <baseLanguageLabel>Base language: </baseLanguageLabel>
+                <editLabel>Edit </editLabel>
+
+                <action type="export-lp" label="Export Language Pack" display="inherit" hint="Export language pack to zip file"/>
+                <action type="apply-lp" label="Apply Language Pack" display="inherit" hint="Apply language pack to parameters"/>
+                <action type="import-lp" label="Import Language Pack" display="inherit" hint="Import language pack"/>
+                <action type="save-lp" label="Save Language Pack" display="inherit" hint="Save language pack"/>
+                <action type="reset-lp" label="Reset Language Pack" display="inherit" hint="Reset language pack"/>
+            </managedParameters>
+
+            <managedLanguagePack>
+                <exportFormat displayName="Language Pack Format">
+                    <option value="ontology" displayName="Ontology OWL/XML" transformationXSL=""/>
+                    <option value="spreadsheet" displayName="Spreadsheet CSV" transformationXSL="LanguagePack2CSV"/>
+                </exportFormat>
+                <sortOrder displayName="Sort: ">
+                    <option value="" displayName="Not sorted"/>
+                    <option value="ascending" displayName="Ascending"/>
+                    <option value="descending" displayName="Descending"/>
+                </sortOrder>
+            </managedLanguagePack>
+
+
+            <newApplicationWizard>
+                <allowableCharacterString>1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</allowableCharacterString>
+                <applicationIdLabel>Application Id: </applicationIdLabel>
+                <newLabel>Create new application</newLabel>
+                <verifyLabel>Verify application Id</verifyLabel>
+                <resetLabel>Reset new application wizard</resetLabel>
+                <displayNameLabel>Description </displayNameLabel>
+                <statusMessage>
+                    <status value="waiting" displayName="Enter identifier for the new application"/>
+                    <status value="applicationExists" displayName="An application with this identifier already exists"/>
+                    <status value="configurationLoaded" displayName="Loaded the configuration found on the server for this application"/>
+                    <status value="defaultConfigurationLoaded" displayName="Loaded the default configuration"/>
+                    <status value="error" displayName="An error occurred when creating the new application"/>
+                    <status value="complete" displayName="The new application was created successfully"/>
+                </statusMessage>
+                <wizardSteps notSupported=" - not supported in this version">
+                    <step action="newAppWizard-storeConfiguration" displayName="Storing application configuration"/>
+                    <step action="newAppWizard-copyMedia" displayName="Copying application media"/>
+                    <step action="newAppWizard-importInformationModel" displayName="Importing information models"/>
+                    <step action="newAppWizard-setUserPermissions" displayName="Setting up user permissions"/>
+                    <step action="" displayName="Set up complete"/>
+                </wizardSteps>
+                <wizardStatus/>
+            </newApplicationWizard>
+            <codeKnowledgeSources>
+                <!-- codeSystem has attributes:
+                        id          used for value of codeSystem attribute in cda:code
+                        datatype    URL, used in rdf:datatype attribute of dc:subject in RDF knowledge map
+                        displayName used for display to users (including dropdown for selection) -->
+                <codeSystemList displayName="Coding System">
+                    <codeSystem id="" datatype="" displayName="--- Show All ---"/>
+                    <codeSystem id="snomed" datatype="https://www.snomed.org" displayName="SNOMED CT"/>
+                    <codeSystem id="icd10" datatype="https://id.who.int/icd/release/11" displayName="ICD 10"/>
+                    <codeSystem id="loinc" datatype="https://loinc.org" displayName="LOINC"/>
+                    <codeSystem id="umls" datatype="https://www.nlm.nih.gov/research/umls" displayName="UMLS"/>
+                </codeSystemList>
+                <saveLabel>Save knowledge maps</saveLabel>
+                <deleteLabel>Delete selected map</deleteLabel>
+                <resetLabel>Reload last saved</resetLabel>
+                <viewLabel>View selected map</viewLabel>
+                <addLabel>Add new map</addLabel>
+                <closeLabel>Close</closeLabel>
+                <headings>
+                    <displayName>Code System</displayName>
+                    <displayName>Clinical Code</displayName>
+                    <displayName>Description</displayName>
+                    <displayName>Knowledge Source (URL)</displayName>
+                </headings>
+
+            </codeKnowledgeSources>
+            <manageSchedule>
+                <previousMonth displayName="Previous Month"/>
+                <nextMonth displayName="Next Month"/>
+            </manageSchedule>
+            <manageUsers>
+                <userListMax>100</userListMax>
+                <userListMaxMessage>Showing maximum number of users - check configuration.</userListMaxMessage>
+                <iso-13606:EHR_Extract id="" displayName="-- Any Application --"/>
+                <selectEditAccountLabel>Edit account </selectEditAccountLabel>
+                <saveAccountLabel>Save Account</saveAccountLabel>
+                <newAccountLabel>New User Account</newAccountLabel>
+                <deleteAccountLabel>Delete Account</deleteAccountLabel>
+                <resetAccountLabel>Reset User Account</resetAccountLabel>
+                <hideAccountLabel>Hide User Account</hideAccountLabel>
+                <showPasswordLabel>Show passwords</showPasswordLabel>
+                <applicationUsersLabel>Users for this application: </applicationUsersLabel>
+                <anyApplicationUsersLabel>Users for any application: </anyApplicationUsersLabel>
+                <selectedUserLabel>User account details for: </selectedUserLabel>
+                <lastLoginLabel>Last logged on</lastLoginLabel>
+                <credentialsLabel>Credentials</credentialsLabel>
+                <applicationsLabel>Applications</applicationsLabel>
+                <specialtiesLabel>Specialties</specialtiesLabel>
+                <rolesLabel>Roles (RBAC)</rolesLabel>
+                <userIdLabel>User Id</userIdLabel>
+                <userIdInvalid>User id already exists as user id or alias.</userIdInvalid>
+                <password1Label>Password </password1Label>
+                <password2Label>Retype password </password2Label>
+                <passwordNotMatched>Passwords do not match</passwordNotMatched>
+                <passwordMatched>OK</passwordMatched>
+                <logonAliasLabel>Logon Alias (optional)</logonAliasLabel>
+                <logonAliasInvalid>Alias already exists as user id or alias.</logonAliasInvalid>
+                <userAccountEditStatus status="unedited" displayName="Edit details"/>
+                <userAccountEditStatus status="edited" displayName="Press to save"/>
+                <userAccountEditStatus status="saved" displayName="Saved"/>
+                <userAccountDetails>
+                    <item name="username" displayName="Username" editable="true" listDisplay="true"/>
+                    <item name="code" displayName="Code" editable="true"/>
+                    <item name="specialtyCode" displayName="Specialty Code" editable="true"/>
+                    <item name="organisation" displayName="Organisation" editable="true" listDisplay="true"/>
+                    <item name="jobTitle" displayName="Job Title" editable="true"/>
+                    <item name="email" displayName="Email" editable="true" listDisplay="true"/>
+                </userAccountDetails>
+                <restrictPatientAccess displayName="Patient Access">
+                    <item value="" displayName="All Patients"/>
+                    <item value="careTeam" displayName="Care Team Patients"/>
+                </restrictPatientAccess>
+            </manageUsers>
+            <manageDirectory>
+                <selectSpecialtyLabel>Specialty: </selectSpecialtyLabel>
+                <newLabel>Add new item to directory</newLabel>
+                <directoryType label="Directory Type: ">
+                    <item value="element" displayName="Element"/>
+                    <item value="entry" displayName="Entry"/>
+                </directoryType>
+                <selectDirectoryLabel>Directory: </selectDirectoryLabel>
+                <noDirectoryLabel>No directories available.</noDirectoryLabel>
+                <saveLabel>Save directory</saveLabel>
+                <exportLabel>Export directory</exportLabel>
+                <rebuildLabel>Rebuild directory</rebuildLabel>
+                <elementDisplayNameLabel width="50">Display Name (required)</elementDisplayNameLabel>
+                <elementValueLabel>Value (default is Display Name)</elementValueLabel>
+                <deleteValueLabel>Delete value</deleteValueLabel>
+                <deleteEntryLabel>Delete entry</deleteEntryLabel>
+                <keyElementLabel marker="*"> - Key element denoted by </keyElementLabel>
+                <editElementDisplayNameLabel>Edit</editElementDisplayNameLabel>
+                <errorCode>#CityEHR:Error</errorCode>
+                <invalidDirectoryMessage>Directory format is invalid</invalidDirectoryMessage>
+                <duplicateValueMessage> Directory not saved - all Display Names must be set with a unique value.</duplicateValueMessage>
+                <duplicateKeyMessage> Directory not saved - all keys must be set with a unique value.</duplicateKeyMessage>
+                <maxDirectorySizeForRebuild>500</maxDirectorySizeForRebuild>
+            </manageDirectory>
+            <importDirectory>
+                <selectSpecialtyLabel>Specialty: </selectSpecialtyLabel>
+            </importDirectory>
+            <viewAuditLog>
+                <allUsersSelection id="" displayName="-- All Users --"/>
+                <maxSessions>500</maxSessions>
+                <loadLogLabel>View session log</loadLogLabel>
+                <patientFilterLabel>Filter by patient id: </patientFilterLabel>
+                <maxSessionsLabel>Maximum sessions retrieved: </maxSessionsLabel>
+                <userLabel>Show audit log for user: </userLabel>
+                <userIdLabel>User Id</userIdLabel>
+                <sessionStartLabel>Session Start</sessionStartLabel>
+                <sessionEndLabel>Session End</sessionEndLabel>
+                <pageVisitLabel>Pages Accessed</pageVisitLabel>
+                <patientVisitLabel>Patients Accessed</patientVisitLabel>
+            </viewAuditLog>
+            <manageCareTeams>
+                <waitingMessage>Click to create new care team</waitingMessage>
+                <careTeamLabel>Care Team: </careTeamLabel>
+                <applicationUsersLabel>Application Users</applicationUsersLabel>
+                <careTeamUsersLabel>Care Team Users</careTeamUsersLabel>
+                <careTeamPatientsLabel>Care Team Patients</careTeamPatientsLabel>
+                <saveLabel>Save Care Team</saveLabel>
+                <newLabel>New Care Team</newLabel>
+                <deleteLabel>Delete Care Team</deleteLabel>
+                <resetLabel>Reset Care Team</resetLabel>
+                <removePatientLabel>Remove selected patients</removePatientLabel>
+            </manageCareTeams>
+            <manageCohortSearch>
+                <userLabel>User: </userLabel>
+                <cohortTypeLabel>Cohort type: </cohortTypeLabel>
+                <roleLabel>Role: </roleLabel>
+                <deleteLabel>Delete selected searches</deleteLabel>
+                <exportLabel>Export selected searches</exportLabel>
+                <cohortType>
+                    <item value="cohortOrSearches" displayName="All"/>
+                    <item value="search" displayName="Searches"/>
+                    <item value="cohort" displayName="Cohorts"/>
+                </cohortType>
+            </manageCohortSearch>
+            <importCohortSearch>
+                <roleLabel>Import searches to role: </roleLabel>
+            </importCohortSearch>
+            <manageLetterTemplates>
+                <newTemplateLabel>New letter template</newTemplateLabel>
+                <deleteLetterLabel>Delete letter template</deleteLetterLabel>
+                <specialtyLabel>Specialty: </specialtyLabel>
+                <templateFileLabel>Template File</templateFileLabel>
+                <templateLabel>Letter Template Name</templateLabel>
+                <templateContentTypeLabel>Content Type</templateContentTypeLabel>
+                <templateContent displayName="Content type is not supported">
+                    <mime type="application/*" displayName="Shipped template"/>
+                    <mime type="application/vnd.oasis.opendocument.text" displayName="ODF Text"/>
+                    <mime type="application/vnd.openxmlformats-officedocument.wordprocessingml.document" displayName="MS Word"/>
+                </templateContent>
+                <newCompositionLabel>New composition association</newCompositionLabel>
+                <templateVariablesLabel>Template Variables</templateVariablesLabel>
+                <templateAssociationsLabel>Associated Compositions</templateAssociationsLabel>
+                <allCompositionsLabel>All Compositions</allCompositionsLabel>
+                <deleteCompositionLabel>Remove Association</deleteCompositionLabel>
+                <compositionSelection>
+                    <iso-13606:composition code="" displayName="-- Select Composition --"/>
+                </compositionSelection>
+            </manageLetterTemplates>
+            <manageExportDataSets>
+                <EDSLabel>Export Data Set: </EDSLabel>
+                <dictionaryEntryLabel>Entries from dictionary</dictionaryEntryLabel>
+                <filterLabel>Filter by </filterLabel>
+                <compositionFilterLabel> Composition</compositionFilterLabel>
+                <allCompositionsSelection code="" displayName="All Compositions"/>
+                <loadEDSLabel>Add all entries</loadEDSLabel>
+                <EDSEntryLabel>Export Data Set</EDSEntryLabel>
+                <clearEDSLabel>Clear data set</clearEDSLabel>
+                <saveLabel>Save data Set</saveLabel>
+                <newLabel>New data set</newLabel>
+                <deleteLabel>Delete data set</deleteLabel>
+                <resetLabel>Reset data set</resetLabel>
+                <dismissLabel>Done</dismissLabel>
+            </manageExportDataSets>
+            <sortSelection>
+                <option displayName="Aa" regex="^[Aa].*"/>
+                <option displayName="Bb" regex="^[Bb].*"/>
+                <!-- etc -->
+            </sortSelection>
+            <generateTestData>
+                <numberOfRecords displayName="Number of records " value="10" size="5"/>
+                <reportProgress default="true" displayName="Report Progress " progressDisplayName="Processed records "
+                    reportingMessage="Progress will be reported for each record" notReportingMessage="Only reporting progress of overall process"
+                    completedMessage="test records generated in"/>
+                <genderParameters displayName="Gender" size="3" valueDisplayName="Value" percentageDisplayName="Percentage"
+                    percentageMessage="Must sum to 100%"/>
+                <genderValue value="" displayName="-- Not set --" prefix="" givenName="" percentage="0" numberOfRecords="0"/>
+                <givenNameOptions displayName="Forename">
+                    <option value="" displayName="No forename" prefix=""/>
+                    <option value="femaleGivenNames-instance" displayName="Female forename" prefix="Ms"/>
+                    <option value="maleGivenNames-instance" displayName="Male forename" prefix="Mr"/>
+                    <option value="neutralGivenNames-instance" displayName="Neutral forename" prefix="Mx"/>
+                </givenNameOptions>
+                <timingParameters stepTimeDisplayName="Step time " averageStepTimeDisplayName="Average step time "/>
+                <identifierPrefix displayName="Patient identifier prefix " size="3">K</identifierPrefix>
+                <identifierLength displayName="Patient identifier length " size="3" default="8" identifierMinimumSuffixLength="4"
+                    identifierRandomSuffixLength="20"/>
+                <setBirthTime default="true" displayName="Set date of birth "/>
+                <minimumAge displayName="Minimum age (years)" size="3">18</minimumAge>
+                <maximumAge displayName=" Maximum age " size="3">65</maximumAge>
+                <cdaHeader>
+                    <id/>
+                    <prefix/>
+                    <given>Given Name</given>
+                    <family>Family Name</family>
+                    <administrativeGenderCode>Unkown</administrativeGenderCode>
+                    <birthTime>1983-03-15</birthTime>
+                    <providerOrganization>cityEHR</providerOrganization>
+                </cdaHeader>
+            </generateTestData>
+            <inspectSpreadsheet>
+                <headerRecords displayName="Header Records "/>
+                <viewSheet displayName=" View sheet"/>
+                <exportHeaders displayName=" Export headers"/>
+                <records displayName=" Records "/>
+                <fields displayName="Fields "/>
+                <exportDatabaseLabel>Export spreadsheet as database XML</exportDatabaseLabel>
+            </inspectSpreadsheet>
+            <importRecords>
+                <setCompositionId displayName="Composition id: ">
+                    <option value="preserve" displayName="Preserve Identifiers"/>
+                    <option value="generate" displayName="Generate New Identifiers"/>
+                </setCompositionId>
+                <importRecordMapParameters>
+                    <parameter value="effectiveTime" displayName="Effective time "/>
+                    <parameter value="activeTable" displayName="  Use sheet "/>
+                    <parameter value="headerRecords" displayName="Header rows "/>
+                    <parameter value="patientIdField" displayName="Patient id field "/>
+                    <parameter value="recordImportMap" displayName="Import map"/>
+                    <parameter value="showMapControls" displayName="Show map"/>
+                </importRecordMapParameters>
+                <mapSelection>
+                    <iso-13606:composition code="" displayName="-- Select Composition --"/>
+                    <cda:observation>
+                        <cda:id root=""/>
+                        <cda:code displayName="-- Select Entry --"/>
+                    </cda:observation>
+                    <iso-13606:entry displayName="-- Select Entry --"/>
+                    <cda:value extension="" xsi:type="" cityEHR:elementDisplayName="-- Select Element --"/>
+                </mapSelection>
+            </importRecords>
+            <purgeRecords>
+                <instructions>Find list of records to purge, verify and then purge.</instructions>
+                <searchLabel>Search to find records to purge</searchLabel>
+                <purgeListLabel prefix="Found " suffix=" records to purge"/>
+                <purgeLabel>Purge records</purgeLabel>
+            </purgeRecords>
+            <fixCompositions>
+                <compositionLabel>Composition </compositionLabel>
+                <sourceLabel> Source</sourceLabel>
+                <targetLabel> Target</targetLabel>
+            </fixCompositions>
+            <manageRecords>
+                <!-- Can archive, unarchive, merge or unmerge records.
+                     Status (of source or target) can be waiting | sameRecords | loaded | notFound | invalid
+                     Status of the overall process can be unverified | verified | processed | error -->
+                <recordOperation displayName="Operation: ">
+                    <option value="merge" displayName="Merge Records"/>
+                    <option value="unmerge" displayName="Unmerge Records"/>
+                    <option value="archive" displayName="Archive Record"/>
+                    <option value="unarchive" displayName="Restore Record"/>
+                </recordOperation>
+                <archiveOperation displayName="Archive">
+                    <option value="record" displayName="Whole Record"/>
+                    <option value="composition" displayName="Selected Compositions"/>
+                </archiveOperation>
+                <informationType>
+                    <type>records</type>
+                    <type>data</type>
+                    <type>archive</type>
+                </informationType>
+                <!-- The cdaHeader is inserted into the source and target elements in control-instance/manageRecords.
+                     Elements in cdaHeader with @matched must be the same in both source and target before the records can be merged.
+                     Note that id can never match, otherwise no merge can ever happen (source cannot be merged into itself)
+                     compositionDisplayName is used to set the displayName of the merge composition -->
+                <cdaHeader>
+                    <id/>
+                    <prefix/>
+                    <given matched=""/>
+                    <family matched=""/>
+                    <administrativeGenderCode matched=""/>
+                    <birthTime matched=""/>
+                </cdaHeader>
+                <unmergeLabel>Merge history for this record</unmergeLabel>
+                <unmergeNoHistoryLabel>No previous merge history</unmergeNoHistoryLabel>
+                <mergeLabel>Merge records</mergeLabel>
+                <sourceLabel>Source Record </sourceLabel>
+                <verifySourceLabel>Verify source id</verifySourceLabel>
+                <targetLabel>Target Record </targetLabel>
+                <verifyTargetLabel>Verify target id</verifyTargetLabel>
+                <compositionCountLabel>Compositions: </compositionCountLabel>
+                <selectCompositionLabel>
+                    <label operation="archive" displayName="Select compositions to archive"/>
+                    <label operation="unarchive" displayName="Select compositions to restore"/>
+                    <label operation="unmerge" displayName="Select compositions stored since merge"/>
+                </selectCompositionLabel>
+                <!-- status message depends on the operation, status, sourceStatus and targetStatus -->
+                <status>
+                    <message operation="merge" status="unverified" sourceStatus="waiting" targetStatus="waiting">Select source and target records,
+                        verify and then merge.</message>
+                    <message operation="merge" status="unverified" sourceStatus="loaded" targetStatus="loaded">Source and target demographics must
+                        match before you can merge.</message>
+                    <message operation="merge" status="unverified" sourceStatus="loaded" targetStatus="waiting">Enter and verify target patient
+                        Id.</message>
+                    <message operation="merge" status="unverified" sourceStatus="notFound" targetStatus="waiting">You must verify an existing patient
+                        record to merge.</message>
+                    <message operation="merge" status="unverified" sourceStatus="notFound" targetStatus="notFound">You must verify an existing patient
+                        record to merge.</message>
+                    <message operation="merge" status="unverified" sourceStatus="notFound" targetStatus="loaded">You must verify an existing patient
+                        record to merge.</message>
+                    <message operation="merge" status="verified" sourceStatus="loaded" targetStatus="notFound">No existing record for target Id -
+                        press Merge to move source to new record.</message>
+                    <message operation="merge" status="verified" sourceStatus="loaded" targetStatus="loaded">Source and target verified - press Merge
+                        to add source to target record.</message>
+                    <message operation="merge" status="error" sourceStatus="loaded" targetStatus="loaded">An error occurred during the merge
+                        operation.</message>
+                    <message operation="merge" status="processed" sourceStatus="loaded" targetStatus="loaded">Source and target have been merged
+                        successfully.</message>
+                    <message operation="unmerge" status="unverified" sourceStatus="waiting" targetStatus="waiting">Select source record, verify and
+                        unmerge.</message>
+                    <message operation="unmerge" status="unverified" sourceStatus="notFound" targetStatus="waiting">You must verify an existing
+                        patient record to unmerge.</message>
+                    <message operation="unmerge" status="unverified" sourceStatus="loaded" targetStatus="notFound">There are no records to
+                        unmerge.</message>
+                    <message operation="unmerge" status="verified" sourceStatus="loaded" targetStatus="loaded">Press unmerge to separate and restore
+                        target record.</message>
+                    <message operation="archive" status="unverified" sourceStatus="waiting" targetStatus="waiting">Select source record, verify and
+                        archive.</message>
+                    <message operation="unarchive" status="unverified" sourceStatus="waiting" targetStatus="waiting">Select archived record, verify
+                        and restore.</message>
+                </status>
+
+                <recordStatus>
+                    <message record="source" operation="merge" status="loaded">Source record to merge:</message>
+                    <message record="source" operation="unmerge" status="loaded">Source record to unmerge:</message>
+                    <message record="source" operation="archive" status="loaded">Source record to archive:</message>
+                    <message record="source" operation="merge unmerge" status="notFound">Source record not found.</message>
+                    <message record="source" operation="merge" status="invalid">Source not found, identifier is invalid.</message>
+                    <message record="source" operation="merge" status="sameRecords">Source and target are the same record - cannot merge.</message>
+                    <message record="source" operation="unarchive" status="notFound" compositionCount="0">No archive for this record.</message>
+                    <message record="source" operation="unarchive" status="loaded">Found full archive for this record.</message>
+                    <message record="target" operation="merge" status="loaded">Target record to merge:</message>
+                    <message record="target" operation="merge" status="notFound">Target not found, merge will create a new record.</message>
+                    <message record="target" operation="merge" status="invalid">Target not found, identifier is invalid.</message>
+                    <message record="target" operation="merge" status="sameRecords">Source and target are the same record - cannot merge.</message>
+                </recordStatus>
+            </manageRecords>
+            <redirectNotifications>
+                <selectSpecialtyLabel>Specialty: </selectSpecialtyLabel>
+                <notificationsLabel>Notifications</notificationsLabel>
+                <redirectToLabel>Redirect to</redirectToLabel>
+                <searchLabel>Search</searchLabel>
+                <searchResults type="" prefix=" Found " suffix=" matches"/>
+                <redirectLabel>Redirect</redirectLabel>
+                <deleteLabel>Delete</deleteLabel>
+                <confirmDeleteMessage prefix="Delete " suffix=" notifications"/>
+                <actorLabel>Notify: </actorLabel>
+                <anyActorLabel>Any actor</anyActorLabel>
+                <existingActorLabel>Existing actor</existingActorLabel>
+                <actionLabel>Action: </actionLabel>
+                <originLabel>Origin: </originLabel>
+                <triggerLabel>Trigger: </triggerLabel>
+                <anyTrigger displayName="Any trigger">Any trigger</anyTrigger>
+                <triggeredEffectiveTimeLabel>Effective time set: </triggeredEffectiveTimeLabel>
+                <triggeredEffectiveTime>
+                    <option value="" displayName="Any effective time"/>
+                    <option value="offset" displayName="Offset from trigger"/>
+                    <option value="noOffset" displayName="Same as trigger"/>
+                </triggeredEffectiveTime>
+                <resetEffectiveTimeLabel>Reset effective time </resetEffectiveTimeLabel>
+                <acknowledgeLabel>Acknowledge </acknowledgeLabel>
+                <acknowledgedLabel>Acknowledged </acknowledgedLabel>
+                <!-- Page element used as selections for action, action-redirect and origin.
+                     Must have same pattern as page elements above in pageInformation.
+                     Note that #cityEHR:Action:AnyAction is used when setting the query for finding notifications, so must not be changed
+                -->
+                <pageInformation>
+                    <page id="action" compositionType="Any action" compositionIRI="#cityEHR:Action:AnyAction"/>
+                    <page id="action" compositionType="No action" compositionIRI="#cityEHR:Action:NoAction"/>
+                    <page id="action-redirect" compositionType="Existing action" compositionIRI="#cityEHR:Action:ExistingAction"/>
+                    <page id="origin" compositionType="Any origin" compositionIRI=""/>
+                </pageInformation>
+                <notificationActions>
+                    <option displayName="Any notification" value="#cityEHR:Notification:AnyNotification"/>
+                </notificationActions>
+
+                <!-- Notification Display - the items match names of elements returned in getNotificationsXQuery -->
+                <notificationDisplay>
+                    <item name="patientId" displayName="Patient Id"/>
+                    <item name="effectiveTime" displayName="Effective"/>
+                    <item name="originComposition" displayName="Origin"/>
+                    <item name="notifyActor" displayName="Notify"/>
+                    <item name="subjectCompositionTypeIRI" displayName="Action Type"/>
+                    <item name="subjectHandleId" displayName="Action"/>
+                </notificationDisplay>
+            </redirectNotifications>
+            <managePatientAccess>
+                <selectSpecialtyLabel>Specialty: </selectSpecialtyLabel>
+                <transferCountLabel prefix="Transfer " suffix=" templates"/>
+                <configureAccessLabel>Configure Patient Access</configureAccessLabel>
+                <selectCompositionsLabel>Compositions for Patient Entry</selectCompositionsLabel>
+                <importSessionDataLabel>Import patient data</importSessionDataLabel>
+                <sessionCountLabel prefix="Import " suffix=" sessions"/>
+                <dataTransferLabel>Patients - Ready for Data Transfer</dataTransferLabel>
+                <patientCompositionSet>
+                    <typeId>#CityEHR:Form</typeId>
+                </patientCompositionSet>
+            </managePatientAccess>
+            <processPatientList>
+                <patientIdLength displayName="Maximum identifier length " value="12"/>
+                <headerRows displayName="Header rows " value="0"/>
+                <patientList type="importedPatientList" displayName="List of patients"/>
+                <patientList type="hasRecordPatientList" displayName="Patients with record"/>
+                <patientList type="noRecordPatientList" displayName="Patients without record"/>
+                <patientList type="careTeamPatientList" displayName="Patients in Care Team"/>
+                <addCareTeamPatientsLabel>Add patients to care team.</addCareTeamPatientsLabel>
+                <exportPatientsLabel>Export patient records</exportPatientsLabel>
+            </processPatientList>
+            <testWebService>
+                <selectWebServiceLabel>Select service call </selectWebServiceLabel>
+                <callWebServiceLabel>Call web service</callWebServiceLabel>
+                <noWebServices>No web services configured for this application.</noWebServices>
+                <webServiceReturnLabel>Web Service Return:</webServiceReturnLabel>
+                <parameterNameLabel>Parameter</parameterNameLabel>
+                <parameterValueLabel>Value</parameterValueLabel>
+            </testWebService>
+        </cityEHRAdmin>
+
+        <cityEHRInTray>
+            <restrictedMessage>In-Tray is restricted to patients in your care team(s).</restrictedMessage>
+            <notificationDisplayHeader prefix="This " suffix=" is effective at: "/>
+            <notificationTarget prefix="Notification is for the " suffix=": ">
+                <option displayName="user" value="#CityEHR:User"/>
+                <option displayName="care team" value="#CityEHR:CareTeam"/>
+                <option displayName="role" value="#CityEHR:Role"/>
+            </notificationTarget>
+            <acknowledge code="#CityEHR:Action:Acknowledge" codeSystem="cityEHR" displayName="Acknowledged"/>
+            <acknowledgeLabel prefix=" by " suffix=" at ">Notification acknowledged</acknowledgeLabel>
+            <!-- defaultFilterSelection only used if selections in application-parameters viewControlsActions are not set -->
+            <noFilterSelection>
+                <item value="#CityEHR:Filter:NoFilter" displayName="--- No Filter ---"/>
+            </noFilterSelection>
+            <emptyValueFilterSelection>
+                <item value="#CityEHR:Filter:Empty" displayName="--- No Value Set ---"/>
+            </emptyValueFilterSelection>
+        </cityEHRInTray>
+
+        <!-- Parameters for all compositions in the folder - view, form, letter, pathway, etc -->
+        <cityEHRFolder>
+            <!-- Need to make sure fieldLength is at least long enough to show date picker in the format configured for the installation -->
+            <fieldLength>35</fieldLength>
+            <maxFieldLength>40</maxFieldLength>
+            <autoCompleteThreshold>0</autoCompleteThreshold>
+            <noSortCategory code="#ISO-13606:Data:DiffiicultyMeasureunabletodo" codeSystem="cityEHR" value="" displayName="Other"/>
+            <careSetting>Care Setting: </careSetting>
+            <loadingLabel>Loading </loadingLabel>
+            <yearInputAsDate low="1900" high="2100" suffix="-01-01"/>
+            <currentDateAccelerator>t</currentDateAccelerator>
+            <displayEffectiveTime>true</displayEffectiveTime>
+            <!-- Position at which new multiple entries are added - first|last - default is first -->
+            <addMultipleEntryPosition>last</addMultipleEntryPosition>
+            <editStatus>
+                <option value="edited" displayName="*"/>
+                <option value="unedited" displayName=""/>
+            </editStatus>
+            <requiredElementsInfoLabel>Some required information has not been supplied: </requiredElementsInfoLabel>
+            <pathwaySourceInfoLabel>Fulfills care pathway action: </pathwaySourceInfoLabel>
+        </cityEHRFolder>
+
+        <cityEHRFolder-Events>
+            <lifeLine displayName="Lifeline" intervalCount="20"/>
+            <allEventsCategory>All Events</allEventsCategory>
+            <provenanceDisplay prefix="Recorded by: " suffix=" at "/>
+            <annotationDisplayName prefix="Of event: "/>
+
+            <allAnnotations>All Annotations</allAnnotations>
+            <addAnnotationsHint>Add Annotation</addAnnotationsHint>
+            <addAnnotationsToEmptySetLabel>No annotations recorded - click to add.</addAnnotationsToEmptySetLabel>
+            <addAnnotationsToSetLabel>Click to add new annotation</addAnnotationsToSetLabel>
+            <!-- annotation is used as the template for adding new annotations.
+                Do not change the structure, but can change the displayNames for the application configuration.
+                Can also change (add, remove, modify) the parameters
+            -->
+            <annotation>
+                <id/>
+                <author label="Author" id="" displayName=""/>
+                <authorTime label="Created" value=""/>
+                <!-- Notifications -->
+                <notification label="Action" value="" displayName=""/>
+                <notifyActor label="Notify" value="" displayName=""/>
+                <effectiveTime label="Effective Time" value="" type="xs:date"/>
+                <!-- Can have any number of parameters -->
+                <parameterSet>
+                    <parameter id="type" label="Type" type="xs:string" value="" displayName="">
+                        <option displayName="Alert" value="alert"/>
+                        <option displayName="Warning" value="warning"/>
+                        <option displayName="Significant" value="significant"/>
+                        <option displayName="Of Interest" value="interesting"/>
+                    </parameter>
+                    <parameter id="comments" label="Comments" type="memo" value="" displayName=""/>
+                    <parameter id="date" label="Date" type="xs:date" value="" displayName=""/>
+                </parameterSet>
+            </annotation>
+        </cityEHRFolder-Events>
+
+        <cityEHRFolder-Forms>
+            <noFormLoadedMessage>Select a form to enter data for this patient.</noFormLoadedMessage>
+            <effectiveTimeLabel>Effective Time:</effectiveTimeLabel>
+            <intermediateNodeLabel> (+)</intermediateNodeLabel>
+            <sdsLabel>Supplementary Data Set - </sdsLabel>
+            <sdsButton type="" label="SDS"/>
+            <classSelectButton show="true" label="..."/>
+            <formActions>
+                <action type="add" label="Click to add Entry" display="inherit"/>
+                <action type="remove" label="Remove Entry" display="inherit"/>
+                <action type="restore" label="Restore Entry" display="inherit"/>
+            </formActions>
+            <uncategorizedEntry value="#CityEHR:Uncategorized" displayName="Other"/>
+        </cityEHRFolder-Forms>
+
+        <cityEHRFolder-Letters>
+            <noLetterLoadedMessage>Select a template to create a letter for this patient.</noLetterLoadedMessage>
+            <effectiveTimeLabel>Effective Time:</effectiveTimeLabel>
+            <letterFileNamePrefix>-letter-</letterFileNamePrefix>
+        </cityEHRFolder-Letters>
+
+        <cityEHRFolder-Pathways>
+            <noPathwayLoadedMessage>Select a template to create a care pathway for this patient.</noPathwayLoadedMessage>
+            <effectiveTimeLabel>Effective Time:</effectiveTimeLabel>
+            <parameters>
+                <role displayName="Role: "/>
+                <delay noDelayLabel="None" displayName="Delay (days): " value="P1D"/>
+                <status displayName="Status: ">
+                    <option value="charted" displayName="Charted" statusContext="@@@charted@@@" outcomeContext="@@@skipped-tbc@@@"/>
+                    <option value="triggered" displayName="Triggered" statusContext="@@@triggered@@@" outcomeContext=""/>
+                    <option value="inProgress" displayName="In Progress" statusContext="@@@inProgress@@@" outcomeContext="@@@aborted-tbc@@@"/>
+                    <option value="completed" displayName="Completed" statusContext="@@@completed@@@" outcomeContext=""/>
+                </status>
+                <outcome displayName="Outcome: ">
+                    <!-- These outcomes cannot be changed once they have been set -->
+                    <option value="completed" displayName="Completed"/>
+                    <option value="aborted" displayName="Aborted"/>
+                    <option value="skipped" displayName="Skipped"/>
+                    <option value="outOfScope" displayName="Out of Scope"/>
+                    <!-- These outcomes are for tasks/actions that are not yet completed and can be changed by user interaction with the pathway -->
+                    <option value="" displayName="To be confirmed"/>
+                </outcome>
+            </parameters>
+            <informationItem>
+                <itemId>time1</itemId>
+                <displayName>Information Item Template</displayName>
+                <content>
+                    <html>
+                        <body>
+                            <img src=""/>
+                        </body>
+                    </html>
+                </content>
+            </informationItem>
+        </cityEHRFolder-Pathways>
+
+        <cityEHRFolder-Views>
+            <!-- showNotifications takes a value all | user | none (or anything other than all|user)
+                 all - shows notifications for all users
+                 user - shows notifications accessible to the current user
+                 anything else, the notifications are not displayed (and the viewNavigation tab is hidden) -->
+            <showNotifications>all</showNotifications>
+            <emptyComposition>No data recorded.</emptyComposition>
+            <emptySection>No data recorded.</emptySection>
+            <!-- viewHistory is now set from the standard viewControls -->
+            <viewHistory displayName="View: " value="current">
+                <option value="current">Current Data</option>
+                <option value="historic">Historic Data</option>
+            </viewHistory>
+            <chartlabel>Chart</chartlabel>
+            <refreshLabel>Refresh</refreshLabel>
+            <closeLabel>Close</closeLabel>
+            <!-- Charts can be rendered directly as SVG in the browser or converted to png using Batik.
+                 Set as svg | jpg -->
+            <chartRendition>jpg</chartRendition>
+            <selectedVariableDisplay prefix="Selected " suffix=" variable(s) " startTimeLabel="with date range " endTimeLabel=" to "/>
+            <startTime displayName="Start: "/>
+            <endTime displayName="End: "/>
+            <interval displayName="Interval: ">
+                <option value="1" displayName="1"/>
+                <option value="2" displayName="2"/>
+                <option value="3" displayName="3"/>
+                <option value="4" displayName="4"/>
+                <option value="5" displayName="5"/>
+                <option value="6" displayName="6"/>
+                <option value="7" displayName="7"/>
+                <option value="8" displayName="8"/>
+                <option value="9" displayName="9"/>
+                <option value="10" displayName="10"/>
+                <option value="11" displayName="11"/>
+                <option value="12" displayName="12"/>
+                <option value="13" displayName="13"/>
+                <option value="14" displayName="14"/>
+                <option value="15" displayName="15"/>
+                <option value="16" displayName="16"/>
+                <option value="17" displayName="17"/>
+                <option value="18" displayName="18"/>
+                <option value="19" displayName="19"/>
+                <option value="20" displayName="20"/>
+            </interval>
+            <!-- Interval units are cast to xs:dayTimeDuration or xs:yearMonthDuration
+                 Hours doesn't work since startTime and endTime are cast as xs:date -->
+            <intervalUnits displayName="">
+                <!-- <option value="PT1H">Hours</option> -->
+                <option value="P1D" displayName="Days" range="20"/>
+                <option value="P7D" displayName="Weeks" range="20"/>
+                <option value="P1M" displayName="Months" range="20"/>
+                <option value="P1Y" displayName="Years" range="20"/>
+                <option value="P10Y" displayName="Decades" range="12"/>
+            </intervalUnits>
+            <!-- intervalSteps need to be in order with the highest threshold first -->
+            <intervalStep>
+                <step value="P1Y" threshold="P365000D"/>
+                <step value="P1M" threshold="P3650D"/>
+                <step value="P7D" threshold="P730D"/>
+                <step value="P1D" threshold="P20D"/>
+                <step value="PT1H" threshold="P0D"/>
+            </intervalStep>
+            <plotGraphs displayName="Plots: ">
+                <option value="combined">Combined</option>
+                <option value="individual">Individual</option>
+            </plotGraphs>
+            <plotLayout displayName="Layout: ">
+                <option value="1">Stacked</option>
+                <option value="2">Tiled</option>
+            </plotLayout>
+            <yAxisLegend displayName="Legend: ">
+                <option value="1">Left</option>
+                <option value="2">Both</option>
+                <option value="0">None</option>
+            </yAxisLegend>
+            <plotColours>
+                <backgroundColour>#E8E8E8</backgroundColour>
+                <legendBackgroundColour>#D3D3D3</legendBackgroundColour>
+                <borderColour>#000000</borderColour>
+                <divColour>#D3D3D3</divColour>
+                <baseColour>10</baseColour>
+                <stepColour>20</stepColour>
+                <colour>#00FF00</colour>
+                <colour>#FF0000</colour>
+                <colour>#FF00FF</colour>
+                <colour>#FFFF00</colour>
+                <colour>#009999</colour>
+                <colour>#00FFFF</colour>
+            </plotColours>
+            <plotConfiguration>
+                <noDataMessage>No data to plot.</noDataMessage>
+                <plotSizeX>800</plotSizeX>
+                <plotSizeY>300</plotSizeY>
+                <legendOrientationX>vertical<!--vertical|horizontal--></legendOrientationX>
+                <legendUnitSizeX>30</legendUnitSizeX>
+                <legendUnitSizeY>30</legendUnitSizeY>
+                <legendFontSize>12</legendFontSize>
+                <plotDivisionsX>10</plotDivisionsX>
+                <plotDivisionsYOffset>0.1</plotDivisionsYOffset>
+                <plotSpacingX>20</plotSpacingX>
+                <plotSpacingY>30</plotSpacingY>
+                <borderWidth>1</borderWidth>
+                <divWidth>1</divWidth>
+                <markerShape>triangle<!-- circle|square|bar|diamond|triangle --></markerShape>
+                <plotLineWidth>2</plotLineWidth>
+            </plotConfiguration>
+            <intervalPlotConfiguration>
+                <intervalPlotSpacing>30</intervalPlotSpacing>
+                <intervalPlotLineWidth>5</intervalPlotLineWidth>
+                <intervalMarkerShape>bar<!-- circle|square|bar|diamond|triangle --></intervalMarkerShape>
+            </intervalPlotConfiguration>
+        </cityEHRFolder-Views>
+
+        <cityEHRDashboard>
+            <pageDisplayName>Dashboard</pageDisplayName>
+            <refreshLabel>Refresh</refreshLabel>
+            <refreshIcon>reset.png</refreshIcon>
+            <queryTimeLabel>Last result: </queryTimeLabel>
+            <runningQueryMessage>Running query...</runningQueryMessage>
+            <queryErrorMessage>Error running dashboard query.</queryErrorMessage>
+            <queryNoResultsMessage>Query returned no results.</queryNoResultsMessage>
+            <chartProperties height="120" width="160" padding="10" barToSpaceRatio="3" baselineColour="black" baselineWidth="1"/>
+            <paneColours>
+                <colour id="orange" title="rgb(211,84,0)" content="rgb(230,126,34)" footer="rgb(235,153,80)"/>
+                <colour id="purple" title="rgb(142,68,173)" content="rgb(155,89,182)" footer="rgb(176,124,198)"/>
+                <colour id="blue" title="rgb(41,128,185)" content="rgb(52,152,219)" footer="rgb(95,174,227)"/>
+                <colour id="red" title="rgb(255,51,51)" content="rgb(255,102,102)" footer="rgb(255,153,153)"/>
+                <colour id="darkBlue" title="rgb(0,51,77)" content="rgb(0,68,102)" footer="rgb(0,85,128)"/>
+                <colour id="green" title="rgb(36,143,36)" content="rgb(51,204,51)" footer="rgb(112,219,112)"/>
+                <colour id="yellow" title="rgb(153,153,0)" content="rgb(204,204,0)" footer="rgb(230,230,0)"/>
+            </paneColours>
+            <!-- Default query results, if the query fails -->
+            <queryResults>
+                <total value="0"/>
+                <category displayName="Data not available" value=""/>
+            </queryResults>
+        </cityEHRDashboard>
+
+        <cityEHRPatientSearch>
+            <!-- WordBreak is a regex that lists the characters that break words when search strings are entered by the user.
+                 Each word is searched for separately.
+                 For example Chumley-Warren searches for Chumley and Warren
+                 Note that lucene (exist) indexes O'Connell as O'Connell (i.e. ' is not a word breaker) -->
+            <wordBreak>[ -]</wordBreak>
+            <logPerformance displayName=" : Search time: ">true</logPerformance>
+            <maxResults>20</maxResults>
+            <maxRecentPatientsResults>10</maxRecentPatientsResults>
+            <fromLabel>From</fromLabel>
+            <toLabel>To</toLabel>
+            <labelSeparator> - </labelSeparator>
+            <startUpMessage>Enter search criteria to find patient.</startUpMessage>
+            <restrictedPatientAccessMessage>Access is restricted to patients in your care team(s).</restrictedPatientAccessMessage>
+            <noSpecialtyMessage>No specialty loaded - cannot specify patient search.</noSpecialtyMessage>
+            <noResultsMessage>No patients match the search criteria you have entered.</noResultsMessage>
+            <exceedsMaxResultsMessage>Please enter more specific search criteria. Results exceed maximum: </exceedsMaxResultsMessage>
+        </cityEHRPatientSearch>
+
+        <cityEHRCohortSearch>
+            <!-- true | false - reruns if true, otherwise not -->
+            <rerunSearchOnLoad>false</rerunSearchOnLoad>
+            <newTerm>
+                <id displayName="New term"/>
+            </newTerm>
+            <logPerformance displayName=" : Search time: ">true</logPerformance>
+            <saveAsLabel>Save as </saveAsLabel>
+            <cohortName>Patient Cohort</cohortName>
+            <specialtyLabel>Specialty </specialtyLabel>
+            <addQueryLabel>Add element search term</addQueryLabel>
+            <removeQueryLabel>Remove element search term</removeQueryLabel>
+            <valueConditionOrLabel>or</valueConditionOrLabel>
+            <addValueConditionLabel>Add value condition</addValueConditionLabel>
+            <removeValueConditionLabel>Remove value condition</removeValueConditionLabel>
+            <searchPrintPrefix>Printed by: </searchPrintPrefix>
+            <searchPrintSuffix> at </searchPrintSuffix>
+            <shortDescription displayName="  Description" size="40"/>
+            <!-- labels for display of search terms -->
+            <headerIdLabel>Ref</headerIdLabel>
+            <headerSearchTermLabel>Search Term</headerSearchTermLabel>
+            <headerCohortLabel>Cohort</headerCohortLabel>
+            <selectorSeparator> | </selectorSeparator>
+            <selectAllLabel>All</selectAllLabel>
+            <selectNoneLabel>None</selectNoneLabel>
+            <noCohortLabel>N/A</noCohortLabel>
+            <toggleSortOrderLabel>&#8593;&#8595;</toggleSortOrderLabel>
+            <combineSearchInactive>Two or more search terms are required before they can be combined.</combineSearchInactive>
+            <combineSelectedSearchInactive>Two or more search terms must be selected before they can be combined.</combineSelectedSearchInactive>
+            <badTypeMessage>Value must be of type: </badTypeMessage>
+            <queryContextLabel>Context </queryContextLabel>
+            <contextDescription prefix="Has " suffix=" with "/>
+            <effectiveTime label="Effective time " description=" with effective time "/>
+            <retrievedCohortLabel>Cohort is </retrievedCohortLabel>
+            <patientAge label="Patient age " description="for patients of age"/>
+            <selectLabel>Select</selectLabel>
+            <cancelLabel>Cancel</cancelLabel>
+            <acknowledgeLabel>OK</acknowledgeLabel>
+            <restrictedPatientAccessMessage>Access is restricted to patients in your care team(s).</restrictedPatientAccessMessage>
+            <emptyRestrictedCohortMessage>There are no accessible patients in this cohort.</emptyRestrictedCohortMessage>
+            <emptyCohortMessage>No cohort loaded - select saved cohort, or return to seach page.</emptyCohortMessage>
+            <!-- Select the location of search (records | data | archive).
+                 Can only be selected by the specified roles -->
+            <searchLocation>
+                <role displayName="System Administrator" value="#CityEHR:Role:System:Administrator"/>
+                <options>
+                    <item value="records" displayName="Stored Records"/>
+                    <item value="data" displayName="Saved Data"/>
+                    <item value="archive" displayName="Archived Data"/>
+                </options>
+            </searchLocation>
+            <searchContext>
+                <displayName>Context </displayName>
+                <options>
+                    <!-- These get inserted in reverse order, so put 'Any context' last -->
+                    <item value="#CityEHR:Notification" displayName="Notifications"/>
+                    <item value="#CityEHR:Annotation" displayName="Annotations"/>
+                    <item value="" displayName="Any context"/>
+                </options>
+            </searchContext>
+
+            <!-- Select the scope of search. -->
+            <searchScope>
+                <displayName>Scope </displayName>
+                <options>
+                    <item value="all" displayName="All data" prefix="Any "/>
+                    <item value="currentData" displayName="Current data" prefix="Current "/>
+                    <item value="firstData" displayName="First recorded" prefix="First "/>
+                    <item value="minData" displayName="Minimum recorded" prefix="Minimum "/>
+                    <item value="maxData" displayName="Maximum recorded" prefix="Maximum "/>
+                    <item value="count" displayName="Recorded count" prefix="Count of (" suffix=")"/>
+                    <item value="distinctCount" displayName="Distinct count" prefix="Count of distinct values of (" suffix=")"/>
+                </options>
+            </searchScope>
+            <!-- Select the type of search.
+                 Inserted into control-instance by set-searchType -->
+            <searchType>
+                <options>
+                    <item value="" displayName="-- Select Search Type --" status="active"/>
+                    <item value="Demographics" displayName="Demographics" status="active"/>
+                    <item value="Administration" displayName="Administration" status="active"/>
+                    <item value="Combine" displayName="Combine Cohorts" status="inactive"/>
+                    <item value="CombineSelected" displayName="Combine Selected Cohorts" status="inactive"/>
+                    <item value="IncludeCohort" displayName="Include Cohort" status="inactive"/>
+                    <!-- Composition search due to be supported in v1.7 -->
+                    <!--
+                    <item value="Composition" displayName="Composition" status="active"/>
+                    -->
+                    <item value="Observation" displayName="Observation" status="active"/>
+                    <!-- Additional options for PrimarySearch entries found in the data dictionary
+                        These are added when the model is constructed and are of the form:
+                        <item value="#ISO-13606:Entry:Diagnosis" displayName="Diagnosis"/>
+                    -->
+                </options>
+            </searchType>
+            <!-- searchSubType is set when specified searchType is selected.
+                 Inserted into control-instance by set-searchType -->
+            <searchSubType>
+                <options searchType="Administration">
+                    <item value="EffectiveTime" displayName="Effective Time"/>
+                    <item value="Author" displayName="Author"/>
+                </options>
+                <options searchType="Demographics">
+                    <item value="Gender" displayName="Gender"/>
+                    <item value="DoB" displayName="Date of Birth"/>
+                    <item value="Age" displayName="Age"/>
+                </options>
+            </searchSubType>
+            <!-- Control parameters are inserted into control-instance when the page loads.
+                 These are for user input of search criteria - structure must be preserved, but the displayNames can be changed -->
+            <controlParameters>
+                <!-- Cohort Statistics -->
+                <cohortStatistics>
+                    <resultString/>
+                    <value displayName="" value=""/>
+                    <statistics>
+                        <count displayName="Count" value="0"/>
+                        <gender displayName="Patients by gender" value=""/>
+                        <averageAge displayName="Mean Age" value="0"/>
+                        <minAge displayName="Min Age" value="0"/>
+                        <maxAge displayName="Max Age" value="0"/>
+                    </statistics>
+                </cohortStatistics>
+                <!-- Cohort Analysis -->
+                <cohortAnalysis>
+                    <parameter entry="" element="" scope="" operation="" precision="2">
+                        <result category="" value=""/>
+                    </parameter>
+                    <operation>
+                        <option value="" displayName="-- Select --"/>
+                        <option value="max" displayName="Maximum"/>
+                        <option value="min" displayName="Minimum"/>
+                        <option value="average" displayName="Average"/>
+                        <option value="sum" displayName="Sum"/>
+                    </operation>
+                </cohortAnalysis>
+                <!-- Query definition -->
+                <queryDefinition>
+                    <combineType>
+                        <options>
+                            <item value="AND" displayName="AND"/>
+                            <item value="OR" displayName="OR"/>
+                            <item value="NOT" displayName="AND NOT"/>
+                            <item value="PERCENTAGE" displayName="AS PERCENTAGE OF"/>
+                        </options>
+                    </combineType>
+                    <combineSelectedType displayName=" using the operator ">
+                        <options>
+                            <item value="AND" displayName="AND"/>
+                            <item value="OR" displayName="OR"/>
+                        </options>
+                    </combineSelectedType>
+                    <comparators>
+                        <comparator type="#CityEHR:ElementProperty:enumeratedClass">
+                            <options>
+                                <item selection="1" value="eq" displayName="is"/>
+                                <item selection="2" value="ne" displayName="is not"/>
+                                <item selection="3" value="SNOMED" displayName="has SNOMED Code"/>
+                                <item selection="4" value="ICD-10" displayName="has ICD-10 Code"/>
+                                <item selection="5" value="OPCS-4" displayName="has OPCS-4 Code"/>
+                                <item selection="6" value="any" displayName="is any value"/>
+                            </options>
+                        </comparator>
+                        <comparator type="#CityEHR:ElementProperty:enumeratedValue">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="any" displayName="is any value"/>
+                            </options>
+                        </comparator>
+                        <comparator type="#CityEHR:ElementProperty:enumeratedCalculatedValue">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="any" displayName="is any value"/>
+                            </options>
+                        </comparator>
+                        <comparator type="#CityEHR:ElementProperty:enumeratedDirectory">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="any" displayName="any value"/>
+                            </options>
+                        </comparator>
+                        <comparator type="xs:date">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="lt" displayName="less than"/>
+                                <item selection="4" value="le" displayName="less than or equal to"/>
+                                <item selection="5" value="gt" displayName="greater than"/>
+                                <item selection="6" value="ge" displayName="greater than or equal to"/>
+                                <item selection="7" value="ge" displayName="in the range" value2="le" displayName2="to"/>
+                                <item selection="8" value="any" displayName="is any value"/>
+                            </options>
+                        </comparator>
+                        <!-- Comparators for age are set to search for the correct date range.
+                            These match the comparators used for date searches.
+                            The displayNames are based on the search that has been specified as an integer (age)
+                            1. age=X then DoB is > current-date() - (interval+1) and =< current-date() - interval
+                            2. age!=X then DoB is =< current-date() - (interval+1) OR > current-date() - interval
+                            3. age<X then DoB > current-date() - interval
+                            4. age=<X then DoB >= current-date() - (interval+1)
+                            5. age>X then DoB < current-date() - (interval+1)
+                            6. age>=X then DoB =< current-date() - interval
+                            7. age in range X to Y then DoB < current-date() - interval1 and >= current-date() - (interval2+1)
+                        -->
+                        <comparator type="age">
+                            <options>
+                                <item selection="1" value="gt" value2="le" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to" value2=""/>
+                                <item selection="3" value="gt" displayName="less than"/>
+                                <item selection="4" value="ge" displayName="less than or equal to"/>
+                                <item selection="5" value="lt" displayName="greater than"/>
+                                <item selection="6" value="le" displayName="greater than or equal to"/>
+                                <item selection="7" value="lt" displayName="in the range" value2="ge" displayName2="to"/>
+                            </options>
+                        </comparator>
+                        <!-- Comparators for effective time are set to cater for adjustemnts needed
+                             due to time being recorded as xs:dateTime but search criteria are specified as xs:date -->
+                        <comparator type="effectiveTime">
+                            <options>
+                                <item selection="0" value="" displayName="Any time"/>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="lt" displayName="less than"/>
+                                <item selection="4" value="le" displayName="less than or equal to"/>
+                                <item selection="5" value="gt" displayName="greater than"/>
+                                <item selection="6" value="ge" displayName="greater than or equal to"/>
+                                <item selection="7" value="ge" displayName="in the range" value2="le" displayName2="to"/>
+                            </options>
+                        </comparator>
+                        <comparator type="effectiveAge">
+                            <options>
+                                <item selection="0" value="" displayName="Any age"/>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="lt" displayName="less than"/>
+                                <item selection="4" value="le" displayName="less than or equal to"/>
+                                <item selection="5" value="gt" displayName="greater than"/>
+                                <item selection="6" value="ge" displayName="greater than or equal to"/>
+                                <item selection="7" value="ge" displayName="in the range" value2="le" displayName2="to"/>
+                            </options>
+                        </comparator>
+                        <comparator type="xs:integer">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="lt" displayName="less than"/>
+                                <item selection="4" value="le" displayName="less than or equal to"/>
+                                <item selection="5" value="gt" displayName="greater than"/>
+                                <item selection="6" value="ge" displayName="greater than or equal to"/>
+                                <item selection="7" value="ge" displayName="in the range" value2="le" displayName2="to"/>
+                                <item selection="8" value="any" displayName="is any value"/>
+                            </options>
+                        </comparator>
+                        <comparator type="xs:double">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="lt" displayName="less than"/>
+                                <item selection="4" value="le" displayName="less than or equal to"/>
+                                <item selection="5" value="gt" displayName="greater than"/>
+                                <item selection="6" value="ge" displayName="greater than or equal to"/>
+                                <item selection="7" value="ge" displayName="in the range" value2="le" displayName2="to"/>
+                                <item selection="8" value="any" displayName="is any value"/>
+                            </options>
+                            <!--
+                                <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="lt" displayName="less than"/>
+                                <item selection="4" value="le" displayName="less than or equal to"/>
+                                <item selection="5" value="gt" displayName="greater than"/>
+                                <item selection="6" value="ge" displayName="greater than or equal to"/>
+                                <item selection="7" value="ge" displayName="in the range" value2="le" displayName2="to"/>
+                                </options>
+                            -->
+                        </comparator>
+                        <comparator type="xs:boolean">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="any" displayName="is any value"/>
+                            </options>
+                        </comparator>
+                        <comparator type="xs:string">
+                            <options>
+                                <item selection="1" value="eq" displayName="equal to"/>
+                                <item selection="2" value="ne" displayName="not equal to"/>
+                                <item selection="3" value="starts-with" displayName="starts with"/>
+                                <item selection="4" value="contains" displayName="contains"/>
+                                <item selection="5" value="any" displayName="is any value"/>
+                            </options>
+                        </comparator>
+                    </comparators>
+                    <!-- Age units are cast to xs:dayTimeDuration or xs:yearMonthDuration.
+                        These are the same as the intervalUnits in view-parameters -->
+                    <ageUnits>
+                        <options>
+                            <option value="P1Y" displayName="in Years"/>
+                            <option value="P1M" displayName="in Months"/>
+                            <option value="P7D" displayName="in Weeks"/>
+                            <option value="P1D" displayName="in Days"/>
+                            <option value="PT1H" displayName="in Hours"/>
+                        </options>
+                    </ageUnits>
+                </queryDefinition>
+            </controlParameters>
+            <!-- Interval units are cast to xs:dayTimeDuration or xs:yearMonthDuration -->
+            <intervalUnits displayName="" value="P1M">
+                <option value="PT1H">Hours</option>
+                <option value="P1D">Days</option>
+                <option value="P7D">Weeks</option>
+                <option value="P1M">Months</option>
+                <option value="P1Y">Years</option>
+                <option value="P10Y">Decades</option>
+            </intervalUnits>
+            <!-- For plots of statistics -->
+            <plotColours>
+                <backgroundColour>#E8E8E8</backgroundColour>
+                <legendBackgroundColour>#D3D3D3</legendBackgroundColour>
+                <borderColour>#000000</borderColour>
+                <divColour>#D3D3D3</divColour>
+                <baseColour>10</baseColour>
+                <stepColour>20</stepColour>
+                <colour>#00FF00</colour>
+                <colour>#FF0000</colour>
+                <colour>#FF00FF</colour>
+                <colour>#FFFF00</colour>
+                <colour>#009999</colour>
+                <colour>#00FFFF</colour>
+            </plotColours>
+            <plotConfiguration>
+                <noDataMessage>No data to plot.</noDataMessage>
+                <plotSizeX>800</plotSizeX>
+                <plotSizeY>300</plotSizeY>
+                <legendSizeX>30</legendSizeX>
+                <legendSizeY>30</legendSizeY>
+                <legendFontSize>12</legendFontSize>
+                <plotDivisionsX>10</plotDivisionsX>
+                <plotDivisionsYOffset>0.1</plotDivisionsYOffset>
+                <plotSpacingX>20</plotSpacingX>
+                <plotSpacingY>30</plotSpacingY>
+                <borderWidth>1</borderWidth>
+                <divWidth>1</divWidth>
+                <markerShape>triangle<!-- circle|square|bar|diamond|triangle --></markerShape>
+                <plotLineWidth>2</plotLineWidth>
+            </plotConfiguration>
+            <!-- Cohort statistics dialog -->
+            <cohortStatisticsDialog>
+                <title>Cohort Statistics</title>
+                <acknowledgeLabel>OK</acknowledgeLabel>
+            </cohortStatisticsDialog>
+            <!-- Cohort analysis dialog -->
+            <cohortAnalysisDialog>
+                <title>Cohort Analysis</title>
+                <description prefix="Cohort has " suffix=" patients"/>
+                <acknowledgeLabel>Close</acknowledgeLabel>
+                <addLabel>Add Parameter</addLabel>
+                <removeLabel>Remove Parameter</removeLabel>
+                <parameterHeadings>
+                    <parameter type="observation" displayName="Observation"/>
+                    <parameter type="scope" displayName="Scope"/>
+                    <parameter type="operation" displayName="Operation"/>
+                    <parameter type="value" displayName="Result"/>
+                </parameterHeadings>
+            </cohortAnalysisDialog>
+        </cityEHRCohortSearch>
+
+        <cityEHRResultsExportDialog>
+            <title>Export Search Results</title>
+            <exportLabel>Export</exportLabel>
+            <cancelLabel>Cancel</cancelLabel>
+            <nameLabel>Cohort name </nameLabel>
+        </cityEHRResultsExportDialog>
+
+        <cityEHRExportDataDialog>
+            <title>Export Patient Data</title>
+            <message prefix="Exporting cohort of " suffix=" patients.">Select data export options for this patient cohort.</message>
+            <exportLabel>Export</exportLabel>
+            <cancelLabel>Cancel</cancelLabel>
+            <nameLabel>Cohort name </nameLabel>
+            <specialtyLabel>Specialty </specialtyLabel>
+            <longitudinalDataOutput displayName="Longitudinal data ">
+                <option value="allData">All Data</option>
+                <option value="currentData">Current data only</option>
+                <option value="firstData">First recorded values</option>
+            </longitudinalDataOutput>
+            <anonymisedLabel>Anonymise </anonymisedLabel>
+            <anonymisationType displayName="Anonymise ">
+                <option value="patientIdentifiable">Patient Identifiable</option>
+                <option value="pseudoAnonymised">Pseudo-anonymised</option>
+                <option value="anonymised">Anonymised</option>
+            </anonymisationType>
+            <exportDataSetLabel>Export data set </exportDataSetLabel>
+            <!-- @context restricts the export type based on anonymisationType
+                 @maxRecords restricts the export type based on patientCount -->
+            <exportType displayName="Export type ">
+                <option value="report" context="patientIdentifiable pseudoAnonymised anonymised">Report</option>
+                <option value="full" context="patientIdentifiable" maxRecords="20">Full Record</option>
+                <option value="demographics" context="patientIdentifiable pseudoAnonymised anonymised">Demographics</option>
+                <option value="dataSet" context="patientIdentifiable pseudoAnonymised anonymised">Export Data Set</option>
+                <option value="variance" context="patientIdentifiable pseudoAnonymised anonymised">Pathway Variance</option>
+            </exportType>
+            <exportDataFormat displayName="Format ">
+                <option value="csv" context="report" transformationXSL="DataSet2CSV.xsl" resourceFileExtension="csv">Comma Separated Values
+                    (.csv)</option>
+                <option value="cda" context="full" transformationXSL="" resourceFileExtension="xml">HL7 CDA</option>
+                <option value="owl" context="full" transformationXSL="CDA2OWL.xsl" resourceFileExtension="owl">OWL/XML</option>
+                <option value="xml" context="dataSet demographics" transformationXSL="" resourceFileExtension="xml">cityEHR XML</option>
+                <option value="odf-spreadsheet" context="dataSet demographics variance" transformationXSL="" resourceFileExtension="ods">Open Office
+                    Spreadsheet (.ods)</option>
+                <option value="ms-spreadsheet" context="dataSet demographics" transformationXSL="" resourceFileExtension="xlsx">MS Excel Spreadsheet
+                    (.xlsx)</option>
+            </exportDataFormat>
+            <spreadsheetFormat displayName="Spreadsheet format ">
+                <option value="singleSheet" context="odf-spreadsheet ms-spreadsheet">Single sheet</option>
+                <option value="multipleSheet" context="odf-spreadsheet ms-spreadsheet">Multiple sheets</option>
+            </spreadsheetFormat>
+            <outputHeaderRow displayName="Output header row " context="odf-spreadsheet ms-spreadsheet csv"/>
+            <dataSetFileNamePrefix>-dataSet-</dataSetFileNamePrefix>
+            <exportReportLabel>Report</exportReportLabel>
+            <exportReportSelection displayName="- Select -" code=""/>
+            <exportReportNoReportsMessage>No reports available</exportReportNoReportsMessage>
+            <exportVarianceLabel>Pathway</exportVarianceLabel>
+            <exportVarianceSelection displayName="- Select -" code=""/>
+            <exportVarianceNoPathwaysMessage>No pathways available</exportVarianceNoPathwaysMessage>
+        </cityEHRExportDataDialog>
+
+        <cityEHRClinicList>
+            <showClinicOnLoad>true</showClinicOnLoad>
+            <noAppointmentsMessage>There are no patients with booked appointments for this clinic.</noAppointmentsMessage>
+            <timeLabel>Time</timeLabel>
+            <activityLabel>Activity</activityLabel>
+
+            <!-- Clinic groups are of type future, recent, past.
+                 The recent attribute sets the maximum number to be displayed the recent clinic category.
+                 
+                 Note that the past clinics will display from @recent+1 onwards -->
+            <clinicFilter recent="3">
+                <clinicGroup type="future">Future Clinics</clinicGroup>
+                <clinicGroup type="recent">Recent Clinics</clinicGroup>
+                <clinicGroup type="past">Older Clinics</clinicGroup>
+            </clinicFilter>
+
+        </cityEHRClinicList>
+
+        <cityEHRPatientList-Selection>
+            <emptyRestrictedCohortMessage>You do not have access to any patients in this cohort.</emptyRestrictedCohortMessage>
+            <restrictedCohortMessage prefix="You have access to " connector=" of " suffix=" patients in this cohort."/>
+
+            <displayingLabel>Displaying</displayingLabel>
+            <rangeLabel>to</rangeLabel>
+            <ofLabel>of</ofLabel>
+            <pageLabel>Page</pageLabel>
+
+            <itemLabel page="cityEHRPatientSearch">patients</itemLabel>
+            <itemLabel page="cityEHRCohortSearch">patients</itemLabel>
+            <itemLabel page="cityEHRClinicList">appointments</itemLabel>
+
+            <previousButton image="images/resultset_previous.png">Previous</previousButton>
+            <firstButton image="images/resultset_first.png">First</firstButton>
+            <lastButton image="images/resultset_last.png">Last</lastButton>
+            <nextButton image="images/resultset_next.png">Next</nextButton>
+
+        </cityEHRPatientList-Selection>
+
+    </staticParameters>
+</parameters>

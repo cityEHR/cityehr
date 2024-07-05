@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+       *********************************************************************************************************
+       cityEHR
+       languagePackListXQuery.xml
+       
+       XQuery to return list of all language packs stored for an application
+       The context of the query is the languagePack collection of the application
+       
+       Copyright (C) 2013-2021 John Chelsom.
+       
+       This program is free software; you can redistribute it and/or modify it under the terms of the
+       GNU Lesser General Public License as published by the Free Software Foundation; either version
+       2.1 of the License, or (at your option) any later version.
+       
+       This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+       without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+       See the GNU Lesser General Public License for more details.
+       
+       The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+       **********************************************************************************************************
+-->
+
+<exist:query xmlns:exist="http://exist.sourceforge.net/NS/exist" start="1" max="500" xml:space="preserve">
+        <exist:text>
+        xquery version "1.0"; 
+        declare namespace owl="http://www.w3.org/2002/07/owl#";  
+        
+        for $resource in collection()
+        
+        let $languagePackHandle := document-uri($resource)
+                
+        let $applicationIRI := data($resource/owl:Ontology/owl:ClassAssertion[owl:Class/@IRI="#ISO-13606:EHR_Extract"]/owl:NamedIndividual/@IRI)
+ 
+        let $languageCode := data($resource/owl:Ontology/owl:DataPropertyAssertion[owl:DataProperty/@IRI="#hasLanguage"][owl:NamedIndividual/@IRI=$applicationIRI]/owl:Literal)        
+ 
+        let $specialtyIRI := data($resource/owl:Ontology/owl:SubClassOf[owl:Class/@IRI="#ISO-13606:Folder"]/owl:Class[1]/@IRI)
+                
+        let $classIRI := data($resource/owl:Ontology/owl:SubClassOf[owl:Class/@IRI="#CityEHR:Class"]/owl:Class[1]/@IRI)
+        
+        let $modelIRI := if ($classIRI) then $classIRI else $specialtyIRI
+              
+        return
+        &lt;languagePack> 
+        &lt;languageCode>{$languageCode}&lt;/languageCode>
+        &lt;applicationIRI>{$applicationIRI}&lt;/applicationIRI>
+        &lt;specialtyIRI>{$specialtyIRI}&lt;/specialtyIRI>
+        &lt;modelIRI>{$modelIRI}&lt;/modelIRI>
+        &lt;handle>{$languagePackHandle}&lt;/handle>
+        &lt;/languagePack>
+        </exist:text>
+</exist:query>

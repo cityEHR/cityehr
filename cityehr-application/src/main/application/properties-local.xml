@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    properties-local.xml
+    
+    Local configuration of Orbeon.
+    This file must be moved to WEB-INF/resources/config (to replace the default that ships with Orbeon)
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<properties xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:oxf="http://www.orbeon.com/oxf/processors">
+
+    <!-- This is an example of property which overrides an existing property's default value:
+    <property as="xs:NMTOKENS"
+              name="oxf.xforms.logging.debug"
+              value="document model submission submission-details control event action analysis server html"/>
+    -->
+    <!-- Set the date format -->
+    <property as="xs:string" name="oxf.xforms.format.input.date" value="[D01]-[MNn,*-3]-[Y0001]"/>
+
+    <!-- Don't need the standard Orbeon theme -->
+    <property as="xs:boolean" name="oxf.epilogue.use-theme" value="false"/>
+    
+    <!-- Maximum file size for upload control - throws Orbeom error if exceeded -->
+    <property as="xs:integer" processor-name="oxf:request"   name="max-upload-size"          value="200000000"/>
+    
+    <!-- These are needed if server is configured to use SSL.
+         This assumes Tomcat is configured for http on port 8080
+         Need to change this is running on a different port -->
+    <!--
+    <property as="xs:anyURI"
+        name="oxf.url-rewriting.service.base-uri"
+        value="http://localhost:8080/orbeon"/>
+    <property as="xs:anyURI"
+        name="oxf.fr.persistence.exist.uri"
+        value="http://localhost:8080/orbeon/fr/service/exist"/>
+    <property as="xs:anyURI"
+        name="oxf.fr.persistence.exist.exist-uri"
+        value="http://localhost:8080/orbeon/exist/rest/db/orbeon/fr"/>
+        -->
+    
+
+    <!-- Session heartbeat - normally true, but change to false to test timeout behaviour.
+         The session timeout (in minutes) is set in web.xml:
+         
+         <session-config>
+                <session-timeout>30</session-timeout>
+         </session-config>
+    -->
+    <!--
+    <property as="xs:boolean" name="oxf.xforms.session-heartbeat" value="false"/>
+    -->
+    
+    
+    <!-- Enable local submissions -->
+    <!--
+    <property as="xs:boolean" name="oxf.xforms.local-submission-include" value="true"/>
+    -->
+
+</properties>

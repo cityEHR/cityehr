@@ -1,0 +1,58 @@
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        patientSetXQuery.xml
+        
+        XQuery to return set of patientIds, ordered by the criteria set in the orderByClause
+        
+        This is an XML document which is read by the cityEHR 
+        Any XML elements (i.e. <queryParameters>) are replaced before the query is submitted
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<query start="1" max="500" xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        
+        declare variable $path := request:get-path-info();
+        declare variable $root := if (ends-with($path,'/')) then $path else concat($path,'/');
+        
+        for $patientId in (<patientIdList/>)
+        let $collectionPath := concat($root,normalize-space($patientId))
+        let $registrationSet := for $entry in collection($collectionPath)<registrationSetSelector/>
+        order by $entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value descending
+        return $entry
+        <orderByClause/>
+        return 
+        &lt;patient id="{$patientId}"/>
+</query>
+<!-- Until 2017-10-30
+<query start="1" max="500">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
+        
+        declare variable $path := request:get-path-info();
+        declare variable $root := if (ends-with($path,'/')) then $path else concat($path,'/');
+        
+        for $patientId in (<patientIdList/>)
+        let $collectionPath := concat($root,normalize-space($patientId))
+        let $registrationSet := for $document in  collection($collectionPath)//cda:ClinicalDocument[contains(<registrationEventList/>,cda:typeId/@extension)]
+                order by $document/cda:effectiveTime/@value descending
+                return $document
+        <orderByClause/>
+        return 
+        &lt;patient id="{$patientId}" debug="{$registrationSet//cda:observation/cda:id/@extension[1]}"/>
+</query>
+-->

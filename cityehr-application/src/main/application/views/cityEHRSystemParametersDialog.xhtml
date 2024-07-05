@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRSystemParametersDialog.xhtml
+    
+    Modal dialog box for edit of system parameters.
+    Only core parameters are edited here - just enough to reset the database if there is a problem accessing it.
+    Used in cityEHRSignOn for recovery if the database cannot be accessed.
+    Includes edit controls that are shared with cityEHRAdmin
+    
+    Control settings are in systemParametersControl-instance (systemParameters-model)
+        displayMode - 'inline' (for cityEHRAdmin) or 'dialog' (for this dialog baox in cityEHRSignOn)
+        confirmationMode - '' (normal state) or close | save | saveAndRestart | reset (when confirming a user action)
+        
+    The parameters are held in managed-parameters-instance.
+    Controls/display for editing managed-parameters-instance are included from cityEHRManageParametersDisplay.xhtml
+    The control settings are in parametersControl-instance (manageParameters-model)
+        editMode - '' (blank) to edit all parameters, 'newApp' for new application, 'recovery' for core parameters in recovery mode
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+
+<xxf:dialog id="systemParametersDialog" appearance="full" level="modal" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xf:label class="stripTitle">
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRSystemParametersDialog/displayName"/>
+    </xf:label>
+
+    <xhtml:div class="dialogue">
+        <!-- Actions to close the dialoge and confirm save/reset.
+             The confirmation is done here, rather than in a confirmation dialgue, to avoid two modal dialogs.
+             This is controled by setting displayMode to dialog (not inline) in systemParametersControl-instance -->
+        
+        <!-- Select the top level element to edit -->
+        <xf:select1 ref="xxf:instance('parametersControl-instance')/editContext">
+            <xf:label
+                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/managedParameters/selectContextLabel"/>
+            <xf:itemset nodeset="xxf:instance('managed-parameters-instance')/*">
+                <xf:label ref="@cityEHR:displayName"/>
+                <xf:value ref="name()"/>
+            </xf:itemset>
+        </xf:select1>
+
+        <!-- Button to close the dialog - only shown if confirmationMode is blank -->
+        <xf:trigger class="{if (xxf:instance('systemParametersControl-instance')/confirmationMode='') then 'button' else 'hidden'}"
+            appearance="minimal">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRSystemParametersDialog/closeButton"/>
+
+            <!-- Confirm close action if there have been edits -->
+            <xf:action ev:event="DOMActivate">
+                <!-- Confirm close action -->
+                <xf:action if="xxf:instance('parametersControl-instance')/status='edited'">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/activeDialogue"
+                        value="'closeSystemParameters'"/>
+                    <xxf:show dialog="actionConfirmationDialog"/>
+                </xf:action>
+                <!-- Not edited - just close the dialog -->
+                <xf:action if="not(xxf:instance('parametersControl-instance')/status='edited')">
+                    <xxf:hide ev:event="DOMActivate" dialog="systemParametersDialog"/>
+                </xf:action>
+            </xf:action>
+        </xf:trigger>
+
+
+        <!-- Manage system parameters controls -->
+        <xi:include href="cityEHRManageSystemParametersControls.xhtml"/>
+
+        <!-- Manage system parameters.
+             For editing, the system parameters are held in managed-parameters-instance. .
+             -->
+        <xhtml:div class="ScrollingContainer">
+            <xi:include href="cityEHRManageParametersDisplay.xhtml"/>
+        </xhtml:div>
+    </xhtml:div>
+</xxf:dialog>

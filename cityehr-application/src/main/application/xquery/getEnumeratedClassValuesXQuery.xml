@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        getEnumeratedClassValuesXQuery.xml
+        
+        XQuery to return set of values for a specific node in an enumerated class
+        Context of the query is the dictionary document
+        
+        This is an XML document which is read by the cityEHR 
+        Any XML elements (i.e. <queryParameters>) are replaced before the query is submitted
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+<query xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace iso-13606="http://www.iso.org/iso-13606"; 
+        declare namespace cityEHR="http://openhealthinformatics.org/ehr";
+        
+        let $valueSet := //iso-13606:element<elementClause/><valueSetClause/><valueClause/><valueScopeClause/>
+        for $code in distinct-values($valueSet/@code)
+        let $value := $valueSet[@code=$code][1]
+        let $displayName := data($value/@displayName[1])  
+        order by $displayName ascending
+        return
+        &lt;iso-13606:data code="{$value/@code}"
+                            codeSystem="{$value/@codeSystem}"
+                            value="{$value/@value}"
+                            displayName="{$value/@displayName}"
+                            units="{$value/@units}"
+                            cityEHR:suppDataSet="{$value/@cityEHR:suppDataSet}"
+                            cityEHR:scope="{if (exists($value/iso-13606:data)) then '<intermediateNodeType/>' else ''}"/>
+</query>
+<!-- <query>
+        xquery version "1.0"; 
+        declare namespace iso-13606="http://www.iso.org/iso-13606"; 
+        let $dictionaryElement := doc("dictionary")//iso-13606:element<elementClause/>
+        for $code in distinct-values(data($dictionaryElement<valueSetClause/><valueClause/>/@code))
+        let $value := $dictionaryElement/iso-13606:data[@code=$code][1]
+        let $displayName := data($value/@displayName[1])  
+        order by $displayName ascending
+        return
+        $value
+        </query>
+-->

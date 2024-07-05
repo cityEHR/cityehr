@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRExportResultsDialog.xhtml
+    
+    Modal dialog box that provides options for export of patient data for a cohort.
+    
+    The actions from the dialog are serviced in the dataExportModel.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- === Export Data Dialog for user actions ==============================================
+     Uses the following data set up in view-parameters:
+    
+    <cityEHRDataExportDialog>
+            <title>Export Patient Data</title>
+            <message>Select Options for export of data for this patient cohort.</message>
+            <exportLabel>Export</exportLabel>
+            <cancelLabel>Cancel</cancelLabel>
+            etc
+    </cityEHRDataExportDialog>
+    
+    Export is for the cohort of patients set up in cohortSet-model
+    and controlled by cohortSetControl-instance
+    
+    The parameters for the dialog are in control-instance/exportData in the main-model of cityEHRCohortSearch. 
+    =======================================================================================
+-->
+
+<xxf:dialog id="exportResultsDialog" appearance="full" level="modeless" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xf:label class="stripTitle">
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRResultsExportDialog/title"/>
+    </xf:label>
+
+    <!-- The serach terms for export have been put into cohortSearchResults-instance -->
+    <xxf:variable name="searchTerms" select="xxf:instance('cohortSearchResults-instance')/term"/>
+
+    <!-- Controls -->
+    <xhtml:p>
+        <!-- Name of the data set (input by the user).
+            Default is the current date/time -->
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRResultsExportDialog/nameLabel"/>
+        <xf:input ref="xxf:instance('control-instance')/exportData/cohortName"/>
+
+
+        <!-- Actions -->
+        <!-- Cancel - hide this dialog -->
+        <xf:trigger class="button" appearance="minimal">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRResultsExportDialog/cancelLabel"/>
+            <xxf:hide ev:event="DOMActivate" dialog="exportResultsDialog"/>
+        </xf:trigger>
+
+        <!-- Export Results.
+             Only show export button if some terms have been selected 
+              -->
+        <xxf:variable name="exportClass" select="if ($searchTerms/selected='true') then 'button' else 'hidden'"/>
+        <xf:trigger class="{$exportClass}" appearance="minimal">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRResultsExportDialog/exportLabel"/>
+            <xf:action ev:event="DOMActivate">
+                <!-- Export results -->
+                <xf:dispatch name="export-search-results" target="main-model"/>
+
+                <xxf:hide dialog="exportResultsDialog"/>
+            </xf:action>
+        </xf:trigger>
+    </xhtml:p>
+
+
+    <!-- Display details of cohort search terms.
+         This does not display sub-categories (is adapted from the display in cityEHRCohortSearch.xhtml -->
+
+    <xhtml:div class="ScrollingContainer">
+        <xhtml:table class="selectionList">
+            <xhtml:thead>
+                <xhtml:tr>
+                    <xhtml:th class="smallSelect">
+                        <xf:trigger appearance="minimal">
+                            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/selectAllLabel"/>
+                            <!-- Selecting 'All' - only select the main terms, not sub-categories -->
+                            <xf:action ev:event="DOMActivate">
+                                <!-- Select all cohorts -->
+                                <xf:dispatch name="select-cohort-set" target="main-model">
+                                    <xxf:context name="cohortSet" select="$searchTerms"/>
+                                    <xxf:context name="selection" select="'true'"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:trigger>
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/selectorSeparator"/>
+                        <xf:trigger appearance="minimal">
+                            <!-- Selecting 'None' - deselect all terms, including sub-categories -->
+                            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/selectNoneLabel"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xxf:variable name="cohortSet" select="xxf:instance('cohort-search-instance')/searchTerms/term"/>
+                                <!-- Deselect all cohorts -->
+                                <xf:dispatch name="select-cohort-set" target="main-model">
+                                    <xxf:context name="cohortSet" select="$searchTerms"/>
+                                    <xxf:context name="selection" select="'false'"/>
+                                </xf:dispatch>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:th>
+                    <!-- Reference (id) of the term and the sort order -->
+                    <xhtml:th>
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/headerIdLabel"/>
+                    </xhtml:th>
+                    <!-- Description -->
+                    <xhtml:th width="80%">
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/headerSearchTermLabel"/>
+                    </xhtml:th>
+                    <!-- Count of patients -->
+                    <xhtml:th>
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/headerCohortLabel"/>
+                    </xhtml:th>
+                </xhtml:tr>
+            </xhtml:thead>
+            <xhtml:tbody>
+                <!-- Repeat to display all terms in the cohort search -->
+                <xf:repeat nodeset="$searchTerms">
+                    <xxf:variable name="term" select="."/>
+                    <xxf:variable name="cohortId" select="$term/id"/>
+
+                    <xxf:variable name="termClass" select="if ($term/selected='true') then 'selected' else ''"/>
+                    <!-- Display the search details -->
+                    <xhtml:tr class="{$termClass}">
+                        <xhtml:td>
+                            <xhtml:div>
+                                <xxf:variable name="selectLabel"
+                                    select="xxf:instance('view-parameters-instance')/displayBoolean/value[@value=$term/selected]/@checkbox"/>
+                                <xf:trigger appearance="minimal" xxf:modal="true" class="selection">
+                                    <xf:label ref="$selectLabel"/>
+                                </xf:trigger>
+                            </xhtml:div>
+                        </xhtml:td>
+                        <xhtml:td>
+                            <xhtml:div>
+                                <xf:trigger appearance="minimal" xxf:modal="true" class="selection">
+                                    <xf:label ref="$term/id"/>
+                                </xf:trigger>
+                            </xhtml:div>
+                        </xhtml:td>
+                        <xhtml:td>
+                            <xhtml:div>
+                                <xf:trigger appearance="minimal" xxf:modal="true" class="selection">
+                                    <xf:label ref="if ($term/shortDescription!='') then $term/shortDescription else $term/description"/>
+                                </xf:trigger>
+                            </xhtml:div>
+                        </xhtml:td>
+                        <!-- Count of hits for this term. 
+                            If this is not set then display the message defined in view-parameters.
+                        -->
+                        <xhtml:td>
+                            <xhtml:div>
+                                <xf:trigger appearance="minimal" xxf:modal="true" class="selection">
+                                    <xf:label
+                                        ref="if ($term/percentage!='') then concat('(',$term/percentage,'%)') else if ($term/count!='') then concat('(',$term/count,')') else xxf:instance('view-parameters-instance')/staticParameters/cityEHRCohortSearch/noCohortLabel"
+                                    />
+                                </xf:trigger>
+                            </xhtml:div>
+                        </xhtml:td>
+
+                        <!-- When user clicks on this row in the table -->
+                        <xf:action ev:event="DOMActivate">
+                            <xf:setvalue ref="$term/selected" value="if(.=true()) then false() else true()"/>
+                        </xf:action>
+                    </xhtml:tr>
+
+
+                </xf:repeat>
+            </xhtml:tbody>
+        </xhtml:table>
+    </xhtml:div>
+
+    <!-- Debugging -->
+    <!--
+    <xf:output
+        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('cohortSearchResults-instance'), 'data')/*, 'html')"
+        mediatype="text/html"/>
+    -->
+    <!--
+    <xf:output class="message" ref="xxf:instance('control-instance')/exportData/anonymisationType"/>
+    <xf:output class="message" ref="xxf:instance('control-instance')/exportData/exportType"/>
+    <xf:output class="message" ref="xxf:instance('control-instance')/exportData/exportDataFormat"/>
+    <xf:output class="message" ref="xxf:instance('control-instance')/exportData/exportDataSet"/>
+    -->
+</xxf:dialog>

@@ -1,0 +1,764 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRFolder-Pathways.xhtml
+    
+    Care pathways for a patient
+    with access to other patient-centred functions and features.
+    
+    When an existing pathway loads, the xforms-model-construct-done action in viewControlsActions-model invokes progress-on-load
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+
+    <!-- ========= HTML Head - Includes the Xforms Model ========= 
+        ========================================================= -->
+    <xhtml:head>
+
+        <!-- HTML Title is the displayName of the current application -->
+        <xhtml:title>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+        </xhtml:title>
+
+        <!-- Stylesheet -->
+        <xhtml:link rel="stylesheet" type="text/css" href="../resources/styles/cityEHRSkin.css" media="screen" />
+
+
+        <!-- ========= System Parameters ===================================================== 
+             ================================================================================= -->
+        <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
+            ================================================================================== -->
+        <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Session model contains stuff for handling of user sessions ============ 
+            ================================================================================== -->
+        <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Audit log model contains stuff for audit of user actions ============== 
+            ================================================================================== -->
+        <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Page navigation model contains stuff for navigation between pages =====
+        ====================================================================================== -->
+        <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Configuration model contains standard configuration of the page ======= 
+            ================================================================================== -->
+        <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= Dictionary model contains the specialty dictionary ========= 
+            ======================================================================= -->
+        <xi:include href="../models/dictionaryModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Release Notes ========= 
+            ============================================================================ -->
+        <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= EHR Information model contains information to be pinned in the information panel == 
+            =================================================================================== -->
+        <xi:include href="../models/informationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Notifications model contains stuff for handling notifications == 
+            =================================================================================== -->
+        <xi:include href="../models/notificationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Patient Demographics model contains demographics data for the patient == 
+            =================================================================================== -->
+        <xi:include href="../models/patientDemographicsModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- === 
+            Care Teams
+            === -->
+        <xi:include href="../models/careTeamModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= cdaModel model contains stuff for loading CDA documents ==== 
+            =================================================================================== -->
+        <xi:include href="../models/cdaModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= Main model contains stuff specific to this page ========= 
+            The main model for view that edit compositions is shared between forms, letters,
+            The compositionType (forms, letters) is set from the page passed in view-parameters
+            =================================================================== -->
+        <xi:include href="../models/compositionMainModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ===  Manage image maps   === -->
+        <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= pathwayModel - control of the care pathway ==== 
+            =================================================================================== -->
+        <xi:include href="../models/pathwayModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= View Controls actions model contains actions for view control ========= 
+            These actions are specific to this page, so the model is implemented directly.           
+            There must be one event handler for each action defined in the <viewControlsActions> for this page in application-parameters
+            The viewControlsActions-instance holds the actions for this view, inserted from parameters-instance for this view
+            ===================================================================================== -->
+        <xf:model id="viewControlsActions-model">
+
+            <xf:instance id="viewControlsActions-instance">
+                <control xmlns=""/>
+            </xf:instance>
+
+            <!-- Only show view controls when a form is loaded -->
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display"
+                calculate="if (xxf:instance('control-instance')/current-form/status='none') then 'hidden' else 'show'"/>
+
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view">
+                <!-- progress only on saved pathway that has been edited -->
+                <!--
+                <xf:bind nodeset="action[@id='progress']/@display" calculate="if (xxf:instance('control-instance')/current-form/status='saved' and xxf:instance('control-instance')/current-form/editStatus='edited') then 'show' else 'hidden'"/>
+                -->
+                <!-- progress only on saved pathway with no tasks or actions inProgress -->
+                <xf:bind nodeset="action[@id='progress']/@display"
+                    calculate="if (xxf:instance('control-instance')/current-form/status='saved') then 'show' else 'hidden'"/>
+
+                <!-- Show XML only when debugging -->
+                <xf:bind nodeset="action[@id='xml']/@display"
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+
+                <!-- start only on new pathway -->
+                <xf:bind nodeset="action[@id='start']/@display"
+                    calculate="if (xxf:instance('control-instance')/current-form/status='new') then 'show' else 'hidden'"/>
+
+                <!-- publish (complete) only on completed pathway -->
+                <xf:bind nodeset="action[@id='publish']/@display"
+                    calculate="if (xxf:instance('control-instance')/current-form/status='saved' and xxf:instance('control-instance')/current-form/pathwayStatus='completed') then 'show' else 'hidden'"/>
+
+                <!-- launch action only when one has been selected in the pathway -->
+                <xf:bind nodeset="action[@id='open']/@display"
+                    calculate="if (xxf:instance('notificationsControl-instance')/currentAction/subjectHandleId !='' and xxf:instance('notificationsControl-instance')/currentAction/displayName !='') then 'show' else 'hidden'"
+                />
+            </xf:bind>
+
+
+            <!-- Application defined action to report variance of the current pathway.
+            -->
+            <xf:action ev:event="variance">
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionDisplay"
+                    value="xxf:instance('viewControls-input-instance')/input[@id='view']"/>
+            </xf:action>
+
+
+            <!-- Application defined action to set the display type of the current pathway.
+                  -->
+            <xf:action ev:event="view">
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionDisplay"
+                    value="xxf:instance('viewControls-input-instance')/select[@id='view']/@value"/>
+            </xf:action>
+
+            <!-- Application defined action to show XML -->
+            <xf:action ev:event="xml">
+                <!-- Display the form instance -->
+                <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                    <xxf:context name="title" select="''"/>
+                    <xxf:context name="displayXML" select="xxf:instance('form-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to abort the pathway (delete the current form) -->
+            <xf:action ev:event="delete">
+                <!-- Need to abort all inProgress actions, removing saved documents and notifications.
+                     Get the id for the pathway.
+                     Find all notifications that reference the pathway and delete them.
+                     Action to delete a notification also deletes the saved documents that it references. -->
+                <!-- TBD -->
+
+                <!-- Remove the saved form (pathway) -->
+                <xf:dispatch name="delete-composition" target="main-model"/>
+                <!-- Actions on successful delete -->
+                <xf:action if="xxf:instance('control-instance')/status=''">
+                    <!-- Get forms in progress for current patient -->
+                    <xf:dispatch name="get-patientCompositions" target="main-model"/>
+                </xf:action>
+            </xf:action>
+
+            <!-- Application defined action to launch the currently selected action.
+            -->
+            <xf:action ev:event="open">
+                <!-- Set up details fo the currently selected action -->
+                <xxf:variable name="subjectHandleId" select="xxf:instance('notificationsControl-instance')/currentAction/subjectHandleId"/>
+                <xxf:variable name="subjectCompositionTypeIRI"
+                    select="xxf:instance('notificationsControl-instance')/currentAction/subjectCompositionTypeIRI"/>
+
+                <xxf:variable name="pageInformation"
+                    select="xxf:instance('view-parameters-instance')/pageInformation/page[@compositionTypeIRI=$subjectCompositionTypeIRI][1]"/>
+
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
+                    value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$subjectHandleId)"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'saved'"/>
+
+                <!-- Load the composition for the action -->
+                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                    <xxf:context name="page" select="$pageInformation/@page"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to reset the current form (pathway) -->
+            <xf:action ev:event="reset">
+                <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                    <xxf:context name="action" select="'resetPathway'"/>
+                </xf:dispatch>
+            </xf:action>
+
+
+            <!-- Application defined action to start the current pathway
+                 -->
+            <xf:action ev:event="start">
+
+                <!-- Progress the pathway -->
+                <xf:dispatch name="progress-pathway" target="pathway-model"/>
+
+                <!-- Save the composition -->
+                <xf:dispatch name="save-cda-composition" target="main-model"/>
+
+                <!-- Set the viewNavigationType to show the saved CDA (inProgress) -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'inProgress'"/>
+
+                <!-- Actions on successful start -->
+                <xf:action if="xxf:instance('control-instance')/status=''">
+                    <!-- Get forms in progress for current patient -->
+                    <xf:dispatch name="get-patientCompositions" target="main-model"/>
+                    <!-- Update the list of action notifications for this pathway -->
+                    <xf:dispatch name="get-pathway-action-notifications" target="pathway-model"/>
+                    <!-- Reset the dirty flag -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                </xf:action>
+            </xf:action>
+
+
+            <!-- Application defined action to progress the current pathway. 
+                 -->
+            <xf:action ev:event="progress">
+                <!-- Progress the pathway -->
+                <xf:dispatch name="progress-pathway" target="pathway-model"/>
+
+                <!-- Save the composition -->
+                <xf:dispatch name="save-cda-composition" target="main-model"/>
+
+                <!-- Actions on successful save -->
+                <xf:action if="xxf:instance('control-instance')/status=''">
+                    <!-- Don't need to reload the list of pathways for this patient -->
+                    <!-- 
+                    <xf:dispatch name="get-patientCompositions" target="main-model"/>
+                    -->
+                    <!-- Update the list of action notifications for this pathway -->
+                    <xf:dispatch name="get-pathway-action-notifications" target="pathway-model"/>
+                    <!-- Update the session status on tasks/actions -->
+                    <xf:dispatch name="set-session-status" target="pathway-model"/>
+                    <!-- Reset the dirty flag -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                </xf:action>
+            </xf:action>
+
+
+            <!-- Application defined action to print the current form.
+                 First generate HTML, then send to the print pipeline -->
+            <xf:action ev:event="printX">
+                <xf:action ev:event="print">
+                    <!-- Set externalId for the patient -->
+                    <xf:dispatch name="set-externalId" target="pageNavigation-model">
+                        <xxf:context name="type" select="'patient'"/>
+                        <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+                    </xf:dispatch>
+
+                    <!-- Convert form to HTML.
+                     Also saves the session-parameters -->
+                    <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                        <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
+                        <xxf:context name="input-instance" select="xxf:instance('form-instance')"/>
+                        <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
+                    </xf:dispatch>
+
+                    <!-- Call submission to generate PDF for HTML -->
+                    <xf:dispatch name="print-html" target="pageNavigation-model"/>
+                </xf:action>
+            </xf:action>
+
+
+            <!-- Application defined action to published a pathway, when it is complete.
+                 Invoked after confirmation from user in the publishPathway confirmation dialog.
+                 
+                 The navigation target is passed as the 'context' event from the confirmation dialog
+                 (if the user has selected a composition) - is this allowed for a pathway??
+         
+                 Remove any documents in the patient data that re documentationOf this pathway.
+                 In theory, these should all have been removed along the way to completing all the tasks but check here, just in case
+         
+                 Then publish the pathway to the patient record.
+            -->
+            <xf:action ev:event="publish-pathway">
+                <xxf:variable name="newCompositionIRI" select="event('context')"/>
+
+                <!-- Remove any data compositions that at documenttionOf the pathway.
+                     These should get removed as the pathwya progresses, but clear up here, just in case -->
+                <xxf:variable name="pathwayId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                <xf:action xxf:iterate="xxf:instance('inProgressSubjectDocuments-instance')/event">
+                    <xxf:variable name="documentHandle" select="handle"/>
+                    <xxf:variable name="documentationOf" select="documentationOf"/>
+
+                    <!-- Remove the document, if documentationOf is of the pathway (which it always should be) -->
+                    <xf:action if="$documentationOf = $pathwayId">
+                        <xf:dispatch name="dal-delete" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="storageLocation" select="$documentHandle"/>
+                            <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                </xf:action>
+
+                <!-- Publish the composition -->
+                <xf:dispatch name="publish-cda-composition" target="main-model"/>
+
+                <!-- Action on successful publish -->
+                <xf:action if="xxf:instance('control-instance')/status=''">
+                    <xf:dispatch name="close-composition-view" target="main-model">
+                        <xxf:context name="newCompositionIRI" select="$newCompositionIRI"/>
+                    </xf:dispatch>
+                </xf:action>
+
+            </xf:action>
+
+
+            <!-- === View specific operations when the page is loaded === -->
+            <xf:action ev:event="xforms-model-construct-done">
+
+                <!-- Set the Care Setting.
+                     careSettingIRI is passed in view-parameters, but use the default if it is not set -->
+                <xxf:variable name="careSetting"
+                    select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
+
+
+                <!-- Set the viewcontrols selection options when loaded -->
+                <xxf:variable name="viewSelection" select="xxf:instance('viewControlsActions-instance')/view/select[@id='view']"/>
+                <!-- The options for the view dropdown are found in configuration parameters -->
+                <!--
+                <xf:action
+                    xxf:iterate="xxf:instance('application-parameters-instance')/viewControlsActions/view[@viewType=xxf:instance('view-parameters-instance')/page]/select[@type='view']/item">
+                    <xxf:variable name="item" select="."/>
+                    <xf:insert context="$viewSelection" nodeset="item" origin="$item" at="last()" position="after"/>
+                </xf:action>
+                -->
+                <xf:setvalue ref="$viewSelection/@value" value="$viewSelection/item[1]/@value"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionDisplay" value="$viewSelection/@value"/>
+
+                <xf:action if="true()">
+
+                    <!-- Set the information panel display -->
+                    <xf:delete nodeset="xxf:instance('information-instance')/informationItem"/>
+                    <!-- What is this doing ? -->
+                    <!--
+                <xxf:variable name="informationItemTemplate" select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Pathways/informationItem"/>
+                <xf:setvalue ref="$informationItemTemplate/displayName" value="xxf:instance('control-instance')/current-form/compositionId"/>
+                <xf:setvalue ref="$informationItemTemplate/content/html/body/img/@src" value="'http://localhost:8080/orbeon/ehr/resources/configuration/ISO-13606-EHR_Extract-cityEHR/pathwayMaps/patientMonitoring.png?ver=0.98w'"/>
+                <xf:insert context="xxf:instance('information-instance')" nodeset="informationItem" origin="$informationItemTemplate" at="last()" position="after"/>
+                -->
+
+
+
+                    <!-- Set up the pathway, if one is loaded -->
+                    <xf:action if="xxf:instance('view-parameters-instance')/compositionStatus!='none'">
+                        <!-- Set the pathwayStatus - on load this will either be charted or inProgress -->
+                        <!--
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/pathwayStatus" value="if (xxf:instance('control-instance')/current-form/status='saved') then 'inProgess' else if (xxf:instance('control-instance')/current-form/status='new') then 'charted' else ''"/>
+                    -->
+
+                        <!-- Set the session status -->
+                        <xf:dispatch name="set-action-roles" target="pathway-model"/>
+
+                        <!-- Get the action notification template- -->
+                        <xf:dispatch name="load-action-notification-template" target="notification-model"/>
+
+                        <!-- Get the list of action notifications for this pathway -->
+                        <xf:dispatch name="get-pathway-action-notifications" target="pathway-model"/>
+
+                        <!-- Get the list of pathway-inProgressSubjectDocuments for this pathway -->
+                        <xf:dispatch name="get-pathway-inProgressSubjectDocuments" target="pathway-model">
+                            <xxf:context name="pathwayId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                        </xf:dispatch>
+
+                        <!-- Get the list of completedSubjectDocuments for this pathway -->
+                        <xf:dispatch name="get-pathway-completedSubjectDocuments" target="pathway-model">
+                            <xxf:context name="pathwayId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                        </xf:dispatch>
+
+                        <!-- Recalculate the model so that button displays are based on the current state of the pathway -->
+                        <!-- Makes buttons appear but trigger disappear
+                    <xf:recalculate model="viewControlsActions-model"/>
+                -->
+                    </xf:action>
+
+                    <!-- Progress the pathway to account for actions completed since the pathway was last loaded.
+                         Only done when reloading an existing pathway -->
+                    <xf:action if="xxf:instance('view-parameters-instance')/compositionStatus='saved'">
+                        <xf:dispatch name="progress-on-load" target="pathway-model"/>
+                    </xf:action>
+
+                    <!-- Set the session status -->
+                    <xf:dispatch name="set-session-status" target="pathway-model"/>
+
+                </xf:action>
+
+            </xf:action>
+
+
+            <!-- === View specific operations when the page is ready === -->
+            <xf:action ev:event="xforms-ready">
+
+                <!-- Check whether the patway is completed.
+                     This happens when all top level tasks have been completed. 
+                     Must be invoked on xforms-ready so that the confirmationdialoge can be displayed -->
+                <xf:dispatch name="check-pathway-complete" target="pathway-model"/>
+
+            </xf:action>
+
+        </xf:model>
+
+
+    </xhtml:head>
+
+
+    <!-- ========================== HTML Body   ================== 
+         ========================================================= -->
+    <xhtml:body class="cityEHRBase orbeon patient">
+        <!-- View XML dialogue box -->
+        <xi:include href="cityEHRViewXMLDialog.xhtml"/>
+        <!-- View HTML dialogue box -->
+        <xi:include href="cityEHRViewCDAHTMLDialog.xhtml"/>
+        <!-- Action confirmation dialogue -->
+        <xi:include href="cityEHRActionConfirmationDialog.xhtml"/>
+        <!-- Fixed Header Information -->
+        <xhtml:div id="ehrHeader">
+            <!-- Patient label pane -->
+            <xhtml:div id="patientLabel">
+                <xi:include href="cityEHRPatientLabel.xhtml"/>
+            </xhtml:div>
+            <!-- System-level Navigation Pane -->
+            <xhtml:div id="systemNavigation">
+                <xi:include href="cityEHRNavigation.xhtml"/>
+            </xhtml:div>
+            <!-- Logo Pane -->
+            <xhtml:div id="logo">
+                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+            </xhtml:div>
+        </xhtml:div>
+        <!-- === Level 2 /3 =================================== 
+            ehrContent
+            Contains
+            ehrNavigation
+            ehrView
+            ehrInfo
+            ==================================================
+        -->
+        <xhtml:div id="ehrContent">
+            <!-- =========================================================
+                ehrNavigation - navigation around the EHR
+                Contains
+                navigationType
+                navigationDisplay
+                ========================================================= -->
+            <xxf:variable name="ehrNavigationClass"
+                select="if (xxf:instance('view-parameters-instance')/viewDisplayLayout='landscape') then 'hidden' else ''"/>
+            <xhtml:div id="ehrNavigation" class="{$ehrNavigationClass}">
+                <xhtml:div id="navigationType">
+
+                    <!-- Controls to select the View Navigation type -->
+                    <xi:include href="cityEHRViewNavigationTypeSelection.xhtml"/>
+
+                    <!-- Button to collapse (hide) ehrNavigation -->
+                    <xhtml:div id="collapseNavigation">
+                        <xf:trigger appearance="minimal" class="layoutControl">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseNavigation']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'landscape'"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+
+                </xhtml:div>
+
+                <xhtml:div id="navigationDisplay" class="navigation">
+
+                    <!-- List of forms saved and in-progress for this patient -->
+                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='inProgress']">
+                        <xi:include href="cityEHRSavedCompositionSelection.xhtml"/>
+                    </xf:group>
+
+                    <!-- List of new forms that could be started for this patient -->
+                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='new']">
+                        <xi:include href="cityEHRCompositionSelection.xhtml"/>
+                    </xf:group>
+
+                </xhtml:div>
+
+            </xhtml:div>
+
+            <!-- =========================================================
+                EHR View 
+                    Contains
+                        viewType
+                        viewControls
+                        viewDisplay
+                ========================================================= -->
+            <xhtml:div id="ehrView">
+
+                <!-- View Type - select the type of ehr view 
+                    ===================================================================== -->
+                <xhtml:div id="viewType">
+                    <!-- Button to expand (restore) ehrNavigation -->
+                    <xxf:variable name="expandNavigationClass"
+                        select="if (xxf:instance('view-parameters-instance')/viewDisplayLayout='portrait') then 'hidden' else ''"/>
+                    <xhtml:div id="expandNavigation" class="{$expandNavigationClass}">
+                        <xf:trigger appearance="minimal" class="layoutControl">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandNavigation']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'portrait'"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+
+                    <!-- Record Navigation Controls
+                        Move about within the patient record
+                    -->
+                    <xi:include href="cityEHRRecordNavigation.xhtml"/>
+
+
+                    <!-- Button to show ehrInfo -->
+                    <xxf:variable name="expandInfoClass"
+                        select="if (xxf:instance('view-parameters-instance')/ehrInfoLayout='hidden') then '' else 'hidden'"/>
+                    <xhtml:div id="expandInfo" class="{$expandInfoClass}">
+                        <xf:trigger appearance="minimal" class="layoutControl">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandInfo']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/ehrInfoLayout" value="''"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+                </xhtml:div>
+
+                <!-- View Controls - contains controls for the current displayed view content
+                    ===================================================================== -->
+                <xhtml:div id="viewControls">
+                    <!-- View Controls Header -->
+                    <xi:include href="cityEHRViewControlsHeader.xhtml"/>
+
+                    <xxf:variable name="pathwaySourceInfoClass"
+                        select="if (exists(xxf:instance('form-instance')//cda:documentationOf/cda:serviceEvent/cda:id[@extension != ''])) then 'message' else 'hidden'"/>
+                    <xhtml:p class="{$pathwaySourceInfoClass}">
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/pathwaySourceInfoLabel"/>
+                        <xf:output
+                            ref="xxf:instance('form-instance')//cda:documentationOf/cda:serviceEvent/cda:code[@codeSystem='cityEHR']/@displayName"/>
+                    </xhtml:p>
+                </xhtml:div>
+
+
+                <!-- View Display - contains display of the currently selected composition 
+                    ===================================================================== -->
+                <xhtml:div id="viewDisplay" class="content">
+
+                    <xi:include href="input:formContent" xxi:omit-xml-base="true"/>
+
+                    <!-- Include filler so that sections at foot of form can scroll to the top -->
+                    <xi:include href="cityEHRFormFootPadding.xhtml"/>
+
+
+                    <!--  Bit of debugging                
+                        <xi:include href="cityEHRFormLayoutTester.xhtml"/>
+                    -->
+
+                    <!-- For debugging -->
+                    <!-- Check handle -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output ref="xxf:instance('control-instance')/error"/>
+                        <xhtml:br/>
+                        <xf:output ref="xxf:instance('control-instance')/current-form/handle"/>
+                        <xhtml:br/> compositionHandle: <xf:output ref="xxf:instance('view-parameters-instance')/compositionHandle"/>
+                        <xhtml:br/> compositionStatus: <xf:output ref="xxf:instance('view-parameters-instance')/compositionStatus"/>
+                        <xhtml:br/> current-form/status: <xf:output ref="xxf:instance('control-instance')/current-form/status"/>
+                        <xhtml:br/> saveHandle: <xf:output ref="xxf:instance('control-instance')/current-form/saveHandle"/>
+                        <xhtml:br/> publishHandle: <xf:output ref="xxf:instance('control-instance')/current-form/publishHandle"/>
+                        <xhtml:br/> handleId: <xf:output ref="xxf:instance('control-instance')/current-form/handleId"/>
+                    </xhtml:p>
+                    -->
+
+                    <!-- Check queries -->
+                    <!--
+                    <xhtml:p> Query: <xhtml:br/>
+                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('query-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('getComposition-query-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                    </xhtml:p>
+-->
+                    <!-- Check action composition -->
+                    <!--
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('action-composition-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+-->
+
+                    <!-- Check action notifications -->
+                    <!--
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('getNotificationsXQuery-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('notification-actions-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+ -->
+
+
+
+                    <!-- Display list of action notifications -->
+
+                    <!--
+
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('notification-actions-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+
+                    <xhtml:ul>
+                        <xf:repeat nodeset="xxf:instance('notification-actions-instance')/notification">
+                            <xxf:variable name="notification" select="."/>
+                            <xhtml:li>
+                                <xf:output ref="$notification/actDisplayName"/>
+                            </xhtml:li>
+                        </xf:repeat>
+                    </xhtml:ul>
+-->
+
+                    <!-- For debugging -->
+                    <!--
+                        <xhtml:p>
+                        <xf:output ref="xxf:instance('control-instance')/error"/>
+                        </xhtml:p>
+                        <xhtml:p>
+                        <xf:output ref="xxf:instance('form-instance')/cda:cod[@codeSystem='cityEHR']e/@displayName"/>
+                        </xhtml:p>
+                        
+                        <p>Current form Id: <xf:output ref="xxf:instance('control-instance')/current-form/handle"/>
+                        </p>
+                        <p>Current form Effective Time: <xf:output ref="xxf:instance('control-instance')/current-form/effectiveTime"/>
+                        </p>
+                        <p>Current form status: <xf:output ref="xxf:instance('control-instance')/current-form/status"/>
+                        </p>
+                        <p>Current form timeStamp: <xf:output ref="xxf:instance('control-instance')/current-form/timeStamp"/>
+                        </p>
+                        <p>Current form database location: <xf:output ref="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('control-instance')/current-form/handle)"/>
+                        </p>
+                        <p>Current form cache location: <xf:output ref="xxf:instance('control-instance')/current-form/formCache"/>
+                        </p>
+                        <p>applicationDatabaseLocation: <xf:output ref="xxf:instance('view-parameters-instance')/applicationDatabaseLocation"/>
+                        </p>
+                    -->
+                    <!-- End of debugging -->
+
+
+                    <!-- Include generated form content 
+                        The include instruction is targetted at the Orbeon pipeline processor
+                        The pipeline running is cityEHRFolder-Forms.xpl
+                        
+                        The generated form content is included here when the pipeline is run.
+                    -->
+                    <!--
+                        <xhtml:p>
+                        Age: <xf:output ref="xs:date(xxf:instance('patient-instance')/cdaheader/birthTime)"/>
+                        </xhtml:p>
+                        Effective Age: <xf:output ref="xs:duration(xs:date(xxf:instance('control-instance')/current-form/effectiveTime)–xs:date(xxf:instance('patient-instance')/cdaheader/birthTime))"/>
+                    -->
+
+
+                    <!-- For debugging - query to get the form XML -->
+                    <!--
+                        <xf:group ref="xxf:instance('application-parameters-instance')[debug='false']">
+                        <p>Submitted Query: <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('query-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                        </p>
+                        </xf:group>
+                    -->
+
+                    <!-- For debugging - results of search to get enumerated class values -->
+                    <!--
+                        <xhtml:p>Enumerated class values: <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('enumeratedClass-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                        </xhtml:p>
+-->
+
+
+                    <!-- For debugging - display the form XML -->
+                    <!--
+                        <xf:group ref="xxf:instance('application-parameters-instance')[debug='false']">
+                        <xhtml:p>
+                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('form-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                        </xhtml:p>
+                        </xf:group>
+                    -->
+
+                    <!-- For debugging - list of inProgess and completed subject documents -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('completedSubjectDocuments-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+
+
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('inProgressSubjectDocuments-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+
+
+
+                    <!--
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('action-notification-template-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+-->
+                    <!--
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('action-composition-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                   -->
+                    <!-- End of debugging -->
+
+
+                </xhtml:div>
+            </xhtml:div>
+
+            <!-- === EHR information === -->
+            <xi:include href="cityEHRInformation.xhtml"/>
+
+        </xhtml:div>
+        <!-- Fixed footer -->
+        <xi:include href="cityEHRFooter.xhtml"/>
+        <!-- Javascript functions specific to this page -->
+        <xhtml:script type="text/javascript" language="javascript"
+            src="{xxf:instance('view-parameters-instance')/staticFileRoot}/scripts/cityEHR.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"> </xhtml:script>
+        <xhtml:script type="text/javascript" language="javascript"
+            src="{xxf:instance('view-parameters-instance')/staticFileRoot}/scripts/jquery.min.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"> </xhtml:script>
+        <xhtml:script type="text/javascript" language="javascript"
+            src="{xxf:instance('view-parameters-instance')/staticFileRoot}/scripts/jquery.maphilight.min.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"> </xhtml:script>
+        <!-- This script is now included in cityehr.js so that it is run once the DOM tree has been created in IE7 -->
+        <!-- <script> $(function() { $('.map').maphilight({ fillColor: '008800' }); }); </script> -->
+        <!-- <script> $(function() { $('.map').maphilight(); }); </script> -->
+    </xhtml:body>
+</xhtml:html>

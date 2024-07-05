@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRExportDataDialog.xhtml
+    
+    Modal dialog box that provides options for export of patient data for a cohort.
+    This dialogue is show only from cityEHRCohortSearch and uses main-model from that view
+    
+    The actions from the dialog are serviced in the dataExportModel.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- === Export Data Dialog for user actions ==============================================
+     Uses the following data set up in view-parameters:
+    
+    <cityEHRExportDataDialog>
+            <title>Export Patient Data</title>
+            <message>Select Options for export of data for this patient cohort.</message>
+            <exportLabel>Export</exportLabel>
+            <cancelLabel>Cancel</cancelLabel>
+            etc
+    </cityEHRExportDataDialog>
+    
+    Export is for the cohort of patients set up in cohortSet-model
+    and controlled by cohortSetControl-instance
+    
+    The parameters for the dialog are in control-instance/exportData in the main-model of cityEHRCohortSearch. 
+    =======================================================================================
+-->
+
+<xxf:dialog id="exportDataDialog" appearance="full" level="modeless" close="false" draggable="true" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xf:label class="stripTitle">
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/title"/>
+    </xf:label>
+
+    <xhtml:p>
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/message/@prefix"/>
+        <xf:output ref="xxf:instance('cohort-instance')/cohortPatientCount"/>
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/message/@suffix"/>
+    </xhtml:p>
+
+    <!-- Name of the data set (input by the user).
+         Default is the current date/time -->
+    <xhtml:p>
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/nameLabel"/>
+        <xf:input ref="xxf:instance('control-instance')/exportData/cohortName"/>
+    </xhtml:p>
+
+    <!-- Specialty - used to select reports, so only needed if report is selected -->
+    <xhtml:p>
+        <xf:select1 ref="xxf:instance('control-instance')/exportData/specialtyIRI">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/specialtyLabel"/>
+            <xf:itemset nodeset="xxf:instance('specialtyList-instance')/iso-13606:Folder">
+                <xf:label ref="@displayName"/>
+                <xf:value ref="@id"/>
+            </xf:itemset>
+            <xf:action ev:event="xforms-value-changed">
+                <!-- Set the specialty selection.
+                     This action is in the main-model of cityEHRCohortSearch -->
+                <xf:dispatch name="set-specialty" target="main-model">
+                    <xxf:context name="specialtyIRI" select="xxf:instance('control-instance')/exportData/specialtyIRI"/>
+                </xf:dispatch>
+
+            </xf:action>
+        </xf:select1>
+    </xhtml:p>
+
+    <!-- longitudinalDataOutput of data (current data or all data) -->
+    <xhtml:p>
+        <xf:select1 ref="xxf:instance('control-instance')/exportData/longitudinalDataOutput">
+            <xf:label
+                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/longitudinalDataOutput/@displayName"/>
+            <xf:itemset
+                nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/longitudinalDataOutput/option">
+                <xf:label ref="."/>
+                <xf:value ref="./@value"/>
+            </xf:itemset>
+            <xf:action ev:event="xforms-value-changed">
+                <!-- Nothing to do here -->
+            </xf:action>
+        </xf:select1>
+    </xhtml:p>
+
+
+    <!-- Anonymous export -->
+    <xhtml:p>
+        <xf:select1 ref="xxf:instance('control-instance')/exportData/anonymisationType">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/anonymisationType/@displayName"/>
+            <xf:itemset nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/anonymisationType/option">
+                <xf:label ref="."/>
+                <xf:value ref="./@value"/>
+            </xf:itemset>
+            <xf:action ev:event="xforms-value-changed">
+                <!-- The type of export is restricted by anonymisation type.
+                     Need to reset it if the current value is not allowed -->
+                <xf:dispatch name="initialise-exportType" target="main-model"/>
+              
+                <!-- Debug anonymisation -->
+                <!--
+                <xxf:variable name="seedNumber" select="sum(string-to-codepoints(xxf:instance('application-parameters-instance')/anonymisation/seedKey))"/>
+                <xxf:variable name="randomNumber" select="translate(substring-after(xs:string(current-dateTime()),'.'),'Z','')"/>
+                <xxf:variable name="sessionNumber" select="translate(xxf:instance('view-parameters-instance')/sessionId,'abcdef','')"/>
+                <xxf:variable name="characterSelectionKey" select="xs:integer($seedNumber) * xs:integer($randomNumber) * xs:integer($sessionNumber)"/>
+                
+                <xxf:variable name="allowableCharacterString" select="xxf:instance('application-parameters-instance')/anonymisation/allowableCharacterString"/>
+                <xxf:variable name="allowableCharacterCount" select="string-length($allowableCharacterString)"/>
+                <xxf:variable name="characterPosition" select="$characterSelectionKey mod $allowableCharacterCount"/>
+                <xxf:variable name="anonymisedCharacter" select="codepoints-to-string(string-to-codepoints($allowableCharacterString)[position()=$characterPosition])"/>
+                
+                <xf:action
+                    if="xxf:instance('control-instance')/exportData/anonymisationType='anonymised'">
+                    <xf:message
+                        ref="concat($seedNumber,' - ',$randomNumber,' - ',$sessionNumber,' - ',$allowableCharacterCount,' - ',$characterPosition,' - ',$anonymisedCharacter)"/>
+                </xf:action>
+                <xf:action
+                    if="xxf:instance('control-instance')/exportData/anonymisationType='pseudoAnonymised'">
+                    <xf:message
+                        ref="concat($seedNumber,' - ',$randomNumber,' - ',$sessionNumber,' - ',$allowableCharacterCount,' - ',$characterPosition,' - ',$anonymisedCharacter)"/>
+                </xf:action>
+                -->
+            </xf:action>
+        </xf:select1>
+    </xhtml:p>
+
+    <!-- Type of export.
+         exportTypeSelection has already been set in initialise-exportType -->
+    <xhtml:p>
+        <xxf:variable name="exportTypeSelection"
+            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportType/option[contains(xxf:instance('control-instance')/exportData/exportTypeSelection,@value)]"/>
+
+        <xf:select1 ref="xxf:instance('control-instance')/exportData/exportType">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportType/@displayName"/>
+            <xf:itemset nodeset="$exportTypeSelection">
+                <xf:label ref="."/>
+                <xf:value ref="./@value"/>
+            </xf:itemset>
+            <xf:action ev:event="xforms-value-changed">
+                <!-- The format is restricted by type of export                      
+                     Need to reset it if the current value is not allowed -->
+                <xxf:variable name="restrictedExportDataFormatList"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportDataFormat/option[contains(@context,xxf:instance('control-instance')/exportData/exportType)]/@value"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/exportData/exportDataFormat"
+                value="if (. = $restrictedExportDataFormatList) then . else $restrictedExportDataFormatList[1]"/>
+            </xf:action>
+        </xf:select1>
+    </xhtml:p>
+
+    <!-- Export format -->
+    <xhtml:p>
+        <xxf:variable name="exportDataFormatList"
+            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportDataFormat/option[contains(@context,xxf:instance('control-instance')/exportData/exportType)]"/>
+        <xf:select1 ref="xxf:instance('control-instance')/exportData/exportDataFormat">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportDataFormat/@displayName"/>
+            <xf:itemset nodeset="$exportDataFormatList">
+                <xf:label ref="."/>
+                <xf:value ref="./@value"/>
+            </xf:itemset>
+            <!-- Set the data format parameters -->
+            <xf:action ev:event="xforms-value-changed">
+                <xxf:variable name="selectedFormat"
+                    select="$exportDataFormatList[@value=xxf:instance('control-instance')/exportData/exportDataFormat]"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+                    value="if (exists($selectedFormat/@transformationXSL)) then $selectedFormat/@transformationXSL else ''"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceFileExtension"
+                    value="if (exists($selectedFormat/@resourceFileExtension)) then $selectedFormat/@resourceFileExtension else ''"/>
+            </xf:action>
+        </xf:select1>
+    </xhtml:p>
+
+    <!-- Spreadsheet format - only show if there are formats to select -->
+    <xxf:variable name="spreadsheetFormatList"
+        select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/spreadsheetFormat/option[contains(@context,xxf:instance('control-instance')/exportData/exportDataFormat)]"/>
+    <xhtml:p class="{if (empty($spreadsheetFormatList)) then 'hidden' else ''}">
+        <xf:select1 ref="xxf:instance('control-instance')/exportData/spreadsheetFormat">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/spreadsheetFormat/@displayName"/>
+            <xf:itemset nodeset="$spreadsheetFormatList">
+                <xf:label ref="."/>
+                <xf:value ref="./@value"/>
+            </xf:itemset>
+            <xf:action ev:event="xforms-value-changed">
+                <!-- Not doing anything here -->
+            </xf:action>
+        </xf:select1>
+    </xhtml:p>
+
+
+    <!-- Output header row - only show if exportDataFormat has values specified in view-parameters -->
+    <xxf:variable name="outputHeaderRow"
+        select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/outputHeaderRow"/>
+    <xhtml:p class="{if (contains($outputHeaderRow/@context,xxf:instance('control-instance')/exportData/exportDataFormat)) then '' else 'hidden'}">
+        <xf:input ref="xxf:instance('control-instance')/exportData/outputHeaderRow">
+            <xf:label ref="$outputHeaderRow/@displayName"/>
+        </xf:input>
+    </xhtml:p>
+
+    <!-- Export data set.
+         Only show this if exporting a data set -->
+    <xxf:variable name="exportDataSetDisplayClass"
+        select="if (xxf:instance('control-instance')/exportData/exportType='dataSet') then '' else 'hidden'"/>
+    <xhtml:p class="{$exportDataSetDisplayClass}">
+
+        <!-- Label is always shown -->
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportDataSetLabel"/>
+
+        <!-- Selection of EDS is only shown if there are some.
+             -->
+        <xxf:variable name="exportDataSetList" select="xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection"/>
+        <xxf:variable name="exportDataSetSelectionClass" select="if (empty($exportDataSetList)) then 'hidden' else ''"/>
+        <xf:select1 class="{$exportDataSetSelectionClass}" ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/id">
+            <xf:itemset nodeset="$exportDataSetList">
+                <xf:label ref="@displayName"/>
+                <xf:value ref="@id"/>
+            </xf:itemset>
+            <!-- This will trigger on user selection, and when the exportDataSet is first set -->
+            <xf:action ev:event="xforms-value-changed" if="xxf:instance('exportDataSetControl-instance')/exportDataSet/lifecycleStatus!='new'">
+                <xxf:variable name="selectedEDS"
+                    select="$exportDataSetList[@id=xxf:instance('exportDataSetControl-instance')/exportDataSet/id]"/>
+                <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/displayName" value="$selectedEDS/@displayName"/>
+                <xf:setvalue ref="xxf:instance('exportDataSetControl-instance')/exportDataSet/handle" value="$selectedEDS/@handle"/>
+                <xf:send submission="load-exportDataSet-submission" target="exportDataSet-model"/>
+            </xf:action>
+        </xf:select1>
+
+        <!-- Button to edit export data sets is always shown -->
+        <xf:trigger appearance="minimal">
+            <xf:label>...</xf:label>
+            <!-- Open dialog to manage export data sets and hide current dialog (exportDataDialog)-->
+            <xf:action ev:event="DOMActivate">
+                <xxf:show dialog="manageExportDataSetDialog" constrain="true"/>
+                <xxf:hide dialog="exportDataDialog"/>
+            </xf:action>
+        </xf:trigger>
+    </xhtml:p>
+
+    <!-- Report selection.
+         Only show this if exporting a report -->
+    <xxf:variable name="reportDisplayClass"
+        select="if (xxf:instance('control-instance')/exportData/exportType='report') then '' else 'hidden'"/>
+    <xhtml:p class="{$reportDisplayClass}">
+
+        <!-- Selection of reports is only shown if there are some -->
+        <xxf:variable name="reportList"
+            select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition[@cityEHR:viewType='Report']"/>
+        <xxf:variable name="exportReportSelectionClass" select="if (empty($reportList)) then 'hidden' else ''"/>
+
+        <!-- Label is always shown -->
+        <xf:output
+            ref="if (empty($reportList)) then xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportReportNoReportsMessage else xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportReportLabel"/>
+
+        <xf:select1 class="{$exportReportSelectionClass}" ref="xxf:instance('control-instance')/exportData/exportReport">
+            <xf:itemset
+                nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportReportSelection | $reportList">
+                <xf:label ref="@displayName"/>
+                <xf:value ref="@code"/>
+            </xf:itemset>
+            <!-- This will trigger on user selection -->
+            <xf:action ev:event="xforms-value-changed" if="xxf:instance('control-instance')/exportData/exportReport!=''">
+                <!-- Get the compositionIRI for the report -->
+                <xf:setvalue ref="xxf:instance('control-instance')/exportData/exportReportCompositionIRI"
+                    value="if (exists($reportList[@code=xxf:instance('control-instance')/exportData/exportReport])) then $reportList[@code=xxf:instance('control-instance')/exportData/exportReport]/iso-13606:composition[1] else ''"
+                />
+            </xf:action>
+        </xf:select1>
+
+    </xhtml:p>
+
+    <!-- Pathway selection.
+         Only show this if exporting a pathway variance report -->
+    <xxf:variable name="pathwayDisplayClass"
+        select="if (xxf:instance('control-instance')/exportData/exportType='variance') then '' else 'hidden'"/>
+    <xhtml:p class="{$pathwayDisplayClass}">
+        
+        <!-- Selection of pathways is only shown if there are some -->
+        <xxf:variable name="pathwayList"
+            select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition[@typeId='#CityEHR:Pathway']"/>
+        <xxf:variable name="pathwaySelectionClass" select="if (empty($pathwayList)) then 'hidden' else ''"/>
+        
+        <!-- Label is always shown -->
+        <xf:output
+            ref="if (empty($pathwayList)) then xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportVarianceNoPathwaysMessage else xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportVarianceLabel"/>
+        
+        <xf:select1 class="{$pathwaySelectionClass}" ref="xxf:instance('control-instance')/exportData/exportPathwayCompositionIRI">
+            <xf:itemset
+                nodeset="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportVarianceSelection | $pathwayList">
+                <xf:label ref="@displayName"/>
+                <xf:value ref="@code"/>
+            </xf:itemset>
+            <!-- This will trigger on user selection -->
+            <xf:action ev:event="xforms-value-changed" if="xxf:instance('control-instance')/exportData/exportPathwayCompositionIRI!=''">
+                <!-- Nothing to do here -->
+            </xf:action>
+        </xf:select1>
+        
+    </xhtml:p>
+    
+    
+
+
+    <!-- Actions -->
+    <xhtml:p>
+        <!-- Cancel - hide this dialog and also manageExportDataSetDialog (which mat have been opened) -->
+        <xf:trigger class="button" appearance="minimal">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/cancelLabel"/>
+            <xxf:hide ev:event="DOMActivate" dialog="exportDataDialog"/>
+            <xxf:hide ev:event="DOMActivate" dialog="manageExportDataSetDialog"/>
+        </xf:trigger>
+
+        <!-- Export Data.
+             Can only export data if conditions are met.
+             Condition 1 : if exporting data set, then need to have one selected 
+             Condition 2 : if exporting report, then need to have one selected
+             Condition 3 : if exporting variance report, then need to have pathway selected
+        
+             Hide this dialog and also manageExportDataSetDialog (which may have been opened) 
+        
+            xxf:modal="true" on trigger blocks the UI until the action in the trigger is done. -->
+        <xxf:variable name="exportClass"
+            select="if (xxf:instance('control-instance')/exportData/exportType='dataSet' and empty(xxf:instance('exportDataSetList-instance')/iso-13606:entryCollection)) then 'hidden' 
+            else if (xxf:instance('control-instance')/exportData/exportType='report' and xxf:instance('control-instance')/exportData/exportReportCompositionIRI='') then 'hidden' 
+            else if (xxf:instance('control-instance')/exportData/exportType='variance' and xxf:instance('control-instance')/exportData/exportPathwayCompositionIRI='') then 'hidden' 
+            else 'button'"/>
+        <xf:trigger class="{$exportClass}" appearance="minimal" xxf:modal="true">
+            <xf:label ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRExportDataDialog/exportLabel"/>
+            <xf:action ev:event="DOMActivate">
+                <!-- Export data - this action is in cityEHRCohortSearch -->
+                <xf:dispatch name="export-data" target="main-model"/>
+
+                <xxf:hide dialog="exportDataDialog"/>
+                <xxf:hide ev:event="DOMActivate" dialog="manageExportDataSetDialog"/>
+            </xf:action>
+        </xf:trigger>
+    </xhtml:p>
+
+    <!-- Debugging -->
+    <!--
+    <xf:output class="message" ref="xxf:instance('control-instance')/exportData/anonymisationType"/>
+    <xf:output class="message" ref="xxf:instance('control-instance')/exportData/exportType"/>
+    <xf:output class="message" ref="xxf:instance('control-instance')/exportData/exportDataFormat"/>
+    -->
+    <!--
+    <xhtml:p class="message">specialtyList-instance<xhtml:br/>
+        <xf:output
+            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('specialtyList-instance'), 'data')/*, 'html')"
+            mediatype="text/html"/>
+    </xhtml:p>
+    -->
+</xxf:dialog>

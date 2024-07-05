@@ -1,0 +1,144 @@
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    DAS28.xhtml
+    
+    Image map file.
+    Works with data-maphilight.
+    
+    Note that the following are required in order for this to work:
+    
+    The <script> in the <head> must be present in the page that includes the image map
+    The <img> element must have width and height attributes, which are picked up by the Orbeon form render
+    (data-maphilight does not work if there is no width/height)
+    
+    The src attribute on <img> gets set to the correct path for the image when the file is included using XSLT.
+    
+    The following javascript libraries must be included on the page:
+
+        jquery.min.js
+        jquery.maphilight.min.js
+        cityEHR.js
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <xhtml:head>     
+        <xhtml:script type="text/javascript" language="javascript" src="../../../scripts/jquery.min.js"> </xhtml:script>
+        <xhtml:script type="text/javascript" language="javascript" src="../../../scripts/jquery.maphilight.min.js"> </xhtml:script>
+        
+        <xhtml:script type="text/javascript" language="javascript" src="../../../scripts/cityEHR.js"> </xhtml:script>
+        
+        <xhtml:script> $(function() { $('.map').maphilight(); }); </xhtml:script>
+    </xhtml:head>
+    
+    <xhtml:body>   
+        
+        <xhtml:img class="map" src="DAS28.png" width="500" height="500" useMap="#DAS28" onLoad="setImageMap(this);"/>
+        
+        <xhtml:map name="DAS28">
+           
+            <!-- Left side - 14 of these, swollen and tender -->
+
+            <xhtml:area id="Map-DAS28-DASShoulderLeftSwollen" shape="poly" coords="305,110,321,110,321,126,305,126" href="#" title="Shoulder left swollen" onClick="toggleXformsControl('DAS28-DASShoulderLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASShoulderLeftTender" shape="poly" coords="321,110,337,110,337,126,321,126" href="#" title="Shoulder left tender" onClick="toggleXformsControl('DAS28-DASShoulderLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DASElbowLeftSwollen" shape="poly" coords="402,154,418,154,418,170,402,170" href="#" title="Elbow left swollen" onClick="toggleXformsControl('DAS28-DASElbowLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASElbowLeftTender" shape="poly" coords="418,154,434,154,434,170,418,170" href="#" title="Elbow left tender" onClick="toggleXformsControl('DAS28-DASElbowLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DASWristLeftSwollen" shape="poly" coords="386,258,402,258,402,274,386,274" href="#" title="Wrist left swollen" onClick="toggleXformsControl('DAS28-DASWristLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASWristLeftTender" shape="poly" coords="402,257,418,257,418,273,402,273" href="#" title="Wrist left tender" onClick="toggleXformsControl('DAS28-DASWristLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS1stMCPLeftSwollen" shape="poly" coords="330,288,346,288,346,304,330,304" href="#" title="1st MCP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS1stMCPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS1stMCPLeftTender" shape="poly" coords="346,288,362,288,362,304,346,304" href="#" title="1st MCP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS1stMCPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS2ndMCPLeftSwollen" shape="poly" coords="346,328,362,328,362,344,346,344" href="#" title="2nd MCP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS2ndMCPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS2ndMCPLeftTender" shape="poly" coords="362,328,378,328,378,344,362,344" href="#" title="2nd MCP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS2ndMCPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS3rdMCPLeftSwollen" shape="poly" coords="384,328,400,328,400,344,384,344" href="#" title="3rd MCP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS3rdMCPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS3rdMCPLeftTender" shape="poly" coords="400,328,416,328,416,344,400,344" href="#" title="3rd MCP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS3rdMCPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS4thMCPLeftSwollen" shape="poly" coords="424,328,440,328,440,344,424,344" href="#" title="4th MCP (hand) left" onClick="toggleXformsControl('DAS28-DAS4thMCPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS4thMCPLeftTender" shape="poly" coords="440,328,456,328,456,344,440,344" href="#" title="4th MCP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS4thMCPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS5thMCPLeftSwollen" shape="poly" coords="464,328,480,328,480,344,464,344" href="#" title="5th MCP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS5thMCPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS5thMCPLeftTender" shape="poly" coords="480,328,496,328,496,344,480,344" href="#" title="5th MCP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS5thMCPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS1stIPLeftSwollen" shape="poly" coords="306,326,322,326,322,342,306,342" href="#" title="1st IP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS1stIPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS1stIPLeftTender" shape="poly" coords="322,326,338,326,338,342,322,342" href="#" title="1st IP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS1stIPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS2ndPIPLeftSwollen" shape="poly" coords="346,352,362,352,362,368,346,368" href="#" title="2nd PIP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS2ndPIPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS2ndPIPLeftTender" shape="poly" coords="362,352,378,352,378,368,362,368" href="#" title="2nd PIP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS2ndPIPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS3rdPIPLeftSwollen" shape="poly" coords="384,352,400,352,400,368,384,368" href="#" title="3rd PIP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS3rdPIPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS3rdPIPLeftTender" shape="poly" coords="400,352,416,352,416,368,400,368" href="#" title="3rd PIP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS3rdPIPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS4thPIPLeftSwollen" shape="poly" coords="424,352,440,352,440,368,424,368" href="#" title="4th PIP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS4thPIPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS4thPIPLeftTender" shape="poly" coords="440,352,456,352,456,368,440,368" href="#" title="4th PIP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS4thPIPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS5thPIPLeftSwollen" shape="poly" coords="464,352,480,352,480,368,464,368" href="#" title="5th PIP (hand) left swollen" onClick="toggleXformsControl('DAS28-DAS5thPIPLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS5thPIPLeftTender" shape="poly" coords="480,352,496,352,496,368,480,368" href="#" title="5th PIP (hand) left tender" onClick="toggleXformsControl('DAS28-DAS5thPIPLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DASKneeLeftSwollen" shape="poly" coords="258,322,274,322,274,338,258,338" href="#" title="Knee left swollen" onClick="toggleXformsControl('DAS28-DASKneeLeftSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASKneeLeftTender" shape="poly" coords="274,322,290,322,290,338,274,338" href="#" title="Knee left tender" onClick="toggleXformsControl('DAS28-DASKneeLeftTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+
+
+            <!-- Right side - 14 of these, swollen and tender -->
+
+            <xhtml:area id="Map-DAS28-DASShoulderRightSwollen" shape="poly" coords="162,110,178,110,178,126,162,126" href="#" title="Shoulder right swollen" onClick="toggleXformsControl('DAS28-DASShoulderRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASShoulderRightTender" shape="poly" coords="178,110,194,110,194,126,178,126" href="#" title="Shoulder right tender" onClick="toggleXformsControl('DAS28-DASShoulderRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DASElbowRightSwollen" shape="poly" coords="66,153,82,153,82,169,66,169" href="#" title="Elbow right swollen" onClick="toggleXformsControl('DAS28-DASElbowRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASElbowRightTender" shape="poly" coords="82,153,98,153,98,169,82,169" href="#" title="Elbow right tender" onClick="toggleXformsControl('DAS28-DASElbowRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DASWristRightSwollen" shape="poly" coords="82,255,98,255,98,271,82,271" href="#" title="Wrist right swollen" onClick="toggleXformsControl('DAS28-DASWristRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASWristRightTender" shape="poly" coords="98,255,114,255,114,271,98,271" href="#" title="Wrist right tender" onClick="toggleXformsControl('DAS28-DASWristRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS1stMCPRightSwollen" shape="poly" coords="136,288,152,288,152,304,136,304" href="#" title="1st MCP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS1stMCPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS1stMCPRightTender" shape="poly" coords="152,288,168,288,168,304,152,304" href="#" title="1st MCP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS1stMCPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS2ndMCPRightSwollen" shape="poly" coords="122,328,138,328,138,344,122,344" href="#" title="2nd MCP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS2ndMCPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS2ndMCPRightTender" shape="poly" coords="138,328,154,328,154,344,138,344" href="#" title="2nd MCP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS2ndMCPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS3rdMCPRightSwollen" shape="poly" coords="84,328,100,328,100,344,84,344" href="#" title="3rd MCP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS3rdMCPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS3rdMCPRightTender" shape="poly" coords="100,328,116,328,116,344,100,344" href="#" title="3rd MCP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS3rdMCPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS4thMCPRightSwollen" shape="poly" coords="43,328,59,328,59,344,43,344" href="#" title="4th MCP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS4thMCPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS4thMCPRightTender" shape="poly" coords="59,328,75,328,75,344,59,344" href="#" title="4th MCP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS4thMCPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS5thMCPRightSwollen" shape="poly" coords="3,328,19,328,19,344,3,344" href="#" title="5th MCP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS5thMCPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS5thMCPRightTender" shape="poly" coords="19,328,35,328,35,344,19,344" href="#" title="5th MCP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS5thMCPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS1stIPRightSwollen" shape="poly" coords="162,326,178,326,178,342,162,342" href="#" title="1st IP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS1stIPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS1stIPRightTender" shape="poly" coords="178,326,194,326,194,342,178,342" href="#" title="1st IP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS1stIPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS2ndPIPRightSwollen" shape="poly" coords="122,352,138,352,138,368,122,368" href="#" title="2nd PIP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS2ndPIPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS2ndPIPRightTender" shape="poly" coords="138,352,154,352,154,368,138,368" href="#" title="2nd PIP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS2ndPIPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS3rdPIPRightSwollen" shape="poly" coords="84,352,100,352,100,368,84,368" href="#" title="3rd PIP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS3rdPIPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS3rdPIPRightTender" shape="poly" coords="100,352,116,352,116,368,100,368" href="#" title="3rd PIP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS3rdPIPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS4thPIPRightSwollen" shape="poly" coords="43,352,59,352,59,368,43,368" href="#" title="4th PIP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS4thPIPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS4thPIPRightTender" shape="poly" coords="59,352,75,352,75,368,59,368" href="#" title="4th PIP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS4thPIPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DAS5thPIPRightSwollen" shape="poly" coords="3,352,19,352,19,368,3,368" href="#" title="5th PIP (hand) right swollen" onClick="toggleXformsControl('DAS28-DAS5thPIPRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DAS5thPIPRightTender" shape="poly" coords="19,352,35,352,35,368,19,368" href="#" title="5th PIP (hand) right tender" onClick="toggleXformsControl('DAS28-DAS5thPIPRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+            <xhtml:area id="Map-DAS28-DASKneeRightSwollen" shape="poly" coords="210,322,226,322,226,338,210,338" href="#" title="Knee right swollen" onClick="toggleXformsControl('DAS28-DASKneeRightSwollen');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <xhtml:area id="Map-DAS28-DASKneeRightTender" shape="poly" coords="226,322,242,322,242,338,226,338" href="#" title="Knee right tender" onClick="toggleXformsControl('DAS28-DASKneeRightTender');" data-maphilight="{&#34;strokeColor&#34;:&#34;FCD116&#34;,&#34;strokeWidth&#34;:1,&#34;strokeOpacity&#34;:0.6,&#34;fillColor&#34;:&#34;FCD116&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+
+        </xhtml:map>
+    </xhtml:body>
+</xhtml:html>

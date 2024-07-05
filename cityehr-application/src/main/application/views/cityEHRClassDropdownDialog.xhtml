@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRClassDropdownDialog.xhtml
+    
+    Dialog to display dropdown selection for enumeratedClass.
+    
+    Uses the configuration set in control-instance/enumeratedClass (compositionMainModel) and classDictionaryModel
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- Class selection dialogue - for browsing though class hierarchy and selecting the node
+    The class and entry node have been set in 
+    xxf:instance('control-instance')/enumeratedClass/classNode
+    xxf:instance('control-instance')/enumeratedClass/entryNode
+-->
+<xxf:dialog id="ClassDropdown-dialog" appearance="minimal" level="modeless" close="false" draggable="false" visible="false"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xxf:variable name="focus" select="xxf:instance('control-instance')/enumeratedClass/focus"/>
+    <xxf:variable name="element" select="xxf:instance('form-instance')//cda:value[@cityEHR:focus=$focus]"/>
+
+    <div class="dropdown">
+        <ul>
+            <!-- Debug - just list all nodes in the dictionary (tests scroll bars on the dialog)
+                <xxf:variable name="xformsNodeset" select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=$xformsClassCode][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedLeafValue']/iso-13606:data"/>
+            -->
+            <xxf:variable name="nodeset" select="xxf:instance('enumeratedClass-instance')/iso-13606:data"/>
+            <xf:repeat nodeset="$nodeset">
+                <xxf:variable name="selection" select="."/>
+                <xxf:variable name="selectionPosition" select="position()"/>
+                <xhtml:li>
+                    <xf:output ref="$selection/@displayName"/>
+                    <xf:output
+                        ref="if ($selection/@cityEHR:scope=xxf:instance('control-instance')/enumeratedClass/intermediateNodeType) then xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Forms/intermediateNodeLabel else ''"/>
+
+                    <!-- Action when value is selected -->
+                    <xf:action if="exists($element)" ev:event="DOMActivate">
+                        <xxf:variable name="selectedData" select="$nodeset[$selectionPosition]"/>
+                        
+                        <xf:dispatch name="set-elementData" target="main-model">
+                            <xxf:context name="element" select="$element"/>
+                            <xxf:context name="selectedData" select="$selectedData"/>
+                        </xf:dispatch>
+                        
+                        <!-- Reset the recorded value (used to refresh the input control text) -->
+                        <xf:setvalue ref="$element" value="$selectedData/@displayName"/>
+
+                        <xxf:hide dialog="ClassDropdown-dialog"/>
+                    </xf:action>
+                </xhtml:li>
+            </xf:repeat>
+        </ul>
+        <!-- Hide dialog when it loses focus -->
+        <xf:action ev:event="DOMFocusOut">
+            <xxf:hide dialog="ClassDropdown-dialog"/>
+        </xf:action>
+
+        <!-- When the dialog closes need to clear the enumeratedClass-instance
+            and restore the displayName in the input to the value that is set in the CDA
+            This handles the case when the user clicks outside the dialog without making a selection
+            The displayName then reverts to the previous value -->
+        <xf:action ev:event="xxforms-dialog-close">
+            <!--
+                <xf:action if="exists($xformsRecordedNode)">
+                <xf:setvalue ref="$xformsElement/@displayName" value="$xformsRecordedNode/@displayName"/>
+                </xf:action>
+            -->
+            <xf:action if="exists($element)">
+                <xf:setvalue ref="$element" value="$element/@displayName"/>
+            </xf:action>
+
+            <!--
+                <xf:delete nodeset="xxf:instance('enumeratedClass-instance')/*"/>
+            -->
+            <!-- Debugging 
+                <xxf:script> alert('closed'); </xxf:script>
+            -->
+        </xf:action>
+    </div>
+</xxf:dialog>

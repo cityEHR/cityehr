@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRManageSystemParametersControls.xhtml
+    
+    Manage system parameters - controls.
+    Used in cityEHRAdmin and in recovery mode in cityEHRSignOn (in cityEHRSystemParametersDialog)
+    
+    Control settings are in systemParametersControl-instance (systemParameters-model)
+        displayMode - inline (for cityEHRAdmin) or dialog (for cityEHRSignOn)
+        confirmationMode - waiting (normal state) or close | save | saveAndRestart | reset (when confirming a user action)
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:ul class="viewControlsHeader" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+    <xhtml:li class="viewControlsActions">
+
+        <!-- Save the system-parameters, 
+             Revert to saved system-parameters
+             
+             but only if edited. -->
+        <xhtml:span class="{if (xxf:instance('parametersControl-instance')/status='edited') then 'viewControl' else 'hidden'}">
+
+            <!-- Save button -->
+            <xxf:variable name="type" select="'save'"/>
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/saveLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <!-- UI is blocked until action is done -->
+            <xf:trigger appearance="minimal">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <!-- Save system-parameters-instance.
+                     Needs to be confirmed with the user.
+                     Needs a restart if the database configuration has been changed.
+                     -->
+                <xf:action ev:event="DOMActivate">
+                    <!-- Check whether database parameters have been changed -->
+                    <xf:dispatch name="set-databaseChecksum" target="systemParameters-model">
+                        <xxf:context name="system-parameters" select="xxf:instance('managed-parameters-instance')"/>
+                        <xxf:context name="databaseChecksum" select="xxf:instance('systemParametersControl-instance')/databaseChecksum"/>
+                    </xf:dispatch>
+                    <xxf:variable name="currentChecksum" select="xxf:instance('systemParametersControl-instance')/databaseChecksum"/>
+
+                    <!-- Database parameters changed - need to confirm restart -->
+                    <xf:action if="$currentChecksum != xxf:instance('managed-parameters-instance')/@databaseChecksum">                      
+                        <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'confirmSaveAndRestart'"/>
+                    </xf:action>
+
+                    <!-- Database parameters not changed - can just save -->
+                    <xf:action
+                        if="xxf:instance('systemParametersControl-instance')/databaseChecksum = xxf:instance('managed-parameters-instance')/@databaseChecksum">
+                        <xf:dispatch name="save-system-parameters-after-edit" target="systemParameters-model"/>
+                    </xf:action>
+                </xf:action>
+            </xf:trigger>
+
+            <!-- Reset button.-->
+            <xxf:variable name="type" select="'reset'"/>
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/resetLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <!-- User pressed the reset button -->
+            <xf:trigger appearance="minimal">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <!-- Reset (reload) system-parameters-instance.
+                     Confirm beforehand, because any edits will be lost.-->
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'confirmReset'"/>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:span>
+
+
+        <!-- Confirm Save and restart -->
+        <xhtml:span class="{if (xxf:instance('parametersControl-instance')/status='confirmSaveAndRestart') then 'viewControl' else 'hidden'}">
+            <!-- Save and restart message.-->
+            <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/saveAndRestartMessage"/>
+            
+            <!-- Save and restart button.-->
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/saveAndRestartLabel"/>
+            <!-- User pressed the cancel button -->
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label ref="$label"/>
+                <xf:hint ref="$label"/>
+                <!-- Save and restart -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:dispatch name="save-system-parameters-and-restart" target="systemParameters-model"/>
+                </xf:action>
+            </xf:trigger>
+            
+            <!-- Cancel button.-->
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/cancelSaveLabel"/>
+            <!-- User pressed the cancel button -->
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label ref="$label"/>
+                <xf:hint ref="$label"/>
+                <!-- Cancel the save and restart -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                </xf:action>
+            </xf:trigger>
+
+        </xhtml:span>
+
+        <!-- Confirm Reset-->
+        <xhtml:span class="{if (xxf:instance('parametersControl-instance')/status='confirmReset') then 'viewControl' else 'hidden'}">
+            <!-- Reset message.-->
+            <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/resetMessage"/>
+            
+            <!-- Reset button.-->
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/resetLabel"/>
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label ref="$label"/>
+                <xf:hint ref="$label"/>
+                <!-- Reset -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:dispatch name="load-system-parameters-for-edit" target="systemParameters-model">
+                        <xxf:context name="displayMode" select="'inline'"/>
+                        <xxf:context name="editMode" select="''"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:trigger>
+            
+            <!-- Cancel button.-->
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/cancelResetLabel"/>
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label ref="$label"/>
+                <xf:hint ref="$label"/>
+                <!-- Cancel the save and restart -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="'edited'"/>
+                </xf:action>
+            </xf:trigger>
+            
+        </xhtml:span>
+        
+        
+
+        <!-- Download user resources.
+             Only on admin page (not when these controls are displayed in recovery mode on cityEHRSignOn -->
+        <xhtml:span class="{if (xxf:instance('view-parameters-instance')/page='cityEHRAdmin') then 'viewControl' else 'hidden'}">
+            <!-- Download button -->
+            <xxf:variable name="type" select="'export'"/>
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/exportUserResourcesLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <!-- UI is blocked until action is done -->
+            <xf:trigger appearance="minimal" xxf:modal="true">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <!-- Return UserResources to the browser through pipeline -->
+                <xf:action ev:event="DOMActivate">
+                    <xf:dispatch name="set-externalId" target="pageNavigation-model">
+                        <xxf:context name="type" select="'userResources'"/>
+                        <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+                    </xf:dispatch>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceDirectory"
+                        value="xxf:instance('view-parameters-instance')/userResourcesURL"/>
+                    <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                        <xxf:context name="page" select="'cityEHRDownloadResources'"/>
+                        <xxf:context name="show" select="'new'"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:span>
+
+        <!-- View XML parameters instance - only on admin page -->
+        <xhtml:span class="{if (xxf:instance('view-parameters-instance')/page='cityEHRAdmin') then 'viewControl' else 'hidden'}">
+            <xxf:variable name="type" select="'xml'"/>
+            <xxf:variable name="label"
+                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageSystemParameters/viewXMLLabel"/>
+            <xxf:variable name="icon"
+                select="concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$type,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version)"/>
+            <xf:trigger appearance="minimal" xxf:modal="true">
+                <xf:label>
+                    <xhtml:img src="{$icon}" alt=""/>
+                </xf:label>
+                <xf:hint ref="$label"/>
+                <xf:action ev:event="DOMActivate">
+                    <!-- Parameters edited - show the managed-parameters-instance
+                         Parameters not edited - show system-parameters-instance -->
+                    <xxf:variable name="$parameters-instance"
+                        select="if (xxf:instance('parametersControl-instance')/status='edited') then xxf:instance('managed-parameters-instance') else xxf:instance('system-parameters-instance')"/>
+                    <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                        <xxf:context name="title" select="''"/>
+                        <xxf:context name="displayXML" select="$parameters-instance"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:trigger>
+        </xhtml:span>
+
+
+    </xhtml:li>
+    <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+</xhtml:ul>

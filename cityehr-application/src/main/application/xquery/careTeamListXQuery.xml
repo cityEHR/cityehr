@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    careTeamListXQuery.xml
+    
+    XQuery to return a list of care teams which have specified user as a member
+    Context is the careteams collection in the application database
+    
+    Returns value and displayName attributes so that the list can be used in element value selections.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<query xml:space="preserve">
+        xquery version "1.0"; 
+        
+        for $resource in collection()[careTeam/user/@id='<userIRI/>']
+        let $resourceHandle := document-uri($resource)
+        let $careTeamId := $resource/careTeam/@id
+        let $careTeamDisplayName := $resource/careTeam/@displayName
+        order by $careTeamDisplayName ascending
+        return
+        &lt;careTeam value="{$careTeamId}" displayName="{$careTeamDisplayName}" handle="{$resourceHandle}"/>
+</query>

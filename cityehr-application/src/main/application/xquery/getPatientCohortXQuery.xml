@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        *********************************************************************************************************
+        cityEHR
+        getPatientCohortXQuery.xml
+        
+        XQuery to return patientInfo and patientData for the list of patientIds in a cohort
+        patientSet is the container that carries attrbutes with parameters for the cohort
+        patientInfo is demographics using all values of each entry in entryList, in descending order of effectiveTime
+        patientData is all instances of the entries in dataSetEntryList, or the current instance only if <currentDataSelector/> is set to [1]
+        The effectiveTime attribute on patientSet is either currentData (so currentDataSelector is [1]) or allData (no currentDataSelector)
+        
+        Only returns results for patients that are found in the database
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+<query start="1" max="500" xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3";
+        declare namespace xmldb="http://exist-db.org/xquery/xmldb";
+        
+       declare variable $path := util:collection-name(collection()[1]);
+       declare variable $pathComponents := tokenize($path,'/');
+       declare variable $pathComponentsCount := count($pathComponents);
+       declare variable $root := string-join($pathComponents[position() lt $pathComponentsCount],'/');
+             
+       declare variable $entryList := (<entryList/>);
+       declare variable $elementList := (<elementList/>);
+       declare variable $dataSetEntryList := (<dataSetEntryList/>);
+       declare variable $referenceDataList := (<referenceDataList/>);
+        
+        declare variable $longitudinalDataOutput := '<longitudinalDataOutput/>';
+        
+        (: Base document element is patientSet, which has attributes for meta data about the cohort :)
+        &lt;patientSet collection="{$root}" entryList="{string-join($entryList,' ')}" elementList="{string-join($elementList,' ')}" dataSetEntryList="{string-join($dataSetEntryList,' ')}" referenceDataList="{string-join($referenceDataList,' ')}" longitudinalDataOutput="{$longitudinalDataOutput}" applicationIRI="" displayName="<cohortName/>" externalId="" headerText="" footerText="">
+       {
+        for $patientId in (<patientIdList/>)
+        let $collectionPath := concat($root,'/',normalize-space($patientId))
+        
+        return 
+        if (xmldb:collection-available($collectionPath)) then
+        (
+        (: Demographics is in patientInfo :)
+        &lt;patientInfo patientId="{$patientId}">
+                <calculatedItemPlaceHolders/>
+                {
+                for $entry in collection($collectionPath)//cda:entry[descendant::cda:id/@extension=$entryList][descendant::cda:value]
+                                let $effectiveTime := data($entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value[1])
+                                order by $effectiveTime descending
+                        return $entry
+                }
+        <!--
+                {for $entryIRI in $entryList
+                        let $entrySet :=
+                                for $entry in collection($collectionPath)//cda:entry[descendant::cda:id/@extension=$entryIRI][descendant::cda:value]
+                                let $effectiveTime := data($entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value[1])
+                                order by $effectiveTime descending
+                        return $entry
+                 return $entrySet[1]
+                }
+                -->
+        &lt;/patientInfo>        
+        ,
+        (: Export data set is in patientData :)
+        if (exists($dataSetEntryList[1])) then
+                &lt;patientData patientId="{$patientId}">
+                {for $dataSetEntryIRI in $dataSetEntryList
+                        let $dataSetEntrySet :=
+                                for $dataSetEntry in collection($collectionPath)//cda:entry[descendant::cda:id/@extension=$dataSetEntryIRI]
+                                        let $effectiveTime := data($dataSetEntry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value)
+                                        let $effectiveTimeValue := if ($longitudinalDataOutput = 'allData') then $effectiveTime else $longitudinalDataOutput
+                                        let $update := update insert attribute effectiveTime {$effectiveTimeValue} into $dataSetEntry
+                                        order by $effectiveTime descending
+                                return $dataSetEntry
+                 return $dataSetEntrySet<currentDataSelector/>
+        }
+        &lt;/patientData>
+        else ()       
+        )   
+        else ()
+        }
+        &lt;/patientSet>
+</query>
+

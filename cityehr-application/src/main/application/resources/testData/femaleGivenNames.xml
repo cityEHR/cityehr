@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    femaleGivenNames.xml
+    
+    List of female given names used to generate test data.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<nameList>
+    <name>Ann</name>
+    <name>Angela</name>
+    <name>Alexandra</name>
+    <name>Alice</name>
+    <name>Amy</name>
+    <name>Alison</name>
+    <name>Agnes</name>
+    <name>Agatha</name>
+    <name>Amelia</name>
+    <name>Anna</name>
+    <name>Arabella</name>
+    <name>Alesha</name>
+    <name>Amber</name>
+    <name>Amanda</name>
+    <name>Bellinda</name>
+    <name>Bella</name>
+    <name>Briony</name>
+    <name>Beatrix</name>
+    <name>Bridget</name>
+    <name>Bronwyn</name>
+    <name>Bethany</name>
+    <name>Barbara</name>
+    <name>Catherine</name>
+    <name>Cordelia</name>
+    <name>Camilla</name>
+    <name>Carol</name>
+    <name>Caroline</name>
+    <name>Candida</name>
+    <name>Cindy</name>
+    <name>Cynthia</name>
+    <name>Dorcas</name>
+    <name>Deborah</name>
+    <name>Delia</name>
+    <name>Davina</name>
+    <name>Dolores</name>
+    <name>Dorothy</name>
+    <name>Dora</name>
+    <name>Ermintrude</name>
+    <name>Emily</name>
+    <name>Elizabeth</name>
+    <name>Evelyn</name>
+    <name>Emelia</name>
+    <name>Eleanor</name>
+    <name>Eva</name>
+    <name>Elspeth</name>
+    <name>Fenella</name>
+    <name>Francesca</name>
+    <name>Fiona</name>
+    <name>Flora</name>
+    <name>Faith</name>
+    <name>Florence</name>
+    <name>Francine</name>
+    <name>Gertrude</name>
+    <name>Gail</name>
+    <name>Greta</name>
+    <name>Gillian</name>
+    <name>Gladys</name>
+    <name>Gemma</name>
+    <name>Georgina</name>
+    <name>Hilary</name>
+    <name>Harriet</name>
+    <name>Helen</name>
+    <name>Helena</name>
+    <name>Hazel</name>
+    <name>Hannah</name>
+    <name>Hailey</name>
+    <name>Hester</name>
+    <name>Ivy</name>
+    <name>Iris</name>
+    <name>Isla</name>
+    <name>Isodora</name>
+    <name>Joanna</name>
+    <name>Jane</name>
+    <name>Janet</name>
+    <name>Jill</name>
+    <name>Jemima</name>
+    <name>Kylie</name>
+    <name>Krystal</name>
+    <name>Katherine</name>
+    <name>Lavinia</name>
+    <name>Lily</name>
+    <name>Laura</name>
+    <name>Lauren</name>
+    <name>Lorraine</name>
+    <name>Letitia</name>
+    <name>Molly</name>
+    <name>Michelle</name>
+    <name>Myrtle</name>
+    <name>Minny</name>
+    <name>Michaela</name>
+    <name>Nora</name>
+    <name>Nelly</name>
+    <name>Nina</name>
+    <name>Nigella</name>
+    <name>Ophelia</name>
+    <name>Posy</name>
+    <name>Patricia</name>
+    <name>Polly</name>
+    <name>Queenie</name>
+    <name>Reece</name>
+    <name>Sissy</name>
+    <name>Sarah</name>
+    <name>Sara</name>
+    <name>Sally</name>
+    <name>Susan</name>
+    <name>Susanna</name>
+    <name>Sheba</name>
+    <name>Siobhan</name>
+    <name>Simona</name>
+    <name>Tricia</name>
+    <name>Trinny</name>
+    <name>Una</name>
+    <name>Verity</name>
+    <name>Vivianne</name>
+    <name>Wanda</name>
+    <name>Wenda</name>
+    <name>Wilhelmina</name>
+    <name>Xena</name>
+    <name>Yvonne</name>
+    <name>Yvette</name>
+    <name>Zara</name>
+    <name>Zoe</name>
+</nameList>

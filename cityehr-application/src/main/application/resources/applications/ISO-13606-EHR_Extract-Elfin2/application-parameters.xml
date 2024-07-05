@@ -1,0 +1,822 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR - Elfin2
+    application-parameters.xml
+    Parameters for configuration of a cityEHR application.
+    
+    This base version of application-parameters.xml is located at the root level of the resources/applications directory structure.
+    Tailored configuration is in application-parameters.xml files located in the resources/applications/<appId> directory.
+    
+    Any parameters set in the tailored configuration override those set in this base configuration.
+    All parameters need to exist in this base configuration, otherwise they will not get set.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
+    **********************************************************************************************************
+-->
+<!-- To force the whole configuration to be replaced in the xmlstore when updated, set cityEHR:edit="replace" -->
+<parameters type="application" version="" date="" languageCode="en-GB" cityEHR:edit="replace" xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+    <!-- Application configuration -->
+    <application cityEHR:displayName="Application Configuration" cityEHR:edit="newApp">
+        <cityEHR:selection>
+            <iso-13606:EHR_Extract commonModel="" defaultSpecialty="" cityEHR:selection="cityEHR:specialty"/>
+        </cityEHR:selection>
+        <cityEHR:edit>
+            <iso-13606:EHR_Extract id="" cityEHR:edit="readOnly"/>
+        </cityEHR:edit>
+
+        <!-- The application id (fixed - actually an IRI), language and default models -->
+        <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:Elfin2" displayName="Elfin 2" baseLanguageCode="en-GB" commonModel="#ISO-13606:Folder:Elfin2BaseModel" defaultSpecialty="#ISO-13606:Folder:Elfin2"/>
+
+        <!-- The other parameters are all images which can be loaded from the location specified in the @value.
+             These are stored as separate resources in systemConfiguration/images for the application in the xmlstore. -->
+        <images>
+            <cityEHR:type>
+                <logo value="" cityEHR:type="image"/>
+                <favicon value="" cityEHR:type="image"/>
+                <welcomeLogo value="" cityEHR:type="image"/>
+                <welcomeSplash-1 value="" cityEHR:type="image"/>
+                <welcomeSplash-2 value="" cityEHR:type="image"/>
+            </cityEHR:type>
+            <cityEHR:edit>
+                <logo hint="" cityEHR:edit="readOnly"/>
+                <favicon hint="" cityEHR:edit="readOnly"/>
+                <welcomeLogo hint="" cityEHR:edit="readOnly"/>
+                <welcomeSplash-1 hint="" cityEHR:edit="readOnly"/>
+                <welcomeSplash-2 hint="" cityEHR:edit="readOnly"/>
+            </cityEHR:edit>
+            <logo cityEHR:displayName="Application logo" hint="60 x 60 px"
+                value="/applications/ISO-13606-EHR_Extract-Elfin2/images/elfinIcon.png"/>
+            <favicon cityEHR:displayName="Application favicon" hint="16 x 16 px"
+                value="/applications/ISO-13606-EHR_Extract-Elfin2/images/elfinIcon-Small.ico"/>
+            <welcomeLogo cityEHR:displayName="Splash page header logo" hint="Recommended width is 720px" value="/applications/ISO-13606-EHR_Extract-Elfin2/images/elfinHeaderSplash.png"/>
+            <welcomeSplash-1 cityEHR:displayName="Splash page image, left" hint="Recommended width 360px or 180px"
+                value="/applications/ISO-13606-EHR_Extract-Elfin2/images/elfinSplash.png"/>
+            <welcomeSplash-2 cityEHR:displayName="Splash page image, right" hint="Recommended width 360px or 180px" value=""/>
+        </images>
+    </application>
+
+    <!-- Supported Languages.
+         Use language codes from IETF RFC 5646 -->
+    <languagePacks cityEHR:displayName="Language Packs" cityEHR:hint="Use language codes from IETF RFC 5646">
+        <cityEHR:template>
+            <language code="" displayName=""/>
+        </cityEHR:template>
+        <language code="en-GB" displayName="English" cityEHR:edit="pinned"/>
+        <language code="es-ES" displayName="Spanish"/>
+        <language code="cmn-CN" displayName="Mandarin"/>
+    </languagePacks>
+
+    <!-- Accreditation displayed in cityEHRSignOn -->
+    <accreditation cityEHR:displayName="Home Page - Accreditation">
+        <cityEHR:template>
+            <line displayName=""/>
+        </cityEHR:template>
+        <line displayName="cityEHR Electronic Heath Record"/>
+        <line displayName="&#169; 2013-2021 John Chelsom"/>
+        <line displayName="Open Health Informatics Research Programme"/>
+        <!--
+            <line displayName="&#10003; &#10007; &#x29cf; &#x29d0; &#9654; &#9664;
+            &#9660; &#9650; &#x229e; &#x229f;"/>
+        -->
+    </accreditation>
+
+    <!-- Parameters for general format of the display -->
+    <displayFormat cityEHR:displayName="Display Formats">
+        <!-- Display formats for unspecified values -->
+        <cityEHR:edit>
+            <value code="" codeSystem="" value="" cityEHR:edit="readOnly"/>
+        </cityEHR:edit>
+        <unspecifiedElementValue>
+            <value code="#ISO-13606:Data:Built-in:Unspecified" codeSystem="cityEHR" value="" displayName="-- Select Value --"/>
+        </unspecifiedElementValue>
+        <unspecifiedFullScopeElementValue>
+            <value code="#ISO-13606:Data:Built-in:Unspecified" codeSystem="cityEHR" value="" displayName="N/R"/>
+        </unspecifiedFullScopeElementValue>
+
+        <!-- Date display and input.
+             These are transfered to corresponding elements in view-parameters/session-parameters using start-new-session in cityEHRSignOn-->
+        <dateDisplayFormat value="[D01]-[MNn,*-3]-[Y0001]"/>
+        <dateTimeDisplayFormat value="[H01]:[m01]:[s01] on [D01]-[MNn,*-3]-[Y0001]"/>
+        <timeDisplayFormat value="[H01]:[m01]:[s01]"/>
+    </displayFormat>
+
+    <!-- Control transition between pages -->
+    <pageTransition cityEHR:displayName="Page Transition">
+        <cityEHR:selection>
+            <homePage value="">
+                <option value="cityEHRDashboard"/>
+                <option value="cityEHRPatientSearch"/>
+                <option value="cityEHRCohortSearch"/>
+                <option value="cityEHRInTray"/>
+                <option value="cityEHRClinicList"/>
+            </homePage>
+            <patientFolderURL value="">
+                <option value="cityEHRFolder-Events"/>
+                <option value="cityEHRFolder-Forms"/>
+                <option value="cityEHRFolder-Views"/>
+                <option value="cityEHRFolder-Letters"/>
+                <option value="cityEHRFolder-Pathways"/>
+                <option value="cityEHRFolder-Orders"/>
+                <option value="cityEHRFolder-Prescriptions"/>
+            </patientFolderURL>
+        </cityEHR:selection>
+        <homePage value="cityEHRDashboard"/>
+        <patientFolderURL value="cityEHRFolder-Views"/>
+        <patientFolderTransition>
+            <cityEHR:selection>
+                <pageTransition source="" target="">
+                    <option value="cityEHRFolder-Events"/>
+                    <option value="cityEHRFolder-Forms"/>
+                    <option value="cityEHRFolder-Views"/>
+                    <option value="cityEHRFolder-Letters"/>
+                    <option value="cityEHRFolder-Pathways"/>
+                    <option value="cityEHRFolder-Orders"/>
+                    <option value="cityEHRFolder-Prescriptions"/>
+                </pageTransition>
+            </cityEHR:selection>
+            <cityEHR:template>
+                <pageTransition source="" target=""/>
+            </cityEHR:template>
+            <pageTransition source="cityEHRFolder-Forms" target="cityEHRFolder-Events"/>
+        </patientFolderTransition>
+    </pageTransition>
+
+
+    <!-- patientRegistration
+        Can have multiple registrationEvents. 
+        First listed is used as the form for manual registration. 
+        The cityEHRRegistration checks this configuration on load and sets the status to 'ok' if all is well.
+        The check is done by comparison with the form-instance for the first registrationEvent.
+        Each combination of entry/element must exist in the registration event for the configuration to be valid. 
+        Note that other registrationEvents may not include every combination -->
+    <patientRegistration cityEHR:displayName="Patient Registration">
+        <cityEHR:selection>
+            <registrationEvent composition="" cityEHR:selection="cityEHR:composition"/>
+            <id entry="" cityEHR:selection="cityEHR:entry"/>
+            <id element="" cityEHR:selection="cityEHR:element"/>
+            <prefix entry="" cityEHR:selection="cityEHR:entry"/>
+            <prefix element="" cityEHR:selection="cityEHR:element"/>
+            <given entry="" cityEHR:selection="cityEHR:entry"/>
+            <given element="" cityEHR:selection="cityEHR:element"/>
+            <family entry="" cityEHR:selection="cityEHR:entry"/>
+            <family element="" cityEHR:selection="cityEHR:element"/>
+            <administrativeGenderCode entry="" cityEHR:selection="cityEHR:entry"/>
+            <administrativeGenderCode element="" cityEHR:selection="cityEHR:element"/>
+            <birthTime entry="" cityEHR:selection="cityEHR:entry"/>
+            <birthTime element="" cityEHR:selection="cityEHR:element"/>
+        </cityEHR:selection>
+        <registrationEvent composition="#CityEHR:Form:BaseRegistration"/>
+        <!-- These entries must exist in the registrationEvent -->
+        <id deprecatedCharacters=" #:%£$@&amp;" displayName="Hospital Number" entry="#ISO-13606:Entry:Demographics"
+            element="#ISO-13606:Element:HospitalNumber"/>
+        <prefix displayName="Title" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Title"/>
+        <given displayName="Forename" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Forename"/>
+        <family displayName="Surname" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Surname"/>
+        <administrativeGenderCode displayName="Gender" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Gender"/>
+        <birthTime displayName="DoB" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:DateOfBirth"/>
+        <!-- Provider organisation is set here -->
+        <providerOrganization value="cityEHR"/>
+    </patientRegistration>
+
+    <!-- Entry/Element values from the information model that are displayed in the patient label.
+     These are found by a query (in patientDemographicsModel) when patient-specific pages are loaded.
+     Note that some values may be retrieved in the query, but not displayed (@display='hidden').
+     The demographicsCheckService is the web service (an entryIRI) that is called to check demogrpahics (no service called if it is blank)
+     The demographicsCheckElement attribute on <controlItem/> is the IRI of the element in the webServiceReturn-instance that is checked against that item.
+     If the value returned from the service is different from the value recorded in the patient record then a flag is raised
+     -->
+
+    <patientLabel displayName="Patient Label">
+        <cityEHR:selection>
+            <controlItem entry="" cityEHR:selection="cityEHR:entry"/>
+            <controlItem element="" cityEHR:selection="cityEHR:element"/>
+            <controlItem type="">
+                <option value="demographics"/>
+                <option value="age"/>
+            </controlItem>
+            <demographicsCheckService value="" cityEHR:selection="../webServices/service/@entryIRI"/>
+        </cityEHR:selection>
+        <demographicsCheckService cityEHR:displayName="Demographics check service" value=""/>
+        <controlPanelGroup cityEHR:displayName="First Row">
+            <controlItem type="demographics" displayName="" prefix="" suffix="," class="family" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Surname"/>
+            <controlItem type="demographics" displayName="" prefix="" suffix="" class="given" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Forename"/>
+            <controlItem type="demographics" displayName="" prefix="(" suffix=")" class="prefix" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Title"/>
+            <controlItem type="demographics" displayName="Born: " prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:DateOfBirth"/>
+            <controlItem type="age" displayName="" prefix="(" suffix=")" class=""/>
+            <controlItem type="demographics" displayName="Gender: " prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Gender"/>
+        </controlPanelGroup>
+        <controlPanelGroup cityEHR:displayName="Second Row">
+            <controlItem type="demographics" displayName="Patient Id" prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:HospitalNumber"/>
+            <controlItem type="demographics" displayName="NHS Number" prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:NHSNumber"/>
+            <controlItem type="alert" displayName="" show="" icon="warning.png" alertDisplay="There are alerts for this patient."
+                errorDisplay="There may be alerts for this patient. Check did not run due to system
+                configuration error."
+                view="#CityEHR:View:Alerts"/>
+        </controlPanelGroup>
+
+        <!-- Display thresholds -->
+        <ageDisplayDays threshold="1" displayName="days"/>
+        <ageDisplayWeeks threshold="3" displayName="weeks"/>
+        <ageDisplayMonths threshold="18" displayName="months"/>
+        <ageDisplayYears threshold="60" displayName="years"/>
+
+    </patientLabel>
+
+    <!-- Information for display in patient cohort lists.
+        referenceData='true' used to denote entries used as reference data in spreadhseet export -->
+    <patientCohorts cityEHR:displayName="Patient Cohorts">
+        <patientInfo page="cityEHRPatientSearch">
+            <item displayName="Patient Id" entry="" element="" calculated="patientId"/>
+            <item displayName="Surname" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Surname" calculated=""/>
+            <item displayName="Forename" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Forename" calculated=""/>
+            <item displayName="Gender" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Gender" calculated=""/>
+            <item displayName="Date of Birth" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:DateOfBirth" calculated=""/>
+        </patientInfo>
+        <patientInfo page="cityEHRCohortSearch">
+            <item displayName="Patient Id" entry="" element="" calculated="patientId"/>
+            <item displayName="Surname" referenceData="true" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Surname" calculated=""/>
+            <item displayName="Forename" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Forename" calculated=""/>
+            <item displayName="Gender" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Gender" calculated=""/>
+            <item displayName="Date of Birth" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:DateOfBirth" calculated=""/>
+            <item displayName="Age" entry="" element="" calculated="age"/>
+        </patientInfo>
+    </patientCohorts>
+
+    <!-- This control panel configures the parameters for the patient search.
+        Each control item contains the following attributes:
+        displayName - displayed as the label for entry
+        element - the element in the data dictionary to be used a a model for the input (e.g. determines its data type, enuerated values, etc)
+        searchComposition - the IRIs of the compositions to be searched - treats this as a string, so IRIs separated by spaces is OK
+        searchEntry - a sequence of the entry IRIs to be seached
+        searchElement - a sequence of the element IRIs to be seached
+        *** Note that searchEntry, searchElement are sequences, so can be IRI for a single entry/element or (IRI-1,IRI-2) to search multiple entry/element.
+        The IRIs *do not* need to be quoted or incouded in brackets ( ) 
+        Every/any combination of entry/element is found in the search ***
+        searchPredicate is the predicate used in the search, but defaults to the view-parameters/fullText-predicate if not specified:
+        contains
+        starts-with
+        ends-with
+        equals
+        fullText
+    -->
+    <patientSearch cityEHR:displayName="Patient Search">
+        <controlPanelGroup initialFocus="ps1-3">
+            <controlItem id="ps1-1" displayName="Patient Id" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:HospitalNumber,#ISO-13606:Element:NHSNumber"/>
+            <controlItem id="ps1-2" displayName="Surname" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:Surname"/>
+            <controlItem id="ps1-3" displayName="Forename" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:Forename"/>
+        </controlPanelGroup>
+        <controlPanelGroup initialFocus="">
+            <controlItem id="ps2-1" displayName="Gender" element="#ISO-13606:Element:Gender"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:Gender" searchPredicate="="/>
+        </controlPanelGroup>
+        <controlPanelGroup initialFocus="">
+            <controlItem id="ps3-1" displayName="Day of Birth" element="#ISO-13606:Element:DayPicker"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="ends-with"/>
+            <controlItem id="ps3-2" displayName="Month" element="#ISO-13606:Element:MonthPicker"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="contains"/>
+            <controlItem id="ps3-3" displayName="Year" element="#ISO-13606:Element:Integer"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="starts-with"/>
+            <controlItem id="ps3-4" displayName="Date" element="#ISO-13606:Element:Date"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="="/>
+        </controlPanelGroup>
+        <controlPanelGroup initialFocus="">
+            <controlItem id="ps4-1" displayName="Consultant" element="#ISO-13606:Element:String"
+                searchComposition="#CityEHR:Message:S12NewAppointment,#CityEHR:Message:#CityEHR:Message:A01Admission"
+                searchEntry="#ISO-13606:Entry:InpatientAdmission,#ISO-13606:Entry:ClinicBooking" entryType="cda:encounter"
+                searchElement="#ISO-13606:Element:ClinicianCode"/>
+        </controlPanelGroup>
+    </patientSearch>
+
+
+    <!-- Configuration of printed pages for XSL-FO.
+         Default is to show header/footer and standard A4 portrait size.
+         If viewDisplay has been expanded to landscape, then the landscape size is used
+         Any specifications for specific compositions are used in place of the default (i.e. override header/footer and size)
+         -->
+    <printConfiguration cityEHR:displayName="Print Configuration">
+        <tbd/>
+    </printConfiguration>
+
+
+    <!-- Anonymisation 
+         The allowed character list has each character permitted in an anonymised (patient) id or name
+         The key is the seed string for generating a pseudo-random number
+         To anonymise, the allowableCharacterString is made into a sequence of codepoints
+         A random, or pseudo-random number is then used to pick a character in the sequence
+         This is repeated for each character in the string to be anonymised
+         The sequence of randomly selected codepoints is then turned back into a string, which at that point is anonymised or pseudo-ananymised
+         -->
+    <anonymisation cityEHR:displayName="Anonymisation">
+        <anonymisationType>anonymised</anonymisationType>
+        <allowableCharacterString>1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</allowableCharacterString>
+        <seedKey>ythaAhsPJSDKL18mqnscj</seedKey>
+        <anonymiseElements>
+            <anonymise entry="#ISO-13606:Entry:HospitalNumber" element="#ISO-13606:Element:HospitalNumber"/>
+            <anonymise entry="#ISO-13606:Entry:NHSNumber" element="#ISO-13606:Element:String"/>
+            <anonymise entry="#ISO-13606:Entry:Forename" element="#ISO-13606:Element:String"/>
+            <anonymise entry="#ISO-13606:Entry:Surname" element="#ISO-13606:Element:String"/>
+        </anonymiseElements>
+    </anonymisation>
+
+
+    <!-- Clinic list parameters.
+         Can have multiple clinicBookingEvent to cater for new appointments, cancelled, modified, etc-->
+    <clinicList cityEHR:displayName="Clinic List">
+        <clinicBookingEvent>#CityEHR:Message:S12NewAppointment</clinicBookingEvent>
+        <clinicBookingEvent>#CityEHR:Message:S14AppointmentModification</clinicBookingEvent>
+        <clinicianElement>#ISO-13606:Element:Clinician</clinicianElement>
+        <specialtyElement>#ISO-13606:Element:SpecialtyCode</specialtyElement>
+        <clinicIdElement>#ISO-13606:Element:ClinicId</clinicIdElement>
+        <clinicDateElement>#ISO-13606:Element:ClinicDate</clinicDateElement>
+        <clinicDescriptionElement>#ISO-13606:Element:ClinicDescription</clinicDescriptionElement>
+        <clinicLocationElement>#ISO-13606:Element:ClinicLocation</clinicLocationElement>
+        <clinicSlotElement>#ISO-13606:Element:ClinicSlot</clinicSlotElement>
+        <clinicActivityElement>#ISO-13606:Element:ClinicActivity</clinicActivityElement>
+        <bookingActionElement>#ISO-13606:Element:BookingAction</bookingActionElement>
+    </clinicList>
+
+    <!-- Controls for system-level navigation.
+         <control> can contain roles for access control e.g. <role displayName="Administrator" id="#CityEHR:Role:Administrator"/>
+         <role> defines access to specified role id - can have multiple <role> elements (or none = all roles have access) -->
+    <systemNavigationControls cityEHR:displayName="System Navigation">
+        <topStrip>
+            <control displayName="Quit" value="">
+                <!--
+                    <role id=""/>
+                -->
+            </control>
+            <control displayName="Administration" value="cityEHRAdmin"/>
+        </topStrip>
+        <bottomStrip>
+            <control displayName="Dashboard" value="cityEHRDashboard"/>
+            <control displayName="Patient Search" value="cityEHRPatientSearch"/>
+            <control displayName="Patient Cohorts" value="cityEHRCohortSearch"/>
+            <control displayName="In-Tray" value="cityEHRInTray"/>
+            <control displayName="Registration" value="cityEHRRegistration"/>
+        </bottomStrip>
+    </systemNavigationControls>
+
+    <!-- Controls for record-level navigation
+         <control> can contain roles for access control e.g. <role displayName="Administrator" id="#CityEHR:Role:Administrator"/>
+         <role> defines access to specified role id - can have multiple <role> elements (or none = all roles have access) -->
+    <recordNavigationControls cityEHR:displayName="Record Navigation">
+        <control displayName="Events" value="cityEHRFolder-Events"/>
+        <control displayName="Summaries" value="cityEHRFolder-Views"/>
+        <control displayName="Forms" value="cityEHRFolder-Forms"/>
+        <control displayName="Letters" value="cityEHRFolder-Letters"/>
+        <control displayName="Pathways" value="cityEHRFolder-Pathways"/>
+    </recordNavigationControls>
+
+    <!-- Controls for cohort search navigation. -->
+    <cohortSearchNavigationControls cityEHR:displayName="Cohort Search Navigation">
+        <control displayType="search" value="Search" display="show"/>
+        <control displayType="cohort" value="Cohort" display="show"/>
+    </cohortSearchNavigationControls>
+
+    <!-- View type selection
+         For tabs in viewType control
+         @display (if present) can be used to toggle display of the tab on/off
+         viewNavigationType can contain role element(s)
+         <role> defines access to specified role id - can have multiple <role> elements (or none = all roles have access)
+         -->
+
+    <viewNavigationTypeSelection cityEHR:displayName="View Navigation Type">
+        <view viewType="cityEHRPatientSearch">
+            <viewNavigationType value="recent" displayName="Recent" display="show"/>
+            <viewNavigationType value="careTeam" displayName="Care Team" display="show"/>
+        </view>
+        <view viewType="cityEHRCohortSearch">
+            <viewNavigationType value="search" displayName="My Searches" display="show"/>
+            <viewNavigationType value="sharedSearch" displayName="Shared Searches" display="hidden"/>
+            <viewNavigationType value="cohort" displayName="My Cohorts" display="hidden"/>
+            <viewNavigationType value="sharedCohort" displayName="Shared Cohorts" display="hidden"/>
+        </view>
+        <view viewType="cityEHRClinicList">
+            <viewNavigationType value="myClinics" displayName="My Clinics" display="show"/>
+            <viewNavigationType value="allClinics" displayName="All Clinics" display="show"/>
+        </view>
+        <view viewType="cityEHRInTray">
+            <viewNavigationType value="due" displayName="Due" display="show"/>
+            <viewNavigationType value="charted" displayName="Charted" display="show"/>
+            <viewNavigationType value="acknowledged" displayName="Acknowledged" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Events">
+            <viewNavigationType value="events" displayName="Events" display="show"/>
+            <viewNavigationType value="annotations" displayName="Annotations" display="show"/>
+            <viewNavigationType value="lifeLine" displayName="LifeLine" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Forms">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Letters">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Orders">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Pathways">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Views">
+            <viewNavigationType value="summaries" displayName="Summaries" display="show"/>
+            <viewNavigationType value="reports" displayName="Reports" display="show"/>
+            <viewNavigationType value="notifications" displayName="Notifications" display="hidden"/>
+        </view>
+    </viewNavigationTypeSelection>
+
+    <!-- View controls actions.
+        @displayName on view is shown as its title in the view control panel
+        @showLabels on view is true | false (default is false, if not present) 
+        @showIcons on view is true | false (default is true, if not present)
+        actions are elements of name: input, select, action, label
+        @displayName on action appears as label and/or hint.
+        @size is width of input field
+        @type is xs:type (xs:date, xs:string, etc) - defaults to a string
+        @display can be hidden | show (actually is shown except when @display='hidden') 
+    
+        The action elements (input, select, action, label) can contain role element(s)
+        <role> defines access to specified role id - can have multiple <role> elements (or none = all roles have access)
+        -->
+
+    <viewControlsActions cityEHR:displayName="View Controls">
+        <view viewType="cityEHRPatientSearch" displayName="Patient Search" showLabels="false" showIcons="true" separator="|" display="show">
+            <select id="careTeam" value="" displayName="Care Team " display="show">
+                <item displayName="-- Select --" value=""/>
+            </select>
+            <action id="assign" displayName="Assign to Care Team" display="show"/>
+            <action id="remove" displayName="Remove from Care Team" display="show"/>
+            <!--
+            <input id="inPatients" displayName="Inpatients Only" type="xs:boolean" display="show"/>
+            -->
+            <!-- The orderBy item values must correspond to element names in patientRegistration -->
+            <select id="orderBy" value="id" displayName="Order by " display="show">
+                <item displayName="gets replaced" value="id"/>
+                <item displayName="gets replaced" value="family"/>
+                <item displayName="gets replaced" value="given"/>
+                <item displayName="gets replaced" value="birthTime"/>
+            </select>
+            <action id="search" displayName="Search" display="show"/>
+            <action id="xml" displayName="Show XML" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+            <action id="export" displayName="Export" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+        </view>
+        <view viewType="cityEHRCohortSearch" displayName="Cohort Search" display="show">
+            <select id="specialty" value="" displayName="Specialty" display="show">
+                <item displayName="Default specialty (gets replaced)" value=""/>
+            </select>
+            <input id="cohortName" displayName="Cohort search " display="show" incremental="true"/>
+            <action id="save" displayName="Save" display="show"/>
+            <action id="saveAs" displayName="Save Copy" display="hidden"/>
+            <action id="delete" displayName="Delete" display="hidden"/>
+            <action id="statistics" displayName="Statistics" display="show"/>
+            <action id="analysis" displayName="Analysis" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+            <action id="export" displayName="Export" display="show"/>
+            <action id="new" displayName="New" display="show"/>
+            <action id="undo" displayName="Undo" display="show"/>
+            <action id="refresh" displayName="Refresh" display="hidden"/>
+            <action id="search" displayName="Search" display="show"/>
+            <action id="xml" displayName="Show Results" display="show"/>
+            <action id="xquery" displayName="Show XQuery" display="show"/>
+        </view>
+        <view viewType="cityEHRClinicList" displayName="Clinic Lists" display="show">
+            <action id="print" displayName="Print" display="show"/>
+            <action id="export" displayName="Export" display="show"/>
+        </view>
+        <view viewType="cityEHRInTray" displayName="In-Tray" display="show">
+            <select id="fromFilter" value="" displayName="From " display="show">
+                <item displayName="-- No Filter --" value=""/>
+            </select>
+            <select id="toFilter" value="" displayName="To " display="show">
+                <item displayName="-- No Filter --" value=""/>
+            </select>
+            <select id="sourceFilter" value="" displayName="Origin " display="show">
+                <item displayName="-- No Filter --" value=""/>
+            </select>
+            <select id="actionFilter" value="" displayName="Action " display="show">
+                <item displayName="-- No Filter --" value=""/>
+            </select>
+            <action id="xml" displayName="Show XML" display="show"/>
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="undoAcknowledge" displayName="Undo Acknowledge" display="show"/>
+            <action id="acknowledge" displayName="Acknowledge" display="show"/>
+            <action id="open" displayName="Open Record" display="show"/>
+            <action id="action" displayName="Open Action" display="show"/>
+        </view>
+        <view viewType="cityEHRRegistration" displayName="Patient Registration" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
+            <input id="showISO13606" displayName="Show ISO-13606" type="xs:boolean" display="show"/>
+            <input id="showIds" displayName="Show Ids" type="xs:boolean" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="register" displayName="Register" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Events" displayName="Patient Record" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
+            <action id="annotations" displayName="Annotations" display="show"/>
+            <action id="save" displayName="Save" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+            <action id="export" displayName="Export Event" display="show"/>
+            <action id="exportAll" displayName="Export Record" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Forms" displayName="Patient Forms" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
+            <input id="showISO13606" displayName="Show ISO-13606" type="xs:boolean" display="show"/>
+            <input id="showIds" displayName="Show Ids" type="xs:boolean" display="show"/>
+            <!-- The higlight entries are build from the highlight configuration element -->
+            <select id="highlight" value="none" displayName="Highlight Entries " display="show">
+                <item displayName="-- None --" value="none"/>
+            </select>
+            <action id="save" displayName="Save" display="show"/>
+            <action id="publish" displayName="Publish" display="show"/>
+            <input id="effectiveTime" displayName="Effective Time" type="xs:dateTime" display="hidden"/>
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Letters" displayName="Patient Letters" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
+            <input id="showISO13606" displayName="Show ISO-13606" type="xs:boolean" display="show"/>
+            <input id="showIds" displayName="Show Ids" type="xs:boolean" display="show"/>
+            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template " display="show"/>
+            <action id="wordprocessor" displayName="Word Processor" display="show"/>
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="publish" displayName="Publish" display="show"/>
+            <action id="save" displayName="Save" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Orders" displayName="Patient Orders" display="show">
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="order" displayName="Order" display="show"/>
+            <action id="save" displayName="Save" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Pathways" displayName="Care Pathways" display="show">
+            <label id="currentAction" displayName="Action" display="show"/>
+            <action id="open" displayName="Open" display="show"/>
+            <select id="view" value="" displayName="Display" display="show">
+                <item displayName="Current Status" value="current"/>
+                <item displayName="Full pathway" value="full"/>
+            </select>
+            <action id="xml" displayName="Show XML" display="show"/>
+            <action id="delete" displayName="Abort" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="start" displayName="Start" display="show"/>
+            <action id="publish" displayName="Publish" display="show"/>
+            <action id="progress" displayName="Progress" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Views" displayName="Patient Summaries" display="show">
+            <select id="view" value="current" displayName="View " display="show">
+                <item displayName="Current Data" value="current"/>
+                <item displayName="Historic Data" value="historic"/>
+            </select>
+            <action id="xml" displayName="Show XML" display="show"/>
+            <action id="reset" displayName="Reset Charted Variables" display="show"/>
+            <action id="svgChart" displayName="Chart" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+    </viewControlsActions>
+
+    <!-- Highlight entries -->
+    <highlight cityEHR:displayName="Highlight Schemes">
+        <cityEHR:template>
+            <scheme value="scheme-1" displayName="" specialtyIRI="" compositionIRI="" style="background-color:#ffffcc"/>
+        </cityEHR:template>
+    </highlight>
+
+    <!-- Dashboard -->
+    <!-- size - wide/normal
+                 
+         queryResults is of the form:
+         
+         <queryResults>
+             <queryTime>2019-10-08T11:51:00</queryTime>
+             <total value="0"/>
+             <category displayName="" value="0"/>
+         </queryResults>
+         
+         If the query returns results in the correct format, then these replace the query results in the dashboardQuery
+         If the query returns an error, then the default query results are preserved
+         
+         If the @chart attribute has contents, then the chart will get generated.
+         Must be 'pie', 'vertical-bar' or 'horizontal-bar'
+
+        -->
+    <dashboardQuerySet cityEHR:displayName="Dashboard Queries">
+        <dashboardQuery displayName="Database Nodes" chart="" queryScope="database" queryPath="configuration" queryPipeline="checkDatabaseNodes" cityEHR:type="text" xml:space="preserve">
+            
+        </dashboardQuery>
+        <dashboardQuery displayName="Total Patients" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">
+            xquery version "1.0"; 
+            declare namespace cda="urn:hl7-org:v3"; 
+            declare namespace xdbe="http://exist-db.org/xquery/xmldb";
+            
+            declare variable $root := request:get-path-info();                    
+            let $count := count(xdbe:get-child-collections($root))
+            
+            return
+            &lt;queryResults>
+            &lt;queryTime>{current-dateTime()}&lt;/queryTime>
+            &lt;total value="{$count}"/>
+            &lt;category displayName="Patients"/>
+            &lt;/queryResults>
+        </dashboardQuery>
+        <dashboardQuery displayName="Total Documents" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">      
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3"; 
+                    
+                    let $count := count(//cda:ClinicalDocument) 
+                    return
+                    &lt;queryResults>
+                    &lt;queryTime>{current-dateTime()}&lt;/queryTime>
+                    &lt;total value="{$count}"/>
+                    &lt;category displayName="Documents"/>
+                    &lt;/queryResults>
+        </dashboardQuery>
+        <dashboardQuery displayName="In Progress" chart="pie" queryScope="application" queryPath="data" queryPipeline="" cityEHR:type="text" xml:space="preserve">                  
+                    xquery version "1.0"; 
+                    declare namespace cda="urn:hl7-org:v3";
+                    
+                    let $formCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Form')])
+                    let $letterCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Letter')])
+                    let $notificationCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Notification')])
+                    let $pathwayCount := count(collection()//cda:ClinicalDocument[contains(cda:typeId/@extension,'#CityEHR:Pathway')])
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;queryTime>{current-dateTime()}&lt;/queryTime>
+                    &lt;total value="{sum(($formCount,$letterCount,$notificationCount,$pathwayCount))}"/>
+                    &lt;category displayName="Forms" value="{$formCount}"/>
+                    &lt;category displayName="Letters" value="{$letterCount}"/>
+                    &lt;category displayName="Notifications" value="{$notificationCount}"/>
+                    &lt;category displayName="Pathways" value="{$pathwayCount}"/>
+                    &lt;/queryResults>
+        </dashboardQuery>
+        <dashboardQuery displayName="Users" chart="" queryScope="database" queryPath="users" queryPipeline="" cityEHR:type="text" xml:space="preserve">                              
+                    xquery version "1.0"; 
+                    
+                    let $users := count(collection()/user)
+                    let $loggedOff := count(collection()/user/audit/sessionInfo[@sessionId=''])
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;queryTime>{current-dateTime()}&lt;/queryTime>
+                    &lt;total value="{$users}"/>
+                    &lt;category displayName="Active" value="{$users - $loggedOff}"/>
+                    &lt;category displayName="Inactive" value="{$loggedOff}"/>
+                    &lt;/queryResults>
+        </dashboardQuery>
+        <dashboardQuery displayName="Care Teams" chart="" queryScope="application" queryPath="careTeams" queryPipeline="" cityEHR:type="text" xml:space="preserve">                                           
+                    xquery version "1.0"; 
+                    
+                    let $careTeams := count(//careTeam)
+                    
+                    return
+                    &lt;queryResults>
+                    &lt;queryTime>{current-dateTime()}&lt;/queryTime>
+                    &lt;total value="{$careTeams}"/>
+                    &lt;category displayName="Care teams"/>
+                    &lt;/queryResults>
+        </dashboardQuery>
+    </dashboardQuerySet>
+
+
+    <!-- Triggers.
+        These are dependent on the information model.
+        So this is just a placeholder to make sure the triggers are added to the configuration
+        
+        Set for composition / entry / element combinations.
+        The value of the entry/element is evaluated with the conditions 
+        (e.g. condition could be "= 'Ambulance'" which would evaluate to true if the value of the entry/element was Ambulance)
+        Note that badly formed consitions will cause the form to crash, so they need to be properly tested
+        If the condition empty or is satisfied then create a notification for the patient, setting:
+        
+        effectiveTime
+        offset is either xs:dayTimeDuration (PnDTnHnMnS) or xs:yearMonthDuration (PYnMn) (can be preceded by minus) which is added (subtracted) from specified date/time. 
+        If offset is not castable (i.e. including if it is blank) then it is ignored
+        default is current-dateTime if the @elementIRI is empty or does not resolve to a value that is castable as xs:dateTime
+        
+        action
+        value from elementIRI or default
+        must be a valid composition in the current specialty dictionary (e.g. #CityEHR:Form:HADS)
+        If it has a value, but is not a composition then a notification is recorded, but with no action
+        So to geta  notification with no action, need to set the default to (e.g.) "none" (or anything that is not of the form #CityEHR:Form:HADS)
+        
+        notifyActor
+        value from elementIRI or default
+        must be one of #CityEHR:User:X, #CityEHR:Role:X or #CityEHR:CareTeam:X
+        
+        These are set either using the hardwired (default) value or by taking the value from the entryIRI/elementIRI attributes
+    -->
+    <triggers cityEHR:displayName="Triggers">
+        <cityEHR:template>
+            <triggerSet compositionIRI="">
+                <cityEHR:template>
+                    <trigger type="notification" entryIRI="" elementIRI="" condition="" displayName="">
+                        <effectiveTime offset="" elementIRI=""/>
+                        <action prefix="" elementIRI="" suffix=""/>
+                        <notifyActor elementIRI=""/>
+                    </trigger>
+                </cityEHR:template>
+            </triggerSet>
+        </cityEHR:template>
+    </triggers>
+
+
+    <!-- Web services.
+         These are dependent on the information model.
+         So this is just a placeholder to make sure the web services are added to the configuration.
+    
+         Contains <service> elements for loopup from web service.
+         and <storedDirectory/> for lookup from directory 
+         
+         Return values may be processed before being set.
+         This also applies to storedDirectory entries (i.e. looked up from stored directory, not a web service)
+         Transform types are uppercase, lowercase, titlecase, sentencecase, yyyymmdd, dd/mm/yyyy 
+        -->
+    <webServices cityEHR:displayName="Web Services">
+        <cityEHR:template>
+            <service entryIRI="" url="" method="post">
+                <cityEHR:template>
+                    <parameter name="" value="" elementIRI=""/>
+                </cityEHR:template>
+                <parameter name="" value="" elementIRI=""/>
+                <returnProcessing>
+                    <cityEHR:template>
+                        <process elementIRI="" sourceExpression="" transformation=""/>
+                    </cityEHR:template>
+                </returnProcessing>
+            </service>
+            <storedDirectory entryIRI="">
+                <returnProcessing>
+                    <cityEHR:template>
+                        <process elementIRI="" sourceExpression="" transformation=""/>
+                    </cityEHR:template>
+                </returnProcessing>
+            </storedDirectory>
+        </cityEHR:template>
+        
+        <service entryIRI="#ISO-13606:Entry:webService" url="/ehr/webService/" method="post">
+            <parameter name="searchkey" value="web service test" elementIRI=""/>
+            <parameter name="token" value="5D701296-7CB8-4D40-B4E4-F024C88427E6" elementIRI=""/>
+        </service>
+        <service entryIRI="#ISO-13606:Entry:Demographics"  url="/ehr/webService/" method="post">
+            <parameter name="serviceName" value="demographics" elementIRI=""/>
+            <parameter name="patientId" value="" elementIRI="#ISO-13606:Element:LookUpKey"/>
+            <returnProcessing>
+                <process elementIRI="#ISO-13606:Element:TownCity"
+                    sourceExpression="if (.='' and  ../../cda:value[@extension='#ISO-13606:Element:StreetAddress']/@value castable as xs:string) then substring-after(../../cda:value[@extension='#ISO-13606:Element:StreetAddress']/@value,',') else ."
+                    transformation="titlecase"/>
+                <process elementIRI="#ISO-13606:Element:StreetAddress" sourceExpression="if (contains(.,',')) then substring-before(.,',') else ."
+                    transformation="titlecase"/>
+                <process elementIRI="#ISO-13606:Element:PostCode" transformation="uppercase"/>
+                <process elementIRI="#ISO-13606:Element:DateOfBirth" transformation="yyyymmdd"/>
+            </returnProcessing>
+        </service>
+        <storedDirectory entryIRI="#ISO-13606:Entry:GPDetails">
+            <returnProcessing>
+                <process elementIRI="#ISO-13606:Element:Address" transformation="titlecase"/>
+                <process elementIRI="#ISO-13606:Element:Town" transformation="titlecase"/>
+                <process elementIRI="#ISO-13606:Element:Postcode" transformation="uppercase"/>
+            </returnProcessing>
+        </storedDirectory>
+    </webServices>
+
+</parameters>

@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    sessionModel.xml
+    
+    Xforms model containing stuff for handling of user sessions.
+    This model is loaded for every page (including cityEHRSignOn)
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="session-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- Control of the session -->
+    <xf:instance id="sessionControl-instance">
+        <control xmlns="">
+            <status/>
+            <sessionParametersLocation/>
+            <!-- Templates for recentPatients log -->
+            <recentPatients applicationIRI=""/>
+            <patient id=""/>
+        </control>
+    </xf:instance>
+
+
+    <!-- === Set the parameters for the view. =============================================================
+        The following elements in view-parameters-instance are passed into the view through the page-flow:
+        page
+        userId
+        sessionId
+        
+        ====================================================================================================
+    -->
+    <xf:instance id="view-parameters-instance" src="input:instance"/>
+
+    <!-- Set the view-parameters from the session-parameters.
+         Only invoked after validate-session, so page, userId and sessionId have been confirmed as valid -->
+    <xf:action ev:event="set-view-parameters">
+
+        <xf:action xxf:iterate="xxf:instance('session-parameters-instance')/*">
+            <xxf:variable name="parameter" select="."/>
+            <xxf:variable name="parameterName" select="$parameter/name()"/>
+
+            <xxf:variable name="viewParameter" select="xxf:instance('view-parameters-instance')/*[name()=$parameterName]"/>
+
+            <xf:setvalue ref="$viewParameter" value="if (exists($parameter)) then $parameter else ''"/>
+        </xf:action>
+
+    </xf:action>
+
+
+
+    <!-- ========= Load and save recent patients accessed by the user ============== 
+         The recentPatients instance is loaded from the database for the current session user.
+         ========================================================================== -->
+    <xf:instance id="recentPatients-instance">
+        <recentPatientsLog/>
+    </xf:instance>
+
+    <!-- Application defined action to load the recentPatients instance from the database.
+         This is only done for the current user specified in view-parameters. -->
+    <xf:action ev:event="load-recentPatients">
+        <xxf:variable name="userId" select="xxf:instance('session-parameters-instance')/@userId"/>
+
+        <!-- Location of the recentPatients log -->
+        <xxf:variable name="recentPatientsLocation" select="concat('/xmlstore/users/',$userId,'/recentPatients')"/>
+
+        <!-- Load the recentPatients log.
+             This will fail the first time a patient is logged for this user.
+             Which is OK - the recentPatients-instance will be empty and the recentPatients log will be created when it is saved. -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$recentPatientsLocation"/>
+            <xxf:context name="resource" select="xxf:instance('recentPatients-instance')"/>
+            <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+        </xf:dispatch>
+    </xf:action>
+
+    <!-- Application defined action to save the recentPatients instance in the database.
+         This is only done for the current user specified in view-parameters. -->
+    <xf:action ev:event="save-recentPatients">
+        <xxf:variable name="userId" select="xxf:instance('session-parameters-instance')/@userId"/>
+
+        <!-- Location of the recentPatients log -->
+        <xxf:variable name="recentPatientsLocation" select="concat('/xmlstore/users/',$userId,'/recentPatients')"/>
+
+        <!-- Save the recentPatients log -->
+        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$recentPatientsLocation"/>
+            <xxf:context name="resource" select="xxf:instance('recentPatients-instance')"/>
+            <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Need to abort the session if the recentPatients log fails to save -->
+        <xf:action if="xxf:instance('sessionControl-instance')/status != ''">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="xxf:instance('sessionControl-instance')/status"/>
+                <xxf:context name="context" select="'save-recentPatients'"/>
+            </xf:dispatch>
+        </xf:action>
+    </xf:action>
+
+    <!-- Application defined action to update the recentPatients instance in the database.
+         This is only done for the current user and application specified in view-parameters.-->
+    <xf:action ev:event="update-recentPatients">
+        <xxf:variable name="patientId" select="xxf:instance('session-parameters-instance')/patientId"/>
+        <xxf:variable name="applicationIRI" select="xxf:instance('session-parameters-instance')/applicationIRI"/>
+
+        <!-- Only if patientId and applicationIRI are set -->
+        <xf:action if="$patientId != '' and $applicationIRI != ''">
+            <!-- Load the recentPatients log.
+             This will fail the first time a patient is logged for this user.
+             Which is OK - the recentPatients-instance will be empty and the recentPatients log will be created when it is saved below. -->
+            <xf:dispatch name="load-recentPatients" target="session-model"/>
+
+            <!-- Create log for this applicationIRI, if it doesn't exist already -->
+            <xf:action if="not(exists(xxf:instance('recentPatients-instance')/recentPatients[@applicationIRI=$applicationIRI]))">
+                <xf:setvalue ref="xxf:instance('sessionControl-instance')/recentPatients/@applicationIRI" value="$applicationIRI"/>
+                <xf:insert context="xxf:instance('recentPatients-instance')" nodeset="recentPatients"
+                    origin="xxf:instance('sessionControl-instance')/recentPatients" at="1" position="before"/>
+            </xf:action>
+
+            <!-- Get the log for this application (must now exist) -->
+            <xxf:variable name="recentPatients"
+                select="xxf:instance('recentPatients-instance')/recentPatients[@applicationIRI=$applicationIRI]"/>
+
+            <!-- Delete patient from log (if it exists) and add at the top -->
+            <xf:delete nodeset="$recentPatients/patient[@id=$patientId]"/>
+            <xf:setvalue ref="xxf:instance('sessionControl-instance')/patient/@id" value="$patientId"/>
+            <xf:insert context="$recentPatients" nodeset="patient" origin="xxf:instance('sessionControl-instance')/patient" at="1"
+                position="before"/>
+
+            <!-- Delete the last on the list, if it exceeds the maxRecentPatientsResults -->
+            <xxf:variable name="maxRecentPatients"
+                select="xs:integer(xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientSearch/maxRecentPatientsResults)"/>
+            <xxf:variable name="surplusPatients" select="$recentPatients/patient[position() gt $maxRecentPatients]"/>
+            <xf:delete nodeset="$surplusPatients"/>
+
+            <!-- Save the recentPatients log -->
+            <xf:dispatch name="save-recentPatients" target="session-model"/>
+
+        </xf:action>
+    </xf:action>
+
+    <!-- Application defined action to transfer log to the recentPatients instance in the database. 
+         Until 2021-02-28 the log was held in user-instance.
+         This is only done for the current user specified in view-parameters. -->
+    <xf:action ev:event="transfer-legacy-recentPatients">
+        <xxf:variable name="userAuditLog" select="xxf:instance('user-instance')/audit"/>
+        <xxf:variable name="userId" select="xxf:instance('session-parameters-instance')/@userId"/>
+
+        <!-- Only need to do this if the (legacy) audit log exists.
+             It is assumed, therefore, that the recentPatients log does not already exist for this user. -->
+        <xf:action if="exists($userAuditLog)">
+
+            <!-- Transfer details for recent patients from user audit log.
+             These are set in recentPatients-instance -->
+            <xf:action xxf:iterate="$userAuditLog/recentPatients">
+                <xxf:variable name="recentPatients" select="."/>
+                <xf:insert context="xxf:instance('recentPatients-instance')" nodeset="recentPatients" origin="$recentPatients" at="1"
+                    position="before"/>
+            </xf:action>
+
+            <!-- Save the recentPatients log. -->
+            <xf:dispatch name="save-recentPatients" target="session-model"/>
+
+            <!-- Clean up the log in user-instance.
+                 And save the insatnce -->
+            <xf:action if="xxf:instance('sessionControl-instance')/status = ''">
+                <xf:delete nodeset="$userAuditLog"/>
+                <xf:dispatch name="save-user-details" target="session-model"/>
+            </xf:action>
+
+        </xf:action>
+    </xf:action>
+
+
+    <!-- ========= Load and save user details ================================== 
+         The user instance is loaded from the database for the current session user.
+         These details (apart from password) can be accessed from the information model
+         and used on forms. letters, etc.
+         ============================================================== -->
+    <xf:instance id="user-instance">
+        <user/>
+    </xf:instance>
+
+    <!-- Application defined action to load the user details.
+         For the user defined by userId in session-parameters.
+         Will abort-session if the user fails to load. -->
+    <xf:action ev:event="load-user-details">
+        <xxf:variable name="userId" select="xxf:instance('session-parameters-instance')/@userId"/>
+
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="concat('/xmlstore/users/',$userId,'/credentials')"/>
+            <xxf:context name="resource" select="xxf:instance('user-instance')"/>
+            <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Need to abort the session if the user fails to load -->
+        <xf:action if="xxf:instance('sessionControl-instance')/status != ''">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="xxf:instance('sessionControl-instance')/status"/>
+                <xxf:context name="context" select="'load-user-details'"/>
+            </xf:dispatch>
+        </xf:action>
+    </xf:action>
+
+    <!-- Application defined action to save the user details.
+         For the user defined by userId in user-instance.
+         user-instance is for the current, authenticated user.
+         -->
+    <xf:action ev:event="save-user-details">
+        <xxf:variable name="userId" select="xxf:instance('user-instance')/credentials/userId"/>
+
+        <!-- Save user details if userId is set -->
+        <xf:action if="$userId != ''">
+            <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="concat('/xmlstore/users/',$userId,'/credentials')"/>
+                <xxf:context name="resource" select="xxf:instance('user-instance')"/>
+                <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Need to abort the session if the userId is blank or user-instance fails to save -->
+        <xf:action if="$userId = '' or xxf:instance('sessionControl-instance')/status != ''">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="xxf:instance('sessionControl-instance')/status"/>
+                <xxf:context name="context" select="'save-user-details'"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+
+    <!-- ========= Password Handling (for user credentials) ========= 
+         ============================================================ -->
+
+    <xf:instance id="passwordControl-instance">
+        <control>
+            <status>notChecked</status>
+            <expiryDate/>
+            <password1 validityMessage=""/>
+            <password2 validityMessage=""/>
+            <password dateSet="" seedKey=""/>
+        </control>
+    </xf:instance>
+
+
+    <!-- Application defined action to check whether password has expired.
+         User has already been authenticated and details loaded to user-instance -->
+    <xf:action ev:event="check-password-validity">
+
+        <!-- Legacy user credentials password did not support seedKey and dateSet attributes on password until 2017-07-03 -->
+        <xf:action if="not(exists(xxf:instance('user-instance')/credentials/password/@dateSet))">
+            <xxf:variable name="storedPassword" select="xxf:instance('user-instance')/credentials/password"/>
+            <xxf:variable name="fixedPassword" select="xxf:instance('passwordControl-instance')/password"/>
+            <!-- Set new password element (fixedPassword) -->
+            <xf:setvalue ref="$fixedPassword/@dateSet" value="current-date()"/>
+            <xf:setvalue ref="$fixedPassword" value="$storedPassword"/>
+            <!-- Remove legacy password -->
+            <xf:delete nodeset="$storedPassword"/>
+            <!-- Insert new version of password -->
+            <xf:insert context="xxf:instance('user-instance')/credentials" origin="$fixedPassword"/>
+            <!-- Save the user credentials -->
+            <xf:dispatch name="save-user-details" target="session-model"/>
+        </xf:action>
+
+        <!-- If password duration is set then check whether password has expired -->
+        <xf:action if="xxf:instance('view-parameters-instance')/passwordPolicy/duration/@value castable as xs:dayTimeDuration">
+            <!-- If no dateSet then password is treated as expired -->
+            <xf:action if="not(xxf:instance('user-instance')/credentials/password/@dateSet castable as xs:date)">
+                <xf:setvalue ref="xxf:instance('passwordControl-instance')/status" value="'expired'"/>
+            </xf:action>
+
+            <!-- If dateSet then test whether password has expired -->
+            <xf:action if="xxf:instance('user-instance')/credentials/password/@dateSet castable as xs:date">
+                <xxf:variable name="expiryDate"
+                    select="xs:date(xxf:instance('user-instance')/credentials/password/@dateSet) + xs:dayTimeDuration(xxf:instance('view-parameters-instance')/passwordPolicy/duration/@value)"/>
+                <xxf:variable name="currentDate" select="current-date()"/>
+                <xf:setvalue ref="xxf:instance('passwordControl-instance')/status"
+                    value="if ($expiryDate lt $currentDate) then 'expired' else 'valid'"/>
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to check the password policy.
+         Starts with status of 'compliant' and sets 'nonCompliant' if any of the policy validation checks fails
+         Check (in order):
+            minLength
+            maxLength
+            pattern(s)  -->
+    <xf:action ev:event="check-password-policy">
+        <xf:setvalue ref="xxf:instance('passwordControl-instance')/status" value="'compliant'"/>
+        <xxf:variable name="password1" select="xxf:instance('passwordControl-instance')/password1"/>
+        <xxf:variable name="password2" select="xxf:instance('passwordControl-instance')/password2"/>
+
+        <!-- minlength -->
+        <xxf:variable name="minLength" select="xxf:instance('view-parameters-instance')/passwordPolicy/minLength"/>
+        <xxf:variable name="minLengthCheck"
+            select="if ($minLength castable as xs:integer and string-length($password1) lt xs:integer($minLength)) then false() else true()"/>
+        <xf:setvalue ref="xxf:instance('passwordControl-instance')/status" value="if ($minLengthCheck) then 'compliant' else 'nonCompliant'"/>
+        <xf:setvalue ref="$password1/@validityMessage" value="if ($minLengthCheck) then '' else $minLength/@displayName"/>
+
+        <!-- maxlength - only check if compliant so far -->
+        <xf:action if="xxf:instance('passwordControl-instance')/status='compliant'">
+            <xxf:variable name="maxLength" select="xxf:instance('view-parameters-instance')/passwordPolicy/maxLength"/>
+            <xxf:variable name="maxLengthCheck"
+                select="if ($maxLength castable as xs:integer and string-length($password1) gt xs:integer($maxLength)) then false() else true()"/>
+            <xf:setvalue ref="xxf:instance('passwordControl-instance')/status"
+                value="if ($maxLengthCheck) then 'compliant' else 'nonCompliant'"/>
+            <xf:setvalue ref="$password1/@validityMessage" value="if ($maxLengthCheck) then '' else $maxLength/@displayName"/>
+        </xf:action>
+
+        <!-- Check allowed characters are present- only check if compliant so far -->
+        <xf:action if="xxf:instance('passwordControl-instance')/status='compliant'">
+            <xxf:variable name="allowedCharacters" select="xxf:instance('view-parameters-instance')/passwordPolicy/allowedCharacters"/>
+            <!-- Check that required characters are present -->
+            <xf:action xxf:iterate="$allowedCharacters/pattern">
+                <xxf:variable name="pattern" select="."/>
+                <!-- Only check if compliant so far -->
+                <xf:action if="xxf:instance('passwordControl-instance')/status='compliant'">
+                    <xxf:variable name="patternCheck" select="matches($password1,$pattern/@value)"/>
+                    <xf:setvalue ref="xxf:instance('passwordControl-instance')/status"
+                        value="if ($patternCheck) then 'compliant' else 'nonCompliant'"/>
+                    <xf:setvalue ref="$password1/@validityMessage"
+                        value="if ($patternCheck) then '' else concat($allowedCharacters/@displayName,$pattern/@displayName)"/>
+                </xf:action>
+            </xf:action>
+            <!-- Check that only required characters are present -->
+            <xf:action xxf:iterate="$allowedCharacters/pattern">
+                <xxf:variable name="pattern" select="."/>
+                <!-- Only check if compliant so far -->
+                <xf:action if="xxf:instance('passwordControl-instance')/status='compliant'"> </xf:action>
+            </xf:action>
+        </xf:action>
+
+        <!-- passwords must match - only check if compliant so far -->
+        <xxf:variable name="matchedCheck"
+            select="if (xxf:instance('passwordControl-instance')/status='compliant' and $password1 = $password2) then true() else false()"/>
+        <xf:setvalue ref="xxf:instance('passwordControl-instance')/status" value="if ($matchedCheck) then 'compliant' else 'nonCompliant'"/>
+        <xf:setvalue ref="$password2/@validityMessage"
+            value="if ($matchedCheck) then '' else xxf:instance('view-parameters-instance')/passwordPolicy/matchPasswords/@displayName"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to reset the user passowrd.
+         There are two cases:
+            If passwordPolicy/security/@encryption is true then 
+                get the seedKey
+                encrypt user-entered password 
+                save encrypted password and seedkey in the user profile
+            Or otherwise
+                just save user-entered password in the user profile
+                
+            The new password is built in passwordControl-instance/password
+            Which then replaces the password stored in the user-instance/credentials
+            The user-instance is passed in as a parameter, since it may be user-instance (setting in cityEHRSetPasswordDialog)
+            or managed-user-instance (setting in cityEHRAdmin) 
+    
+            Note that the user-instance needs to be saved after the password is reset (not done here).
+    -->
+    <xf:action ev:event="reset-password">
+        <xxf:variable name="password" select="event('password')"/>
+        <xxf:variable name="user-instance" select="event('user-instance')"/>
+
+        <!-- Using encryption -->
+        <xf:action if="xxf:instance('view-parameters-instance')/passwordPolicy/security/@encryption='true'">
+            <!-- Get seedKey - use random value based on current dateTime and seedKey in view-parameters (ensures seedKay cannot be blank) -->
+            <xxf:variable name="seedKeySet" select="xxf:instance('view-parameters-instance')/passwordPolicy/security/@seedKey"/>
+            <xxf:variable name="seedKey" select="string-join(($seedKeySet,xs:string(current-dateTime())),'')"/>
+
+            <!-- Encrypt password -->
+            <xf:dispatch name="encrypt-password" target="session-model">
+                <xxf:context name="password" select="$password"/>
+                <xxf:context name="seedKey" select="$seedKey"/>
+                <xxf:context name="encryptedPassword" select="xxf:instance('passwordControl-instance')/password"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Not using encrytpion - just set the password -->
+        <xf:action if="not(xxf:instance('view-parameters-instance')/passwordPolicy/security/@encryption='true')">
+            <xf:setvalue ref="xxf:instance('passwordControl-instance')/password/@seedKey" value="''"/>
+            <xf:setvalue ref="xxf:instance('passwordControl-instance')/password" value="$password"/>
+        </xf:action>
+
+        <!-- Set the date of reset -->
+        <xf:setvalue ref="xxf:instance('passwordControl-instance')/password/@dateSet" value="current-date()"/>
+        <!-- Remove stored password -->
+        <xf:delete nodeset="$user-instance/credentials/password"/>
+        <!-- Insert new version of password -->
+        <xf:insert context="$user-instance/credentials" origin="xxf:instance('passwordControl-instance')/password"/>
+    </xf:action>
+
+    <!-- Application defined action to encrypt the user passowrd.
+         Uses the hmac xpath function that encrypts using a seed string.
+         This is invoked from both reset-password (above) and authenticate-cityEHR-user in cityEHRSignOn
+         If seedkey is blank then password is not encrypted.
+         Sets and returns the encryptedPassword parameter. -->
+    <xf:action ev:event="encrypt-password">
+        <xxf:variable name="password" select="event('password')"/>
+        <xxf:variable name="seedKey" select="event('seedKey')"/>
+        <xxf:variable name="encryptedPassword" select="event('encryptedPassword')"/>
+
+        <!-- Set password - encrypted with seedKey but only if not blank  -->
+        <xf:setvalue ref="$encryptedPassword" value="if ($seedKey!= '') then hmac($seedKey,$password, 'MD5', 'hex') else $password"/>
+
+        <!-- Set seedKey -->
+        <xf:setvalue ref="$encryptedPassword/@seedKey" value="$seedKey"/>
+
+    </xf:action>
+
+
+    <!-- ========= Load and store session details ================================== 
+         The session-parameters instance is loaded from the database for the current session user.
+         These details (apart from password) can be accessed from the information model
+         and used on forms. letters, etc.
+         ============================================================== -->
+
+    <!-- session-parameters-instance is loaded on every page. -->
+    <xf:instance id="session-parameters-instance">
+        <parameters/>
+    </xf:instance>
+
+    <!-- previousSession-parameters-instance is used only on cityEHRSignOn page -->
+    <xf:instance id="previousSession-parameters-instance">
+        <parameters/>
+    </xf:instance>
+
+    <!-- Application defined action to set the database location of the session-parameters
+         The location is xmlstore/users/[userId[/session-parameters
+         The userId is passed to the page through view-parameters as defined in page-flow -->
+    <xf:action ev:event="set-sessionParametersLocation">
+        <xf:setvalue ref="xxf:instance('sessionControl-instance')/sessionParametersLocation"
+            value="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/session-parameters')"/>
+    </xf:action>
+
+
+    <!-- Load default session-parameters-instance as shipped with the system -->
+    <xf:action ev:event="load-default-session-parameters">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xf:dispatch name="dal-readStaticFile" target="databaseAccessLayer-model">
+            <xxf:context name="staticFileLocation" select="'/session-parameters.xml'"/>
+            <xxf:context name="resource" select="xxf:instance('session-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set the version as defined in view-parameters -->
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/@version"
+            value="xxf:instance('view-parameters-instance')/versionNumber/@version"/>
+
+        <!-- Return the status -->
+        <xf:setvalue ref="$status" value="xxf:instance('sessionControl-instance')/status"/>
+    </xf:action>
+
+    <!-- Application defined action to load the previous session.
+         Invoked from cityEHRSignOn page -->
+    <xf:action ev:event="load-previous-session-parameters">
+        <!-- Set the database location for the session parameters -->
+        <xf:dispatch name="set-sessionParametersLocation" target="session-model"/>
+
+        <!-- Read parameters from the database -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="xxf:instance('sessionControl-instance')/sessionParametersLocation"/>
+            <xxf:context name="resource" select="xxf:instance('previousSession-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+    <!-- Application defined action to load session-parameters-instance from the user-specific database location.
+         The location is xmlstore/users/[userId]/session-parameters -->
+    <xf:action ev:event="load-session-parameters">
+        <!-- Set the database location for the session parameters -->
+        <xf:dispatch name="set-sessionParametersLocation" target="session-model"/>
+
+        <!-- Read parameters from the database -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="xxf:instance('sessionControl-instance')/sessionParametersLocation"/>
+            <xxf:context name="resource" select="xxf:instance('session-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set status -->
+        <xf:setvalue ref="xxf:instance('sessionControl-instance')/status"
+            value="if (. = '') then 'loaded-session-parameters' else 'failed-load-session-parameters'"/>
+    </xf:action>
+
+
+    <!-- Application defined action to save session-parameters-instance to the user-specific database location.
+         The location is xmlstore/users/[userId]/session-parameters -->
+    <xf:action ev:event="save-session-parameters">
+        <!-- Set the database location for the session parameters -->
+        <xf:dispatch name="set-sessionParametersLocation" target="session-model"/>
+
+        <!-- Save parameters to the database -->
+        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="xxf:instance('sessionControl-instance')/sessionParametersLocation"/>
+            <xxf:context name="resource" select="xxf:instance('session-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('sessionControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set status -->
+        <xf:setvalue ref="xxf:instance('sessionControl-instance')/status"
+            value="if (. = '') then 'saved-session-parameters' else 'failed-save-session-parameters'"/>
+    </xf:action>
+
+
+    <!-- Application defined action to validate the user session.
+         Invoked from xforms-model-construct-done in configuration-model
+         This happens when each page is loaded, other than cityEHRSignOn and is used to check that a valid page navigation has been requested.
+         
+         Load the session parameters (load-session-parameters) which requires the userId (passed in URL) 
+         
+         The transition recorded in session-parameters-instance is validated as follows:
+            sessionId matches the sessionId passed in the URL
+            the departureTime is within the allowed limit for the sessionPageLoad defined in session-parameters 
+            page matches the page set in view-parameters (set as value in page-flow, so not passed in the URL)  -->
+
+    <xf:action ev:event="validate-session">
+        <!-- Load the session parameters -->
+        <xf:dispatch name="load-session-parameters" target="session-model"/>
+
+        <!-- Session checks can be made if the session has been loaded successfully -->
+        <xf:action if="xxf:instance('sessionControl-instance')/status = 'loaded-session-parameters'">
+            <!-- Time the current page was loaded -->
+            <xxf:variable name="loadTime" select="current-dateTime()"/>
+
+            <!-- Time limit for page load, as determined from sessionPageLoad parameter -->
+            <xxf:variable name="departureTime" select="xxf:instance('session-parameters-instance')/@departureTime"/>
+            <xxf:variable name="sessionPageLoad" select="xxf:instance('system-parameters-instance')/dynamicParameters/sessionPageLoad/@value"/>
+            <xxf:variable name="allowedLoadTime"
+                select="if ($departureTime castable as xs:dateTime and $sessionPageLoad castable as xs:dayTimeDuration)  then xs:dateTime($departureTime) + xs:dayTimeDuration($sessionPageLoad) else $loadTime"/>
+
+            <!-- Session validation criteria - loadTime, sessionId, page -->
+            <xxf:variable name="loadTimeValidation" select="if ($allowedLoadTime gt $loadTime) then '' else 'badLoadTime'"/>
+            <xxf:variable name="sessionIdValidation"
+                select="if (xxf:instance('view-parameters-instance')/sessionId = xxf:instance('session-parameters-instance')/@sessionId) then '' else 'badSessionId'"/>
+            <xxf:variable name="pageValidation"
+                select="if (xxf:instance('view-parameters-instance')/page = xxf:instance('session-parameters-instance')/@page) then '' else 'badPage'"/>
+            <xxf:variable name="validationError"
+                select="normalize-space(string-join(($sessionIdValidation,$pageValidation,$loadTimeValidation),' '))"/>
+
+            <!-- Abort session if the page transition is invalid -->
+            <xf:action if="$validationError!=''">
+                <xf:dispatch name="abort-session" target="pageNavigation-model">
+                    <xxf:context name="errorCode" select="concat('failed-session-validation','-',$validationError)"/>
+                    <xxf:context name="context" select="'validate-session'"/>
+                </xf:dispatch>
+            </xf:action>
+        </xf:action>
+
+        <!-- Abort session if the session parameters failed to load -->
+        <xf:action if="xxf:instance('sessionControl-instance')/status != 'loaded-session-parameters'">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="xxf:instance('sessionControl-instance')/status"/>
+                <xxf:context name="context" select="'validate-session'"/>
+            </xf:dispatch>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to save the session.
+         Invoked from load-cityEHR-page in pageNavigation-model
+         The session-parameters-instance is used to pass information between the pages in a session.
+         The userId, sessionId and page are passed in the view-parameters.
+         All other information is in session-parameters-instance.
+    
+         The targetPage is the page invoked in the page-flow.
+         But is is not necessarily a new page to be loaded and displayed to the user.
+         If a new page is not being loaded (e.g. for an export, or when a pipeline is invoked) then @page in session-parameters remains unchanged
+         This is determined by $showPage being 'replace' (for a new page) or something else -->
+
+    <xf:action ev:event="save-session-for-transition">
+        <xxf:variable name="sessionId" select="event('sessionId')"/>
+        <xxf:variable name="targetPage" select="event('targetPage')"/>
+        <xxf:variable name="showPage" select="event('showPage')"/>
+
+        <!-- Set the page departure time -->
+        <xxf:variable name="departureTime" select="current-dateTime()"/>
+
+        <!-- Set the main session parameters.
+             These are attributes on the session-parameters-instance document element -->
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/@sessionId" value="$sessionId"/>
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/@departureTime" value="$departureTime"/>
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/@pageFlow" value="$targetPage"/>
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/@showPage" value="$showPage"/>
+
+        <!-- The page is only reset if $showPage is 'replace' -->
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/@page" value="if ($showPage='replace') then $targetPage else ."/>
+
+        <!-- Set the session parameters, transferred from view-parameters -->
+        <xf:action xxf:iterate="xxf:instance('session-parameters-instance')/*">
+            <xxf:variable name="parameter" select="."/>
+            <xxf:variable name="parameterName" select="$parameter/name()"/>
+
+            <xxf:variable name="viewParameter" select="xxf:instance('view-parameters-instance')/*[name()=$parameterName]"/>
+
+            <xf:setvalue ref="$parameter" value="if (exists($viewParameter)) then $viewParameter else ."/>
+        </xf:action>
+
+        <!-- Save the user session -->
+        <xf:dispatch name="save-session-parameters" target="session-model"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to close the session.
+         Invoked from quit-session in pageNavigation-model
+         Set the sessionId to blank and save the session-parameters -->
+    <xf:action ev:event="end-session">
+        <!-- Set sessionId to blank -->
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/@sessionId" value="''"/>
+
+        <!-- Save the user session -->
+        <xf:dispatch name="save-session-parameters" target="session-model"/>
+    </xf:action>
+
+
+
+    <!-- ========= Set up session when it is first loaded ========= 
+         ======================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Not doing anything here - actions are invoked from configurationModel -->
+    </xf:action>
+
+
+</xf:model>

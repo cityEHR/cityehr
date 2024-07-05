@@ -1,0 +1,1743 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRFolder-Views.xhtml
+    
+    Summary views for a patient, including graphing
+    with access to other patient-centred functions and features.
+    
+    Main viewNavigationType can be summaries | reports | notifcations
+    
+    The views for this specialty are defined in the dictionary
+    A view is either a summary (Folder or Composition) or a Report.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+
+    <!-- ========= HTML Head - Includes the Xforms Model ========= 
+        ========================================================= -->
+    <xhtml:head>
+
+        <!-- Try this to force compatibility mode -->
+        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
+
+        <!-- HTML Title is the displayName of the current application -->
+        <xhtml:title>
+            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+        </xhtml:title>
+
+        <!-- Stylesheet -->
+        <xhtml:link rel="stylesheet" type="text/css"
+            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
+
+
+        <!-- ========= System Parameters ===================================================== 
+             ================================================================================= -->
+        <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
+            ================================================================================== -->
+        <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Session model contains stuff for handling of user sessions ============ 
+            ================================================================================== -->
+        <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Audit log model contains stuff for audit of user actions ============== 
+            ================================================================================== -->
+        <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Page navigation model contains stuff for navigation between pages =====
+        ====================================================================================== -->
+        <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Configuration model contains standard configuration of the page ======= 
+            ================================================================================== -->
+        <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= Dictionary model contains the specialty dictionary ========= 
+            ======================================================================= -->
+        <xi:include href="../models/dictionaryModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= Release Notes ========= 
+            ============================================================================ -->
+        <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= EHR Information model contains information to be pinned in the information panel == 
+            =================================================================================== -->
+        <xi:include href="../models/informationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Patient Demographics model contains demographics data for the patient == 
+            =================================================================================== -->
+        <xi:include href="../models/patientDemographicsModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Reference data - directories of entries and elements ==== 
+            =================================================================== -->
+        <xi:include href="../models/directoryModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= summary-view-model contains stuff for processing views ========= 
+            ========================================================================== -->
+        <xi:include href="../models/summaryViewModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= exportDataModel model contains stuff for exporting patient records ==== 
+            =================================================================================== -->
+        <xi:include href="../models/exportDataModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Notifications model contains stuff for handling notifications == 
+        =================================================================================== -->
+        <xi:include href="../models/notificationModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= cdaModel model contains stuff for loading CDA documents ==== 
+            =================================================================================== -->
+        <xi:include href="../models/cdaModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Care teams model is needed for notifications  == 
+            =================================================================================== -->
+        <xi:include href="../models/careTeamModel.xml" xxi:omit-xml-base="true"/>
+
+
+        <!-- ========= View Controls actions model contains actions for view control ========= 
+            These actions are specific to this page, so the model is implemented directly.           
+            There must be one event handler for each action defined in the <viewControlsActions> for this page in application-parameters
+            The viewControlsActions-instance holds the actions for this view, inserted from parameters-instance for this view
+            ===================================================================================== -->
+        <xf:model id="viewControlsActions-model">
+
+            <xf:instance id="viewControlsActions-instance">
+                <control xmlns=""/>
+            </xf:instance>
+
+            <!-- Bindings for dynamic change of display of view controls  -->
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display" calculate="'show'"/>
+
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view">
+                <!-- Show XML only when debugging -->
+                <xf:bind nodeset="action[@id='xml']/@display"
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+                <!-- Can only chart/reset historic data, once a variable is selected -->
+                <xf:bind nodeset="action[@id=('svgChart','reset')]/@display"
+                    calculate="if (xxf:instance('view-parameters-instance')/viewHistory='historic' and exists(xxf:instance('control-instance')/current-chart/variables/variable)) then 'show' else 'hidden'"/>
+                <!-- Can only select viewHistory parameters for Composition or Folder summary views (i.e. not reports views or notifications) -->
+                <xf:bind nodeset="select[@id='view']/@display"
+                    calculate="if (xxf:instance('view-parameters-instance')/viewNavigationType = 'summaries') then 'show' else 'hidden'"/>
+            </xf:bind>
+
+            <!-- Application defined action when view type changes.
+                 Invoked when the view navigation type is selected (in cityEHRViewNavigationTypeSelection.xhtml)-->
+            <xf:action ev:event="viewNavigationTypeChanged">
+                <xf:dispatch name="set-viewNavigationType" target="main-model"/>
+            </xf:action>
+
+
+            <!-- Application defined action to change the type of view.
+                 Can be Current Data or Historic Data -->
+            <xf:action ev:event="view">
+                <!-- Set the viewHistory parameters and render view -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewHistory"
+                    value="xxf:instance('viewControls-input-instance')/select[@id='view']/@value"/>
+                <xf:dispatch name="render-view" target="main-model"/>
+
+                <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+                <xf:recalculate model="viewControlsActions-model"/>
+            </xf:action>
+
+
+            <!-- Application defined action to create an SVG chart -->
+            <xf:action ev:event="svgChart">
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/rendition" value="'svg'"/>
+                <!-- Initialise the chart parameters.
+                     The setvalue actions in initialise-chart-parameters cause xforms-value-changed on the startTime, interval and intervalUnits 
+                     Which invokes actions for set-chart-parameters and generate-chart -->
+                <xf:dispatch name="initialise-chart-parameters" target="main-model"/>
+                <!-- Show the charts -->
+                <xf:setvalue ref="xxf:instance('control-instance')/showCharts" value="'true'"/>
+                <xxf:show ev:event="DOMActivate" dialog="viewChartDialog"/>
+
+            </xf:action>
+
+            <!-- Application defined action to reset the chart variables -->
+            <xf:action ev:event="reset">
+                <xf:delete nodeset="xxf:instance('control-instance')/current-chart/variables/variable"/>
+
+                <!-- Javascipt resets all the check boxes -->
+                <xxf:script>resetAllCheckboxes();</xxf:script>
+
+                <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+                <xf:recalculate model="viewControlsActions-model"/>
+            </xf:action>
+
+            <!-- Application defined action to print the current view.
+                 The HTML is already in HTML instance, so just need to set externalId and call print-html -->
+            <xf:action ev:event="print">
+                <xf:action ev:event="print">
+                    <!-- Set externalId for the patient -->
+                    <xf:dispatch name="set-externalId" target="pageNavigation-model">
+                        <xxf:context name="type" select="'patient'"/>
+                        <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+                    </xf:dispatch>
+
+                    <!-- Call submission to generate PDF for HTML -->
+                    <xf:dispatch name="print-html" target="pageNavigation-model"/>
+                </xf:action>
+            </xf:action>
+
+            <!-- Application defined action to export the current view to Word Processor
+                First save the view to the xml cache 
+                Set the template, based on the composition (as set in application-parameters)
+                Then call the pipeline to generate the Word Processor document -->
+            <xf:action ev:event="wordprocessor">
+
+                <!-- Store view in the XML cache -->
+                <xf:dispatch name="store-xmlCache" target="pageNavigation-model">
+                    <xxf:context name="xml-instance" select="xxf:instance('view-instance')"/>
+                </xf:dispatch>
+
+                <!-- Set the Word template to use as the base for conversion.
+                     The template location is relative to staticFileRoot.
+                     Not curretnly using the compositionIRI -->
+                <xxf:variable name="compositionIRI" select="''"/>
+                <xxf:variable name="templatePath" select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
+                <xxf:variable name="templateList" select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
+                <xxf:variable name="template"
+                    select="if ($templateList/template[@compositionIRI=$compositionIRI]) then $templateList/template[@compositionIRI=$compositionIRI]/@template else $templateList/@template"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/wordTemplateURL"
+                    value="concat(xxf:instance('view-parameters-instance')/appPath,$templatePath,$template)"/>
+
+                <!-- Call pipeline through page-flow -->
+                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                    <xxf:context name="page" select="'cityEHRWordProcessorCDA'"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to show XML.
+                 Could have a look at view-instance or form-instance -->
+            <xf:action ev:event="xml">
+                <!-- Display the view instance -->
+                <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                    <xxf:context name="title" select="''"/>
+                    <xxf:context name="displayXML" select="xxf:instance('form-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+
+
+            <!-- Set the selection options when loaded -->
+            <xf:action ev:event="xforms-model-construct-done">
+                <xxf:variable name="viewSelection" select="xxf:instance('viewControls-input-instance')/select[@id='view']"/>
+                <xf:setvalue ref="xxf:instance('viewControls-input-instance')/select[@id='view']/@value" value="$viewSelection/item[1]/@value"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewHistory" value="$viewSelection/item[1]/@value"/>
+                <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+                <xf:recalculate model="viewControlsActions-model"/>
+            </xf:action>
+
+
+        </xf:model>
+
+        <!-- ========= Main model contains stuff specific to this page ========= 
+            =================================================================== -->
+        <xf:model id="main-model" xxf:external-events="set-chart-variable">
+
+            <!-- Control of the view -->
+            <xf:instance id="control-instance">
+                <control xmlns="">
+                    <status/>
+                    <error/>
+                    <debug/>
+                    <statusMessage/>
+                    <formatted-view/>
+
+                    <iso-13606:folder code="" displayName=""/>
+
+                    <!-- Summary view - can be folder or composition type -->
+                    <currentSummary>
+                        <viewIRI/>
+                        <displayName/>
+                        <careSettingIRI/>
+                    </currentSummary>
+
+                    <!-- Report view -->
+                    <currentReport>
+                        <viewIRI/>
+                        <displayName/>
+                        <careSettingIRI/>
+                    </currentReport>
+
+                    <!-- For notifications -->
+                    <currentNotificationType/>
+                    <actorList/>
+                    <filterCriteria/>
+
+                    <!-- For historic data -->
+                    <startTime/>
+                    <endTime/>
+
+                    <!-- testing -->
+                    <trueTest>true</trueTest>
+                    <falseTest>false</falseTest>
+                    <test value="Long test value with spaces"/>
+                    <test value="Another with spaces"/>
+                    <pattern/>
+                    <string/>
+
+                    <!-- Parameters for view charting -->
+                    <current-chart>
+                        <!-- Previously supported fusion | svg here, but fusion charts support dropped 2015-10-28.
+                             Options now are svg | png (direct SVG or png generated from SVG) which is set in view-parameters and then in rendition -->
+                        <rendition/>
+                        <svgChart/>
+                        <htmlChart/>
+                        <htmlChartStatic>
+                            <html xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:cda="urn:hl7-org:v3"
+                                xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+                                xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+                                xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+                                xmlns:math="http://exslt.org/math" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:xi="http://www.w3.org/2001/XInclude"
+                                xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+                                xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+                                xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xf="http://www.w3.org/2002/xforms">
+                                <body>
+                                    <svg width="300" height="300" version="1.1" xmlns:owl="http://www.w3.org/2002/07/owl#"
+                                        xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions" xmlns:svg="http://www.w3.org/2000/svg"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="0" y="0" width="100" height="100" fill="yellow"/>
+                                        <text x="250" y="250" font-size="12" text-anchor="middle">Nothing to plot - Hello world!</text>
+                                        <circle cx="30" cy="30" r="20" stroke="none" fill="blue"/>
+                                    </svg>
+                                </body>
+                            </html>
+                        </htmlChartStatic>
+                        <startTime/>
+                        <endTime/>
+                        <interval/>
+                        <intervalInDays/>
+                        <intervalUnits/>
+                        <step/>
+                        <plotGraphs><!-- combined | individual --></plotGraphs>
+                        <plotLayout><!-- 1 | 2 --></plotLayout>
+                        <yAxisLegend><!-- 0 | 1 | 2 --></yAxisLegend>
+                        <plotColours><!--Gets replaced with version from view-parameters--></plotColours>
+                        <plotConfiguration><!--Gets replaced with version from view-parameters--></plotConfiguration>
+                        <intervalPlotConfiguration><!--Gets replaced with version from view-parameters--></intervalPlotConfiguration>
+                        <idRoot>chart-</idRoot>
+                        <variable id="" action="false" checkboxStatus="" plotType="" plotColour="" plotLineWidth="" markerShape="" minValue=""
+                            maxValue="" minTime="" maxTime="" scale="" entryId="" dateElementExtension="" variableElementExtension=""
+                            variableElementValue="" variableElementDisplayName="" valueElementExtension=""/>
+                        <variables>
+                            <!-- Each variable is set up by looking for defined patterns in the elements of the identified entry
+                                <variable action="false" checkboxStatus="" plotType="" plotColour="" minValue="" maxValue="" minTime="" maxTime="" scale="" entryId="#ISO-13606:Entry:OsteoporosisBoneChemistry" dateElementExtension="#ISO-13606:Element:SampleDate" variableElementExtension="#ISO-13606:Element:BoneChemistryTest" variableElementValue="#CityEHR:Class:Labs:P1NP" variableElementDisplayName="P1NP" valueElementExtension="#ISO-13606:Element:Double"/>
+                                <variable action="false" checkboxStatus="" plotType="" plotColour="" minValue="" maxValue="" minTime="" maxTime="" scale="" entryId="#ISO-13606:Entry:OsteoporosisBoneChemistry" dateElementExtension="#ISO-13606:Element:SampleDate" variableElementExtension="#ISO-13606:Element:BoneChemistryTest" variableElementValue="#CityEHR:Class:Labs:CTX" variableElementDisplayName="CTX" valueElementExtension="#ISO-13606:Element:Double"/>
+                                <variable action="false" checkboxStatus="" plotType="" plotColour="" minValue="" maxValue="" minTime="" maxTime="" scale="" entryId="#ISO-13606:Entry:OsteoporosisBoneChemistry" dateElementExtension="#ISO-13606:Element:SampleDate" variableElementExtension="#ISO-13606:Element:BoneChemistryTest" variableElementValue="#CityEHR:Class:Labs:Ca" variableElementDisplayName="Calcium" valueElementExtension="#ISO-13606:Element:Double"/>
+                                <variable action="false" checkboxStatus="" plotType="" plotColour="" minValue="" maxValue="" minTime="" maxTime="" scale="" entryId="#ISO-13606:Entry:OsteoporosisBoneChemistry" dateElementExtension="#ISO-13606:Element:SampleDate" variableElementExtension="#ISO-13606:Element:BoneChemistryTest" variableElementValue="#CityEHR:Class:Labs:AlkP" variableElementDisplayName="Alkaline phosphatase" valueElementExtension="#ISO-13606:Element:Double"/>
+                                <variable action="false" checkboxStatus="" plotType="" plotColour="" minValue="" maxValue="" minTime="" maxTime="" scale="" entryId="#ISO-13606:Entry:OsteoporosisBoneChemistry" dateElementExtension="#ISO-13606:Element:SampleDate" variableElementExtension="#ISO-13606:Element:BoneChemistryTest" variableElementValue="#CityEHR:Class:Labs:GFR" variableElementDisplayName="GFR" valueElementExtension="#ISO-13606:Element:Double"/>
+                            -->
+                            <!-- The information for each chart variable is as follows:
+                                
+                                entryId                     the id of the entry (cda:observation/cda:id/@extension)
+                                dateElementExtension        the id of the element (cda:value)  used for the date (x-axis) - if empty then use the effectiveTime on the observation
+                                variableElementExtension    the id of the element (cda:value) used as the variable to plot - can be empty
+                                variableElementValue        the value of the variable - used to select the entries to be plotted, but uses all entries if variableElementExtension is empty
+                                variableElementDisplayName  the display name of the variable - to be used in labels, etc
+                                valueElementExtension       the id the element (cda:value) holding variable value to be plotted on y-axis
+                            -->
+                        </variables>
+                    </current-chart>
+                </control>
+            </xf:instance>
+
+            <!-- Bindings for control parameters data types -->
+            <xf:bind nodeset="xxf:instance('control-instance')/current-chart/startTime" type="xs:date"/>
+
+
+            <!-- ========= Download from XMLView (debugging only) ========= 
+                 ========================================================== -->
+            <!-- Application defined action to download XML - called from the viewXML dialogue.
+                 Could be view-instance ot form-instance -->
+            <xf:action ev:event="download-xml">
+                <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                    <xxf:context name="export-instance" select="xxf:instance('form-instance')"/>
+                    <xxf:context name="exportType" select="'PatientSummary'"/>
+                </xf:dispatch>
+            </xf:action>
+
+
+            <!-- ========= Notifications ========= 
+                 ================================= -->
+
+            <!-- Application defined action to set filter criteria for getting notifications -->
+            <xf:action ev:event="set-filterCriteria">
+                <xf:setvalue ref="xxf:instance('control-instance')/filterCriteria" value="''"/>
+            </xf:action>
+
+            <!-- Application defined action to set the current notification.
+                The notification is passed as the selectedNotification parameter.
+                Note that this may be empty () in cases where the user has selected a viewNavigationType with no notifications.
+                If selectedNotification is empty then just clear the currentNotification -->
+            <xf:action ev:event="set-notification">
+                <xxf:variable name="selectedNotification" select="event('selectedNotification')"/>
+
+                <!-- Clear the current notification -->
+                <xf:delete nodeset="xxf:instance('notificationsControl-instance')/currentNotification/*"/>
+
+                <!-- Only set notification if the requested notifcation exists -->
+                <xf:action if="exists($selectedNotification)">
+                    <!-- Set the notification in the notificationsControl-instance -->
+                    <xf:insert context="xxf:instance('notificationsControl-instance')/currentNotification" origin="$selectedNotification"/>
+
+                    <!-- Load the notification composition.
+                        This loads the currently selected notification to notification-instance -->
+                    <xf:send submission="load-notification-submission" target="notification-model"/>
+
+                    <!-- Set the page title -->
+                    <xxf:variable name="notificationTimeDisplay"
+                        select="if ($selectedNotification/effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($selectedNotification/effectiveTime), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                        else if ($selectedNotification/effectiveTime castable as xs:date) then format-date(xs:date($selectedNotification/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ())
+                        else $selectedNotification/effectiveTime"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
+                        value="concat($notificationTimeDisplay,' ',$selectedNotification/displayName)"/>
+
+                </xf:action>
+
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+
+            </xf:action>
+
+
+            <!-- ========= Charts ========= 
+                 ========================== -->
+
+            <!-- Set up the charts when the page loads -->
+            <xf:action ev:event="setup-charts">
+
+                <xf:delete nodeset="xxf:instance('control-instance')/current-chart/plotColours"/>
+                <xf:insert context="xxf:instance('control-instance')/current-chart"
+                    origin="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotColours"/>
+
+                <xf:delete nodeset="xxf:instance('control-instance')/current-chart/plotConfiguration"/>
+                <xf:insert context="xxf:instance('control-instance')/current-chart"
+                    origin="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotConfiguration"/>
+
+                <xf:delete nodeset="xxf:instance('control-instance')/current-chart/intervalPlotConfiguration"/>
+                <xf:insert context="xxf:instance('control-instance')/current-chart"
+                    origin="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/intervalPlotConfiguration"/>
+
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/rendition"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/chartRendition"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/plotGraphs"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotGraphs/option[1]/@value"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/plotLayout"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/plotLayout/option[1]/@value"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/yAxisLegend"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/yAxisLegend/option[1]/@value"/>
+
+            </xf:action>
+
+            <!-- Chart variables are set when triggered by change in checkboxStatus. ***jc
+                 The current variable is set in current-chart/variable 
+                 Variable is determined by entryId / variableElementExtension / variableElementValue -->
+            <xf:action ev:event="set-chart-variable">
+                <!-- The selected variable -->
+                <xxf:variable name="variable" select="xxf:instance('control-instance')/current-chart/variable"/>
+
+                <!-- Remove the variable from the list  -->
+                <xf:delete
+                    nodeset="xxf:instance('control-instance')/current-chart/variables/variable[@entryId=$variable/@entryId][@variableElementExtension=$variable/@variableElementExtension][@variableElementValue=$variable/@variableElementValue]"/>
+
+                <!-- If the variable is selected, then set the minTime and maxTime and insert into list -->
+                <xf:action if="xxf:instance('control-instance')/current-chart/variable/@action='checked'">
+                    <xxf:variable name="timeValues"
+                        select="xxf:instance('view-instance')//cda:observation[cda:id/@extension=$variable/@entryId]/cda:value[@extension=$variable/@dateElementExtension]/substring(@value,1,10)"/>
+                    <!--
+                    <xxf:variable name="values"
+                        select="if ($variable/@variableElementExtension != $variable/@valueElementExtension) then xxf:instance('view-instance')//cda:observation[cda:id/@extension=$variable/@entryId] [cda:value[@extension=$variable/@variableElementExtension][@value=$variable/@variableElementValue]] /cda:value[@extension=$variable/@valueElementExtension][@value castable as xs:double]/@value
+                        else xxf:instance('view-instance')//cda:observation[cda:id/@extension=$variable/@entryId] /cda:value[@extension=$variable/@valueElementExtension][@value castable as xs:double]/@value"/>
+                    -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-chart/variable/@minTime"
+                        value="min($timeValues[. castable as xs:date])"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-chart/variable/@maxTime"
+                        value="max($timeValues[. castable as xs:date])"/>
+
+                    <xf:insert context="xxf:instance('control-instance')/current-chart/variables"
+                        origin="xxf:instance('control-instance')/current-chart/variable"/>
+                </xf:action>
+
+                <!-- Set the minTime and maxTime for all selected variables -->
+                <xf:setvalue ref="xxf:instance('control-instance')/startTime"
+                    value="min(xxf:instance('control-instance')/current-chart/variables/variable/@minTime[. castable as xs:date]/xs:date(.))"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/endTime"
+                    value="max(xxf:instance('control-instance')/current-chart/variables/variable/@maxTime[. castable as xs:date]/xs:date(.))"/>
+
+                <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+                <xf:recalculate model="viewControlsActions-model"/>
+            </xf:action>
+
+            <!-- Configure all defined chart variables, ready to create the chart. -->
+            <xf:action ev:event="configure-chart-variables">
+                <!-- Set the plot colour for the variables to be charted.
+                    This uses the built-in colours first and then generates new ones based on the baseColour and stepColour -->
+                <xxf:variable name="builtInColours" select="count(xxf:instance('control-instance')/current-chart/plotColours/colour)"/>
+                <xxf:variable name="baseColour" select="count(xxf:instance('control-instance')/current-chart/plotColours/baseColour)"/>
+                <xxf:variable name="stepColour" select="count(xxf:instance('control-instance')/current-chart/plotColours/stepColour)"/>
+                <!-- Iterate through each chart variable, setting:
+                        plotColour
+                        minValue
+                        maxValue
+                        scale   -->
+                <xf:action xxf:iterate="xxf:instance('control-instance')/current-chart/variables/variable">
+                    <xxf:variable name="variable" select="."/>
+                    <xxf:variable name="position" select="position()"/>
+                    <xf:setvalue ref="$variable/@id" value="concat('variable-',$position)"/>
+                    <!-- Set the plot colour -->
+                    <xf:setvalue ref="$variable/@plotColour"
+                        value="if ($position le $builtInColours) then xxf:instance('control-instance')/current-chart/plotColours/colour[$position] else ($baseColour + ($position * $stepColour))"/>
+                    <!-- Set the plot value marker (displayed at the point where the value is plotted) -->
+                    <xf:setvalue ref="$variable/@markerShape"
+                        value="if ($variable/@plotType='interval') then xxf:instance('control-instance')/current-chart/intervalPlotConfiguration/intervalMarkerShape else xxf:instance('control-instance')/current-chart/plotConfiguration/markerShape"/>
+                    <!-- Set the plot line width -->
+                    <xf:setvalue ref="$variable/@plotLineWidth"
+                        value="if ($variable/@plotType='interval') then xxf:instance('control-instance')/current-chart/intervalPlotConfiguration/intervalPlotLineWidth else xxf:instance('control-instance')/current-chart/plotConfiguration/plotLineWidth"/>
+                    <!-- Set min/max values and the scale (1, 10, 100, 1000).
+                         The values are found depending on whether the variable and value elements are different or the same. -->
+                    <xxf:variable name="values"
+                        select="if ($variable/@variableElementExtension != $variable/@valueElementExtension) then xxf:instance('view-instance')//cda:observation[cda:id/@extension=$variable/@entryId] [cda:value[@extension=$variable/@variableElementExtension][@value=$variable/@variableElementValue]] /cda:value[@extension=$variable/@valueElementExtension][@value castable as xs:double]/@value
+                        else xxf:instance('view-instance')//cda:observation[cda:id/@extension=$variable/@entryId] /cda:value[@extension=$variable/@valueElementExtension][@value castable as xs:double]/@value"/>
+                    <xxf:variable name="minValue" select="if (count($values) gt 0) then min($values) else 0"/>
+                    <xxf:variable name="maxValue" select="if (count($values) gt 0) then max($values) else 0"/>
+                    <xf:setvalue ref="$variable/@minValue" value="$minValue"/>
+                    <xf:setvalue ref="$variable/@maxValue" value="$maxValue"/>
+                    <xf:setvalue ref="$variable/@scale"
+                        value="if ($maxValue gt 1000) then 1000 else if ($maxValue gt 100) then 100 else if ($maxValue gt 10) then 10 else 1"/>
+                </xf:action>
+            </xf:action>
+
+            <!-- Initialise the chart parameters - startTime, interval and intervalUnits.
+                 startTime and endTime are already set in control-instance, based on the selected variables.
+                 Then in control instance current-chart, startTime is set directly as startTime.
+                 The intervalUnits -->
+            <xf:action ev:event="initialise-chart-parameters">
+                <!-- Set startTime -->
+                <xxf:variable name="startTime"
+                    select="if (xxf:instance('control-instance')/startTime castable as xs:date) then xxf:instance('control-instance')/startTime else current-date()"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/startTime" value="$startTime"/>
+
+                <!-- Set endTime variable only for now -->
+                <xxf:variable name="endTime"
+                    select="if (xxf:instance('control-instance')/endTime castable as xs:date) then xxf:instance('control-instance')/endTime else $startTime"/>
+
+                <!-- Set the intervalUnits.
+                     This is the first unit in intervalUnitsOptions where the unit multiplied by the range is greater than the interval between startTime and endTime -->
+                <xxf:variable name="intervalUnitsOptions"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/intervalUnits/option"/>
+                <xxf:variable name="viableIntervalUnitsOptions"
+                    select="$intervalUnitsOptions[ if (@value castable as xs:dayTimeDuration) then xs:date($startTime) + (xs:integer(@range) * xs:dayTimeDuration(@value)) gt xs:date($endTime)  else if (@value castable as xs:yearMonthDuration) then xs:date($startTime) + (xs:integer(@range) * xs:yearMonthDuration(@value)) gt xs:date($endTime) else false()]"/>
+                <xxf:variable name="intervalUnits"
+                    select="if (exists($viableIntervalUnitsOptions[1])) then $viableIntervalUnitsOptions[1]/@value else $intervalUnitsOptions[last()]/@value"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/intervalUnits" value="$intervalUnits"/>
+
+                <!-- Set the interval
+                     The interval is the first intervalOptions where the value multiplied by the intervalUnits is greater than the interval between startTime and endTime -->
+                <xxf:variable name="intervalOptions"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/interval/option"/>
+                <xxf:variable name="viableIntervalOptions"
+                    select="$intervalOptions[ if ($intervalUnits castable as xs:dayTimeDuration) then xs:date($startTime) + (xs:integer(@value) * xs:dayTimeDuration($intervalUnits)) gt xs:date($endTime) else if ($intervalUnits castable as xs:yearMonthDuration) then xs:date($startTime) + (xs:integer(@value) * xs:yearMonthDuration($intervalUnits)) gt xs:date($endTime) else false()]"/>
+                <xxf:variable name="interval"
+                    select="if (exists($viableIntervalOptions[1])) then $viableIntervalOptions[1]/@value else $intervalOptions[last()]/@value"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/interval" value="$interval"/>
+
+                <!-- Note that xxf:instance('control-instance')/current-chart/endTime will get set 
+                     though the xforms-value-changed actions on startTime, interval and intervalUnits that invoke set-chart-parameters-->
+
+            </xf:action>
+
+            <!-- Some chart parameters are set by the user or in initialise-chart-parameters. ***jc
+                    startTime, interval, intervalUnits
+
+                 This action is called when one (or more) of these parameters changes, to set
+                    intervalInDays is xs:dayTimeDuration - calculated from interval and intervalUnits
+                    endTime is xs:date - calculated from startTime and intervalInDays.
+                  -->
+            <xf:action ev:event="set-chart-parameters">
+                <!-- First check that parameters are set correctly -->
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/startTime"
+                    value="if (. castable as xs:date) then . else current-date()"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/interval" value="if (. castable as xs:integer) then . else 20"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/intervalUnits"
+                    value="if ((. castable as xs:dayTimeDuration) or (. castable as xs:yearMonthDuration)) then . else 'P1M'"/>
+
+                <xxf:variable name="startTime" select="xxf:instance('control-instance')/current-chart/startTime"/>
+                <xxf:variable name="intervalUnits" select="xxf:instance('control-instance')/current-chart/intervalUnits"/>
+                <xxf:variable name="interval" select="xxf:instance('control-instance')/current-chart/interval"/>
+                <xxf:variable name="intervalDuration"
+                    select="if ($intervalUnits castable as xs:dayTimeDuration) then xs:integer($interval) * xs:dayTimeDuration($intervalUnits) else xs:integer($interval) * xs:yearMonthDuration($intervalUnits)"/>
+
+                <!-- Set the endTime.
+                     Originally, $intervalDuration was cast here to xs:dayTimeDuration or xs:yearMonthDuration, but that doesn't work (why?)-->
+                <xxf:variable name="endTime" select="xs:date($startTime) + $intervalDuration"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/endTime" value="$endTime"/>
+
+                <!-- Set the intervalInDays -->
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/intervalInDays" value="xs:date($endTime) - xs:date($startTime)"/>
+
+                <!-- Step is the unit of measurement on the x-axis -->
+                <xf:setvalue ref="xxf:instance('control-instance')/current-chart/step"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/intervalStep/step[xs:dayTimeDuration(xxf:instance('control-instance')/current-chart/intervalInDays) gt xs:dayTimeDuration(@threshold)][1]/@value"
+                />
+            </xf:action>
+
+            <!-- Action to generate the chart as SVG 
+                 Can only generate the chart if some variables are selected -->
+            <xf:action ev:event="generate-chart">
+                <xf:action if="exists(xxf:instance('control-instance')/current-chart/variables/variable)">
+                    <!-- Configure the chart variables -->
+                    <xf:dispatch name="configure-chart-variables" target="main-model"/>
+
+                    <!-- Generate the chart through XSLT pipeline -->
+                    <xf:delete nodeset="xxf:instance('control-instance')/current-chart/svgChart/*"/>
+                    <xf:delete nodeset="xxf:instance('control-instance')/current-chart/htmlChart/*"/>
+
+                    <xxf:variable name="xsltPipeline"
+                        select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/generateSVGChart.xpl')"/>
+
+                    <!-- png rendition just returns file name of png -->
+                    <xf:action if="xxf:instance('control-instance')/current-chart/rendition='png'">
+                        <xf:insert context="xxf:instance('control-instance')/current-chart/svgChart"
+                            origin="xxf:call-xpl($xsltPipeline, ('instance','control'), (xxf:instance('view-instance'),xxf:instance('control-instance')) , 'data')"
+                        />
+                    </xf:action>
+
+                    <!-- svg rendition returns the svg -->
+                    <xf:action if="xxf:instance('control-instance')/current-chart/rendition='svg'">
+                        <xf:insert context="xxf:instance('control-instance')/current-chart/htmlChart"
+                            origin="xxf:call-xpl($xsltPipeline, ('instance','control'), (xxf:instance('view-instance'),xxf:instance('control-instance')) , 'data')"
+                        />
+                    </xf:action>
+                </xf:action>
+            </xf:action>
+
+
+
+            <!-- ========= Navigation of  Views and Reports ========= 
+                 ==================================================== -->
+
+            <!-- The viewNavigationType elements match viewNavigationType in view-parameters viewNavigationTypeSelection -->
+            <xf:instance id="viewNavigationList-instance">
+                <viewNavigationList xmlns="">
+                    <viewNavigationType value="summaries"/>
+                    <viewNavigationType value="reports"/>
+                </viewNavigationList>
+            </xf:instance>
+
+            <!-- Application defined action to initialize the viewNavigationList from the dictionary -->
+            <xf:action ev:event="initialize-viewNavigationList">
+                <xxf:variable name="compositionType" select="'#CityEHR:View'"/>
+
+                <!-- Folder list only has folders that contain views -->
+                <xxf:variable name="folderList"
+                    select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[iso-13606:composition/@typeId=$compositionType]"/>
+
+                <!-- Iterate through the list of folders -->
+                <xf:action xxf:iterate="$folderList">
+                    <xxf:variable name="folder" select="."/>
+                    <xxf:variable name="folderIRI" select="$folder/@code"/>
+                    <xxf:variable name="folderDisplayName" select="$folder/@displayName"/>
+
+                    <!-- Iterate through the viewNavigationType (currently only summaries or reports) -->
+                    <xf:action xxf:iterate="xxf:instance('viewNavigationList-instance')/viewNavigationType">
+                        <xxf:variable name="viewNavigationType" select="."/>
+
+                        <!-- cityEHR:viewType is Composition | Folder | Report
+                         Just need to separate the summaries (Composition or Folder) from the reports (Report) -->
+                        <xxf:variable name="viewType" select="if ($viewNavigationType/@value='reports') then 'Report' else ('Composition','Folder')"/>
+
+                        <!-- Set of views (summaries or reports) for this folder, sorted by rank.
+                             The views are iso-13606:composition -->
+                        <xxf:variable name="folderContents"
+                            select="xxf:sort($folder/iso-13606:composition[@typeId=$compositionType][@cityEHR:viewType=$viewType][@cityEHR:rank!='0'],@cityEHR:rank,'number','ascending')"/>
+
+                        <!-- If views exist for this folder, then add the folder to the viewNavigationType -->
+                        <xf:action if="exists($folderContents)">
+                            <!-- Insert the folder template -->
+                            <xf:insert context="$viewNavigationType" origin="xxf:instance('control-instance')/iso-13606:folder" nodeset="*"
+                                at="last()" position="after"/>
+                            <xxf:variable name="viewNavigationFolder" select="$viewNavigationType/iso-13606:folder[last()]"/>
+
+                            <!-- Set code and displayName -->
+                            <xf:setvalue ref="$viewNavigationFolder/@code" value="$folder/@code"/>
+                            <xf:setvalue ref="$viewNavigationFolder/@displayName" value="$folder/@displayName"/>
+
+                            <!-- Iterate through the views and add to the viewNavigationFolder -->
+                            <xf:action xxf:iterate="$folderContents">
+                                <xxf:variable name="viewNavigationItem" select="."/>
+                                <xf:insert context="$viewNavigationFolder" origin="$viewNavigationItem" nodeset="*" at="last()" position="after"/>
+                            </xf:action>
+
+                        </xf:action>
+
+                    </xf:action>
+
+                </xf:action>
+
+                <!-- SHow or hide the viewNavigationType tabs -->
+
+            </xf:action>
+
+
+
+            <!-- ========= Summary Views and Reports ========= 
+                 ============================================= -->
+
+            <xf:instance id="view-html-instance">
+                <html xmlns=""/>
+            </xf:instance>
+            <xf:instance id="report-html-instance">
+                <html xmlns=""/>
+            </xf:instance>
+
+            <!-- Application defined action to render the summary view -->
+            <xf:action ev:event="render-view">
+                <!-- Clear the view (in case anything goes wrong with rendering the new view) -->
+                <xf:delete nodeset="xxf:instance('view-html-instance')/*"/>
+
+                <!-- Create HTML -->
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
+                    <xxf:context name="input-instance" select="xxf:instance('view-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('view-html-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- Application defined action to render the report -->
+            <xf:action ev:event="render-report">
+                <!-- Clear the report (in case anything goes wrong with rendering the new report) -->
+                <xf:delete nodeset="xxf:instance('report-html-instance')/*"/>
+
+                <!-- Create HTML -->
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
+                    <xxf:context name="input-instance" select="xxf:instance('patientSet-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('report-html-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+
+
+            <!-- Application defined action to initialize the summary views (summaries or reports) 
+                
+                 The list of summaries and reports has been created in viewNavigationList-instance
+                   
+                 Load the initial summary view, if one exists.
+                 If the summary views page was invoked by the user clicking to see Alerts then:
+                     compositionHandle is set to the IRI of the alert view
+                     compositionStatus is set to 'new' in view-parameters-instance
+                     
+                 So if an alert, set the viewIRI to the alertViewIRI
+                 Otherwise set the viewIRI to the first summary or report found in viewNavigationList-instance         
+             -->
+            <xf:action ev:event="initialize-views">
+
+                <!-- Get the first vuew in the set of views for this application -->
+                <xxf:variable name="firstView" select="xxf:instance('viewNavigationList-instance')//iso-13606:composition[1]"/>
+
+                <!-- Get the alert view (if requested and it exists) -->
+                <xxf:variable name="alertViewIRI"
+                    select="if (xxf:instance('view-parameters-instance')/compositionStatus='new') then xxf:instance('view-parameters-instance')/compositionHandle else ''"/>
+                <xxf:variable name="alertView"
+                    select="if ($alertViewIRI!='') then (xxf:instance('viewNavigationList-instance')//iso-13606:folder/iso-13606:composition[@code=$alertViewIRI])[1] else ()"/>
+
+                <!-- Set the initial view to display -->
+                <xxf:variable name="initialView" select="if (exists($alertView)) then $alertView else $firstView"/>
+
+                <!-- Set the currentSummary or currentReport.
+                     Or neither, since its possible that there are no views defined in the information model.
+                     Need to set global parameters;
+                         careSettingIRI and viewNavigationType (summaries or reports)
+                     
+                     Then currentSummary or currentReport, depending on the viewNavigationType -->
+                <xf:action if="exists($initialView)">
+                    <!-- Set general parameters -->
+                    <xxf:variable name="careSettingIRI" select="$initialView/ancestor::iso-13606:folder/@code"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSettingIRI"/>
+
+                    <xxf:variable name="viewNavigationType" select="$initialView/ancestor::viewNavigationType/@value"/>
+
+                    <!-- Set currentSummary or currentReport -->
+                    <xxf:variable name="currentView"
+                        select="if ($viewNavigationType='summaries') then xxf:instance('control-instance')/currentSummary else if ($viewNavigationType='reports') then xxf:instance('control-instance')/currentReport else ()"/>
+                    <xf:action if="exists($currentView)">
+                        <xf:setvalue ref="$currentView/viewIRI" value="$initialView/@code"/>
+                        <xf:setvalue ref="$currentView/displayName" value="$initialView/@displayName"/>
+                        <xf:setvalue ref="$currentView/careSettingIRI" value="$careSettingIRI"/>
+                    </xf:action>
+
+                    <!-- Now that the currentView is set, can also set the viewNavigationType
+                         Ordinarily, setting this would trigger the set-viewNavigationType action, but not while the xform is loading
+                         So invoke directly - also then invokes load-and-render-view which uses the currentView for the viewNavigationType -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="$viewNavigationType"/>
+                    <xf:dispatch name="set-viewNavigationType" target="main-model"/>
+
+                </xf:action>
+
+                <!-- No views to show - can only view notifcations (if there are any) -->
+                <xf:action if="not(exists($initialView))">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI"
+                        value="xxf:instance('view-parameters-instance')/specialtyIRI"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'notifications'"/>
+                </xf:action>
+
+                <!-- Now reset the compositionStatus (in case it was passed into the view as 'new' to display alerts) -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'none'"/>
+
+            </xf:action>
+
+
+            <!-- Application defined action to set the type of the view.
+                 The type can be summaries | reports | notifcations
+                 If a summary or report is already loaded then it just needs to be displayed (so nothing to do here)
+                 If a summary or report is not already loaded, then set the first one as the current viewIRI, then load and render
+                 The list of views is already set up in viewNavigationList-instance
+            -->
+            <xf:action ev:event="set-viewNavigationType">
+                <xxf:variable name="viewNavigationType" select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
+
+                <!-- Views - summaries and reports - current selection is held in currentSummary or currentReport -->
+                <xf:action if="$viewNavigationType=('summaries','reports')">
+                    <!-- Current view is either currentSummary or currentReport -->
+                    <xxf:variable name="currentView"
+                        select="if ($viewNavigationType='summaries') then xxf:instance('control-instance')/currentSummary else xxf:instance('control-instance')/currentReport"/>
+
+                    <!-- If there is no view loaded, then set the first one.
+                         Note that the same view may be included in more than one folder -->
+                    <xf:action if="$currentView/viewIRI=''">
+                        <xxf:variable name="viewList"
+                            select="xxf:instance('viewNavigationList-instance')/viewNavigationType[@value=$viewNavigationType]/iso-13606:folder/iso-13606:composition"/>
+
+                        <!-- A view should exist, since the navigation tab was displayed, but check anyway -->
+                        <xxf:variable name="firstView" select="$viewList[1]"/>
+
+                        <xf:action if="exists($firstView)">
+                            <xf:dispatch name="load-and-render-view" target="main-model">
+                                <xxf:context name="view" select="$firstView"/>
+                            </xf:dispatch>
+                        </xf:action>
+
+                    </xf:action>
+
+                    <!-- If there is a view already selected for this viewNavigationType -->
+                    <xf:action if="not($currentView/viewIRI='')">
+                        <xxf:variable name="selectedViewIRI" select="$currentView/viewIRI"/>
+                        <xxf:variable name="currentViewCareSettingIRI" select="$currentView/careSettingIRI"/>
+                        <xxf:variable name="selectedView"
+                            select="xxf:instance('viewNavigationList-instance')/viewNavigationType[@value=$viewNavigationType]/iso-13606:folder[@code=$currentViewCareSettingIRI]/iso-13606:composition[@code=$selectedViewIRI]"/>
+                        <xf:dispatch name="load-and-render-view" target="main-model">
+                            <xxf:context name="view" select="$selectedView"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                </xf:action>
+
+
+                <!-- Notifications - current selection is held in xxf:instance('notificationsControl-instance')/currentNotification,
+                     Which has the full structure for the notification.
+                     If no notification has previously been selected, then set to the first in the list
+                     Otherwsie don't need to do anything, the current notification will just get displayed -->
+                <xf:action if="$viewNavigationType='notifications'">
+
+                    <!-- If no notification has been selected, then set to the first in the list -->
+                    <xf:action if="not(exists(xxf:instance('notificationsControl-instance')/currentNotification/*))">
+
+                        <!-- Notifications are split into types (i.e. annotation | action) -->
+                        <xxf:variable name="annotationNotifications" select="xxf:instance('notification-annotations-instance')/notification"/>
+                        <xxf:variable name="actionNotifications" select="xxf:instance('notification-actions-instance')/notification"/>
+                        <xxf:variable name="firstNotification" select="($annotationNotifications|$actionNotifications)[1]"/>
+
+                        <xf:dispatch name="set-notification" target="main-model">
+                            <xxf:context name="selectedNotification" select="$firstNotification"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                </xf:action>
+            </xf:action>
+
+
+            <!-- Application defined action to load and render the view.
+                 The views for each viewNavigationType (summaries or reports) are set up in viewNavigationList-instance
+                 The view passed as a parameter is an iso-13606:composition element from that list 
+                 The viewType is either Composition, Folder or Report -->
+            <xf:action ev:event="load-and-render-view">
+                <xxf:variable name="view" select="event('view')"/>
+
+                <!-- Only load if view exists -->
+                <xf:action if="exists($view)">
+                    <xxf:variable name="viewIRI" select="$view/@code"/>
+                    <xxf:variable name="viewDisplayName" select="$view/@displayName"/>
+                    <xxf:variable name="viewType" select="$view/@cityEHR:viewType"/>
+                    <xxf:variable name="viewCareSetting" select="$view/ancestor::iso-13606:folder"/>
+                    <xxf:variable name="viewCareSettingIRI" select="if (exists($viewCareSetting)) then $viewCareSetting/@code else ''"/>
+
+                    <!-- Set the global careSettingIRI -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$viewCareSettingIRI"/>
+
+                    <!-- Set the page displayName -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName" value="$viewDisplayName"/>
+
+                    <!-- For Composition or Folder views -->
+                    <xf:action if="$viewType = ('Composition','Folder')">
+                        <!-- Set the currentSummary in control-instance -->
+                        <xf:setvalue ref="xxf:instance('control-instance')/currentSummary/viewIRI" value="$viewIRI"/>
+                        <xf:setvalue ref="xxf:instance('control-instance')/currentSummary/displayName" value="$viewDisplayName"/>
+                        <xf:setvalue ref="xxf:instance('control-instance')/currentSummary/careSettingIRI" value="$viewCareSettingIRI"/>
+
+                        <!-- Load the view -->
+                        <xf:dispatch name="load-view" target="summary-view-model">
+                            <xxf:context name="view" select="$view"/>
+                        </xf:dispatch>
+
+                        <!-- Run XSLT to render the view (for Composition or Folder type views) -->
+                        <xf:dispatch name="render-view" target="main-model"/>
+
+                        <!-- Reset the charts -->
+                        <xf:dispatch name="reset" target="viewControlsActions-model"/>
+
+                        <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+                        <xf:rebuild model="viewControlsActions-model"/>
+                    </xf:action>
+
+                    <!-- For Report views -->
+                    <xf:action if="$viewType = 'Report'">
+
+                        <!-- Set the currentReport in control-instance -->
+                        <xf:setvalue ref="xxf:instance('control-instance')/currentReport/viewIRI" value="$viewIRI"/>
+                        <xf:setvalue ref="xxf:instance('control-instance')/currentReport/displayName" value="$viewDisplayName"/>
+                        <xf:setvalue ref="xxf:instance('control-instance')/currentReport/careSettingIRI" value="$viewCareSettingIRI"/>
+
+                        <!-- First generate the report - its then stored in patientSet-instance -->
+                        <xf:dispatch name="generate-report" target="exportData-model">
+                            <xxf:context name="reportIRI" select="$view/iso-13606:composition[1]"/>
+                            <xxf:context name="patientCohort" select="xxf:instance('view-parameters-instance')/patientId"/>
+                            <xxf:context name="exportDataFormat" select="''"/>
+                            <xxf:context name="outputHeaderRow" select="''"/>
+                        </xf:dispatch>
+
+                        <!-- Run XSLT to render the report  -->
+                        <xf:dispatch name="render-report" target="main-model"/>
+
+                    </xf:action>
+
+
+                </xf:action>
+            </xf:action>
+
+
+
+            <!-- ========= Set up Folder when the model is ready =================== 
+                 ================================================================== -->
+            <xf:action ev:event="xforms-model-construct-done">
+                <!-- Set up the patient for this patient-specific view -->
+                <xf:dispatch name="set-patient-for-view" target="patientDemographics-model"/>
+
+                <!-- Load dictionary for current specialty 
+                     This is language dependent -->
+                <xf:dispatch name="load-dictionary" target="dictionary-model">
+                    <xxf:context name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                    <xxf:context name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
+                    <xxf:context name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+                </xf:dispatch>
+
+                <!-- Initialize the list of views for navigation.
+                     This sets up viewNavigationList-instance -->
+                <xf:dispatch name="initialize-viewNavigationList" target="main-model"/>
+
+                <!-- Set the Care Setting.
+                     careSettingIRI is passed in view-parameters, but use the default if it is not set -->
+                <!--
+                <xxf:variable name="careSetting"
+                    select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
+                -->
+
+                <!-- Reset locations for notifications.
+                     Looking patient-specific notifications only -->
+                <xf:setvalue ref="xxf:instance('notificationsControl-instance')/notificationLocation"
+                    value="concat(.,'/',xxf:instance('view-parameters-instance')/patientId)"/>
+
+                <!-- Get the care teams for this user -->
+                <xf:dispatch name="getCareTeamsForUser" target="careTeam-model"/>
+
+                <!-- Get the list of the userId, roles and care teams for the current user.
+                     Then set the actor list for use in the get-notifications query -->
+                <xxf:variable name="userIRI" select="xxf:instance('user-instance')/@id"/>
+                <xxf:variable name="careTeamIRIList" select="xxf:instance('careTeamList-instance')/careTeam/@value"/>
+                <xxf:variable name="roleIRIList" select="xxf:instance('user-instance')/rbac/role/@value"/>
+
+                <!-- Set up the actor list for the notifcation query.
+                     The parameter showNotifications determines which notifications are shown -->
+                <xf:setvalue ref="xxf:instance('control-instance')/actorList"
+                    value="if (xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/showNotifications='user') then string-join(($userIRI,$careTeamIRIList,$roleIRIList),''',''') else ''"/>
+
+                <!-- Set up the filterCriteria for the notifcation query -->
+                <xf:dispatch name="set-filterCriteria" target="main-model"/>
+
+                <!-- Get the notifications for this patient. -->
+                <xf:dispatch name="load-notifications" target="notification-model">
+                    <xxf:context name="actorList" select="xxf:instance('control-instance')/actorList"/>
+                    <xxf:context name="filterCriteria" select="xxf:instance('control-instance')/filterCriteria"/>
+                </xf:dispatch>
+
+                <!-- cda-instance control (for generating reports) -->
+                <xxf:variable name="specialtyIRI" select="xxf:instance('view-parameters-instance')/specialtyIRI"/>
+                <xf:setvalue ref="xxf:instance('cdaControl-instance')/specialtyIRI" value="$specialtyIRI"/>
+                <xf:setvalue ref="xxf:instance('cdaControl-instance')/specialtyId" value="replace(substring($specialtyIRI,2),':','-')"/>
+
+                <!-- Expand view selection view (or not) -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                    value="xxf:instance('view-parameters-instance')/pageInformation/page[@page=xxf:instance('view-parameters-instance')/page]/@showViewNavigationItemList"/>
+
+                <!-- Load the initial summary view (from summaries or reports), if one exists.-->
+                <xf:dispatch name="initialize-views" target="main-model"/>
+
+                <!-- Initialise the current-chart parameters -->
+                <xf:dispatch name="setup-charts" target="main-model"/>
+
+                <!-- Need recalculate so that viewControlsActions binds are refreshed -->
+                <xf:recalculate model="main-model"/>
+
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+
+            </xf:action>
+
+
+            <!-- When form is ready to display -->
+            <xf:action ev:event="xforms-ready">
+                <!-- viewNavigationTypeSelection for this page -->
+                <xxf:variable name="viewNavigationTypeSelection"
+                    select="xxf:instance('application-parameters-instance')/viewNavigationTypeSelection/view[@viewType=xxf:instance('view-parameters-instance')/page]"/>
+
+                <!-- Only show Notification tab in viewNavigationTypeSelection if there are notifications for this patient
+                     and the parameter showNotifications is set to user|all -->
+                <xf:action
+                    if="(exists(xxf:instance('notification-annotations-instance')/notification) or exists(xxf:instance('notification-actions-instance')/notification)) and xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/showNotifications=('user','all')">
+                    <xf:setvalue ref="$viewNavigationTypeSelection/viewNavigationType[@value='notifications']/@display" value="'show'"/>
+                </xf:action>
+
+                <!-- Show (or not) tabs for summaries and reports.
+                     Check whether summaries and reports exist in viewNavigationList-instance -->
+                <xf:setvalue ref="$viewNavigationTypeSelection/viewNavigationType[@value='summaries']/@display"
+                    value="if (exists(xxf:instance('viewNavigationList-instance')/viewNavigationType[@value='summaries']/iso-13606:folder/*)) then 'show' else 'hidden'"/>
+                <xf:setvalue ref="$viewNavigationTypeSelection/viewNavigationType[@value='reports']/@display"
+                    value="if (exists(xxf:instance('viewNavigationList-instance')/viewNavigationType[@value='reports']/iso-13606:folder/*)) then 'show' else 'hidden'"/>
+
+                <!-- Refresh the bindings on the viewControlsActions-model -->
+                <xf:recalculate model="viewControlsActions-model"/>
+
+            </xf:action>
+
+        </xf:model>
+
+
+    </xhtml:head>
+
+
+    <!-- ========================== HTML Body   ================== 
+         ========================================================= -->
+    <xhtml:body class="cityEHRBase orbeon patient">
+        <!-- View XML dialogue box -->
+        <xi:include href="cityEHRViewXMLDialog.xhtml"/>
+        <!-- View SVG Charts dialogue box -->
+        <xi:include href="cityEHRViewChartDialog.xhtml"/>
+        <!-- Fixed Header Information -->
+        <xhtml:div id="ehrHeader">
+            <!-- Patient label pane -->
+            <xhtml:div id="patientLabel">
+                <xi:include href="cityEHRPatientLabel.xhtml"/>
+            </xhtml:div>
+            <!-- System-level Navigation Pane -->
+            <xhtml:div id="systemNavigation">
+                <xi:include href="cityEHRNavigation.xhtml"/>
+            </xhtml:div>
+            <!-- Logo Pane -->
+            <xhtml:div id="logo">
+                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+            </xhtml:div>
+        </xhtml:div>
+        <!-- === Level 2 /3 =================================== 
+             ehrContent
+                 Contains
+                     ehrNavigation
+                     ehrView
+                     ehrInfo
+             ==================================================
+        -->
+        <xhtml:div id="ehrContent">
+            <!-- =========================================================
+                ehrNavigation - navigation around the EHR
+                    Contains
+                        navigationType
+                        navigationDisplay
+                ========================================================= -->
+            <xxf:variable name="ehrNavigationClass"
+                select="if (xxf:instance('view-parameters-instance')/viewDisplayLayout='landscape') then 'hidden' else ''"/>
+            <xhtml:div id="ehrNavigation" class="{$ehrNavigationClass}">
+
+                <xhtml:div id="navigationType">
+
+                    <!-- Controls to select the View Navigation type -->
+                    <xi:include href="cityEHRViewNavigationTypeSelection.xhtml"/>
+
+                    <!-- Button to collapse (hide) ehrNavigation -->
+                    <xhtml:div id="collapseNavigation">
+
+                        <xf:trigger appearance="minimal" class="layoutControl">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseNavigation']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'landscape'"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+
+                </xhtml:div>
+
+                <!-- Navigation display for views, reports and notifications ***jc
+                     Views for summaries and reports have been set up in xxf:instance('viewNavigationList-instance')/viewNavigationType-->
+                <xhtml:div id="navigationDisplay" class="navigation">
+                    <xxf:variable name="viewNavigationType" select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
+
+                    <!-- Display list of summary views or reports -->
+                    <xf:group ref="$viewNavigationType=('summaries','reports')"
+                        class="{if ($viewNavigationType=('summaries','reports')) then '' else 'hidden'}">
+
+                        <xxf:variable name="currentView"
+                            select="if ($viewNavigationType='summaries') then xxf:instance('control-instance')/currentSummary else xxf:instance('control-instance')/currentReport"/>
+
+                        <!-- Folder list for this  viewNavigationType -->
+                        <xxf:variable name="folderList"
+                            select="xxf:instance('viewNavigationList-instance')/viewNavigationType[@value=$viewNavigationType]/iso-13606:folder"/>
+                        <xxf:variable name="currentCareSetting" select="xxf:instance('view-parameters-instance')/careSettingIRI"/>
+                        <xxf:variable name="showViewNavigationItemList" select="xxf:instance('view-parameters-instance')/showViewNavigationItemList"/>
+
+                        <!-- Show list of views for each folder (care context) -->
+                        <xf:repeat nodeset="$folderList" id="folder-repeat">
+                            <xxf:variable name="folder" select="."/>
+                            <xxf:variable name="folderIRI" select="$folder/@code"/>
+                            <xxf:variable name="folderDisplayName" select="$folder/@displayName"/>
+
+                            <!-- Set of views or reports for this folder (already sorted by rank) -->
+                            <xxf:variable name="folderContents" select="$folder/iso-13606:composition"/>
+                            <xxf:variable name="folderContentsCount" select="count($folderContents)"/>
+
+                            <xxf:variable name="viewNavigationCategoryClass"
+                                select="if ($folderContentsCount=0) then 'hidden' else if ($folderIRI=$currentCareSetting) then 'viewNavigationSelectedCategory' else 'viewNavigationCategory'"/>
+
+                            <!-- This containing span helps Orbeon's repeat to produce HTML that doesn't interfere with our own CSS -->
+                            <xxf:variable name="selectionActionClass"
+                                select="if ($folderIRI=$currentCareSetting and xxf:instance('view-parameters-instance')/showViewNavigationItemList='true') then 'collapse' else 'expand'"/>
+                            <xf:trigger class="{$viewNavigationCategoryClass}" appearance="minimal">
+                                <xf:label
+                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/viewNavigationItem/prefix[@action=$selectionActionClass],$folderDisplayName,' (',$folderContentsCount,')')"/>
+                                <!-- Action when folder is selected -->
+                                <xf:action ev:event="DOMActivate">
+                                    <xxf:variable name="selectedFolder" select="$folderList[index('folder-repeat')]"/>
+                                    <xxf:variable name="selectedFolderIRI" select="$selectedFolder/@code"/>
+                                    <xf:message ref="$folderIRI"/>
+
+                                    <!-- Toggle display of viewNavigationItemList on currently selected viewNavigationItem -->
+                                    <!--
+                                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                                        value="if ($selectedFolderIRI=$currentCareSetting and $showViewNavigationItemList='true') then 'false'  else 'true'"/>
+                                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$selectedFolderIRI"/>
+                                        -->
+                                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                                        value="if ($folderIRI=$currentCareSetting and $showViewNavigationItemList='true') then 'false'  else 'true'"/>
+                                    <!-- Set the care setting -->
+                                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$folderIRI"/>
+                                    <!-- Set first view in list as the current view and load it -->
+                                    <xxf:variable name="selectedView" select="$folderContents[1]"/>
+                                    <!-- Load and render the view -->
+                                    <xf:dispatch name="load-and-render-view" target="main-model">
+                                        <xxf:context name="view" select="$selectedView"/>
+                                    </xf:dispatch>
+                                </xf:action>
+                            </xf:trigger>
+
+                            <!-- Show the views for the currently selected folder -->
+                            <xf:group ref="xxf:instance('view-parameters-instance')[careSettingIRI=$folderIRI]"
+                                class="{if (xxf:instance('view-parameters-instance')/careSettingIRI=$folderIRI) then '' else 'hidden'}">
+                                <xf:repeat nodeset="$folderContents">
+                                    <xxf:variable name="view" select="."/>
+                                    <xxf:variable name="viewType" select="$view/@cityEHR:viewType"/>
+                                    <xxf:variable name="viewNavigationItemClass"
+                                        select="if ($currentView/viewIRI=$view/@code) then 'viewNavigationSelectedItem' else 'viewNavigationSubItem'"/>
+                                    <!-- Navigation item for each composition -->
+                                    <xf:trigger class="{$viewNavigationItemClass}" appearance="minimal">
+                                        <xf:label ref="$view/@displayName"/>
+                                        <!-- Action when view is selected -->
+                                        <xf:action ev:event="DOMActivate">
+                                            <!-- Load and render the view -->
+                                            <xf:dispatch name="load-and-render-view" target="main-model">
+                                                <xxf:context name="view" select="$view"/>
+                                            </xf:dispatch>
+                                        </xf:action>
+                                    </xf:trigger>
+                                    <!-- Display contents list for the summary view.
+                                         (Only for summaries not reports)
+                                          Iterate through the ClinicalDocuments
+                                          There should only be one for a Composition view, can be many for a Folder view.
+                                          But only show more than one if the viewHistory is set to 'historic'.
+                                    
+                                          Navigation on click is to:
+                                             Specified section in a Composition view
+                                             Specified composition in a Folder view 
+                                    
+                                          There is no on-click navigation for a 'current' Folder view -->
+                                    <xxf:variable name="contentClass"
+                                        select="if ($viewNavigationType='summaries' and $currentView/viewIRI=$view/@code) then 'viewSelectionList' else 'hidden'"/>
+                                    <xhtml:ul class="{$contentClass}">
+                                        <xxf:variable name="compositionList"
+                                            select="if ($viewNavigationType='reports') then () else if (xxf:instance('view-parameters-instance')/viewHistory='historic') then xxf:instance('view-instance')/cda:ClinicalDocument else xxf:instance('view-instance')/cda:ClinicalDocument[1]"/>
+                                        <xf:repeat nodeset="$compositionList">
+                                            <xxf:variable name="composition" select="."/>
+                                            <xxf:variable name="compositionCount" select="position()"/>
+                                            <xxf:variable name="effectiveTime" select="$composition/cda:effectiveTime/@value"/>
+                                            <xxf:variable name="crossRefId" select="concat('''Composition-',$compositionCount,'''')"/>
+                                            <!-- Only show the composition title for Folder views -->
+                                            <xxf:variable name="titleClass"
+                                                select="if ($viewType='Composition') then 'hidden' else 'viewSelectionHeading'"/>
+                                            <xhtml:li class="{$titleClass}" onclick="javascript:scrollToElement({$crossRefId})">
+                                                <xf:output
+                                                    ref="if ($effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($effectiveTime),xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else 
+                                                      if ($effectiveTime castable as xs:date) then format-date(xs:date($effectiveTime),xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else 
+                                                      if ($effectiveTime castable as xs:time) then format-time(xs:time($effectiveTime),xxf:instance('view-parameters-instance')/timeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else 
+                                                      $effectiveTime"/>
+                                                <xhtml:br />
+                                                <xf:output ref="$composition/cda:code[@codeSystem='cityEHR']/@displayName"/>
+                                            </xhtml:li>
+                                            <!-- Sections in the selected composition.
+                                                 Only show these for Composition views -->
+                                            <xhtml:li>
+                                                <xhtml:ul class="viewSelectionList">
+                                                    <xf:repeat
+                                                        nodeset="$composition/cda:component/cda:structuredBody/cda:component/cda:section[not(@cityEHR:visibility='alwaysHidden')]">
+                                                        <xxf:variable name="sectionCount" select="position()"/>
+                                                        <xxf:variable name="sectionCrossRefId"
+                                                            select="concat('''Composition-',$compositionCount,'-Section-',$sectionCount,'''')"/>
+                                                        <xxf:variable name="viewSelectionClass"
+                                                            select="if ($viewType='Composition') then 'viewSelection' else 'hidden'"/>
+                                                        <xhtml:li class="{$viewSelectionClass}"
+                                                            onclick="javascript:scrollToElement({$sectionCrossRefId})">
+                                                            <xf:output ref="./cda:title"/>
+                                                        </xhtml:li>
+                                                    </xf:repeat>
+                                                </xhtml:ul>
+                                            </xhtml:li>
+                                        </xf:repeat>
+                                    </xhtml:ul>
+                                </xf:repeat>
+                            </xf:group>
+                        </xf:repeat>
+                    </xf:group>
+
+                    <!-- Display list of notifications -->
+                    <xf:group ref="$viewNavigationType='notifications'" class="{if ($viewNavigationType='notifications') then '' else 'hidden'}">
+
+                        <!-- Notifications are split into types (i.e. annotation | notification) -->
+                        <xxf:variable name="annotationNotifications" select="xxf:instance('notification-annotations-instance')/notification"/>
+                        <xxf:variable name="actionNotifications" select="xxf:instance('notification-actions-instance')/notification"/>
+
+                        <xxf:variable name="notificationTypeList"
+                            select="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification/@type"/>
+
+                        <xf:repeat nodeset="$notificationTypeList" id="notification-type-repeat">
+                            <xxf:variable name="notificationType" select="."/>
+                            <xxf:variable name="notificationTypeDisplayName"
+                                select="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification[@type=$notificationType]/@typeDisplayName"/>
+
+                            <xxf:variable name="notificationList"
+                                select="if ($notificationType='annotation') then $annotationNotifications else $actionNotifications"/>
+                            <xxf:variable name="notificationsCount" select="count($notificationList)"/>
+
+                            <!-- Set to 'hidden' on zero count if we don't want to show the option -->
+                            <xxf:variable name="viewNavigationCategoryClass"
+                                select="if ($notificationsCount gt 0) then 'viewNavigationCategory' else 'hidden'"/>
+
+                            <!-- Click on the viewNavigationItemSelect trigger toggles the display of the viewNavigation contents.
+                                    Contents are displayed for the currently selected notificationType -->
+
+                            <xxf:variable name="selectionActionClass"
+                                select="if ($notificationType=xxf:instance('control-instance')/currentNotificationType and xxf:instance('view-parameters-instance')/showViewNavigationItemList='true') then 'collapse' else 'expand'"/>
+
+                            <!-- Trigger selects the type of notification -->
+                            <xf:trigger class="{$viewNavigationCategoryClass}" appearance="minimal">
+                                <xf:label
+                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/viewNavigationItem/prefix[@action=$selectionActionClass],$notificationTypeDisplayName,' (',$notificationsCount,')')"/>
+
+                                <!-- Action when notification type is selected -->
+                                <xf:action ev:event="DOMActivate">
+                                    <!-- Toggle display of viewNavigationItemList on currently selected viewNavigationItem -->
+                                    <xxf:variable name="selectedNotificationType" select="$notificationTypeList[index('notification-type-repeat')]"/>
+                                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                                        value="if ($selectedNotificationType=xxf:instance('control-instance')/currentNotificationType and .='true') then 'false'  else 'true'"/>
+                                    <xf:setvalue ref="xxf:instance('control-instance')/currentNotificationType" value="$selectedNotificationType"/>
+
+                                    <!-- Set first notification in list as the current notification and load it -->
+                                    <xf:action>
+                                        <xxf:variable name="selectedNotification" select="$notificationList[1]"/>
+                                        <!-- Set current notification -->
+                                        <xf:dispatch name="set-notification" target="main-model">
+                                            <xxf:context name="selectedNotification" select="$selectedNotification"/>
+                                        </xf:dispatch>
+                                    </xf:action>
+
+                                </xf:action>
+                            </xf:trigger>
+
+                            <!-- Show the notifications for the currently selected type -->
+                            <xxf:variable name="notificationTypeClass"
+                                select="if (xxf:instance('control-instance')/currentNotificationType=$notificationType and xxf:instance('view-parameters-instance')/showViewNavigationItemList='true') then '' else 'hidden'"/>
+
+                            <xhtml:span class="{$notificationTypeClass}">
+                                <xf:repeat nodeset="$notificationList" id="notification-repeat">
+                                    <xxf:variable name="notification" select="."/>
+                                    <xxf:variable name="notificationTimeDisplay"
+                                        select="if ($notification/effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($notification/effectiveTime), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                                            else if ($notification/effectiveTime castable as xs:date) then format-date(xs:date($notification/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ())
+                                            else $notification/effectiveTime"/>
+                                    <!-- selectionClass highlights the currently selected notification -->
+                                    <xxf:variable name="viewNavigationItemClass"
+                                        select="if (xxf:instance('notificationsControl-instance')/currentNotification/notification/notificationId=$notification/notificationId) then 'viewNavigationSelectedItem' else 'viewNavigationSubItem'"/>
+                                    <!-- Trigger selects the current notification -->
+                                    <xf:trigger class="{$viewNavigationItemClass}" appearance="minimal">
+                                        <!-- Note that the &#13; carriage return produces nothing, not a CR -->
+                                        <xf:label ref="concat($notificationTimeDisplay,' ',$notification/displayName)"/>
+                                        <!-- Action when notification is selected -->
+                                        <xf:action ev:event="DOMActivate">
+                                            <xxf:variable name="selectedNotification" select="$notificationList[index('notification-repeat')]"/>
+                                            <!-- Set current notification -->
+                                            <xf:dispatch name="set-notification" target="main-model">
+                                                <xxf:context name="selectedNotification" select="$selectedNotification"/>
+                                            </xf:dispatch>
+                                        </xf:action>
+                                    </xf:trigger>
+                                </xf:repeat>
+                            </xhtml:span>
+
+                            <!-- End of currently selected notification type -->
+                        </xf:repeat>
+                        <!-- End of repeat through notificationTypes -->
+
+                    </xf:group>
+
+                </xhtml:div>
+
+            </xhtml:div>
+
+            <!-- =========================================================
+                EHR View - the main display of stuff in the EHR
+                    Contains
+                    viewType
+                    viewControls
+                    viewDisplay
+                ========================================================= -->
+            <xhtml:div id="ehrView">
+                <!-- View Type - select the type of ehr view 
+                    ===================================================================== -->
+                <xhtml:div id="viewType">
+                    <!-- Button to expand (restore) ehrNavigation -->
+                    <xxf:variable name="expandNavigationClass"
+                        select="if (xxf:instance('view-parameters-instance')/viewDisplayLayout='portrait') then 'hidden' else ''"/>
+                    <xhtml:div id="expandNavigation" class="{$expandNavigationClass}">
+                        <xf:trigger appearance="minimal" class="layoutControl">
+                            <xf:label
+                                ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandNavigation']/@displayName"/>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'portrait'"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:div>
+
+                    <!-- Record Navigation Controls
+                        Move about within the patient record
+                    -->
+                    <xi:include href="cityEHRRecordNavigation.xhtml"/>
+                </xhtml:div>
+
+                <!-- View Controls - contains controls for the current displayed view content 
+                    ===================================================================== -->
+                <xhtml:div id="viewControls">
+                    <!-- View Controls Header -->
+
+                    <xi:include href="cityEHRViewControlsHeader.xhtml"/>
+
+                    <!-- View controls panel -->
+                    <xhtml:ul class="controlPanel">
+                        <xhtml:li class="controlPanelGroup">
+                            <!-- Only show  variable info for historic data view and when variable is selected ***jc -->
+                            <xf:group ref="xxf:instance('view-parameters-instance')[viewHistory='historic']">
+                                <xxf:variable name="selectedVariableCount"
+                                    select="count(xxf:instance('control-instance')/current-chart/variables/variable)"/>
+                                <xxf:variable name="selectedVariableDisplay"
+                                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/selectedVariableDisplay"/>
+                                <xhtml:span class="{if ($selectedVariableCount=0) then 'hidden' else 'controlItem'}">
+                                    <xf:output
+                                        ref="concat($selectedVariableDisplay/@prefix,$selectedVariableCount,$selectedVariableDisplay/@suffix,$selectedVariableDisplay/@startTimeLabel,xxf:instance('control-instance')/startTime,$selectedVariableDisplay/@endTimeLabel,xxf:instance('control-instance')/endTime)"
+                                    />
+                                </xhtml:span>
+                            </xf:group>
+                        </xhtml:li>
+                    </xhtml:ul>
+
+                    <!-- Use ths display for debugging setting of charting variables -->
+                    <!--
+                        <p>Start time:<xf:output ref="xxf:instance('control-instance')/current-chart/startTime"/>
+                        <br/> End time: <xf:output ref="xxf:instance('control-instance')/current-chart/endTime"/>
+                        <br/> PI Interval Value: <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/interval/@value"/>
+                        <br/> Interval: <xf:output ref="xxf:instance('control-instance')/current-chart/interval"/>
+                        <br/> Interval in Days: <xf:output ref="xxf:instance('control-instance')/current-chart/intervalInDays"/>
+                        <br/> PI Interval Units Value: <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Views/intervalUnits/@value"/>
+                        <br/> Interval Units: <xf:output ref="xxf:instance('control-instance')/current-chart/intervalUnits"/>
+                        <br/> Step: <xf:output ref="xxf:instance('control-instance')/current-chart/step"/>
+                        </p>
+                    -->
+                </xhtml:div>
+
+
+
+                <!-- View Content - contains display of the currently selected composition 
+                ===================================================================== -->
+                <xhtml:div id="viewDisplay" class="content">
+
+                    <!-- These hidden inputs are necessary so that javascript can be called in the view HTML    
+                    to set the variables for the charting. Toggle display:none / display:inline for debugging -->
+                    <xxf:variable name="inputStyle" select="'display:none;'"/>
+                    <xhtml:span style="{$inputStyle}">
+                        <xf:input id="setVariable-entryId" ref="xxf:instance('control-instance')/current-chart/variable/@entryId"
+                            style="{$inputStyle}"/>
+                        <xf:input id="setVariable-plotType" ref="xxf:instance('control-instance')/current-chart/variable/@plotType"
+                            style="{$inputStyle}"/>
+                        <xf:input id="setVariable-dateElementExtension"
+                            ref="xxf:instance('control-instance')/current-chart/variable/@dateElementExtension" style="{$inputStyle}"/>
+                        <xf:input id="setVariable-variableElementExtension"
+                            ref="xxf:instance('control-instance')/current-chart/variable/@variableElementExtension" style="{$inputStyle}"/>
+                        <xf:input id="setVariable-variableElementValue"
+                            ref="xxf:instance('control-instance')/current-chart/variable/@variableElementValue" style="{$inputStyle}"/>
+                        <xf:input id="setVariable-variableElementDisplayName"
+                            ref="xxf:instance('control-instance')/current-chart/variable/@variableElementDisplayName" style="{$inputStyle}"/>
+                        <xf:input id="setVariable-valueElementExtension"
+                            ref="xxf:instance('control-instance')/current-chart/variable/@valueElementExtension" style="{$inputStyle}"/>
+                        <xf:input id="setVariable-action" ref="xxf:instance('control-instance')/current-chart/variable/@action" style="{$inputStyle}"/>
+                        <!-- When the checked value is set, the variable is added/removed from the variable set.
+                         Use the change of checkboxStatus to trigger the variable setting. -->
+                        <xf:input id="checkboxStatus" ref="xxf:instance('control-instance')/current-chart/variable/@checkboxStatus"
+                            style="{$inputStyle}"/>
+                    </xhtml:span>
+
+
+                    <!-- Display the formatted summary view - only if viewNavigationType is summaries -->
+                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='summaries']" class="viewNavigationSelection">
+                        <xf:output ref="xxf:serialize(xxf:instance('view-html-instance'), 'html')" mediatype="text/html"/>
+                    </xf:group>
+
+                    <!-- Display the formatted report - only if viewNavigationType is reports -->
+                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='reports']" class="viewNavigationSelection">
+                        <xf:output ref="xxf:serialize(xxf:instance('report-html-instance'), 'html')" mediatype="text/html"/>
+                    </xf:group>
+
+                    <!-- Display the Notification - only if viewNavigationType is notifcation -->
+                    <xxf:variable name="displayNotificationClass"
+                        select="if (xxf:instance('view-parameters-instance')/viewNavigationType='notifications' and exists(xxf:instance('notificationsControl-instance')/currentNotification/notification[handle!=''])) then 'notificationInformation' else 'hidden'"/>
+
+                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='notifications']">
+                        <xhtml:ul class="{$displayNotificationClass}">
+                            <xhtml:li>
+                                <xi:include href="cityEHRNotificationDisplay.xhtml"/>
+                            </xhtml:li>
+                        </xhtml:ul>
+                    </xf:group>
+
+                    <!-- === Debugging ===
+                    ================= -->
+
+                    <!-- Page display name -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('view-parameters-instance')/pageDisplayName, 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+
+                    <!-- Dictionary instance -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('dictionary-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+
+                    <!-- viewNavigationList instance -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('viewNavigationList-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+
+                    <!-- Render SVG directly in main view - this works -->
+                    <!--
+                    <xhtml:p>
+                        <xf:repeat nodeset="xxf:instance('control-instance')/current-chart/htmlChart">
+                            <xxf:variable name="chartSVG" select="./div"/>
+                            <xf:output ref="if (exists($chartSVG)) then xxf:serialize($chartSVG, 'html') else ''" mediatype="text/html"/>
+                        </xf:repeat>
+                    </xhtml:p>
+-->
+
+                    <!--
+                    <xhtml:p class="message">
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notification-annotations-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('notification-actions-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+
+                    <!--
+                    <xhtml:p class="message">
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+
+
+                    <!-- Use ths display for debugging setting of charting variables -->
+                    <!--
+                    <xf:repeat
+                        nodeset="xxf:instance('control-instance')/current-chart/variables/variable">
+                        <xhtml:p>
+                            <xf:repeat nodeset="./@*">
+                                <xf:output ref="concat(./name(),': ',.)"/>
+                                <xhtml:br/>
+                            </xf:repeat>
+                        </xhtml:p>
+                    </xf:repeat>
+                    -->
+                    <!-- Use ths display for debugging parameters passed in view-parameters 
+                    <userId/>
+                    <patientId/>
+                    <applicationIRI/>
+                    <specialtyIRI/>
+                    <careSettingIRI/>
+                    <formHandle/>
+                    <formStatus/>
+                -->
+                    <!--
+                    <xhtml:p>userId:<xhtml:br/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/userId"/>
+                    </xhtml:p>
+                    <xhtml:p>patientId:<xhtml:br/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/patientId"/>
+                    </xhtml:p>
+                    <xhtml:p>applicationId:<xhtml:br/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/applicationId"/>
+                    </xhtml:p>
+                    <xhtml:p>specialtyIRI:<xhtml:br/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/specialtyIRI"/>
+                    </xhtml:p>
+                    <xhtml:p>careSettingIRI:<xhtml:br/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/careSettingIRI"/>
+                    </xhtml:p>
+                    <xhtml:p>compositionHandle:<xhtml:br/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/compositionHandle"/>
+                    </xhtml:p>
+                    <xhtml:p>compositionStatus:<xhtml:br/>
+                    <xf:output ref="xxf:instance('view-parameters-instance')/compositionStatus"/>
+                    </xhtml:p>
+         -->
+
+                    <!-- Debug viewHistory -->
+                    <!--
+                    <xhtml:p class="message">viewHistory:<xhtml:br/>
+                        <xf:output ref="xxf:instance('view-parameters-instance')/viewHistory"/>
+                    </xhtml:p>
+
+       -->
+
+                    <!-- Use ths display for debugging patient label -->
+                    <!--
+                    <p>Alerts Query:<br/>
+                        <xf:output class="message" ref="xxf:instance('alert-query-instance')" mediatype="text/html"/>
+                    </p> 
+                    <p>Alerts Count:<br/>
+                        <xf:output class="message" ref="xxf:instance('entryCount-instance')" mediatype="text/html"/>
+                    </p> 
+                    
+                    -->
+
+                    <!-- For debugging view display -->
+                    <!--
+                    <xhtml:p>
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('view-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                    </xhtml:p>
+                    <xhtml:p>
+                    <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/formatted-view, 'data')/*, 'html')" mediatype="text/html"/>
+                    </xhtml:p>
+                -->
+
+                    <!-- dalQuery-instance and dalResponse-instance -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('dalQuery-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('dalResponse-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+
+                    <!-- For debugging view instance -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('view-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
+
+                    <!--
+                    <xhtml:p>
+                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('exportDataControl-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                    </xhtml:p>                   
+                    -->
+
+                    <!-- For debugging the general query instance -->
+                    <!--
+                    <xhtml:p class="ISO13606-Element-DisplayName">
+                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('query-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+
+                    <!-- For debugging the result of query to get all entry values -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('allEntryValues-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+
+                    <!-- For debugging the result of query to get latest entry values -->
+                    <!--
+                        <xhtml:p>
+                            <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('latestEntrySet-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                        </xhtml:p>
+                    -->
+                    <!--
+                    <xhtml:p>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('directoryElements-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+
+                    <!-- For debugging graph XML -->
+                    <!--
+                    <xhtml:p> Evaluation test:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:evaluate('string-join((xxf:instance(''control-instance'')/trueTest | (if (not(exists(xxf:instance(''control-instance'')/dummy-fails))) then () else xxf:instance(''control-instance'')/trueTest) | xxf:instance(''control-instance'')/falseTest | xxf:instance(''control-instance'')/test/@value ),'';'')')"
+                        />
+                    </xhtml:p>
+
+                    <xhtml:p> Match test:<xhtml:br/>
+                        <xf:input ref="xxf:instance('control-instance')/string">
+                            <xf:label ref="'String: '"/>
+                        </xf:input>
+                        <xf:input ref="xxf:instance('control-instance')/pattern">
+                            <xf:label ref="'Pattern: '"/>
+                        </xf:input>
+                        <xf:output
+                            ref="if (xxf:instance('control-instance')/pattern!='') then xxf:evaluate(concat('replace(''',xxf:instance('control-instance')/string,''',''',xxf:instance('control-instance')/pattern,''',','''s'')')) else xxf:instance('control-instance')/string">
+                            <xf:label ref="'Output: '"/>
+                        </xf:output>
+                    </xhtml:p>
+                    -->
+
+                    <!--
+                    <xhtml:p>svgChart:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/current-chart/htmlChart, 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                        <xxf:variable name="chartSVG" select="xxf:instance('control-instance')/current-chart/htmlChart/html"/>
+                        <xf:output ref="if (exists($chartSVG)) then xxf:serialize($chartSVG, 'html') else ''" mediatype="text/html"/>
+                    </xhtml:p>
+-->
+
+                    <!-- For debugging reports -->
+<!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patientSet-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('form-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+
+-->
+                    <!--
+                    <xf:output
+                        ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('report-html-instance'), 'data')/*, 'html')"
+                        mediatype="text/html"/>
+                        -->
+
+                </xhtml:div>
+
+            </xhtml:div>
+
+            <!-- === EHR information === -->
+            <!-- Check what we want for summaryviews.
+                 This contains reference to the knowledgeMap-instance which is declared in compositionMainModel
+                 Which is not included in this page -->
+
+            <!--
+            <xi:include href="cityEHRInformation.xhtml"/>
+-->
+
+        </xhtml:div>
+        <!-- Fixed footer -->
+        <xi:include href="cityEHRFooter.xhtml"/>
+
+        <!-- Need javascipt for selection of chart variables and scrolling of contents -->
+        <xhtml:script type="text/javascript" language="javascript"
+            src="{xxf:instance('view-parameters-instance')/staticFileRoot}/scripts/cityEHR.js?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
+        ></xhtml:script>
+    </xhtml:body>
+</xhtml:html>

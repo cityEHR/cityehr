@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRInProgressDialog.xhtml
+    
+    Modal dialog box that displays a message while lengthy actions complete.
+    Show at the start of the action, hide when the action is complete.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- === In progress Dialog for user actions ==============================================
+         Uses the following data set up in view-parameters:
+    
+    <staticInProgressDialogue>
+        <activeDialogue>inProgressId</activeDialogue>
+        <dialogue id="inProgressId">
+            <title>In Progress</title>
+            <message>Please wait while processing...</message>
+        </dialogue>
+    </staticInProgressDialogue>
+    =======================================================================================
+-->
+
+<xxf:dialog id="inProgressDialog" class="inprogress" appearance="full" level="modal" close="false"
+    draggable="false" visible="false" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+
+    <!-- When the dialog opens.
+         Perform the designated action.
+         Then close the dialog -->
+
+    <xhtml:img src="../resources/icons/loading.gif" height="20"/>
+
+</xxf:dialog>

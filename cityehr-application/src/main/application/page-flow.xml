@@ -1,0 +1,366 @@
+<!--
+  Copyright (C) 2010 Orbeon, Inc.
+
+  This program is free software; you can redistribute it and/or modify it under the terms of the
+  GNU Lesser General Public License as published by the Free Software Foundation; either version
+  2.1 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Lesser General Public License for more details.
+
+  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+-->
+
+<config xmlns="http://www.orbeon.com/oxf/controller">
+
+  <!-- ========== Files to serve directly ========== -->
+  <files path-info="*.gif"/>
+  <files path-info="*.css"/>
+  <files path-info="*.js"/>
+  <files path-info="*.png"/>
+  <files path-info="*.jpg"/>
+  <files path-info="*.wsdl"/>
+  <files path-info="*.html" mime-type="text/html"/>
+  <files path-info="*.java" mime-type="text/plain"/>
+  <files path-info="*.txt" mime-type="text/plain"/>
+  <files path-info="*.doc" mime-type="text/doc"/>
+  <files path-info="*.xml" mime-type="text/xml"/>
+  <files path-info="*.xconf" mime-type="text/xml"/>
+  <files path-info="*.pdf" mime-type="text/pdf"/>
+  <files path-info="*.rtf" mime-type="text/rtf"/>
+
+  <!-- Home page - EHR 
+       Can be passed an errorCode if application returns to home page
+       Can be passed ?debug=true to force start in debug mode (wteher debugging is enabled, or not) -->
+  <page id="home" path-info="/ehr/" view="views/cityEHRSignOn.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRSignOn'"/>
+    <setvalue ref="/parameters/errorCode" parameter="errorCode"/>
+    <setvalue ref="/parameters/mode" parameter="mode"/>
+  </page>
+  
+  <page id="page-not-found" path-info="/ehr/page-not-found" model="pipelines/cityEHRPageNotFound.xpl"/>
+
+  <!-- Non-patient views -->
+  <page path-info="/ehr/cityEHRAdmin/" view="views/cityEHRAdmin.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRAdmin'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+  
+  <page path-info="/ehr/cityEHRWireframe/" view="views/cityEHRWireframe.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRWireframe'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRRegistration/" model="pipelines/cityEHRFolder-Compositions.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRRegistration'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- Cross-patient views -->
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRDashboard/" model="pipelines/cityEHRDashboard.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRDashboard'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <page path-info="/ehr/cityEHRPatientSearch/" view="views/cityEHRPatientSearch.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRPatientSearch'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <page path-info="/ehr/cityEHRInTray/" view="views/cityEHRInTray.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRInTray'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <page path-info="/ehr/cityEHRClinicList/" view="views/cityEHRClinicList.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRClinicList'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+  
+  <page path-info="/ehr/cityEHROrderList/" view="views/cityEHROrderList.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHROrderList'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <page path-info="/ehr/cityEHRCohortSearch/" view="views/cityEHRCohortSearch.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRCohortSearch'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- ===== Patient specific views ===== 
+       ================================== -->
+  <page path-info="/ehr/cityEHRFolder-Events/" view="views/cityEHRFolder-Events.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Events'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <page path-info="/ehr/cityEHRFolder-Views/" view="views/cityEHRFolder-Views.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Views'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRFolder-Letters/" model="pipelines/cityEHRFolder-Compositions.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Letters'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRFolder-Forms/" model="pipelines/cityEHRFolder-Compositions.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Forms'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRFolder-Pathways/" model="pipelines/cityEHRFolder-Compositions.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Pathways'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <page path-info="/ehr/cityEHRFolder-Orders/" view="views/cityEHRFolder-Orders.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Orders'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+  
+  <page path-info="/ehr/cityEHRFolder-Bookings/" view="views/cityEHRFolder-Bookings.xhtml" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Bookings'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+
+  <!-- ====== Utilities ======================================
+       These return output to the browser.
+       Called with xf:load with show="new" 
+       ======================================================= -->
+  
+  
+  <!-- Export a Wordprocessor document.
+       This one is a 'model' not a 'view' so that the word document can be serialized and returned to the bowser as an attachment 
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRWordProcessorCDA/" model="pipelines/cityEHRWordProcessorCDA.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+  
+  <!-- Download resources
+       Zips up the specified folder on the server and returns to the browser
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRDownloadResources/" model="pipelines/cityEHRDownloadResources.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+  
+
+  <!-- Print HTML cache
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRPrintCachedHTML/" model="pipelines/cityEHRPrintCachedHTML.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- Export HTML cache
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRExportCachedHTML/" model="pipelines/cityEHRExportCachedHTML.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- Export a Wordprocessor attachment.
+       This one is a 'model' not a 'view' so that the word document can be serialized and returned to the bowser as an attachment 
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRWordProcessorAttachment/" model="pipelines/cityEHRWordProcessorAttachment.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/patientId" parameter="patientId"/>
+    <setvalue ref="/parameters/externalId" parameter="externalId"/>
+    <setvalue ref="/parameters/applicationId" parameter="applicationId"/>
+    <setvalue ref="/parameters/attachmentTemplateURL" parameter="attachmentTemplateURL"/>
+  </page>
+
+  <!-- Export OWL information model as ODF spreadsheet document.
+       This one is a 'model' not a 'view' so that the spreadsheet document can be serialized and returned to the bowser as an attachment 
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRExportResourceAsODFSpreadsheet/" model="pipelines/cityEHRExportResourceAsODFSpreadsheet.xpl"
+    default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRExportResourceAsODFSpreadsheet'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- (Transform and) Export Resource
+       This one is a 'model' not a 'view' so that the output resource can be serialized and returned to the bowser as an attachment.
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRExportResource/" model="pipelines/cityEHRExportResource.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+
+  <!-- Backup database from manifest
+       Exports database resources as described in the (cached) manifest
+       And returns as a zip to the browser
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRBackUpDatabaseFromManifest/" model="pipelines/cityEHRBackUpDatabaseFromManifest.xpl"
+    default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRBackUpDatabaseFromManifest'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+   
+  <!-- Export Instance.
+       This one is a 'model' not a 'view' so that the output can be serialized and returned to the bowser as an attachment 
+       Called as a submission with view-parameters posted as input -->
+  <page path-info="/ehr/cityEHRExportInstance/" model="pipelines/cityEHRExportInstance.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRExportInstance'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+  
+  <!-- Export Cohort.
+       This one is a 'model' not a 'view' so that the output can be serialized and returned to the bowser as an attachment    
+       Returns cohort to browser - either as XML or in format created by transformation.
+       Called as a submission with patientSet-instance posted as input -->
+  <page path-info="/ehr/cityEHRExportCohort/" model="pipelines/cityEHRExportCohort.xpl"/> 
+  
+  
+  
+  <!-- ====== Utilities ======================================
+       These return output to the browser.
+       Called with xf:submission
+       ======================================================= --> 
+  
+  
+  <!-- Export data for a cohort in a zip file or spreadsheet.
+       This one is a 'model' not a 'view' so that the output can be serialized and returned to the bowser as an attachment 
+       Called as a submission with view-parameters posted as input -->
+  <page path-info="/ehr/cityEHRExportCohortData/" model="pipelines/cityEHRExportCohortData.xpl"/>
+  
+  <!--
+  <page path-info="/ehr/cityEHRExportInstance/" model="pipelines/cityEHRExportInstance.xpl"/>
+  -->
+  
+  <!-- Print Cohort.
+       Returns PDF to browser.
+       Called as a submission with patient-cohort-instance posted as input -->
+  <page path-info="/ehr/cityEHRPrintCohort/" model="pipelines/cityEHRPrintCohort.xpl"/>
+  
+  <!-- Print HTML.
+       Returns PDF to browser.
+       Called as a submission with html-instance posted as input -->
+  <page path-info="/ehr/cityEHRPrintHTML/" model="pipelines/cityEHRPrintHTML.xpl"/>
+  
+
+  
+  <!-- === These pages with just an action do not return any output.
+           The submission is view-parameters, set up with the variables needed in the pipeline, unless otherwise stated === -->
+
+  <!-- Transform and Store Resource -->
+  <page path-info="/ehr/cityEHRTransformAndStoreResource/">
+    <action action="pipelines/cityEHRTransformAndStoreResource.xpl"/>
+  </page>
+
+  <!-- Copy and Replace Resource-->
+  <page path-info="/ehr/copyResource/">
+    <action action="pipelines/copyResource.xpl"/>
+  </page>
+
+  <!-- Generate data dictionary from stored ontology -->
+  <page path-info="/ehr/generateDictionary/">
+    <action action="pipelines/generateDictionary.xpl"/>
+  </page>
+
+
+  <!-- Test web services.
+       The submission is webServiceData-instance set up in webServiceModel -->
+  <page path-info="/ehr/webService/">
+    <action action="pipelines/webService.xpl"/>
+  </page>
+  
+  
+  
+  <!-- ====== Application Programming Interface ==============
+       The API for cityEHR
+       ======================================================= -->
+  
+  <page path-info="/ehr/api/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+    <setvalue ref="/parameters/command" parameter="command"/>
+    <setvalue ref="/parameters/patientId" parameter="patientId"/>
+    <setvalue ref="/parameters/compositionId" parameter="compositionId"/>
+  </page> 
+  
+  <page path-info="/ehr/api/authenticate/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/command" value="'authenticate'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/password" parameter="password"/>
+  </page> 
+  
+  <page path-info="/ehr/api/getApplicationList/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/command" value="'getApplicationList'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+    <setvalue ref="/parameters/applicationId" parameter="applicationId"/>
+  </page> 
+  
+  <page path-info="/ehr/api/getDemographics/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/command" value="'getDemographics'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+    <setvalue ref="/parameters/applicationId" parameter="applicationId"/>
+    <setvalue ref="/parameters/patientId" parameter="patientId"/>
+  </page> 
+  
+  <page path-info="/ehr/api/getCompositionList/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/command" value="'getCompositionList'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+    <setvalue ref="/parameters/applicationId" parameter="applicationId"/>
+    <setvalue ref="/parameters/patientId" parameter="patientId"/>
+  </page> 
+  
+  <page path-info="/ehr/api/getComposition/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/command" value="'getComposition'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+    <setvalue ref="/parameters/applicationId" parameter="applicationId"/>
+    <setvalue ref="/parameters/patientId" parameter="patientId"/>
+    <setvalue ref="/parameters/compositionId" parameter="compositionId"/>
+    <setvalue ref="/parameters/mime" parameter="mime"/>
+  </page> 
+  
+  <page path-info="/ehr/api/postComposition/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/command" value="'postComposition'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+    <setvalue ref="/parameters/applicationId" parameter="applicationId"/>
+    <setvalue ref="/parameters/patientId" parameter="patientId"/>
+  </page>  
+  
+  
+  <!-- ========== Epilogue ========== -->
+  <epilogue url="oxf:/config/epilogue.xpl"/>
+
+
+  <!-- ========== Page Not Found - Go Home ========== -->
+  <not-found-handler page="page-not-found"/>
+
+
+
+</config>

@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    configurationModel.xml
+    
+    Xforms model containing application configuration loaded for every page in cityEHR, except cityEHRSignOn.    
+    
+    The page is set up on xforms-model-construct-done:
+    
+        load-system-parameters
+        load-system-icons
+        load-database-parameters
+        validate-session
+        set-view-parameters
+        load-user-details
+        resume-auditLog
+        load-application-parameters
+        load-logo
+        set-view-controls
+        
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="configuration-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xxf:session-heartbeat="true">
+
+
+    <!-- ========= configurationControl-instance  ========= 
+         =================================================== -->
+
+    <xf:instance id="configurationControl-instance">
+        <control>
+            <status model="configuration-model"/>
+        </control>
+    </xf:instance>
+
+
+    <!-- === Set the application parameters which are stored in the database.
+             Located in systemConfiguration/application-parameters for the application.
+             If the load fails, then return to home page. -->
+    <xf:instance id="application-parameters-instance">
+        <parameters xmlns="" version="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
+    </xf:instance>
+
+    <!-- Application defined action to load application-parameters-instance.
+         Uses the applicationId that has been set in view-parameters.
+         Invokes dal-read to load the parameters and aborts the session if there is an error -->
+    <xf:action ev:event="load-application-parameters">
+        <xxf:variable name="applicationId" select="xxf:instance('session-parameters-instance')/applicationId"/>
+
+        <!-- Set the language variant location (if session is not using the base language) -->
+        <xxf:variable name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
+        <xxf:variable name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+
+        <!-- The location of parameters with language variant -->
+        <xxf:variable name="languageVariantLocation" select="if ($languageCode != $baseLanguageCode) then concat('/variants/',$languageCode) else ''"/>
+
+        <!-- Load the stored application parameters -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation"
+                select="concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/application-parameters')"/>
+            <xxf:context name="resource" select="xxf:instance('application-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('configurationControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- If load fails, then use the standard application parameters.
+             This can be needed if the base language for the application has been set to a variant, but the variant application parameters have not yet been created -->
+        <xf:action if="xxf:instance('configurationControl-instance')/status!=''">
+            <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation"
+                    select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/application-parameters')"/>
+                <xxf:context name="resource" select="xxf:instance('application-parameters-instance')"/>
+                <xxf:context name="status" select="xxf:instance('configurationControl-instance')/status"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- If load still fails, then return to sign on page, with error message -->
+        <xf:action if="xxf:instance('configurationControl-instance')/status!=''">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="'failedConfigLoad'"/>
+                <xxf:context name="context" select="'load-application-parameters'"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set default logo
+         Default location must be set in the application parameter (@value), relative to the staticFileURL
+         If the image has been loaded from a file then @value will be set to file:.. - the location of the (temporary) file from which it was loaded 
+         So in this case the cityEHRGetUploadedBinary will not find anything (relative to staticFileURL)-->
+    <xf:action ev:event="set-logo-default">
+        <!-- logo specified in parameters -->
+        <xxf:variable name="imageElement" select="xxf:instance('application-parameters-instance')/application/images/logo"/>
+
+        <!-- Get default logo image, if specified -->
+        <xf:action if="$imageElement/@value != ''">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
+                value="concat(xxf:instance('view-parameters-instance')/staticFileURL,'/',$imageElement/@value)"/>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType" value="'image/*'"/>
+            <xxf:variable name="pipeline" select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedBinary.xpl')"/>
+            <xxf:variable name="imageData" select="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
+            <xf:setvalue ref="xxf:instance('logo-instance')" value="xs:base64Binary($imageData)"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- ========= Error Handling =================================
+         Application defined action to handle system error messages 
+         ========================================================== -->
+    <xf:action ev:event="systemError">
+        <!-- TBD -->
+    </xf:action>
+
+
+
+    <!-- ========= View controls ====================================
+         If the page has view controls then it must include a viewControlsActions-model
+         That model contains page-specific actions and bindings
+         The viewControls-input-instance is generic, so can be included here
+         Display of the view controls is handled by cityEHRViewControlsActions.xhtml
+         ============================================================ -->
+
+    <!--  viewControls-input-instance contains the control input parameters.
+          An input for each action type is inserted when the page is loaded-->
+    <xf:instance id="viewControls-input-instance">
+        <inputValues>
+            <!--
+            <input id="" type="xs:string"/>
+            -->
+        </inputValues>
+    </xf:instance>
+
+    <xf:bind nodeset="xxf:instance('viewControls-input-instance')/input">
+        <xf:bind nodeset=".[@type='xs:date']" type="xs:date"/>
+        <xf:bind nodeset=".[@type='xs:dateTime']" type="xs:dateTime"/>
+        <xf:bind nodeset=".[@type='xs:time']" type="xs:time"/>
+        <xf:bind nodeset=".[@type='xs:string']" type="xs:string"/>
+        <xf:bind nodeset=".[@type='xs:integer']" type="xs:integer"/>
+        <xf:bind nodeset=".[@type='xs:double']" type="xs:double"/>
+        <xf:bind nodeset=".[@type='xs:boolean']" type="xs:boolean"/>
+    </xf:bind>
+
+    <!-- Application defined action to set up view controls 
+         Only used if the viewControlsActions-instance is defined in the page being loaded -->
+    <xf:action ev:event="set-view-controls">
+
+        <xf:action if="exists(xxf:instance('viewControlsActions-instance'))">
+
+            <!-- viewControlsActions-instance -->
+            <xf:insert context="xxf:instance('viewControlsActions-instance')"
+                origin="xxf:instance('application-parameters-instance')/viewControlsActions/view[@viewType=xxf:instance('view-parameters-instance')/page]"/>
+
+            <!-- viewControls-input-instance.
+                 Insert an element for any input or select in the configuration -->
+            <xf:action if="exists(xxf:instance('viewControls-input-instance'))">
+                <xxf:variable name="viewControls" select="xxf:instance('viewControlsActions-instance')/view/*[name(.) = ('input','select')]"/>
+
+                <xf:action xxf:iterate="$viewControls">
+                    <xxf:variable name="control" select="."/>
+                    <xf:insert context="xxf:instance('viewControls-input-instance')" origin="$control"/>
+                </xf:action>
+            </xf:action>
+
+        </xf:action>
+    </xf:action>
+
+
+
+    <!-- ========= Set up model when it is first loaded ====================
+         This is used to set up every page, other than cityEHRSignOn.
+         
+         The sequence to initiate every page (other than cityEHRSignOn) is:
+         
+         Include systemParametersModel - no actions invoked
+         Include databaseAccessLayer - no actions invoked
+         Include sessionModel - no actions invoked
+         Include auditLogModel - no actions invoked
+         Include pageNavigationModel - no actions invoked
+         Include configurationModel (this model) which invokes actions below to set up the page:
+                    
+         =================================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Load the system-parameters -->
+        <xf:dispatch name="load-system-parameters" target="systemParameters-model">
+            <xxf:context name="status" select="xxf:instance('configurationControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- If there was a problem with system-parameters, then we can't continue -->
+        <xf:action if="xxf:instance('configurationControl-instance')/status != ''">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="xxf:instance('configurationControl-instance')/status"/>
+                <xxf:context name="context" select="'load-system-parameters'"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Load the database-parameters -->
+        <xf:dispatch name="load-database-parameters" target="databaseAccessLayer-model">
+            <xxf:context name="status" select="xxf:instance('configurationControl-instance')/status"/>
+        </xf:dispatch>
+        <!-- If there was a problem with database-parameters, then we can't continue -->
+        <xf:action if="xxf:instance('configurationControl-instance')/status != ''">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="xxf:instance('configurationControl-instance')/status"/>
+                <xxf:context name="context" select="'load-database-parameters'"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Load the system icons (to iconList-instance) -->
+        <xf:dispatch name="load-system-icons" target="systemParameters-model"/>
+
+        <!-- Check for valid session.
+             Requires databaseLocation, storageLocation and userId to be set
+             Loads the session-parameters cached for the user.
+             A vaild session must already be started for this user when any page other than cityEHRSignOn loads
+             Will abort-session if there is a problem -->
+        <xf:dispatch name="validate-session" target="session-model"/>
+
+        <!-- Set the view-parameters from session-parameters -->
+        <xf:dispatch name="set-view-parameters" target="session-model"/>
+
+        <!-- Load the variant system parameters, if necessary, now that we know the language for the session -->
+        <xf:dispatch name="load-variant-system-parameters" target="systemParameters-model">
+            <xxf:context name="sessionLanguageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
+            <xxf:context name="status" select="xxf:instance('configurationControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Load details of current user.
+             Requires userId to be set in view-parameters
+             Will abort-session if details can't be loaded -->
+        <xf:dispatch name="load-user-details" target="session-model"/>
+
+        <!-- Resume auditLog - writes an entry for the new page, if audit log recording is set.
+             Sets the status if there is a problem -->
+        <xf:dispatch name="resume-auditLog" target="auditLog-model">
+            <xxf:context name="status" select="xxf:instance('configurationControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Abort session if there was a problem -->
+        <xf:action if="xxf:instance('configurationControl-instance')/status !=''">
+            <xf:dispatch name="abort-session" target="pageNavigation-model">
+                <xxf:context name="errorCode" select="'failed-to-resume-audit-log'"/>
+                <xxf:context name="context" select="'resume-auditLog'"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Load application-parameters.
+             Uses the applicationId, languageCode and baseLanguageCode set in the session-parameters
+             Will abort-session if parameters can't be loaded. -->
+        <xf:dispatch name="load-application-parameters" target="configuration-model"/>
+
+        <!-- Load application logo (from database) -->
+        <xf:dispatch name="load-logo" target="pageNavigation-model">
+            <xxf:context name="applicationId" select="xxf:instance('session-parameters-instance')/applicationId"/>
+            <xxf:context name="logoElement" select="xxf:instance('application-parameters-instance')/application/images/logo"/>
+        </xf:dispatch>
+
+        <!-- Set the view controls, if there are any -->
+        <xf:dispatch name="set-view-controls" target="configuration-model"/>
+
+
+        <!-- Debugging - force an error, to test error handing - this one forces call to the error handler in web.xml -->
+        <!--
+        <xxf:variable name="forceError" select="invalidXpath(dummy)"/>
+        <xf:insert context="$forceError"
+            origin="$forceError"/>
+            -->
+
+    </xf:action>
+
+
+    <!-- ========= Set parameters when form is ready ========= 
+         ===================================================== -->
+    <xf:action ev:event="xforms-ready">
+
+        <!-- Time the current page was ready -->
+        <xxf:variable name="readyTime" select="current-dateTime()"/>
+
+        <!-- Time taken to load the page -->
+        <xxf:variable name="pageLoadTime"
+            select="if (xxf:instance('user-instance')/audit/sessionInfo/@departureTime castable as xs:dateTime)  then xs:dateTime($readyTime) - xs:dateTime(xxf:instance('user-instance')/audit/sessionInfo/@departureTime) else ''"/>
+
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageLoadTime" value="$pageLoadTime"/>
+    </xf:action>
+
+
+</xf:model>

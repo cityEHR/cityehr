@@ -1,0 +1,59 @@
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    weightManagement.html
+    
+    Image map file.
+    Works with data-maphilight.
+    
+    Note that the following are required in order for this to work:
+    
+    The <script> in the <head> must be present in the page that includes the image map
+    The <img> element must have width and height attributes, which are picked up by the Orbeon form render
+    (data-maphilight does not work if there is no width/height)
+    
+    The src attribute on <img> gets set to the correct path for the image when the file is included using XSLT.
+    
+    The following javascript libraries must be included on the page:
+
+        jquery.min.js
+        jquery.maphilight.min.js
+        cityEHR.js
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<html xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <head>     
+        <script type="text/javascript" language="javascript" src="../../../scripts/jquery.min.js"> </script>
+        <script type="text/javascript" language="javascript" src="../../../scripts/jquery.maphilight.min.js"> </script>
+        
+        <script type="text/javascript" language="javascript" src="../../../scripts/cityEHR.js"> </script>
+        
+        <script> $(function() { $('.map').maphilight(); }); </script>
+    </head>
+    
+    <body>   
+        
+        <img class="map" src="weightManagement.png" width="1157" height="868" border="0" usemap="#weightManagement" onLoad="setImageMap(this);"/>
+        
+        <map name="weightManagement">
+            <area shape="rect" coords="239,27,571,128" id="Map-weightManagement-start" title="Start" onClick="toggleXformsControl('weightManagement-start');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <area shape="rect" coords="241,186,574,362" id="Map-weightManagement-enterData" title="Enter Data" onClick="toggleXformsControl('weightManagement-enterData');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <area shape="poly" coords="406,412,567,463,405,511,240,462,407,413" id="Map-weightManagement-checkBMI" title="Check BMI" onClick="toggleXformsControl('weightManagement-checkBMI');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <area shape="rect" coords="239,578,572,692" id="Map-weightManagement-followUp" title="Follow Up" onClick="toggleXformsControl('weightManagement-followUp');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <area shape="rect" coords="710,377,1083,547" id="Map-weightManagement-dietPlan" title="Diet and Exercise Plan" onClick="toggleXformsControl('weightManagement-dietPlan');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+            <area shape="rect" coords="240,751,571,852" id="Map-weightManagement-finish" title="Finish" onClick="toggleXformsControl('weightManagement-finish');" data-maphilight="{&#34;strokeColor&#34;:&#34;c30000&#34;,&#34;strokeWidth&#34;:0,&#34;strokeOpacity&#34;:0.4,&#34;fillColor&#34;:&#34;c30000&#34;,&#34;fillOpacity&#34;:0.4,&#34;shadow&#34;:true,&#34;shadowBackground&#34;:&#34;ffffff&#34;}"/>
+        </map>
+    </body>
+</html>

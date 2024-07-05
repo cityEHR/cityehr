@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    notificationCDA.xml
+    
+    Template CDA document used to record notifications for a patient.
+       
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"  xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <typeId extension="#CityEHR:Notification" root="#CityEHR:Notification"/>
+    <templateId extension="" root=""/>
+    <id extension="timeStamp" root="cityEHR"/>
+    <code code="" codeSystem="cityEHR" codeSystemName="" displayName="Notification"/>
+    <effectiveTime value=""/>
+    <recordTarget>
+        <patientRole>
+            <id extension="" root=""/>
+            <patient>
+                <name>
+                    <prefix/>
+                    <given/>
+                    <family/>
+                </name>
+                <administrativeGenderCode code="" codeSystem="" displayName=""/>
+                <birthTime value=""/>
+            </patient>
+            <providerOrganization>
+                <id extension="" root="2.16.840.1.113883.2.1.4.3"/>
+            </providerOrganization>
+        </patientRole>
+    </recordTarget>
+    <!-- Author records the user creating this notification -->
+    <author>
+        <time value=""/>
+        <assignedAuthor>
+            <id extension="" root=""/>
+            <assignedPerson>
+                <name/>
+            </assignedPerson>
+            <authoringDevice>
+                <!-- Use the application display name here -->
+                <softwareName/>
+            </authoringDevice>
+            <representedOrganization>
+                <id root=""/>
+                <!-- Use the application owner name here -->
+                <name/>
+            </representedOrganization>
+        </assignedAuthor>
+    </author>
+    <!-- Participant records the care team, user or role to be notified.
+         There is only one participant element initially.
+         root of id gives the type of entity - #CityEHR:Role, #CityEHR:CareTeam, #CityEHR:User-->
+    <participant>
+        <time value=""/>
+        <functionCode code="#CityEHR:Action:Notify" codeSystem="" codeSystemName="" displayName=""/>
+        <associatedEntity>
+            <id extension="" root=""/>
+            <code code="" codeSystem="cityEHR" codeSystemName="" displayName=""/>
+        </associatedEntity>
+    </participant>
+    <!-- This records the origin of the notification 
+         root of id gives the document, the extension gives the entry/element -->
+    <documentationOf>
+        <serviceEvent classCode="#CityEHR:Notification">
+            <id extension="" root="cityEHR"/>
+            <code code="" codeSystem="cityEHR" codeSystemName="" displayName=""/>
+        </serviceEvent>
+    </documentationOf>
+    <component>
+        <structuredBody>
+            <component>
+                <section>
+                    <id extension="#CityEHR:Section:Notification" root="cityEHR"/>
+                    <title>Notification</title>
+                    <!-- The observation records details of the origin of a triggered action -->
+                    <entry cityEHR:Sequence="Ranked" cityEHR:rendition="#CityEHR:EntryProperty:Form" cityEHR:initialValue="#CityEHR:EntryProperty:Default" cityEHR:labelWidth="">
+                        <observation>
+                            <typeId root="cityEHR" extension="#HL7-CDA:Observation"/>
+                            <id root="#ISO-13606:Entry:CityEHR:Notifcation" extension="#ISO-13606:Entry:CityEHR:Notifcation" cityEHR:origin=""/>
+                            <code code="" codeSystem="cityEHR" displayName="Notification Data"/>
+                            <value root="#ISO-13606:Element:CityEHR:Notifcation:Type" extension="#ISO-13606:Element:CityEHR:Notifcation:Type" xsi:type="xs:string" cityEHR:elementDisplayName="" value="" displayName=""/>
+                        </observation>
+                    </entry>
+                    <!-- The act records the action to be taken (if any) in response to this notification -->
+                    <entry cityEHR:Sequence="Ranked" cityEHR:rendition="#CityEHR:EntryProperty:Form"
+                        cityEHR:initialValue="#CityEHR:EntryProperty:Default"
+                        cityEHR:labelWidth="">
+                        <act cityEHR:role="" cityEHR:start="" cityEHR:delay="" cityEHR:status="charted"
+                            cityEHR:sessionStatus=""
+                            cityEHR:outcome="">
+                            <typeId root="cityEHR" extension="#HL7-CDA:Act"/>
+                            <id root="#CityEHR:Action" extension="" cityEHR:origin=""/>
+                            <code code="" codeSystem="cityEHR" displayName=""/>
+                            <subject>
+                                <typeId root="" extension=""/>
+                                <id root="cityEHR" extension=""/>
+                                <code code="" codeSystem="cityEHR" displayName=""/>
+                            </subject>
+                        </act>
+                    </entry>
+                </section>
+            </component>
+        </structuredBody>
+    </component>
+</ClinicalDocument>

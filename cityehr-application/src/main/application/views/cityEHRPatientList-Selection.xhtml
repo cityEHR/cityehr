@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRPatientList-Selection.xhtml
+    
+    Table to display the selection list for a cohort of patients.
+    Used to display lists in cityEHRPatientSearch, cityEHRCohortSearch, cityEHRCinicList
+    
+    Works in conjunction with cohortSetModel.xml which holds the patient cohort
+    The cohort is a set of patientInfo elements
+    The full cohort is held in patient-cohort-instance
+    The current page to display as a list is held in page-cohort-instance
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<xhtml:span xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+
+    <!-- Show message that has been set from the status of the cohort.
+         There are four cases:
+            No message - when there is a cohort to display
+            Cohort is restricted to care team patients, but there are still some to display
+            Cohort is not empty, but there are no care team patients to display
+            Cohort is empty
+            
+         If there is no message, then the display is hidden so that it does not take up space.
+    -->
+    <xxf:variable name="displayMessage" select="if (xxf:instance('cohortSetControl-instance')/cohortMessage='') then 'hidden' else 'message'"/>
+    <xhtml:p class="{$displayMessage}">
+        <xf:output ref="normalize-space(xxf:instance('cohortSetControl-instance')/cohortMessage)"/>
+    </xhtml:p>
+
+
+    <!-- Show cohort if it has records -->
+    <xxf:variable name="displayControls"
+        select="if (xxf:instance('cohortSetControl-instance')/records = 0) then 'hidden' else 'selectionListControlPanel'"/>
+    <xxf:variable name="displayCohort" select="if (xxf:instance('cohortSetControl-instance')/records = 0) then 'hidden' else 'selectionList'"/>
+
+    <!-- Show controls if there are records in the cohort -->
+    <xhtml:ul class="{$displayControls}">
+        <!-- Summary of patients displayed -->
+        <xhtml:li class="Unranked">
+            <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/displayingLabel"/>
+            <xf:output ref="xxf:instance('cohortSetControl-instance')/startRecord"/>
+            <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/rangeLabel"/>
+            <xf:output ref="xxf:instance('cohortSetControl-instance')/endRecord"/>
+            <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/ofLabel"/>
+            <xf:output ref="xxf:instance('cohortSetControl-instance')/records"/>
+            <xf:output
+                ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/itemLabel[@page=xxf:instance('view-parameters-instance')/page]"
+            />
+        </xhtml:li>
+
+        <!-- Navigate through pages, but ony if there is more than one -->
+        <xxf:variable name="controlsDisplayClass"
+            select="if (xs:integer(xxf:instance('cohortSetControl-instance')/pages) gt 1) then 'Unranked' else 'hidden'"/>
+        <xhtml:li class="{$controlsDisplayClass}">
+            <xhtml:ul class="labelGroup">
+                <!-- Navigate back, but not on first page -->
+                <xhtml:li class="Unranked navigateButtons">
+                    <xxf:variable name="navigateBackClass"
+                        select="if (xs:integer(xxf:instance('cohortSetControl-instance')/currentPage) gt 1) then 'label' else 'hidden'"/>
+                    <xhtml:span class="{$navigateBackClass}">
+                        <!-- First page -->
+                        <xf:trigger appearance="minimal">
+                            <xf:label>
+                                <xhtml:img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/first.png"/>
+                            </xf:label>
+                            <xf:hint>
+                                <xf:output
+                                    ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/firstButton"/>
+                            </xf:hint>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/currentPage" value="1"/>
+                                <xf:dispatch name="load-cohort-page" target="cohortSet-model"/>
+                            </xf:action>
+                        </xf:trigger>
+                        <!-- Previous page -->
+                        <xf:trigger appearance="minimal">
+                            <xf:label>
+                                <xhtml:img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/previous.png"/>
+                            </xf:label>
+                            <xf:hint>
+                                <xf:output
+                                    ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/previousButton"/>
+                            </xf:hint>
+                            <xf:action ev:event="DOMActivate" if="xs:integer(xxf:instance('cohortSetControl-instance')/currentPage) gt 1">
+                                <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/currentPage"
+                                    value="xxf:instance('cohortSetControl-instance')/currentPage -1"/>
+                                <xf:dispatch name="load-cohort-page" target="cohortSet-model"/>
+                            </xf:action>
+                        </xf:trigger>
+                    </xhtml:span>
+                </xhtml:li>
+                <!-- Summary -->
+                <xhtml:li class="Unranked labelGroup">
+                    <xhtml:span class="label">
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/pageLabel"/>
+                        <xf:output ref="xxf:instance('cohortSetControl-instance')/currentPage"/>
+                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/ofLabel"/>
+                        <xf:output ref="xxf:instance('cohortSetControl-instance')/pages"/>
+                    </xhtml:span>
+                </xhtml:li>
+                <!-- Navigate forward -->
+                <xhtml:li class="Unranked navigateButtons">
+                    <xxf:variable name="navigateForwardClass"
+                        select="if (xs:integer(xxf:instance('cohortSetControl-instance')/currentPage) lt xs:integer(xxf:instance('cohortSetControl-instance')/pages)) then 'label' else 'hidden'"/>
+                    <xhtml:span class="{$navigateForwardClass}">
+                        <!-- Next page -->
+                        <xf:trigger appearance="minimal">
+                            <xf:label>
+                                <xhtml:img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/next.png"/>
+                            </xf:label>
+                            <xf:hint>
+                                <xf:output
+                                    ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/nextButton"/>
+                            </xf:hint>
+                            <xf:action ev:event="DOMActivate"
+                                if="xs:integer(xxf:instance('cohortSetControl-instance')/currentPage) lt xs:integer(xxf:instance('cohortSetControl-instance')/pages)">
+                                <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/currentPage"
+                                    value="xxf:instance('cohortSetControl-instance')/currentPage +1"/>
+                                <xf:dispatch name="load-cohort-page" target="cohortSet-model"/>
+                            </xf:action>
+                        </xf:trigger>
+                        <!-- Last page -->
+                        <xf:trigger appearance="minimal">
+                            <xf:label>
+                                <xhtml:img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/last.png"/>
+                            </xf:label>
+                            <xf:hint>
+                                <xf:output
+                                    ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRPatientList-Selection/lastButton"/>
+                            </xf:hint>
+                            <xf:action ev:event="DOMActivate">
+                                <xf:setvalue ref="xxf:instance('cohortSetControl-instance')/currentPage"
+                                    value="xxf:instance('cohortSetControl-instance')/pages"/>
+                                <xf:dispatch name="load-cohort-page" target="cohortSet-model"/>
+                            </xf:action>
+                        </xf:trigger>
+
+                    </xhtml:span>
+                </xhtml:li>
+                <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+            </xhtml:ul>
+
+        </xhtml:li>
+
+        <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+
+    </xhtml:ul>
+
+    <!-- Table to display patient list -->
+    <xhtml:table class="{$displayCohort}">
+        <!-- Header displayNames come from patientInfo in cohortSetControl-instance -->
+        <xhtml:thead>
+            <xhtml:tr>
+                <xf:repeat nodeset="xxf:instance('cohortSetControl-instance')/patientInfo/item">
+                    <xhtml:td>
+                        <xf:output ref="./@displayName"/>
+                    </xhtml:td>
+                </xf:repeat>
+            </xhtml:tr>
+        </xhtml:thead>
+        <xhtml:tbody>
+            <!-- Repeat to display the patientInfo list -->
+            <xf:repeat id="patient-repeat" nodeset="xxf:instance('page-cohort-instance')//patientInfo">
+                <!-- Set the record count -->
+                <xxf:variable name="recordCount" select="if ((position() mod 2) = 0) then 'even' else 'odd'"/>
+
+                <xxf:variable name="patientInfo" select="."/>
+                <xxf:variable name="patientId" select="$patientInfo/@patientId"/>
+
+                <!-- Display the patient details.
+                     Iterate through patientInfo in cohortSetControl-instance.
+                     This ensures the details are displayed in the same order as the header -->
+
+                <xhtml:tr class="{$recordCount}">
+                    <!-- When user clicks on this row in the table -->
+                    <xf:action ev:event="DOMActivate">
+                        <xf:dispatch name="select-patient" target="cohortSet-model">
+                            <xxf:context name="selectedPatientId" select="$patientId"/>
+                        </xf:dispatch>
+                    </xf:action>
+                    
+                        <xf:repeat nodeset="xxf:instance('cohortSetControl-instance')/patientInfo/item">
+                            <xxf:variable name="item" select="."/>
+                            <xhtml:td>
+                                <xxf:variable name="cdaValue"
+                                    select="($patientInfo/descendant::cda:entry[descendant::cda:id/@extension=$item/@entry]/descendant::cda:value[@extension=$item/@element])[1]"/>
+                                <xxf:variable name="value" select="if (exists($cdaValue)) then $cdaValue/@value else ''"/>
+                                <xxf:variable name="displayName" select="if (exists($cdaValue)) then $cdaValue/@displayName else ''"/>
+                                <xxf:variable name="valueDisplay"
+                                    select="if ($value castable as xs:date) then format-date($value, xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                                    else if ($value castable as xs:time) then format-time($value, xxf:instance('view-parameters-instance')/timeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                                    else if ($value castable as xs:dateTime) then format-dateTime($value, xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) 
+                                    else $value"/>
+                                <xxf:variable name="calculatedValue" select="$patientInfo/*[./name()=$item/@calculated]"/>
+                                <xhtml:div>
+                                    <xf:trigger appearance="minimal" xxf:modal="true" class="selection">
+                                        <xf:label
+                                            ref="if (exists($calculatedValue)) then $calculatedValue else if ($displayName!='') then $displayName else $valueDisplay"
+                                        />
+                                    </xf:trigger>
+                                </xhtml:div>
+                            </xhtml:td>
+                        </xf:repeat>
+                    
+
+                </xhtml:tr>
+
+            </xf:repeat>
+
+        </xhtml:tbody>
+    </xhtml:table>
+</xhtml:span>

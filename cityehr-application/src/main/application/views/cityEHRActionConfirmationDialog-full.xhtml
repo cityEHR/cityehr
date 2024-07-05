@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRActionConfirmationDialog.xhtml
+    
+    Modal dialog box that protects actions that would lose focus of (e.g.) edited forms.
+    
+    If the action is confirmed then it is invoked, otherwise the dialog closes with no action.
+        
+        Copyright (C) 2013-2021 John Chelsom.
+        
+        This program is free software; you can redistribute it and/or modify it under the terms of the
+        GNU Lesser General Public License as published by the Free Software Foundation; either version
+        2.1 of the License, or (at your option) any later version.
+        
+        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+        See the GNU Lesser General Public License for more details.
+        
+        The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+        **********************************************************************************************************
+-->
+
+<!-- === Confirmation Dialog for user actions ==============================================
+     Uses the following data set up in view-parameters:
+    
+    <staticConfirmationDialogue>
+        <activeDialogue>confirmId</activeDialogue>
+        <dialogue id="confirmId">
+            <title>Confirmation Dialogue</title>
+            <message>Confirmation Message</message>
+            <actions>
+                <action displayName="Action 1" model="modelId" event="eventId"/>
+            </actions>
+        </dialogue>
+    </staticConfirmationDialogue>
+    =======================================================================================
+-->
+
+<xxf:dialog id="actionConfirmationDialog" appearance="full" level="modal" close="false"
+    draggable="true" visible="false" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xhtml:div class="dialogue">
+        <xxf:variable name="activeDialogue"
+            select="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/dialogue[@id=../activeDialogue]"/>
+
+        <!-- The header -->
+        <xhtml:table width="100%">
+            <xhtml:tbody>
+                <xhtml:tr>
+                    <xhtml:td class="dialogueTitle">
+                        <xf:output
+                            ref="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/dialogueMessageLabel"/>
+                        <xf:output
+                            ref="if (exists($activeDialogue)) then $activeDialogue/title else xxf:instance('view-parameters-instance')/staticConfirmationDialogue/activeDialogue"
+                        />
+                    </xhtml:td>
+                    <xhtml:td class="dialogueTitle" align="right">
+                        <xhtml:img class="logoimage"
+                            src="{xxf:instance('view-parameters-instance')/staticFileRoot}/{xxf:instance('application-parameters-instance')/application/logo/@value}?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
+                        />
+                    </xhtml:td>
+                </xhtml:tr>
+            </xhtml:tbody>
+        </xhtml:table>
+
+        <!-- The main message line -->
+        <xhtml:p>
+            <xf:output
+                ref="if (exists($activeDialogue)) then $activeDialogue/message else xxf:instance('view-parameters-instance')/staticConfirmationDialogue/dialogueNotFound"
+            />
+        </xhtml:p>
+
+        <!-- Debugging
+        <xhtml:p>
+            <xf:output ref="$activeDialogue/dynamicSelection/selection"/>
+        </xhtml:p>
+        -->
+
+        <!-- Dynamic message lines (may be more than one) -->
+        <xf:repeat nodeset="$activeDialogue/dynamicMessage/message[.!='']">
+            <xxf:variable name="message" select="."/>
+            <xhtml:p>
+                <xf:output ref="$message"/>
+            </xhtml:p>
+        </xf:repeat>
+
+        <!-- Dynamic selection.
+             Either select1 or select, depending on how the dynamicSelection is set up -->
+        <xhtml:p>
+            <xf:select1 ref="$activeDialogue/dynamicSelection[@type='select1']/selection"
+                appearance="full">
+                <xf:itemset ref="$activeDialogue/dynamicSelection/option">
+                    <xf:value ref="@value"/>
+                    <xf:label ref="@displayName"/>
+                </xf:itemset>
+            </xf:select1>
+
+            <xf:select ref="$activeDialogue/dynamicSelection[@type!='select1']/selection"
+                appearance="full">
+                <xf:itemset ref="$activeDialogue/dynamicSelection/option">
+                    <xf:value ref="@value"/>
+                    <xf:label ref="@displayName"/>
+                </xf:itemset>
+            </xf:select>
+        </xhtml:p>
+
+
+        <!-- Triggers for actions -->
+        <xf:repeat id="actionConfirmationDialog-repeat" nodeset="$activeDialogue/actions/action">
+            <xf:trigger class="button" appearance="minimal">
+                <xf:label ref="./@label"/>
+                <xf:action ev:event="DOMActivate">
+                    <xxf:variable name="selection"
+                        select="$activeDialogue/actions/action[index('actionConfirmationDialog-repeat')]"/>
+                    <xf:dispatch name="{$selection/@event}" target="{$selection/@model}"/>
+                    <xxf:hide dialog="actionConfirmationDialog"/>
+                </xf:action>
+            </xf:trigger>
+        </xf:repeat>
+
+        <!-- Need to be able to close the dialog if there was no active dialog defined -->
+        <xf:trigger class="{if (exists($activeDialogue)) then 'hidden' else 'button'}">
+            <xf:label
+                ref="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/dialogueNotFoundLabel"/>
+            <xxf:hide ev:event="DOMActivate" dialog="actionConfirmationDialog"/>
+        </xf:trigger>
+    </xhtml:div>
+</xxf:dialog>

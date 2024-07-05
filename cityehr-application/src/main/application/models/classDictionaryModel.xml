@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    classDictionaryModel.xml
+    
+    Handling dictionaries for enumerated classes
+    The class dictionary includes the class hierarchy and the supplementary data sets
+    From 2023-03 supplementary data sets are in the specialty model, not the class model
+    The dictionary is identified by specialtyId and dictionaryId
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="classDictionary-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- ========= Control ========= 
+         =========================== -->
+    <xf:instance id="classDictionaryControl-instance">
+        <control xmlns="">
+            <dictionaryId/>
+            <specialtyId/>
+            <status/>
+        </control>
+
+    </xf:instance>
+
+
+    <!-- ========= Queries to get data from the xmlstore ========= 
+         ========================================================= -->
+
+    <!-- Load queries from files -->
+    <xf:instance id="getEnumeratedClassValuesXQuery-instance" src="oxf:/apps/ehr/xquery/getEnumeratedClassValuesXQuery.xml"/>
+    <xf:instance id="getEnumeratedClassHierarchyXQuery-instance" src="oxf:/apps/ehr/xquery/getEnumeratedClassHierarchyXQuery.xml"/>
+    <xf:instance id="getDictionaryEntryXQuery-instance" src="oxf:/apps/ehr/xquery/getDictionaryEntryXQuery.xml"/>
+    <xf:instance id="getDictionaryElementsXQuery-instance" src="oxf:/apps/ehr/xquery/getDictionaryElementsXQuery.xml"/>
+
+    <!-- Generic query to be used when parameters need to be set before running -->
+    <xf:instance id="dictionaryQuery-instance">
+        <exist:query>
+            <exist:text/>
+        </exist:query>
+    </xf:instance>
+
+    <!-- Response instances -->
+    <xf:instance id="enumeratedClass-instance">
+        <selections xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:iso-13606="http://www.iso.org/iso-13606">
+            <selectionList> </selectionList>
+        </selections>
+    </xf:instance>
+    <xf:instance id="enumeratedClassHierarchy-instance">
+        <iso-13606:element/>
+    </xf:instance>
+    <xf:instance id="dictionaryEntry-instance">
+        <cda:composition/>
+    </xf:instance>
+    <xf:instance id="dictionaryElements-instance">
+        <iso-13606:element/>
+    </xf:instance>
+
+
+    <!-- =========== Actions to handle class dictionaries =========== 
+         ============================================================ -->
+
+
+    <!-- Application defined action to get the set of enumeratedClass elements, matching specified criteria
+         Runs query to set the enumeratedClassHierarchy-instance from the class dictionary.
+         
+         The class dictionary is found either in the current specialty or in the base specialty.
+         
+    -->
+    <xf:action ev:event="get-enumeratedClassElements">
+        <xxf:variable name="searchValue" select="event('searchValue')"/>
+        <xxf:variable name="classCode" select="event('classCode')"/>
+        <xxf:variable name="entryNode" select="event('entryNode')"/>
+        <xxf:variable name="elementScope" select="event('elementScope')"/>
+        
+        <!--
+        <xf:message ref="concat('/',$searchValue,'/',$classCode,'/',$entryNode,'/',$elementScope,'/')"/>
+-->
+        
+        <!-- Only search if the searchValue is more than the specified length -->
+        <xxf:variable name="autoCompleteThreshold"
+            select="if (xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/autoCompleteThreshold castable as xs:integer) then xs:integer(xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/autoCompleteThreshold) else 0"/>
+        <xf:action if="string-length($searchValue) gt $autoCompleteThreshold">
+            
+            <!-- Session parameters -->
+            <xxf:variable name="applicationId"
+                select="xxf:instance('session-parameters-instance')/applicationId"/>
+            <xxf:variable name="specialtyId"
+                select="xxf:instance('session-parameters-instance')/specialtyId"/>                      
+            <xxf:variable name="languageCode"
+                select="xxf:instance('session-parameters-instance')/languageCode"/>
+            <xxf:variable name="baseLanguageCode"
+                select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+            
+            <xxf:variable name="languageVariantLocation"
+                select="if ($languageCode!='' and $baseLanguageCode!='' and $languageCode != $baseLanguageCode) then concat('/variants/',$languageCode) else ''"/>
+
+            <!-- Dictionary to search is for the class (in the current specialty) -->
+            <xxf:variable name="dictionaryId" select="replace(substring($classCode,2),':','-')"/>
+            <xxf:variable name="dictionaryLocation"
+                select="concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/dictionary/',$dictionaryId)"/>
+
+            <!-- Set terms in the getEnumeratedClassValuesXQuery -->
+            <xf:setvalue ref="xxf:instance('getEnumeratedClassValuesXQuery-instance')/elementClause"
+                value="concat('[@extension=''',$classCode,''']')"/>
+            <xf:setvalue ref="xxf:instance('getEnumeratedClassValuesXQuery-instance')/valueSetClause"
+                value="if ($entryNode!=$classCode) then concat('[@cityEHR:elementType=(''#CityEHR:ElementProperty:enumeratedClass'',''#CityEHR:Property:ElementType:enumeratedClass'')]/descendant::iso-13606:data[@code=''',$entryNode,''']/descendant::iso-13606:data') else '[@cityEHR:elementType=(''#CityEHR:ElementProperty:enumeratedClass'',''#CityEHR:Property:ElementType:enumeratedClass'')]/descendant::iso-13606:data'"/>
+            <xf:setvalue ref="xxf:instance('getEnumeratedClassValuesXQuery-instance')/valueScopeClause"
+                value="if ($elementScope ='#CityEHR:ElementProperty:Defined') then '[not(child::*)]' else ''"/>
+            <xf:setvalue ref="xxf:instance('getEnumeratedClassValuesXQuery-instance')/intermediateNodeType"
+                value="xxf:instance('control-instance')/enumeratedClass/intermediateNodeType"/>
+
+            <!-- Use matches with wildcard and case insensitive - should be pretty efficient, even without indexing -->
+            <xxf:variable name="valueSearchTerm" select="concat('''', $searchValue, '''')"/>
+            <xf:setvalue ref="xxf:instance('getEnumeratedClassValuesXQuery-instance')/valueClause"
+                value="concat('[matches(@displayName,',$valueSearchTerm,',''i'')]')"/>
+
+            <!-- Run the query -->
+            <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="$dictionaryLocation"/>
+                <xxf:context name="query" select="xxf:instance('getEnumeratedClassValuesXQuery-instance')"/>
+                <xxf:context name="response" select="xxf:instance('enumeratedClass-instance')"/>
+                <xxf:context name="status" select="xxf:instance('classDictionaryControl-instance')/status"/>
+            </xf:dispatch>
+
+            <!-- Set system error if there was a problem -->
+            <xf:action if="xxf:instance('classDictionaryControl-instance')/status != ''">
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                    value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetDictionaryElementsQuery']"/>
+            </xf:action>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to update the enumeratedClassHierarchy 
+         Runs query to set the enumeratedClassHierarchy-instance from the class dictionary.
+         
+         The class dictionary is found either in the current specialty or in the base specialty.
+         
+    -->
+    <xf:action ev:event="update-enumeratedClassHierarchy">
+        <xxf:variable name="classCode" select="event('classCode')"/>
+        <xxf:variable name="entryNode" select="event('entryNode')"/>
+        <xxf:variable name="elementScope" select="event('elementScope')"/>
+        
+        <!-- Session parameters -->
+        <xxf:variable name="applicationId"
+            select="xxf:instance('session-parameters-instance')/applicationId"/>
+        <xxf:variable name="specialtyId"
+            select="xxf:instance('session-parameters-instance')/specialtyId"/>                      
+        <xxf:variable name="languageCode"
+            select="xxf:instance('session-parameters-instance')/languageCode"/>
+        <xxf:variable name="baseLanguageCode"
+            select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+        
+        <!--
+        <xf:message ref="concat('/',$applicationId, '/',$classCode,'/',$entryNode,'/',$elementScope,'/')"/>
+        -->
+        
+        <xxf:variable name="languageVariantLocation"
+            select="if ($languageCode!='' and $baseLanguageCode!='' and $languageCode != $baseLanguageCode) then concat('/variants/',$languageCode) else ''"/>
+        
+        <!-- Dictionary to search is for the class (in the current specialty) -->
+        <xxf:variable name="dictionaryId" select="replace(substring($classCode,2),':','-')"/>
+        <xxf:variable name="dictionaryLocation"
+            select="concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/dictionary/',$dictionaryId)"/>
+
+        <xf:setvalue ref="xxf:instance('getEnumeratedClassHierarchyXQuery-instance')/elementClause"
+            value="concat('[@extension=''',$classCode,'''][@cityEHR:elementType=(''#CityEHR:ElementProperty:enumeratedClass'',''#CityEHR:Property:ElementType:enumeratedClass'')]')"/>
+
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$dictionaryLocation"/>
+            <xxf:context name="query" select="xxf:instance('getEnumeratedClassHierarchyXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('enumeratedClassHierarchy-instance')"/>
+            <xxf:context name="status" select="xxf:instance('classDictionaryControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set system error if there was a problem -->
+        <xf:action if="xxf:instance('classDictionaryControl-instance')/status != ''">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedEnumeratedClassHierarchyQuery']"/>
+        </xf:action>
+
+
+    </xf:action>
+
+
+    <!-- Application defined action to get the set of elements used in a supplementary data set   
+         Returns the set of iso-13606:element which match the specified extensions
+         
+         The class dictionary is found either in the current specialty or in the base specialty.   
+         
+         2024-03-03 Deprecated - was needed when SDS entries were transfered to control-instance for editing.
+    -->
+    <xf:action ev:event="get-dictionaryElements">
+        <xxf:variable name="classCode" select="event('classCode')"/>
+        <xxf:variable name="supplementaryEntry" select="event('supplementaryEntry')"/>
+
+        <!-- Dictionary to search is for the class (in the current specialty) -->
+        <xxf:variable name="dictionaryId" select="replace(substring($classCode,2),':','-')"/>
+        <xxf:variable name="dictionaryLocation"
+            select="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/dictionary/',$dictionaryId)"/>
+
+        <!-- Get details from the data dictionary for this class on the SDS elements.
+                                             Just need the list of enumeratedValue elements so that the selection lists can be created
+                                             Use the @root in case there are any aliased elements -->
+        <xxf:variable name="supplementaryEntryElementIRIList"
+            select="$supplementaryEntry/descendant::cda:value[@cityEHR:elementType = ('#CityEHR:ElementProperty:enumeratedValue', '#CityEHR:Property:ElementType:enumeratedValue')]/@root"/>
+        <xf:setvalue ref="xxf:instance('getDictionaryElementsXQuery-instance')/elementClause"
+            value="concat('[@root=(''',string-join($supplementaryEntryElementIRIList,''','''),''')]')"/>
+
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$dictionaryLocation"/>
+            <xxf:context name="query" select="xxf:instance('getDictionaryElementsXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('dictionaryElements-instance')"/>
+            <xxf:context name="status" select="xxf:instance('classDictionaryControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set system error if there was a problem -->
+        <xf:action if="xxf:instance('classDictionaryControl-instance')/status != ''">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetDictionaryElementsQuery']"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Get entry from the data dictionary  
+         Returns first match (if any) on the entryIRI in dictionaryEntry-instance
+         
+         The class dictionary is found either in the current specialty or in the base specialty.  
+         2024-03-03 Deprecated - was needed when SDS entries were specified in the class model.
+    -->
+    <xf:action ev:event="get-dictionaryEntry">
+        <xxf:variable name="classCode" select="event('classCode')"/>
+        <xxf:variable name="entryIRI" select="event('entryIRI')"/>
+
+        <!-- Dictionary to search is for the class (in the current specialty) -->
+        <xxf:variable name="dictionaryId" select="replace(substring($classCode,2),':','-')"/>
+        <xxf:variable name="dictionaryLocation"
+            select="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/dictionary/',$dictionaryId)"/>
+
+        <xf:setvalue ref="xxf:instance('getDictionaryEntryXQuery-instance')/entryIRI" value="$entryIRI"/>
+
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$dictionaryLocation"/>
+            <xxf:context name="query" select="xxf:instance('getDictionaryEntryXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('dictionaryEntry-instance')"/>
+            <xxf:context name="status" select="xxf:instance('classDictionaryControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set system error if there was a problem -->
+        <xf:action if="xxf:instance('classDictionaryControl-instance')/status != ''">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetDictionaryEntryQuery']"/>
+        </xf:action>
+
+    </xf:action>
+
+
+
+    <!-- ========= Set up model when it is first loaded ========= 
+        =================================================================== -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Specialty is constant for composition entry, but may get changed for cohort searches -->
+        <xf:setvalue ref="xxf:instance('classDictionaryControl-instance')/specialtyId"
+            value="xxf:instance('view-parameters-instance')/specialtyId"/>
+    </xf:action>
+
+
+
+</xf:model>

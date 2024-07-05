@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRNotificationDisplay.xhtml
+    
+    Displays details of the current notification in notificationsControl-instance
+    Used in cityEHRFolder-Views and cityEHRInTray
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:span xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+
+    <!-- Display the current notification -->
+    <xxf:variable name="currentNotification" select="xxf:instance('notificationsControl-instance')/currentNotification/notification"/>
+
+    <!-- First the header -->
+    <xhtml:p class="notificationHeader">
+
+        <!-- Notification header information -->
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/notificationDisplayHeader/@prefix"/>
+
+        <xxf:variable name="notificationDisplayName"
+            select="xxf:instance('view-parameters-instance')/notifications/notificationTypes/notification[@type=xxf:instance('control-instance')/currentNotificationType]/@displayName"/>
+        <xf:output ref="$notificationDisplayName"/>
+
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/notificationDisplayHeader/@suffix"/>
+
+        <xxf:variable name="notificationTimeDisplay"
+            select="if ($currentNotification/effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($currentNotification/effectiveTime), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else if ($currentNotification/effectiveTime castable as xs:date) then format-date(xs:date($currentNotification/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $currentNotification/effectiveTime"/>
+        <xf:output ref="$notificationTimeDisplay"/>
+
+        <!-- For debugging -->
+        <!--
+            <xf:output ref="$currentNotification/handle"/>
+        -->
+
+        <!-- Target of the notification (participant)
+            
+            <participant>
+            <functionCode code="" codeSystem="" codeSystemName="" displayName=""/>
+            <associatedEntity>
+            <id extension="" root="#CityEHR:Role"/>
+            <code code="" codeSystem="" codeSystemName="" displayName="- Any Role -"/>
+            </associatedEntity>
+            </participant>
+            
+        -->
+        <xxf:variable name="participant" select="xxf:instance('notification-instance')//cda:participant[1]"/>
+        <xxf:variable name="participantTypeIRI" select="$participant/cda:associatedEntity/cda:id/@root"/>
+        <xxf:variable name="participantIRI" select="$participant/cda:associatedEntity/cda:id/@extension"/>
+        <xxf:variable name="participantDisplayName" select="$participant/cda:associatedEntity/cda:code[@codeSystem='cityEHR']/@displayName"/>
+
+        <xhtml:br/>
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/notificationTarget/@prefix"/>
+        <xf:output
+            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/notificationTarget/option[@value=$participantTypeIRI]/@displayName"/>
+        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/notificationTarget/@suffix"/>
+        <xf:output ref="$participantDisplayName"/>
+
+        <!-- Message if this notification has been acknowledged -->
+        <xhtml:br/>
+        <xf:output
+            ref="if (xxf:instance('notification-instance')//cda:participant[1]/cda:functionCode/@code=xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/acknowledge/@code) then normalize-space(xxf:instance('view-parameters-instance')/staticParameters/cityEHRInTray/acknowledgeLabel) else ''"/>
+
+    </xhtml:p>
+
+
+    <!-- Then the rest of the information in the notification.
+         The notification is either for an action in a pathway, an action raised by a trigger or an annotation.
+         The annotation mau also have have an action (act) if one was specified 
+         So get and display the information depending on which type it is. 
+         Hide the one that isn't used, but make sure all variables are instantiated to something so that errors aren't thrown. -->
+    <xhtml:p class="notificationBody">
+        <xxf:variable name="notificationAction" select="xxf:instance('notification-instance')//cda:act[1][cda:id/@extension != '']"/>
+        <xxf:variable name="notificationInfo" select="xxf:instance('notification-instance')//cda:observation[1]"/>
+
+        <xxf:variable name="notificationActionClass" select="if (exists($notificationAction)) then '' else 'hidden'"/>
+        <xxf:variable name="notificationInfoClass" select="if (exists($notificationInfo)) then '' else 'hidden'"/>
+
+
+        <!-- Notification is for an action in a pathway. -->
+        <xhtml:span class="{$notificationActionClass}">
+            <xf:output ref="'Action details'"/>
+        </xhtml:span>
+
+
+        <!-- Notification is for an annotation.
+             Show the notification and history of actions of this type-->
+        <xhtml:span class="{$notificationInfoClass}">
+            <xhtml:table>
+                <xhtml:tbody>
+                    <xhtml:tr>
+                        <!-- This notification -->
+                        <xhtml:td>
+                            <xhtml:table>
+                                <xhtml:tbody>
+                                    <xf:repeat nodeset="$notificationInfo/cda:value">
+                                        <xxf:variable name="parameter" select="."/>
+                                        <xhtml:tr>
+                                            <xhtml:td class="ISO13606-Element-DisplayName">
+                                                <xf:output ref="$parameter/@cityEHR:elementDisplayName"/>
+                                            </xhtml:td>
+                                            <xhtml:td>
+                                                <xf:output
+                                                    ref="if ($parameter/@displayName != '') then $parameter/@displayName else $parameter/@value"/>
+                                            </xhtml:td>
+                                        </xhtml:tr>
+                                    </xf:repeat>
+                                </xhtml:tbody>
+                            </xhtml:table>
+                        </xhtml:td>
+
+                        <!-- Action history.
+                             Only used when the notifcation is displayed in the InTray -->
+                        <xhtml:td> </xhtml:td>
+                    </xhtml:tr>
+
+                </xhtml:tbody>
+            </xhtml:table>
+        </xhtml:span>
+
+
+    </xhtml:p>
+</xhtml:span>
