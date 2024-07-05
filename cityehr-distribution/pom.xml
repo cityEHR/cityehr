@@ -5,14 +5,14 @@
         <groupId>com.seveninformatics.cityehr</groupId>
         <artifactId>cityehr-parent</artifactId>
         <version>1.8.0-SNAPSHOT</version>
-        <relativePath>./cityehr-parent</relativePath>
+        <relativePath>../cityehr-parent</relativePath>
     </parent>
 
-    <artifactId>cityehr</artifactId>
+    <artifactId>cityehr-distribution</artifactId>
     <packaging>pom</packaging>
 
-    <name>cityEHR</name>
-    <description>cityEHR Multi-module Project</description>
+    <name>cityEHR Distributions</name>
+    <description>cityEHR Distribution Modules</description>
 
     <scm>
         <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
@@ -22,10 +22,7 @@
     </scm>
 
     <modules>
-        <module>cityehr-parent</module>
-        <module>cityehr-application</module>
-        <module>cityehr-orbeon-minimal</module>
-        <module>cityehr-distribution</module>
+        <module>cityehr-webapp</module>
     </modules>
 
 </project>

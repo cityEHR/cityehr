@@ -1,0 +1,92 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.seveninformatics.cityehr</groupId>
+        <artifactId>cityehr-parent</artifactId>
+        <version>1.8.0-SNAPSHOT</version>
+        <relativePath>../../cityehr-parent</relativePath>
+    </parent>
+
+    <artifactId>cityehr-webapp</artifactId>
+    <packaging>war</packaging>
+
+    <name>cityEHR Web Application</name>
+    <description>cityEHR Java EE Web Application WAR package</description>
+
+    <scm>
+        <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
+        <developerConnection>scm:git:https://github.com/cityehr/cityehr.git</developerConnection>
+        <url>scm:git:https://github.com/cityehr/cityehr.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <unpacked.war-dir>${project.build.directory}/${project.artifactId}-${project.version}</unpacked.war-dir>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cityehr-application</artifactId>
+            <version>${project.version}</version>
+            <classifier>application</classifier>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cityehr-orbeon-minimal</artifactId>
+            <version>${project.version}</version>
+            <classifier>webapp</classifier>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>cityehr-application</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>application</classifier>
+                                    <type>zip</type>
+                                    <outputDirectory>${unpacked.war-dir}/WEB-INF/resources/apps/ehr</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>cityehr-orbeon-minimal</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>webapp</classifier>
+                                    <type>zip</type>
+                                    <outputDirectory>${unpacked.war-dir}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <outdatedCheckPath>WEB-INF/__none__</outdatedCheckPath>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
