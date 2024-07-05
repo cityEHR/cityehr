@@ -1,0 +1,125 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.seveninformatics.cityehr</groupId>
+        <artifactId>cityehr-parent</artifactId>
+        <version>1.8.0-SNAPSHOT</version>
+        <relativePath>../cityehr-parent</relativePath>
+    </parent>
+
+    <artifactId>cityehr-orbeon-minimal</artifactId>
+    <packaging>pom</packaging>
+
+    <name>cityEHR Minimal Orbeon Forms</name>
+    <description>Minimal version of Orbeon Forms for use in cityEHR</description>
+
+    <scm>
+        <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
+        <developerConnection>scm:git:https://github.com/cityehr/cityehr.git</developerConnection>
+        <url>scm:git:https://github.com/cityehr/cityehr.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <orbeon.version>3.9.0.201105152046</orbeon.version>
+        <orbeon.classifier>CE</orbeon.classifier>
+        <unpacked.war-dir>${project.build.directory}/${project.artifactId}-${project.version}</unpacked.war-dir>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.seveninformatics.cityehr.thirdparty.org.orbeon</groupId>
+                                    <artifactId>orbeon</artifactId>
+                                    <version>${orbeon.version}</version>
+                                    <classifier>${orbeon.classifier}</classifier>
+                                    <type>war</type>
+                                    <excludes>WEB-INF/jboss-web.xml,WEB-INF/jonas-web.xml,WEB-INF/liferay-*,WEB-INF/portlet.xml,WEB-INF/sun-web.xml,WEB-INF/weblogic.xml,WEB-INF/classes/jboss-*,WEB-INF/resources/apps/**,WEB-INF/resources/forms/**,WEB-INF/resources/page-flow-portlet.xml,WEB-INF/resources/page-flow-portlet-edit.xml,WEB-INF/resources/config/prologue-portlet.xpl,WEB-INF/resources/config/processors-local.xml.template,WEB-INF/resources/config/properties-local.xml.template,xforms-jsp/**</excludes>
+                                    <outputDirectory>${unpacked.war-dir}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${unpacked.war-dir}/WEB-INF</dir>
+                                    <includes>
+                                        <include>web.xml</include>
+                                    </includes>
+                                    <stylesheet>src/main/xslt/web.xml.xslt</stylesheet>
+                                    <parameters>
+                                        <parameter>
+                                            <name>version</name>
+                                            <value>${project.version}</value>
+                                        </parameter>
+                                    </parameters>
+                                    <outputDir>${unpacked.war-dir}/WEB-INF</outputDir>
+                                </transformationSet>
+                                <transformationSet>
+                                    <dir>${unpacked.war-dir}/WEB-INF/resources</dir>
+                                    <includes>
+                                        <include>apps-list.xml</include>
+                                    </includes>
+                                    <stylesheet>src/main/xslt/apps-list.xml.xslt</stylesheet>
+                                    <outputDir>${unpacked.war-dir}/WEB-INF/resources</outputDir>
+                                </transformationSet>
+                                <transformationSet>
+                                    <dir>${unpacked.war-dir}/WEB-INF/resources</dir>
+                                    <includes>
+                                        <include>page-flow.xml</include>
+                                    </includes>
+                                    <stylesheet>src/main/xslt/page-flow.xml.xslt</stylesheet>
+                                    <outputDir>${unpacked.war-dir}/WEB-INF/resources</outputDir>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/assembly/webapp-zip.xml</descriptor>
+                    </descriptors>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -24,6 +24,7 @@
     <modules>
         <module>cityehr-parent</module>
         <module>cityehr-application</module>
+        <module>cityehr-orbeon-minimal</module>
     </modules>
 
 </project>
