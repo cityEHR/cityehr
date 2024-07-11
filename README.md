@@ -14,7 +14,18 @@ $ mvn clean package
 ```
 
 ## Running cityEHR
-There are three options at present:
+There are two options at present:
+
+1. (Preferred) Run the stand-alone cityEHR Jar file that embeds Jetty Server.
+    ```shell
+    $ java -jar cityehr-distribution/cityehr-standalone-jetty/target/cityehr-standalone-jetty-1.8.0-SNAPSHOT.jar
+    ```
+    Note: As the Jar file is stand-alone you can copy it to any location you prefer before running it. 
+
+2. Copy and deploy the WAR file from the `cityehr-distribution/cityehr-webapp/target` folder to your favourite Java EE server.
+
+## Running cityEHR for Development Purposes
+There are two options at present:
 
 1. Run with Jetty via Codehaus Cargo through Maven:
     ```shell
@@ -25,5 +36,3 @@ There are three options at present:
     ```shell
     $ mvn clean verify -pl cityehr-distribution/cityehr-webapp org.codehaus.cargo:cargo-maven3-plugin:run -Dcargo.maven.containerId=tomcat9x
     ```
-
-3. Copy and deploy the WAR file from the `cityehr-distribution/cityehr-webapp/target` folder to your favourite Java EE server.

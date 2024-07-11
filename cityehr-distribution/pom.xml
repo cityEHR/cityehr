@@ -23,6 +23,7 @@
 
     <modules>
         <module>cityehr-webapp</module>
+        <module>cityehr-standalone-jetty</module>
     </modules>
 
 </project>

@@ -75,6 +75,18 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <ignoredUnusedDeclaredDependencies>
+                                <ignoredUnusedDeclaredDependency>com.seveninformatics.cityehr:cityehr-application</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>com.seveninformatics.cityehr:cityehr-orbeon-minimal</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
