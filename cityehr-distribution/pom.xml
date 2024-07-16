@@ -24,6 +24,7 @@
     <modules>
         <module>cityehr-webapp</module>
         <module>cityehr-standalone-jetty</module>
+        <module>cityehr-standalone-tomcat</module>
     </modules>
 
 </project>

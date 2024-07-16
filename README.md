@@ -14,15 +14,21 @@ $ mvn clean package
 ```
 
 ## Running cityEHR
-There are two options at present:
+There are three options at present:
 
 1. (Preferred) Run the stand-alone cityEHR Jar file that embeds Jetty Server.
     ```shell
     $ java -jar cityehr-distribution/cityehr-standalone-jetty/target/cityehr-standalone-jetty-1.8.0-SNAPSHOT.jar
     ```
-    Note: As the Jar file is stand-alone you can copy it to any location you prefer before running it. 
+    Note: As the Jar file is stand-alone you can copy it to any location you prefer before running it.
 
-2. Copy and deploy the WAR file from the `cityehr-distribution/cityehr-webapp/target` folder to your favourite Java EE server.
+2. Run the stand-alone cityEHR Jar file that embeds Tomcat Server.
+    ```shell
+    $ java -jar cityehr-distribution/cityehr-standalone-tomcat/target/cityehr-standalone-tomcat-1.8.0-SNAPSHOT.jar
+    ```
+   Note: As the Jar file is stand-alone you can copy it to any location you prefer before running it.
+
+3. Copy and deploy the WAR file from the `cityehr-distribution/cityehr-webapp/target` folder to your favourite Java EE server.
 
 ## Running cityEHR for Development Purposes
 There are two options at present:
