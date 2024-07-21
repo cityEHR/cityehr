@@ -8,7 +8,20 @@ Requires:
 * [Java](https://bell-sw.com/pages/downloads/#jdk-8-lts) 8+
 * [Apache Maven](https://maven.apache.org/download.cgi) 3.9.6+
 
-Then run:
+You first need to obtain a copy of the Source Code from GitHub if you have not already done so.
+The process to do this is the same as you would do for any GitHub repository.
+If you are not familiar with GitHub you can use one of the many available GUI tools
+for working with it (such as [GitHub Desktop](https://github.com/apps/desktop), [SourceTree](https://www.sourcetreeapp.com/), or [GitKraken](https://www.gitkraken.com/)),
+or if you prefer to use the Command Line / Terminal, and have already installed [git](https://git-scm.com/downloads), then you can just run:
+
+```shell
+$ git clone https://github.com/cityehr/cityehr.git
+$ cd cityehr
+```
+
+Note: You only need to do the above once!
+
+Then to build cityEHR, run:
 ```shell
 $ mvn clean package
 ```
