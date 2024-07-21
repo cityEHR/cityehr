@@ -5,14 +5,14 @@
         <groupId>com.seveninformatics.cityehr</groupId>
         <artifactId>cityehr-parent</artifactId>
         <version>1.8.0-SNAPSHOT</version>
-        <relativePath>../cityehr-parent</relativePath>
+        <relativePath>../../cityehr-parent</relativePath>
     </parent>
 
-    <artifactId>cityehr-distribution</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>cityehr-standalone-common</artifactId>
+    <packaging>jar</packaging>
 
-    <name>cityEHR Distributions</name>
-    <description>cityEHR Distribution Modules</description>
+    <name>cityEHR Standalone Common Code</name>
+    <description>cityEHR Standalone Common Code</description>
 
     <scm>
         <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
@@ -21,11 +21,11 @@
         <tag>HEAD</tag>
     </scm>
 
-    <modules>
-        <module>cityehr-webapp</module>
-        <module>cityehr-standalone-common</module>
-        <module>cityehr-standalone-jetty</module>
-        <module>cityehr-standalone-tomcat</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>
