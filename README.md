@@ -5,8 +5,8 @@
 
 ## Building cityEHR from Source Code
 Requires:
-    * Java 8+
-    * Apache Maven 3.9.6+
+* [Java](https://bell-sw.com/pages/downloads/#jdk-8-lts) 8+
+* [Apache Maven](https://maven.apache.org/download.cgi) 3.9.6+
 
 Then run:
 ```shell
