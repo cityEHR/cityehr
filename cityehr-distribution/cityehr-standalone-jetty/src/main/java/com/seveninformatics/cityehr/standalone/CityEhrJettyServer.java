@@ -1,15 +1,16 @@
 package com.seveninformatics.cityehr.standalone;
 
+import com.seveninformatics.cityehr.standalone.common.CityEhrAsciiLogo;
 import com.seveninformatics.cityehr.standalone.common.configuration.Configuration;
 import com.seveninformatics.cityehr.standalone.common.configuration.ConfigurationBuilder;
 import com.seveninformatics.cityehr.standalone.common.configuration.CliArgumentsParser;
 import com.seveninformatics.cityehr.standalone.common.configuration.EnvironmentVariablesParser;
 import com.seveninformatics.cityehr.standalone.common.configuration.SystemPropertiesParser;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.util.log.Log;
-import org.eclipse.jetty.util.log.Logger;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -20,53 +21,99 @@ import java.nio.file.Paths;
 
 /**
  * Embedded Jetty Server for running cityEHR.
+ *
+ * @author <a href="mailto:adam@evolvedbinary.com">Adam Retter</a>
  */
 public class CityEhrJettyServer {
 
-  private static final Logger LOG = Log.getLogger(CityEhrJettyServer.class);
-
   public static void main(final String[] args) throws Exception {
+    // Parse the Configuration
+    final Configuration configuration = parseArguments(args);
+
+    // Setup logging
+    final Logger logger = createLogger(configuration);
+    logger.info("Starting cityEHR...");
+
+    // Create the Jetty server for cityEHR
+    final Server server = newServer(configuration, logger);
+    server.start();
+
+    // Let the user know that cityEHR is now running
+    printReadyBanner(configuration, logger);
+
+    // Wait until the server is shutdown
+    server.join();
+  }
+
+  private static Configuration parseArguments(final String[] args) {
     final Configuration configuration = new ConfigurationBuilder()
         .add(new EnvironmentVariablesParser())
         .add(new SystemPropertiesParser())
         .add(new CliArgumentsParser(args))
         .build();
 
-    final Server server = newServer(configuration);
-    server.start();
-    server.join();
+    // Set the working directory if it has not yet been set
+    if (configuration.getServerWorkingDirectory() == null) {
+      final Path defaultServerWorkingDirectory = Paths.get("jetty." + configuration.getServerHttpPort());
+      configuration.setServerWorkingDirectory(defaultServerWorkingDirectory);
+    }
+
+    return configuration;
   }
 
-  public static Server newServer(final Configuration configuration) throws IOException {
-    final int port = configuration.getServerHttpPort();
-    final Server server = new Server(port);
+  private static Logger createLogger(final Configuration configuration) throws IOException {
+    // Set any variables that we refer to from our `logback.xml` config file
+    final Path serverLogDirectory = configuration.getServerLogDirectory().normalize().toAbsolutePath();
+    if (!Files.exists(serverLogDirectory)) {
+      Files.createDirectories(serverLogDirectory);
+    }
+    System.setProperty("cityehr.slf4j.log-directory", serverLogDirectory.toString());
 
-    final WebAppContext context = new WebAppContext();
+    // Create the logger
+    final Logger logger = LoggerFactory.getLogger(CityEhrJettyServer.class);
+    logger.info("Log directory: {}", serverLogDirectory);
+
+    return logger;
+  }
+
+  private static Server newServer(final Configuration configuration, final Logger logger) throws IOException {
+    final int port = configuration.getServerHttpPort();
+    logger.info("Using Server HTTP Port: {}", port);
 
     final URL warLocation = CityEhrJettyServer.class.getProtectionDomain().getCodeSource().getLocation();
     final Resource warResource = Resource.newResource(warLocation);
 
-    LOG.info("Using BaseResource: {}", warResource);
-
     // NOTE(AR) has to be set - see: https://www.eclipse.org/lists/jetty-users/msg10722.html
+    final Server server = new Server(port);
+    final WebAppContext context = new WebAppContext("ROOT", "/");
     context.setExtractWAR(true);
 
     // Set the directory the war will extract to
-    @Nullable Path workingDirectory = configuration.getServerWorkingDirectory();
-    if (workingDirectory == null) {
-      workingDirectory = Paths.get("jetty." + port);
+    @Nullable final Path workingDirectory = configuration.getServerWorkingDirectory();
+    if (workingDirectory != null) {
+      if (!Files.exists(workingDirectory)) {
+        Files.createDirectories(workingDirectory);
+      }
+      logger.info("Using Server Working Directory: {}", workingDirectory.normalize().toAbsolutePath());
+
+      final Path webappsDirs = workingDirectory.resolve("webapps");
+      if (!Files.exists(webappsDirs)) {
+        Files.createDirectories(webappsDirs);
+      }
+      context.setTempDirectory(webappsDirs.toFile());
+      logger.info("Using Web Apps Directory: {}", webappsDirs.normalize().toAbsolutePath());
     }
-    if (!Files.exists(workingDirectory)) {
-      Files.createDirectories(workingDirectory);
-    }
-    context.setTempDirectory(workingDirectory.toFile());
 
     context.setWarResource(warResource);
+    logger.info("Using WAR file: {}", warResource);
 
-    context.setContextPath("/");
-//    context.setWelcomeFiles(new String[] { "index.html", "welcome.html" });
     context.setParentLoaderPriority(true);
     server.setHandler(context);
+
     return server;
+  }
+
+  private static void printReadyBanner(final Configuration configuration, final Logger logger) {
+    logger.info(CityEhrAsciiLogo.logoAndFooter("cityEHR is running!", "Visit: http://localhost:" + configuration.getServerHttpPort()));
   }
 }

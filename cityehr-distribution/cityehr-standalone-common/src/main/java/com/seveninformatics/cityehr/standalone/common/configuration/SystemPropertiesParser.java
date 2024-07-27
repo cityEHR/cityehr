@@ -14,6 +14,7 @@ public class SystemPropertiesParser extends AbstractConfigurationParser<Properti
 
   public static final String SYSTEM_PROPERTY_NAME_SERVER_HTTP_PORT = "cityehr.server.http.port";
   public static final String SYSTEM_PROPERTY_NAME_SERVER_WORKING_DIRECTORY = "cityehr.server.working-directory";
+  public static final String SYSTEM_PROPERTY_NAME_SERVER_LOG_DIRECTORY = "cityehr.server.log-directory";
 
   /**
    * Constructor.
@@ -34,6 +35,11 @@ public class SystemPropertiesParser extends AbstractConfigurationParser<Properti
     @Nullable Path serverWorkingDirectory = parsePath(SYSTEM_PROPERTY_NAME_SERVER_WORKING_DIRECTORY);
     if (serverWorkingDirectory != null) {
       configuration.setServerWorkingDirectory(serverWorkingDirectory);
+    }
+
+    @Nullable Path serverLogDirectory = parsePath(SYSTEM_PROPERTY_NAME_SERVER_LOG_DIRECTORY);
+    if (serverLogDirectory != null) {
+      configuration.setServerLogDirectory(serverLogDirectory);
     }
 
     return configuration;

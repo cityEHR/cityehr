@@ -41,6 +41,13 @@ public class CliArgumentsParser extends AbstractConfigurationParser<String[]> {
             configuration.setServerWorkingDirectory(serverWorkingDirectory);
           }
           break;
+
+        case "--server-log-directory":
+          @Nullable Path serverLogDirectory = parsePath(i + 1);
+          if (serverLogDirectory != null) {
+            configuration.setServerLogDirectory(serverLogDirectory);
+          }
+          break;
       }
     }
 

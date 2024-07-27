@@ -30,10 +30,11 @@ $ mvn clean package
 
 The following configuration options are available when starting cityEHR and may be specified as either Environment Variables, Java System Properties, or Command Line Arguments:
 
-| Description                                                                           | Environment Variable | Java System Property | Command Line Argument |
-|---------------------------------------------------------------------------------------|-|-|-|
-| Set the TCP port number that cityEHR will listen on for HTTP requests (default: 8080) | CITYEHR_SERVER_HTTP_PORT | cityehr.server.http.port | --server-http-port |
+| Description                                                                           | Environment Variable             | Java System Property             | Command Line Argument      |
+|---------------------------------------------------------------------------------------|----------------------------------|----------------------------------|----------------------------|
+| Set the TCP port number that cityEHR will listen on for HTTP requests (default: 8080) | CITYEHR_SERVER_HTTP_PORT         | cityehr.server.http.port         | --server-http-port         |
 | Set the working directory for holding the server code and data                        | CITYEHR_SERVER_WORKING_DIRECTORY | cityehr.server.working-directory | --server-working-directory |
+| Set the log directory for holding the server log files                                | CITYEHR_SERVER_LOG_DIRECTORY     | cityehr.server.log-directory     | --server-log-directory     |
 
 There are three options at present:
 

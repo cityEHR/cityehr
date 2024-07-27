@@ -13,6 +13,7 @@ public class EnvironmentVariablesParser extends AbstractConfigurationParser<Map<
 
   public static final String ENVIRONMENT_VARIABLE_NAME_SERVER_HTTP_PORT = "CITYEHR_SERVER_HTTP_PORT";
   public static final String ENVIRONMENT_VARIABLE_NAME_SERVER_WORKING_DIRECTORY = "CITYEHR_SERVER_WORKING_DIRECTORY";
+  public static final String ENVIRONMENT_VARIABLE_NAME_SERVER_LOG_DIRECTORY = "CITYEHR_SERVER_LOG_DIRECTORY";
 
   /**
    * Constructor.
@@ -33,6 +34,11 @@ public class EnvironmentVariablesParser extends AbstractConfigurationParser<Map<
     @Nullable Path serverWorkingDirectory = parsePath(ENVIRONMENT_VARIABLE_NAME_SERVER_WORKING_DIRECTORY);
     if (serverWorkingDirectory != null) {
       configuration.setServerWorkingDirectory(serverWorkingDirectory);
+    }
+
+    @Nullable Path serverLogDirectory = parsePath(ENVIRONMENT_VARIABLE_NAME_SERVER_LOG_DIRECTORY);
+    if (serverLogDirectory != null) {
+      configuration.setServerLogDirectory(serverLogDirectory);
     }
 
     return configuration;

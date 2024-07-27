@@ -2,16 +2,19 @@ package com.seveninformatics.cityehr.standalone.common.configuration;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Standalone Configuration for cityEHR.
  */
 public class Configuration {
-  public final static int DEFAULT_SERVER_HTTP_PORT = 8080;
+  public static final int DEFAULT_SERVER_HTTP_PORT = 8080;
+  public static final String DEFAULT_SERVER_LOG_DIRECTORY_NAME = "log";
 
   // null indicates the value has not been configured
   private @Nullable Integer serverHttpPort = null;
   private @Nullable Path serverWorkingDirectory = null;
+  private @Nullable Path serverLogDirectory = null;
 
   /**
    * Default constructor.
@@ -27,6 +30,7 @@ public class Configuration {
   private Configuration(final Configuration configuration) {
     this.serverHttpPort = configuration.serverHttpPort;
     this.serverWorkingDirectory = configuration.serverWorkingDirectory;
+    this.serverLogDirectory = configuration.serverLogDirectory;
   }
 
   /**
@@ -66,6 +70,32 @@ public class Configuration {
    */
   public void setServerWorkingDirectory(final Path serverWorkingDirectory) {
     this.serverWorkingDirectory = serverWorkingDirectory;
+  }
+
+  /**
+   * Get the log directory for holding the server log files.
+   *
+   * @return the log directory for holding the server log files.
+   */
+  public Path getServerLogDirectory() {
+    if (serverLogDirectory != null) {
+      return serverLogDirectory;
+    }
+
+    if (serverWorkingDirectory != null) {
+      return serverWorkingDirectory.resolve(DEFAULT_SERVER_LOG_DIRECTORY_NAME);
+    }
+
+    return Paths.get(DEFAULT_SERVER_LOG_DIRECTORY_NAME);
+  }
+
+  /**
+   * Set the log directory for holding the server log files.
+   *
+   * @param serverLogDirectory the log directory for holding the server log files.
+   */
+  public void setServerLogDirectory(final Path serverLogDirectory) {
+    this.serverLogDirectory = serverLogDirectory;
   }
 
   /**
