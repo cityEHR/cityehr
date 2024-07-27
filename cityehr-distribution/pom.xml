@@ -28,4 +28,20 @@
         <module>cityehr-standalone-tomcat</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <!-- NOTE(AR) this allows us to make building the Docker Image optional (disabled by default) -->
+            <id>docker</id>
+            <activation>
+                <property>
+                    <name>docker</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <modules>
+                <module>cityehr-docker</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>

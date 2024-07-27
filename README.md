@@ -7,6 +7,7 @@
 Requires:
 * [Java](https://bell-sw.com/pages/downloads/#jdk-8-lts) 8+
 * [Apache Maven](https://maven.apache.org/download.cgi) 3.9.6+
+* (Optional) [Docker](https://docs.docker.com/engine/install/)
 
 You first need to obtain a copy of the Source Code from GitHub if you have not already done so.
 The process to do this is the same as you would do for any GitHub repository.
@@ -26,6 +27,8 @@ Then to build cityEHR, run:
 $ mvn clean package
 ```
 
+NOTE: If you wish to also build the Docker Image you need to add the `-Pdocker` argument to the above command, i.e. `mvn clean package -Pdocker`.
+
 ## Running cityEHR
 
 The following configuration options are available when starting cityEHR and may be specified as either Environment Variables, Java System Properties, or Command Line Arguments:
@@ -36,7 +39,7 @@ The following configuration options are available when starting cityEHR and may 
 | Set the working directory for holding the server code and data                        | CITYEHR_SERVER_WORKING_DIRECTORY | cityehr.server.working-directory | --server-working-directory |
 | Set the log directory for holding the server log files                                | CITYEHR_SERVER_LOG_DIRECTORY     | cityehr.server.log-directory     | --server-log-directory     |
 
-There are three options at present:
+There are four options at present:
 
 1. (Preferred) Run the stand-alone cityEHR Jar file that embeds Jetty Server.
     ```shell
@@ -51,6 +54,8 @@ There are three options at present:
    Note: As the Jar file is stand-alone you can copy it to any location you prefer before running it.
 
 3. Copy and deploy the WAR file from the `cityehr-distribution/cityehr-webapp/target` folder to your favourite Java EE server.
+
+4. If you built the Docker Image, you can start a Docker Container form that image by running: `docker run -it -p 8080:8080 cityehr/cityehr:1.8.0-SNAPSHOT`.
 
 ## Running cityEHR for Development Purposes
 There are two options at present:

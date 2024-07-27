@@ -1,0 +1,143 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.seveninformatics.cityehr</groupId>
+        <artifactId>cityehr-parent</artifactId>
+        <version>1.8.0-SNAPSHOT</version>
+        <relativePath>../../cityehr-parent</relativePath>
+    </parent>
+
+    <artifactId>cityehr-docker</artifactId>
+    <packaging>pom</packaging>
+
+    <name>cityEHR Docker Image</name>
+    <description>cityEHR Docker Image</description>
+
+    <scm>
+        <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
+        <developerConnection>scm:git:https://github.com/cityehr/cityehr.git</developerConnection>
+        <url>scm:git:https://github.com/cityehr/cityehr.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <docker.dir.suffix>docker-dir</docker.dir.suffix>
+        <docker.context.dir>${project.build.directory}/cityehr-docker-${project.version}-${docker.dir.suffix}</docker.context.dir>
+        <docker.tag>latest</docker.tag>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cityehr-standalone-jetty</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources-filtered</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble-archives</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archiveBaseDirectory>${project.basedir}/../..</archiveBaseDirectory>
+                            <attach>false</attach>
+                            <inlineDescriptors>
+                                <inlineDescriptor>
+                                    <id>${docker.dir.suffix}</id>
+                                    <formats>
+                                        <format>dir</format>
+                                    </formats>
+                                    <includeBaseDirectory>false</includeBaseDirectory>
+                                    <fileSets>
+                                        <fileSet>
+                                            <outputDirectory></outputDirectory>
+                                            <directory>/</directory>
+                                            <includes>
+                                                <include>LICENSE</include>
+                                            </includes>
+                                        </fileSet>
+                                        <fileSet>
+                                            <outputDirectory>../../..</outputDirectory>
+                                            <directory>cityehr-distribution/cityehr-standalone-jetty/target</directory>
+                                            <includes>
+                                                <include>cityehr-standalone-jetty-${project.version}.jar</include>
+                                            </includes>
+                                        </fileSet>
+                                    </fileSets>
+                                </inlineDescriptor>
+                            </inlineDescriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.44.0</version>
+                <configuration>
+                    <verbose>true</verbose>
+                    <images>
+                        <image>
+                            <name>cityehr/cityehr:%v</name>
+                            <alias>cityehr</alias>
+                            <build>
+                                <tags>
+                                    <tag>${docker.tag}</tag>
+                                </tags>
+                                <dockerFile>${project.build.outputDirectory}/Dockerfile</dockerFile>
+                                <contextDir>${docker.context.dir}</contextDir>
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>push-image</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
