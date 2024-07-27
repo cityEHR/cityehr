@@ -55,7 +55,7 @@ public class CliArgumentsParser extends AbstractConfigurationParser<String[]> {
   }
 
   private @Nullable Integer parseInt(final int index) {
-    if (index < input.length - 1) {
+    if (index < input.length) {
       final String value = input[index];
       if (!value.startsWith("--")) {
         try {
@@ -69,7 +69,7 @@ public class CliArgumentsParser extends AbstractConfigurationParser<String[]> {
   }
 
   private @Nullable String parseString(final int index) {
-    if (index < input.length - 1) {
+    if (index < input.length) {
       final String value = input[index];
       if (!value.startsWith("--")) {
         return value;
