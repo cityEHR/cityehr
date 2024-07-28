@@ -1,5 +1,5 @@
 # cityEHR
-
+[![Build Status](https://github.com/evolvedbinary/cityehr/actions/workflows/ci.yml/badge.svg)](https://github.com/evolvedbinary/cityehr/actions/workflows/ci.yml)
 [![Java 8](https://img.shields.io/badge/java-8-blue.svg)](https://adoptopenjdk.net/)
 [![License](https://img.shields.io/badge/license-LGPL%202.1-blue.svg)](https://www.gnu.org/licenses/lgpl-2.1.html)
 
