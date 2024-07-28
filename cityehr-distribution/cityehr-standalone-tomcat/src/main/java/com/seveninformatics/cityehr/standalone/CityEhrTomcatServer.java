@@ -93,6 +93,7 @@ public class CityEhrTomcatServer {
     logger.info("Using Server HTTP Port: {}", port);
 
     final Tomcat tomcat = new Tomcat();
+    // NOTE(AR) to set the port correctly, or to add HTTPS, we also need to modify WEB-INF/resources/config/properties-local.xml in the resultant extracted WAR file
     tomcat.setPort(port);
 
     // Set the directory the war will extract to

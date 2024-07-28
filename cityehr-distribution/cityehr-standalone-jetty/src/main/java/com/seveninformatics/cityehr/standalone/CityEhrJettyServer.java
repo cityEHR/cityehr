@@ -87,9 +87,10 @@ public class CityEhrJettyServer {
     final URL warLocation = CityEhrJettyServer.class.getProtectionDomain().getCodeSource().getLocation();
     final Resource warResource = Resource.newResource(warLocation);
 
-    // NOTE(AR) has to be set - see: https://www.eclipse.org/lists/jetty-users/msg10722.html
+    // NOTE(AR) to set the port correctly, or to add HTTPS, we also need to modify WEB-INF/resources/config/properties-local.xml in the resultant extracted WAR file
     final Server server = new Server(port);
     final WebAppContext context = new WebAppContext("ROOT", "/");
+    // NOTE(AR) has to be set - see: https://www.eclipse.org/lists/jetty-users/msg10722.html
     context.setExtractWAR(true);
 
     // Set the directory the war will extract to
