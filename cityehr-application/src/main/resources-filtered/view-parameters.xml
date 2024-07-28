@@ -38,8 +38,8 @@
 
     <!-- Version is used for (re) building parameters.
          Release is overridden by value in application-parameters -->
-    <versionNumber displayName="Version Number - " version="V1.7-2024-05-09-01" release="1"
-        notSupportedMessage="Not supported in this version of cityEHR: ">
+    <versionNumber displayName="Version Number - " version="${project.version}" release="1"
+                   notSupportedMessage="Not supported in this version of cityEHR: ">
         <releaseNotes>
             <!-- Contains a set of HTML elements that are used as default release notes if none are found.
                  Release notes are stored in <version>.xml in resources/releaseNotes.
