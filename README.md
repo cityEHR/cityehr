@@ -3,6 +3,14 @@
 [![Java 8](https://img.shields.io/badge/java-8-blue.svg)](https://adoptopenjdk.net/)
 [![License](https://img.shields.io/badge/license-LGPL%202.1-blue.svg)](https://www.gnu.org/licenses/lgpl-2.1.html)
 
+cityEHR is an Open Source Electronic Health Records system designed to support patient-centred shared care, and reuse of data for clinical studies.
+
+All clinical data is held using open standards such as HL7 CDA, ISO-13606, and XML.
+
+The system runs as an enterprise-scale, Web-based application, configured entirely through an information model created by clinical users themselves using spreadsheets and other familiar tools.
+
+For further information see the [Open Health Informations](http://openhealthinformatics.com/) website.
+
 ## Project Structure
 The project is split into a number of separate modules. Thought has been given to separation of concerns so as to try and
 achieve a clean modular system whereby each module does only one thing. Composition is used so that some modules are
