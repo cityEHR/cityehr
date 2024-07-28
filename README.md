@@ -3,6 +3,26 @@
 [![Java 8](https://img.shields.io/badge/java-8-blue.svg)](https://adoptopenjdk.net/)
 [![License](https://img.shields.io/badge/license-LGPL%202.1-blue.svg)](https://www.gnu.org/licenses/lgpl-2.1.html)
 
+## Project Structure
+The project is split into a number of separate modules. Thought has been given to separation of concerns so as to try and
+achieve a clean modular system whereby each module does only one thing. Composition is used so that some modules are
+built by combining the output of one or more other modules.
+
+### Project Modules
+
+| Name                                           | Description                                                                                                         |
+|------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| cityehr-parent                                 | Contains common build configuration that is inherited by all modules                                                |
+| cityehr-orbeon-minimal                         | Converts and configures an Orbeon Forms WAR into a minimal WAR as needed for running `cityehr-application`          |
+| cityehr-application                            | Contains the Application Code for cityEHR (XML, XPL, XQuery, XSLT, etc.)                                            |
+| cityehr-distribution/cityehr-war               | Builds a WAR file of cityEHR by combining `cityehr-orbeon-minimal` and `cityehr-application`                        |
+| cityehr-distribution/cityehr-standalone-common | Common Java Code needed for `cityehr-standalone-jetty` and `cityehr-standalone-tomcat`                              |
+| cityehr-distribution/cityehr-standalone-jetty  | Builds a single standalone JAR file application from `cityehr-war` by embedding Eclipse Jetty Server to run cityEHR |
+| cityehr-distribution/cityehr-standalone-tomcat | Builds a single standalone JAR file application from `cityehr-war` by embedding Apache Tomcat Server to run cityEHR |
+| cityehr-distribution/cityehr-docker            | Builds a cityEHR Docker Image from `cityehr-standalone-jetty`                                                       |
+
+<img width="60%" src="https://github.com/evolvedbinary/cityehr/blob/main/cityehr-build-graph.svg?raw=true" alt="cityEHR Graph of Modules that produce Artifacts" />
+
 ## Building cityEHR from Source Code
 Requires:
 * [Java](https://bell-sw.com/pages/downloads/#jdk-8-lts) 8+
