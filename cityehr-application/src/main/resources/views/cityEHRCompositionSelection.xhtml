@@ -99,7 +99,7 @@
                         <xxf:variable name="selectedComposition" select="$folderCompositions[index('composition-repeat')]"/>
                         
                         <!-- The current page is reloaded with the composition set -->
-                        <xf:dispatch name="load-new-composition" target="main-model">
+                        <xf:dispatch name="confirm-load-new-composition" target="main-model">
                             <xxf:context name="composition" select="$selectedComposition"/>                            
                         </xf:dispatch>
                         

@@ -26,13 +26,17 @@
     **********************************************************************************************************
 -->
 
-<xf:model id="imageMap-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
-    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
-    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:svg="http://www.w3.org/2000/svg">
+<xf:model id="imageMap-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:svg="http://www.w3.org/2000/svg">
 
 
     <!-- ========= Instances for managing image maps ========= 
@@ -42,7 +46,8 @@
         <control xmlns="">
             <status/>
             <currentValue/>
-            <svg xmlns="http://www.w3.org/2000/svg" id="" version="1.1" class="imageMap" viewBox="" x="" y="" style=""/>
+            <svg xmlns="http://www.w3.org/2000/svg" id="" version="1.1" class="imageMap" viewBox=""
+                x="" y="" style=""/>
         </control>
     </xf:instance>
 
@@ -77,10 +82,12 @@
         <xf:delete nodeset="xxf:instance('imageMapList-instance')/*"/>
 
         <!-- The image map template -->
-        <xxf:variable name="imageMapTemplate" select="xxf:instance('imageMapControl-instance')/svg:svg"/>
+        <xxf:variable name="imageMapTemplate"
+            select="xxf:instance('imageMapControl-instance')/svg:svg"/>
 
         <!-- Get the stored image maps -->
-        <xxf:variable name="imageMapStorageLocation" select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/imageMaps')"/>
+        <xxf:variable name="imageMapStorageLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/imageMaps')"/>
         <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$imageMapStorageLocation"/>
@@ -95,18 +102,23 @@
             <xxf:variable name="entryId" select="substring-after($entryIRI,'#ISO-13606:Entry:')"/>
 
             <!-- Stored image map -->
-            <xxf:variable name="storedImageMap" select="xxf:instance('storedImageMapList-instance')/svg:svg[@id=$entryId]"/>
+            <xxf:variable name="storedImageMap"
+                select="xxf:instance('storedImageMapList-instance')/svg:svg[@id=$entryId]"/>
 
             <!-- If there is a stored image map -->
             <xf:action if="exists($storedImageMap)">
-                <xf:insert context="xxf:instance('imageMapList-instance')" nodeset="*" origin="$storedImageMap" at="last()" position="after"/>
+                <xf:insert context="xxf:instance('imageMapList-instance')" nodeset="*"
+                    origin="$storedImageMap" at="last()" position="after"/>
             </xf:action>
 
             <!-- If there is no stored image map -->
             <xf:action if="not(exists($storedImageMap))">
-                <xxf:variable name="imageMapTemplate" select="xxf:instance('imageMapControl-instance')/svg:svg"/>
-                <xf:insert context="xxf:instance('imageMapList-instance')" nodeset="*" origin="$imageMapTemplate" at="last()" position="after"/>
-                <xxf:variable name="imageMap" select="xxf:instance('imageMapList-instance')/*[last()]"/>
+                <xxf:variable name="imageMapTemplate"
+                    select="xxf:instance('imageMapControl-instance')/svg:svg"/>
+                <xf:insert context="xxf:instance('imageMapList-instance')" nodeset="*"
+                    origin="$imageMapTemplate" at="last()" position="after"/>
+                <xxf:variable name="imageMap"
+                    select="xxf:instance('imageMapList-instance')/*[last()]"/>
 
                 <xf:setvalue ref="$imageMap/@id" value="$entryId"/>
             </xf:action>
@@ -130,13 +142,15 @@
         <!-- The list of image maps defined in the specialty dictionary -->
         <xxf:variable name="dictionaryImageMapList"
             select="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry[contains(@cityEHR:rendition,'ImageMap')]"/>
-        <xxf:variable name="dictionaryImageMapEntryIRIList" select="$dictionaryImageMapList/cda:component/cda:observation/cda:id/@extension"/>
+        <xxf:variable name="dictionaryImageMapEntryIRIList"
+            select="$dictionaryImageMapList/cda:component/cda:observation/cda:id/@extension"/>
 
         <!-- The list of image maps defined for the composition -->
         <xxf:variable name="specialtyIRI" select="xxf:instance('dictionary-instance')/@code"/>
         <xxf:variable name="compositionEntryIRIList"
             select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@code=$compositionIRI]/iso-13606:entry"/>
-        <xxf:variable name="compositionImageMapEntryIRIList" select="$dictionaryImageMapEntryIRIList[.=$compositionEntryIRIList]"/>
+        <xxf:variable name="compositionImageMapEntryIRIList"
+            select="$dictionaryImageMapEntryIRIList[.=$compositionEntryIRIList]"/>
 
         <!-- Get the list of image maps for the composition.
              The list of image maps is formed in imageMapList-instance. -->
@@ -168,20 +182,26 @@
         <!-- Only handle the comamnd if it has been passed -->
         <xf:action if="$imageMapCommand != ''">
 
-            <xxf:variable name="commandAndClassSeparator" select="xxf:instance('view-parameters-instance')/commandAndClassSeparator"/>
-            <xxf:variable name="commandSeparator" select="xxf:instance('view-parameters-instance')/commandSeparator"/>
+            <xxf:variable name="commandAndClassSeparator"
+                select="xxf:instance('view-parameters-instance')/commandAndClassSeparator"/>
+            <xxf:variable name="commandSeparator"
+                select="xxf:instance('view-parameters-instance')/commandSeparator"/>
 
             <!-- imageMapCommand is of the form entryId_elementId_value -->
-            <xxf:variable name="imageMapCommandTokens" select="tokenize($imageMapCommand,$commandSeparator)"/>
+            <xxf:variable name="imageMapCommandTokens"
+                select="tokenize($imageMapCommand,$commandSeparator)"/>
             <xxf:variable name="entryIRI"
                 select="if (exists($imageMapCommandTokens[1])) then concat('#ISO-13606:Entry:',$imageMapCommandTokens[1]) else ''"/>
             <xxf:variable name="elementIRI"
                 select="if (exists($imageMapCommandTokens[2])) then concat('#ISO-13606:Element:',$imageMapCommandTokens[2]) else ''"/>
-            <xxf:variable name="value" select="if (exists($imageMapCommandTokens[3])) then $imageMapCommandTokens[3] else ''"/>
+            <xxf:variable name="value"
+                select="if (exists($imageMapCommandTokens[3])) then $imageMapCommandTokens[3] else ''"/>
 
             <!-- Action depends of the type of the entry - Simple or MultipleEntry -->
-            <xxf:variable name="cdaBody" select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
-            <xxf:variable name="entry" select="$cdaBody//cda:entry[descendant::cda:id[1]/@extension=$entryIRI]"/>
+            <xxf:variable name="cdaBody"
+                select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+            <xxf:variable name="entry"
+                select="$cdaBody//cda:entry[descendant::cda:id[1]/@extension=$entryIRI]"/>
 
             <!-- Simple entry contains observation, MultipleEntry contains organizer -->
             <!-- MultipleEntry.
@@ -229,8 +249,10 @@
 
         <xxf:variable name="entrySortOrder" select="$entry/@cityEHR:SortOrder"/>
         <xxf:variable name="entryTemplate" select="$entry/cda:organizer/cda:component[1]"/>
-        <xxf:variable name="entrySetContainer" select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
-        <xxf:variable name="elementTemplate" select="$entry/cda:organizer/cda:component[1]//cda:observation/cda:value[@extension=$mappedElementIRI]"/>
+        <xxf:variable name="entrySetContainer"
+            select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
+        <xxf:variable name="elementTemplate"
+            select="$entry/cda:organizer/cda:component[1]//cda:observation/cda:value[@extension=$mappedElementIRI]"/>
 
         <xxf:variable name="enumeration"
             select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension = $mappedElementIRI]/iso-13606:data"/>
@@ -259,15 +281,18 @@
             'first'"/>
         <!-- Add new entry as last in the container -->
         <xf:action if="$addMultipleEntryPosition = 'last'">
-            <xf:insert context="$entrySetContainer" nodeset="cda:component" origin="$entryTemplate" at="last()" position="after"/>
+            <xf:insert context="$entrySetContainer" nodeset="cda:component" origin="$entryTemplate"
+                at="last()" position="after"/>
         </xf:action>
         <!-- Or as first - this is the default if the option is not specified in view-parameters -->
         <xf:action if="$addMultipleEntryPosition = 'first'">
-            <xf:insert context="$entrySetContainer" nodeset="cda:component" origin="$entryTemplate" at="1" position="before"/>
+            <xf:insert context="$entrySetContainer" nodeset="cda:component" origin="$entryTemplate"
+                at="1" position="before"/>
         </xf:action>
 
         <!-- If a required value then refresh the main model (for requiredElementStatus) -->
-        <xxf:variable name="requiredValue" select="exists($entryTemplate//cda:value[@cityEHR:RequiredValue='Required'])"/>
+        <xxf:variable name="requiredValue"
+            select="exists($entryTemplate//cda:value[@cityEHR:RequiredValue='Required'])"/>
         <xf:action if="$requiredValue">
             <xf:recalculate model="main-model"/>
         </xf:action>
@@ -300,14 +325,15 @@
         <xf:action if="$imageMapSelection = ''">
             <!-- Get the current value for the element
                  Need to set currentValue in the control instance, because $element/@value gets reset in the processing -->
-            
-            <xxf:variable name="currentValue" select="xxf:instance('imageMapControl-instance')/currentValue"/>
+
+            <xxf:variable name="currentValue"
+                select="xxf:instance('imageMapControl-instance')/currentValue"/>
             <xf:setvalue ref="$currentValue" value="$element/@value"/>
-             
+
             <!-- Get the enumeratedValues (if there are any) -->
             <xxf:variable name="enumeration"
                 select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension = $mappedElementIRI]/iso-13606:data/@value"/>
-            
+
             <xxf:variable name="lastEnumeratedValue" select="$enumeration[position()=last()]"/>
             <xxf:variable name="reverseEnumeration" select="reverse($enumeration)"/>
 
@@ -315,13 +341,15 @@
             <xf:action if="exists($enumeration)">
                 <!-- If the current value isn't in the enumeration, or is equal to the last value
                      then set to the first value -->
-                <xf:action if="not($currentValue = $enumeration) or $currentValue=$lastEnumeratedValue">
+                <xf:action
+                    if="not($currentValue = $enumeration) or $currentValue=$lastEnumeratedValue">
                     <xf:setvalue ref="$element/@value" value="$enumeration[1]"/>
                 </xf:action>
 
                 <!-- If the current value is one of the enumerated values (but not the last)
                      Then toggle to the next value. -->
-                <xf:action if="$currentValue = $enumeration and not($currentValue=$lastEnumeratedValue)">
+                <xf:action
+                    if="$currentValue = $enumeration and not($currentValue=$lastEnumeratedValue)">
 
                     <!-- Iterate in reverse order.
                          and set to the previous value when the match is found
@@ -333,7 +361,8 @@
 
                         <!-- Set to the next in the list -->
                         <xf:action if="$value = $currentValue">
-                            <xf:setvalue ref="$element/@value" value="$reverseEnumeration[position() = ($position - 1)]"/>
+                            <xf:setvalue ref="$element/@value"
+                                value="$reverseEnumeration[position() = ($position - 1)]"/>
                             <!-- Debugging
                             <xf:message ref="concat('Set value: ',$currentValue,' to value: ',$element/@value)"/>
                             -->
@@ -346,6 +375,8 @@
 
         <!-- Update the image map display (resets classes on all SVG <g> elements -->
         <xf:dispatch name="refresh-allImageMapClasses" target="imageMap-model"/>
+
+
 
     </xf:action>
 
@@ -361,7 +392,8 @@
         <xxf:variable name="entry" select="event('entry')"/>
         <xxf:variable name="entryIRI" select="($entry//cda:id/@extension)[1]"/>
 
-        <xxf:variable name="commandSeparator" select="xxf:instance('view-parameters-instance')/commandSeparator"/>
+        <xxf:variable name="commandSeparator"
+            select="xxf:instance('view-parameters-instance')/commandSeparator"/>
 
         <!-- Get the ids -->
         <xxf:variable name="entryId" select="substring-after($entryIRI, 'Entry:')"/>
@@ -372,20 +404,26 @@
             select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension = $mappedElementIRI]/iso-13606:data/@value"/>
 
         <!-- All values set for the entry -->
-        <xxf:variable name="observationSetContainer" select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
-        <xxf:variable name="setValues" select="$observationSetContainer//cda:observation//cda:value[@extension = $mappedElementIRI]/@value"/>
+        <xxf:variable name="observationSetContainer"
+            select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
+        <xxf:variable name="setValues"
+            select="$observationSetContainer//cda:observation//cda:value[@extension = $mappedElementIRI]/@value"/>
 
         <!-- Clear the parameters -->
-        <xf:setvalue ref="xxf:instance('session-parameters-instance')/javascriptParameters" value="''"/>
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/javascriptParameters"
+            value="''"/>
 
         <!-- Build parameters using mapped element values -->
         <xf:action xxf:iterate="$enumeration">
             <xxf:variable name="value" select="."/>
 
-            <xxf:variable name="imageMapCommand" select="concat($entryId,$commandSeparator,$mappedElementId,$commandSeparator,$value)"/>
-            <xxf:variable name="imageMapClassValueSet" select="translate($imageMapCommand,$commandSeparator,' ')"/>
+            <xxf:variable name="imageMapCommand"
+                select="concat($entryId,$commandSeparator,$mappedElementId,$commandSeparator,$value)"/>
+            <xxf:variable name="imageMapClassValueSet"
+                select="translate($imageMapCommand,$commandSeparator,' ')"/>
 
-            <xxf:variable name="imageMapClass" select="if ($value = $setValues) then $imageMapClassValueSet else ''"/>
+            <xxf:variable name="imageMapClass"
+                select="if ($value = $setValues) then $imageMapClassValueSet else ''"/>
 
             <!-- javascriptParameters are picked up by setClassOnElement function.
                  These are a set of imageMapCommand///imageMapClass separated by @@@ 
@@ -413,12 +451,15 @@
          This action handles both single and MultipleEntry
     -->
     <xf:action ev:event="refresh-allImageMapClasses">
-        <xxf:variable name="commandSeparator" select="xxf:instance('view-parameters-instance')/commandSeparator"/>
-        <xxf:variable name="valueClassPrefix" select="xxf:instance('view-parameters-instance')/valueClassPrefix"/>
+        <xxf:variable name="commandSeparator"
+            select="xxf:instance('view-parameters-instance')/commandSeparator"/>
+        <xxf:variable name="valueClassPrefix"
+            select="xxf:instance('view-parameters-instance')/valueClassPrefix"/>
 
         <!-- Clear the command and parameters -->
         <xf:setvalue ref="xxf:instance('session-parameters-instance')/imageMapCommand" value="''"/>
-        <xf:setvalue ref="xxf:instance('session-parameters-instance')/javascriptParameters" value="''"/>
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/javascriptParameters"
+            value="''"/>
 
 
         <!-- Load the imageMapList from xmlCache. -->
@@ -428,11 +469,13 @@
 
         <!-- The list of image map commands - entry_element_value set in id attributes
              (where _ is the $commandSeparator) -->
-        <xxf:variable name="imageMapCommandList" select="xxf:instance('storedImageMapList-instance')//svg:g/@id"/>
+        <xxf:variable name="imageMapCommandList"
+            select="xxf:instance('storedImageMapList-instance')//svg:g/@id"/>
 
         <!-- Iterate through the list of entries referenced in the image maps.
              (There may be several commands for the same entry -->
-        <xxf:variable name="imageMapEntryList" select="distinct-values($imageMapCommandList/substring-before(.,$commandSeparator))"/>
+        <xxf:variable name="imageMapEntryList"
+            select="distinct-values($imageMapCommandList/substring-before(.,$commandSeparator))"/>
         <xf:action xxf:iterate="$imageMapEntryList">
             <xxf:variable name="entryId" select="."/>
             <xxf:variable name="entryIRI" select="concat('#ISO-13606:Entry:',$entryId)"/>
@@ -441,25 +484,32 @@
             <!-- Get the entry in the form-instance.
                  There should only be one, but this works if there are more than one 
                  Can be single or MultipleEntry -->
-            <xxf:variable name="cdaBody" select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
-            <xxf:variable name="entry" select="$cdaBody//cda:entry[descendant::cda:id[1]/@extension=$entryIRI]"/>
+            <xxf:variable name="cdaBody"
+                select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+            <xxf:variable name="entry"
+                select="$cdaBody//cda:entry[descendant::cda:id[1]/@extension=$entryIRI]"/>
 
             <!-- Iterate through the entry_element commands referenced in the image maps,
                  But only if the entry exists in the composition -->
             <xf:action if="exists($entry)">
-                <xxf:variable name="entryCommandList" select="$imageMapCommandList[starts-with(.,$commandPrefix)]"/>
+                <xxf:variable name="entryCommandList"
+                    select="$imageMapCommandList[starts-with(.,$commandPrefix)]"/>
                 <xf:action xxf:iterate="$entryCommandList">
                     <xxf:variable name="imageMapCommand" select="."/>
 
                     <!-- imageMapCommand is of the form entryId_elementId_value
                          where _ is the $commandSeparator -->
-                    <xxf:variable name="imageMapCommandTokens" select="tokenize($imageMapCommand,$commandSeparator)"/>
-                    <xxf:variable name="elementId" select="if (exists($imageMapCommandTokens[2])) then $imageMapCommandTokens[2] else ''"/>
-                    <xxf:variable name="imageMapValue" select="if (exists($imageMapCommandTokens[3])) then $imageMapCommandTokens[3] else ''"/>
+                    <xxf:variable name="imageMapCommandTokens"
+                        select="tokenize($imageMapCommand,$commandSeparator)"/>
+                    <xxf:variable name="elementId"
+                        select="if (exists($imageMapCommandTokens[2])) then $imageMapCommandTokens[2] else ''"/>
+                    <xxf:variable name="imageMapValue"
+                        select="if (exists($imageMapCommandTokens[3])) then $imageMapCommandTokens[3] else ''"/>
 
                     <!-- Element must exist in command - otherwise ignore it -->
                     <xf:action if="$elementId !=''">
-                        <xxf:variable name="elementIRI" select="concat('#ISO-13606:Element:',$elementId)"/>
+                        <xxf:variable name="elementIRI"
+                            select="concat('#ISO-13606:Element:',$elementId)"/>
 
                         <!-- Simple entry contains observation, MultipleEntry contains organizer -->
                         <xxf:variable name="observationtContainer"
@@ -473,8 +523,10 @@
                              If the imageMapValue is not specified, then the imageMapClass is set to the value.
                              -->
 
-                        <xxf:variable name="valueSet" select="$observationtContainer//cda:observation//cda:value[@extension = $elementIRI]/@value"/>
-                        <xxf:variable name="valueIsMatched" select="if ($imageMapValue!= '' and $imageMapValue = $valueSet) then true() else false()"/>
+                        <xxf:variable name="valueSet"
+                            select="$observationtContainer//cda:observation//cda:value[@extension = $elementIRI]/@value"/>
+                        <xxf:variable name="valueIsMatched"
+                            select="if ($imageMapValue!= '' and $imageMapValue = $valueSet) then true() else false()"/>
 
                         <!-- The valueClass is set using the valueClassPrefix, so that numeric values can be handled -->
                         <xxf:variable name="valueClass"
@@ -483,7 +535,8 @@
                         <xxf:variable name="imageMapClass"
                             select="if ($valueClass='') then '' else string-join(($entryId,$elementId,$valueClass),' ')"/>
 
-                        <xf:setvalue ref="xxf:instance('session-parameters-instance')/javascriptParameters"
+                        <xf:setvalue
+                            ref="xxf:instance('session-parameters-instance')/javascriptParameters"
                             value="concat('@@@',$imageMapCommand,'///',$imageMapClass,.)"/>
 
                     </xf:action>

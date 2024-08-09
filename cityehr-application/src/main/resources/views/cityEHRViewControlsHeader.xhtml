@@ -22,12 +22,16 @@
 -->
 
 <!-- View Controls Header -->
-<xhtml:ul class="viewControlsHeader" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
-    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+<xhtml:ul class="viewControlsHeader" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
     <!-- Title of this view -->
     <xhtml:li class="viewControlsTitle">
         <!-- Page displayName -->
@@ -36,6 +40,10 @@
         <!-- Output the edit status -->
         <xf:output
             ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/editStatus/option[@value=xxf:instance('control-instance')/current-form/editStatus]/@displayName"/>
+        <!-- Debugging - show the editStatus -->
+        <!--
+        <xf:output ref="xxf:instance('control-instance')/current-form/editStatus"/>
+        -->
         <!-- Output the pathway status -->
         <xf:output class="message"
             ref="if (xxf:instance('view-parameters-instance')/compositionStatus!='none') then xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Pathways/parameters/status/option[@value=xxf:instance('control-instance')/current-form/pathwayStatus]/@displayName else ''"/>
@@ -63,19 +71,20 @@
                 class="error"/>
             <xf:trigger appearance="minimal">
                 <xf:label>
-                    <xf:output ref="xxf:instance('view-parameters-instance')/systemError/@acknowledgeLabel"/>
+                    <xf:output
+                        ref="xxf:instance('view-parameters-instance')/systemError/@acknowledgeLabel"
+                    />
                 </xf:label>
                 <xf:action ev:event="DOMActivate">
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError" value="''"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                        value="''"/>
                 </xf:action>
             </xf:trigger>
         </xf:group>
-
         <!-- System status -->
         <xf:output
             ref="if (xxf:instance('view-parameters-instance')/systemStatus!='') then concat(xxf:instance('view-parameters-instance')/systemStatus/@displayName,xxf:instance('view-parameters-instance')/systemStatus) else ''"
             class="status"/>
-
         <!-- Page load time, if debugging -->
         <xxf:variable name="debugClass"
             select="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>

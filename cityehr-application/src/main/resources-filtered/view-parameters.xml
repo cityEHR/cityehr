@@ -1781,6 +1781,12 @@
                 <addCareTeamPatientsLabel>Add patients to care team.</addCareTeamPatientsLabel>
                 <exportPatientsLabel>Export patient records</exportPatientsLabel>
             </processPatientList>
+            <manageImportExport>
+                
+            </manageImportExport>
+            <manageScheduledImport>
+                
+            </manageScheduledImport>
             <testWebService>
                 <selectWebServiceLabel>Select service call </selectWebServiceLabel>
                 <callWebServiceLabel>Call web service</callWebServiceLabel>

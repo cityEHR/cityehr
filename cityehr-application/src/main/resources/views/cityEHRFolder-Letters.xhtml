@@ -335,6 +335,7 @@
                     <!-- Call pipeline through page-flow to launch Word Processor -->
                     <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
                         <xxf:context name="page" select="'cityEHRWordProcessorCDA'"/>
+                        <xxf:context name="checkEdits" select="false()"/>
                     </xf:dispatch>
 
                 </xf:action>
@@ -359,6 +360,7 @@
                 <xf:action if="$template != ''">
                     <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
                         <xxf:context name="page" select="'cityEHRWordProcessorAttachment'"/>
+                        <xxf:context name="checkEdits" select="false()"/>
                     </xf:dispatch>
                 </xf:action>
             </xf:action>

@@ -122,11 +122,14 @@
                         ''"/>
             <xsl:variable name="hasDisplayName" select="exists(li[@class = 'ISO13606-Section-DisplayName'][descendant::text()])"/>
             
+            <!-- For debugging - output the class attribute -->
+            <!--
             <w:p>
                     <w:r>
                         <xsl:value-of select="@class"/>
                     </w:r> 
             </w:p>
+            -->
 
             <xsl:if test="$rendition = 'Standalone' or $hasDisplayName">
                 <w:p>

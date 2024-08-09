@@ -386,7 +386,8 @@
         <xxf:variable name="processStatus" select="xxf:instance('processExecutionLog-instance')/@status"/>
         <xxf:variable name="lastActionStatus" select="xxf:instance('processExecutionLog-instance')/action[last()]/@errorCode"/>
         
-        <xf:setvalue ref="$status" value="if ($processStatus = 'aborted') then concat($processStatus,' - ',$lastActionStatus) else ''"/>
+        <!-- status is waiting | running | aborted | completed -->
+        <xf:setvalue ref="$status" value="if ($processStatus = 'aborted') then concat($processStatus,' - ',$lastActionStatus) else $processStatus"/>
         
     </xf:action>
     

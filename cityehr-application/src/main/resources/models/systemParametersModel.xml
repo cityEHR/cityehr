@@ -26,13 +26,17 @@
     **********************************************************************************************************
 -->
 
-<xf:model id="systemParameters-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
-    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
-    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+<xf:model id="systemParameters-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
 
     <!-- ========= systemParametersControl-instance  ========= 
          Holds the URL of the system-parameters in the local (built-in) database.
@@ -50,7 +54,8 @@
             <storageLocation/>
             <displayMode>dialog | inline</displayMode>
             <confirmationMode>'' | close | save | saveAndRestart | reset </confirmationMode>
-            <status model="systemParameters-model">loaded | edited | failedLoadDefaultSystemParameters | failedSaveSystemParameters |
+            <status model="systemParameters-model">loaded | edited |
+                failedLoadDefaultSystemParameters | failedSaveSystemParameters |
                 malformedSystemParameters</status>
             <databaseChecksum/>
             <iconFile last-modified-ms="" last-modified-date="" size="" path="" name=""/>
@@ -62,7 +67,8 @@
          Invoked when action to be confirmed is cancelled.
            -->
     <xf:action ev:event="reset-confirmationMode">
-        <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/confirmationMode" value="''"/>
+        <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/confirmationMode"
+            value="''"/>
     </xf:action>
 
 
@@ -87,36 +93,43 @@
         <xxf:variable name="status" select="event('status')"/>
 
         <!-- Set the database URL for the resource -->
-        <xxf:variable name="systemResourceURL" select="xxf:instance('view-parameters-instance')/systemResourcesURL"/>
+        <xxf:variable name="systemResourceURL"
+            select="xxf:instance('view-parameters-instance')/systemResourcesURL"/>
         <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceURL"
             value="concat($systemResourceURL/@localPrefix,$systemResourceURL/@storageLocation,$systemResourceName)"/>
 
         <!-- Clear out the systemResource-instance, in case the read submission fails -->
-        <xf:insert nodeset="xxf:instance('systemResource-instance')" origin="xxf:instance('emptySystemResource-instance')"/>
+        <xf:insert nodeset="xxf:instance('systemResource-instance')"
+            origin="xxf:instance('emptySystemResource-instance')"/>
 
         <!-- Load the resource -->
         <xf:send submission="load-systemResource" target="systemParameters-model"/>
 
         <!-- Transfer to the specified instance if loaded successfully -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/systemResourceStatus = ''">
-            <xf:insert nodeset="$systemResource-instance" origin="xxf:instance('systemResource-instance')"/>
+            <xf:insert nodeset="$systemResource-instance"
+                origin="xxf:instance('systemResource-instance')"/>
         </xf:action>
 
         <!-- Set the status -->
-        <xf:setvalue ref="$status" value="xxf:instance('systemParametersControl-instance')/systemResourceStatus"/>
+        <xf:setvalue ref="$status"
+            value="xxf:instance('systemParametersControl-instance')/systemResourceStatus"/>
     </xf:action>
 
     <!-- Submission to load the system resource.
          This must be done directly with a submission, since the DAL is configured after the system paraneters -->
-    <xf:submission id="load-systemResource" resource="{xxf:instance('systemParametersControl-instance')/systemResourceURL}" method="get"
+    <xf:submission id="load-systemResource"
+        resource="{xxf:instance('systemParametersControl-instance')/systemResourceURL}" method="get"
         replace="instance" instance="systemResource-instance">
         <!-- Success -->
         <xf:action ev:event="xforms-submit-done">
-            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus" value="''"/>
+            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus"
+                value="''"/>
         </xf:action>
         <!-- Failed -->
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus" value="'load-systemResource-failed'"/>
+            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus"
+                value="'load-systemResource-failed'"/>
         </xf:action>
     </xf:submission>
 
@@ -128,33 +141,38 @@
         <xxf:variable name="status" select="event('status')"/>
 
         <!-- Set the database URL for the resource -->
-        <xxf:variable name="systemResourceURL" select="xxf:instance('view-parameters-instance')/systemResourcesURL"/>
+        <xxf:variable name="systemResourceURL"
+            select="xxf:instance('view-parameters-instance')/systemResourcesURL"/>
         <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceURL"
             value="concat($systemResourceURL/@localPrefix,$systemResourceURL/@storageLocation,$systemResourceName)"/>
 
         <!-- Set the systemResource-instance -->
-        <xf:insert nodeset="xxf:instance('systemResource-instance')" origin="$systemResource-instance"/>
+        <xf:insert nodeset="xxf:instance('systemResource-instance')"
+            origin="$systemResource-instance"/>
 
         <!-- Save the resource -->
         <xf:send submission="save-systemResource" target="systemParameters-model"/>
 
         <!-- Set the status -->
-        <xf:setvalue ref="$status" value="xxf:instance('systemParametersControl-instance')/systemResourceStatus"/>
+        <xf:setvalue ref="$status"
+            value="xxf:instance('systemParametersControl-instance')/systemResourceStatus"/>
     </xf:action>
 
 
     <!-- Submission to save the system resource.
          This must be done directly with a submission, since the DAL is configured after the system paraneters -->
     <xf:submission id="save-systemResource" ref="xxf:instance('systemResource-instance')"
-        action="{xxf:instance('systemParametersControl-instance')/systemResourceURL}" method="put" replace="none" f:url-type="resource"
-        includenamespacesprefixes="">
+        action="{xxf:instance('systemParametersControl-instance')/systemResourceURL}" method="put"
+        replace="none" f:url-type="resource" includenamespacesprefixes="">
         <!-- Success -->
         <xf:action ev:event="xforms-submit-done">
-            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus" value="''"/>
+            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus"
+                value="''"/>
         </xf:action>
         <!-- Failed -->
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus" value="'save-systemResource-failed'"/>
+            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/systemResourceStatus"
+                value="'save-systemResource-failed'"/>
         </xf:action>
     </xf:submission>
 
@@ -176,7 +194,8 @@
         <xf:dispatch name="dal-readStaticFile" target="databaseAccessLayer-model">
             <xxf:context name="staticFileLocation" select="'/system-parameters.xml'"/>
             <xxf:context name="resource" select="xxf:instance('default-system-parameters-instance')"/>
-            <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+            <xxf:context name="status"
+                select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
 
         <xf:setvalue ref="$status"
@@ -211,29 +230,37 @@
 
         <!-- Load default system parameters from disk -->
         <xf:dispatch name="load-default-system-parameters" target="systemParameters-model">
-            <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+            <xxf:context name="status"
+                select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
 
         <!-- Can only continue if default parameters were loaded -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/status=''">
             <!-- Copy current system-parameters loaded from xmlstore to stored system parameters -->
-            <xf:insert nodeset="xxf:instance('stored-system-parameters-instance')" origin="xxf:instance('system-parameters-instance')"/>
+            <xf:insert nodeset="xxf:instance('stored-system-parameters-instance')"
+                origin="xxf:instance('system-parameters-instance')"/>
 
             <!-- Rebuild parameters 
                  This uses the general rebuild-parameters defined in manageParameters-model -->
             <xf:dispatch name="rebuild-parameters" target="manageParameters-model">
-                <xxf:context name="parameters-instance" select="xxf:instance('system-parameters-instance')"/>
-                <xxf:context name="stored-parameters-instance" select="xxf:instance('stored-system-parameters-instance')"/>
-                <xxf:context name="default-parameters-instance" select="xxf:instance('default-system-parameters-instance')"/>
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="parameters-instance"
+                    select="xxf:instance('system-parameters-instance')"/>
+                <xxf:context name="stored-parameters-instance"
+                    select="xxf:instance('stored-system-parameters-instance')"/>
+                <xxf:context name="default-parameters-instance"
+                    select="xxf:instance('default-system-parameters-instance')"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
         </xf:action>
 
         <!-- Update calculated parameters -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/status=''">
             <xf:dispatch name="set-calculated-parameters" target="manageParameters-model">
-                <xxf:context name="parameters-instance" select="xxf:instance('system-parameters-instance')"/>
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="parameters-instance"
+                    select="xxf:instance('system-parameters-instance')"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
         </xf:action>
 
@@ -241,43 +268,70 @@
              This will also invoke build-database-parameters, since the databaseChecksum is blank in the default-system-parameters-instance -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/status=''">
             <xf:dispatch name="save-system-parameters" target="systemParameters-model">
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
         </xf:action>
 
         <!-- Now update the language pack.
              This is using the DAL - needs to be checked, since this may not be configured at this stage -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/status=''">
-            <xxf:variable name="languagePackLocation" select="'/xmlstore/system/languagePack/system-parameters'"/>
-            <xxf:variable name="baseLanguageCode" select="lower-case(xxf:instance('system-parameters-instance')/@languageCode)"/>
+            <xxf:variable name="languagePackLocation"
+                select="'/xmlstore/system/languagePack/system-parameters'"/>
+            <xxf:variable name="baseLanguageCode"
+                select="lower-case(xxf:instance('system-parameters-instance')/@languageCode)"/>
 
             <!-- Read language pack from the database -->
             <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="'ehr'"/>
                 <xxf:context name="storageLocation" select="$languagePackLocation"/>
-                <xxf:context name="resource" select="xxf:instance('systemParameterslanguagePack-instance')"/>
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="resource"
+                    select="xxf:instance('systemParameterslanguagePack-instance')"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
 
             <!-- Generate language pack (updates the existing language pack that is passed in) -->
             <xf:dispatch name="generate-parametersLanguagePack" target="manageParameters-model">
-                <xxf:context name="parameters-instance" select="xxf:instance('system-parameters-instance')"/>
+                <xxf:context name="parameters-instance"
+                    select="xxf:instance('system-parameters-instance')"/>
                 <xxf:context name="baseLanguageCode" select="$baseLanguageCode"/>
-                <xxf:context name="languagePack-instance" select="xxf:instance('systemParameterslanguagePack-instance')"/>
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="languagePack-instance"
+                    select="xxf:instance('systemParameterslanguagePack-instance')"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
 
             <!-- Save the updated language pack -->
             <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="'ehr'"/>
                 <xxf:context name="storageLocation" select="$languagePackLocation"/>
-                <xxf:context name="resource" select="xxf:instance('systemParameterslanguagePack-instance')"/>
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="resource"
+                    select="xxf:instance('systemParameterslanguagePack-instance')"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
         </xf:action>
 
         <!-- Set the status after update -->
         <xf:setvalue ref="$status" value="xxf:instance('systemParametersControl-instance')/status"/>
+    </xf:action>
+
+
+    <!-- Application defined action to record the status of shippedResourcesConfiguration.
+         Invoked from cityEHRSignOn.
+         Used so that shipped resources can be reloded if the process is interupted for any reason.
+           -->
+
+    <xf:action ev:event="record-shippedResourcesConfiguration">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xf:setvalue
+            ref="xxf:instance('system-parameters-instance')/coreParameters/shippedResourcesConfiguration"
+            value="$status"/>
+        
+        <xf:dispatch name="save-system-parameters" target="systemParameters-model"/>
+
     </xf:action>
 
 
@@ -303,26 +357,33 @@
         <xxf:variable name="status" select="event('status')"/>
 
         <xf:dispatch name="load-systemResource" target="systemParameters-model">
-            <xxf:context name="systemResource-instance" select="xxf:instance('system-parameters-instance')"/>
-            <xxf:context name="systemResourceName" select="xxf:instance('view-parameters-instance')/systemResourcesURL/@systemParametersResource"/>
-            <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+            <xxf:context name="systemResource-instance"
+                select="xxf:instance('system-parameters-instance')"/>
+            <xxf:context name="systemResourceName"
+                select="xxf:instance('view-parameters-instance')/systemResourcesURL/@systemParametersResource"/>
+            <xxf:context name="status"
+                select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
 
         <!-- Parameters loaded - check the structure -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/status = ''">
             <!-- Structure not as expected -->
-            <xf:action if="not(exists(xxf:instance('system-parameters-instance')/dynamicParameters))">
-                <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status" value="'system-paramters-bad-format'"/>
+            <xf:action
+                if="not(exists(xxf:instance('system-parameters-instance')/dynamicParameters))">
+                <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status"
+                    value="'system-paramters-bad-format'"/>
             </xf:action>
             <!-- Structure looks OK -->
             <xf:action if="exists(xxf:instance('system-parameters-instance')/dynamicParameters)">
-                <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status" value="''"/>
+                <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status"
+                    value="''"/>
             </xf:action>
         </xf:action>
 
         <!-- Parameters not loaded - set the error status  -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/status != ''">
-            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status" value="'failed-load-system-parameters'"/>
+            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status"
+                value="'failed-load-system-parameters'"/>
         </xf:action>
 
         <!-- Set the return status -->
@@ -341,16 +402,19 @@
         <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status" value="''"/>
 
         <!-- Check the base language for the system parameters - load variant parameters if necessary -->
-        <xf:action if="$sessionLanguageCode != '' and lower-case(xxf:instance('system-parameters-instance')/@baseLanguageCode)!=$sessionLanguageCode">
+        <xf:action
+            if="$sessionLanguageCode != '' and lower-case(xxf:instance('system-parameters-instance')/@baseLanguageCode)!=$sessionLanguageCode">
 
             <!-- Only load variant parameters if they exist -->
-            <xxf:variable name="variantLocation" select="concat('/xmlstore/system/variants/',$sessionLanguageCode,'/system-parameters')"/>
+            <xxf:variable name="variantLocation"
+                select="concat('/xmlstore/system/variants/',$sessionLanguageCode,'/system-parameters')"/>
 
             <!-- Check whether variant system parameters exist -->
             <xf:dispatch name="resource-exists" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="'ehr'"/>
                 <xxf:context name="storageLocation" select="$variantLocation"/>
-                <xxf:context name="result" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="result"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
 
             <!-- Variant parameters exist, so load them -->
@@ -359,7 +423,8 @@
                     <xxf:context name="system" select="'ehr'"/>
                     <xxf:context name="storageLocation" select="$variantLocation"/>
                     <xxf:context name="resource" select="xxf:instance('system-parameters-instance')"/>
-                    <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('systemParametersControl-instance')/status"/>
                 </xf:dispatch>
             </xf:action>
         </xf:action>
@@ -393,14 +458,17 @@
 
         <!-- Parameters are not valid - don't save them -->
         <xf:action if="not($parametersValid)">
-            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status" value="'malformedSystemParameters'"/>
+            <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/status"
+                value="'malformedSystemParameters'"/>
         </xf:action>
 
         <xf:action if="$parametersValid">
             <!-- Set the date of the saved parameters (and timeStamp used for archive) -->
             <xxf:variable name="currentDateTime" select="current-dateTime()"/>
-            <xxf:variable name="timeStamp" select="substring(replace(replace(string($currentDateTime),':','-'),'\+','*'),1,16)"/>
-            <xf:setvalue ref="xxf:instance('system-parameters-instance')/@date" value="$currentDateTime"/>
+            <xxf:variable name="timeStamp"
+                select="substring(replace(replace(string($currentDateTime),':','-'),'\+','*'),1,16)"/>
+            <xf:setvalue ref="xxf:instance('system-parameters-instance')/@date"
+                value="$currentDateTime"/>
 
             <!-- Set the current version of cityEHR -->
             <xf:setvalue ref="xxf:instance('system-parameters-instance')/@version"
@@ -408,8 +476,10 @@
 
             <!-- Check whether database parameters have been changed -->
             <xf:dispatch name="set-databaseChecksum" target="systemParameters-model">
-                <xxf:context name="system-parameters" select="xxf:instance('system-parameters-instance')"/>
-                <xxf:context name="databaseChecksum" select="xxf:instance('systemParametersControl-instance')/databaseChecksum"/>
+                <xxf:context name="system-parameters"
+                    select="xxf:instance('system-parameters-instance')"/>
+                <xxf:context name="databaseChecksum"
+                    select="xxf:instance('systemParametersControl-instance')/databaseChecksum"/>
             </xf:dispatch>
 
             <!-- Database parameters changed - need to regenerate the database-parameters
@@ -420,7 +490,8 @@
                 <!-- Generate the database-parameters.
                      Pass the status - will get set if anything goes wrong -->
                 <xf:dispatch name="build-database-parameters" target="databaseAccessLayer-model">
-                    <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('systemParametersControl-instance')/status"/>
                 </xf:dispatch>
 
                 <!-- Reset the databaseChecksum -->
@@ -439,24 +510,30 @@
             <!-- Only save system parameters if the status has not been set (because of an error) -->
             <xf:action if="xxf:instance('systemParametersControl-instance')/status=''">
                 <!-- Locations are defined in view-parameters -->
-                <xxf:variable name="systemResourcesURL" select="xxf:instance('view-parameters-instance')/systemResourcesURL"/>
+                <xxf:variable name="systemResourcesURL"
+                    select="xxf:instance('view-parameters-instance')/systemResourcesURL"/>
 
                 <!-- Save system-parameters in the archive.
                      archive/<timeStamp>/system-parameters -->
                 <xxf:variable name="archiveParametersResourceName"
                     select="concat($systemResourcesURL/@archiveLocation,$timeStamp,$systemResourcesURL/@separator,$systemResourcesURL/@systemParametersResource)"/>
                 <xf:dispatch name="save-systemResource" target="systemParameters-model">
-                    <xxf:context name="systemResource-instance" select="xxf:instance('system-parameters-instance')"/>
+                    <xxf:context name="systemResource-instance"
+                        select="xxf:instance('system-parameters-instance')"/>
                     <xxf:context name="systemResourceName" select="$archiveParametersResourceName"/>
-                    <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('systemParametersControl-instance')/status"/>
                 </xf:dispatch>
 
                 <!-- Save the active system-parameters -->
-                <xxf:variable name="parametersResourceName" select="$systemResourcesURL/@systemParametersResource"/>
+                <xxf:variable name="parametersResourceName"
+                    select="$systemResourcesURL/@systemParametersResource"/>
                 <xf:dispatch name="save-systemResource" target="systemParameters-model">
-                    <xxf:context name="systemResource-instance" select="xxf:instance('system-parameters-instance')"/>
+                    <xxf:context name="systemResource-instance"
+                        select="xxf:instance('system-parameters-instance')"/>
                     <xxf:context name="systemResourceName" select="$parametersResourceName"/>
-                    <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('systemParametersControl-instance')/status"/>
                 </xf:dispatch>
 
             </xf:action>
@@ -475,17 +552,20 @@
 
         <!-- Load default system parameters from disk -->
         <xf:dispatch name="load-default-system-parameters" target="systemParameters-model">
-            <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+            <xxf:context name="status"
+                select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
 
         <!-- Can only continue if default parameters were loaded -->
         <xf:action if="xxf:instance('systemParametersControl-instance')/status=''">
             <!-- Copy default to system-parameters -->
-            <xf:insert nodeset="xxf:instance('system-parameters-instance')" origin="xxf:instance('default-system-parameters-instance')"/>
+            <xf:insert nodeset="xxf:instance('system-parameters-instance')"
+                origin="xxf:instance('default-system-parameters-instance')"/>
 
             <!-- Set calculated values -->
             <xf:dispatch name="set-calculated-parameters" target="manageParameters-model">
-                <xxf:context name="parameters-instance" select="xxf:instance('system-parameters-instance')"/>
+                <xxf:context name="parameters-instance"
+                    select="xxf:instance('system-parameters-instance')"/>
             </xf:dispatch>
 
             <!-- Save the system-parameters.
@@ -511,7 +591,8 @@
         <xxf:variable name="system-parameters" select="event('system-parameters')"/>
         <xxf:variable name="databaseChecksum" select="event('databaseChecksum')"/>
 
-        <xxf:variable name="systemDatabases" select="$system-parameters/coreParameters/databaseConfiguration/systemDatabases/database"/>
+        <xxf:variable name="systemDatabases"
+            select="$system-parameters/coreParameters/databaseConfiguration/systemDatabases/database"/>
         <xxf:variable name="logicalDatabases"
             select="$system-parameters/coreParameters/databaseConfiguration/logicalDatabases/database[@id=$systemDatabases/@logicalDatabase]"/>
         <xxf:variable name="physicalClusters"
@@ -529,7 +610,8 @@
          So need to transfer to system-parameters and then save -->
     <xf:action ev:event="save-system-parameters-after-edit">
         <!-- Replace the system-parameters-instance -->
-        <xf:insert nodeset="xxf:instance('system-parameters-instance')" origin="xxf:instance('managed-parameters-instance')"/>
+        <xf:insert nodeset="xxf:instance('system-parameters-instance')"
+            origin="xxf:instance('managed-parameters-instance')"/>
         <!-- Save system parameters -->
         <xf:dispatch name="save-system-parameters" target="systemParameters-model"/>
         <!-- Set the status -->
@@ -541,7 +623,8 @@
          Since this invalidates the session it's necessary to immediately return to the cityEHRSignOn page -->
     <xf:action ev:event="save-system-parameters-and-restart">
         <!-- Replace the system-parameters-instance -->
-        <xf:insert nodeset="xxf:instance('system-parameters-instance')" origin="xxf:instance('managed-parameters-instance')"/>
+        <xf:insert nodeset="xxf:instance('system-parameters-instance')"
+            origin="xxf:instance('managed-parameters-instance')"/>
         <!-- Save system parameters -->
         <xf:dispatch name="save-system-parameters" target="systemParameters-model"/>
         <!-- End session, reload sign on page -->
@@ -555,13 +638,15 @@
         <xxf:variable name="displayMode" select="event('displayMode')"/>
         <xxf:variable name="editMode" select="event('editMode')"/>
 
-        <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/displayMode" value="if ($displayMode='') then . else $displayMode"/>
+        <xf:setvalue ref="xxf:instance('systemParametersControl-instance')/displayMode"
+            value="if ($displayMode='') then . else $displayMode"/>
         <xf:dispatch name="reset-confirmationMode" target="systemParameters-model"/>
 
         <!-- Set to edit the system parameters.
              Note that the editMode for set-managed-parameters is newApp or '' (blank) -->
         <xf:dispatch name="set-managed-parameters" target="manageParameters-model">
-            <xxf:context name="parameters-instance" select="xxf:instance('system-parameters-instance')"/>
+            <xxf:context name="parameters-instance"
+                select="xxf:instance('system-parameters-instance')"/>
             <xxf:context name="editMode" select="$editMode"/>
         </xf:dispatch>
     </xf:action>
@@ -598,9 +683,12 @@
         <!-- Get the list of shipped icons -->
         <xf:dispatch name="dal-getStaticResourceList" target="databaseAccessLayer-model">
             <xxf:context name="staticResourceLocation" select="'/icons'"/>
-            <xxf:context name="staticResourceList-instance" select="xxf:instance('shippedIconList-instance')"/>
-            <xxf:context name="fileTemplate" select="xxf:instance('systemParametersControl-instance')/iconFile"/>
-            <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+            <xxf:context name="staticResourceList-instance"
+                select="xxf:instance('shippedIconList-instance')"/>
+            <xxf:context name="fileTemplate"
+                select="xxf:instance('systemParametersControl-instance')/iconFile"/>
+            <xxf:context name="status"
+                select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
 
         <!-- Load each icon from disk -->
@@ -612,7 +700,8 @@
 
             <xf:dispatch name="load-icon-from-disk" target="systemParameters-model">
                 <xxf:context name="fileName" select="$fileName"/>
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
 
             <xf:setvalue ref="$iconFile" value="xxf:instance('icon-instance')"/>
@@ -638,10 +727,12 @@
             <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
                 <xxf:context name="staticResourceLocation" select="$staticResourceLocation"/>
                 <xxf:context name="resource" select="xxf:instance('icon-instance')"/>
-                <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
 
-            <xf:setvalue ref="$status" value="xxf:instance('systemParametersControl-instance')/status"/>
+            <xf:setvalue ref="$status"
+                value="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:action>
 
     </xf:action>
@@ -656,7 +747,8 @@
         <!-- Get the icon files from disk -->
         <xf:dispatch name="initialize-shippedIconList" target="systemParameters-model"/>
         <!-- Transfer shipped icons  to iconList -->
-        <xf:insert nodeset="xxf:instance('iconList-instance')" origin="xxf:instance('shippedIconList-instance')"/>
+        <xf:insert nodeset="xxf:instance('iconList-instance')"
+            origin="xxf:instance('shippedIconList-instance')"/>
         <!-- Save the iconList -->
         <xf:dispatch name="save-system-icons" target="systemParameters-model"/>
     </xf:action>
@@ -666,13 +758,15 @@
          Gets the stored iconList in iconList-instance -->
     <xf:action ev:event="load-system-icons">
         <!-- Location defined in view-parameters -->
-        <xxf:variable name="iconResourceName" select="xxf:instance('view-parameters-instance')/systemResourcesURL/@iconResource"/>
+        <xxf:variable name="iconResourceName"
+            select="xxf:instance('view-parameters-instance')/systemResourcesURL/@iconResource"/>
 
         <!-- Load the system resource -->
         <xf:dispatch name="load-systemResource" target="systemParameters-model">
             <xxf:context name="systemResource-instance" select="xxf:instance('iconList-instance')"/>
             <xxf:context name="systemResourceName" select="$iconResourceName"/>
-            <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+            <xxf:context name="status"
+                select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
 
     </xf:action>
@@ -682,13 +776,15 @@
          Saves the iconList-instance -->
     <xf:action ev:event="save-system-icons">
         <!-- Location defined in view-parameters -->
-        <xxf:variable name="iconResourceName" select="xxf:instance('view-parameters-instance')/systemResourcesURL/@iconResource"/>
+        <xxf:variable name="iconResourceName"
+            select="xxf:instance('view-parameters-instance')/systemResourcesURL/@iconResource"/>
 
         <!-- Load the system resource -->
         <xf:dispatch name="save-systemResource" target="systemParameters-model">
             <xxf:context name="systemResource-instance" select="xxf:instance('iconList-instance')"/>
             <xxf:context name="systemResourceName" select="$iconResourceName"/>
-            <xxf:context name="status" select="xxf:instance('systemParametersControl-instance')/status"/>
+            <xxf:context name="status"
+                select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
     </xf:action>
 

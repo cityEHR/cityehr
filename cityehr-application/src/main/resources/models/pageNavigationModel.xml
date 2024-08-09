@@ -21,13 +21,17 @@
     **********************************************************************************************************
 -->
 
-<xf:model id="pageNavigation-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
-    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
-    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+<xf:model id="pageNavigation-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:controller="http://www.orbeon.com/oxf/controller">
 
 
@@ -86,98 +90,118 @@
         <xxf:variable name="show" select="event('show')"/>
         <xxf:variable name="checkEdits" select="event('checkEdits')"/>
 
-        <!-- Show page must be either 'new' or 'replace' -->
-        <xxf:variable name="showPage" select="if (exists($show) and $show='new') then 'new' else 'replace'"/>
+        <!-- Get the process status in case there is a process running -->
+        <xf:dispatch name="get-processStatus" target="process-model">
+            <xxf:context name="status"
+                select="xxf:instance('pageNavigationControl-instance')/status"/>
+        </xf:dispatch>
 
-        <!-- checkEditStatus default is 'true' -->
-        <xxf:variable name="checkEditStatus" select="if (exists($checkEdits) and $checkEdits=false()) then false() else true()"/>
+        <!-- User action is disabled while a process is running -->
+        <xf:action if="xxf:instance('pageNavigationControl-instance')/status != 'running'">
 
-        <!-- Check the editStatus on the page from where this action is invoked.
+            <!-- Show page must be either 'new' or 'replace' -->
+            <xxf:variable name="showPage"
+                select="if (exists($show) and $show='new') then 'new' else 'replace'"/>
+
+            <!-- checkEditStatus default is 'true' -->
+            <xxf:variable name="checkEditStatus"
+                select="if (exists($checkEdits) and $checkEdits=false()) then false() else true()"/>
+
+            <!-- Check the editStatus on the page from where this action is invoked.
              check-editStatus must be implemented in the main-model for that page.
              This can be the main-model in compositionMainModel or in the cityEHRAdmin page -->
-        <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/editStatus" value="''"/>
+            <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/editStatus" value="''"/>
 
-        <xf:action if="$checkEditStatus = true()">
-            <xf:dispatch name="check-editStatus" target="main-model">
-                <xxf:context name="editStatus" select="xxf:instance('pageNavigationControl-instance')/editStatus"/>
-            </xf:dispatch>
-        </xf:action>
-
-        <!-- No edits on the current page - invoke navigation directly -->
-        <xf:action if="xxf:instance('pageNavigationControl-instance')/editStatus = ''">
-
-            <!-- No page is specified, so load the home page  -->
-            <xf:action if="$page = ''">
-                <xf:dispatch name="quit-session" target="pageNavigation-model"/>
+            <xf:action if="$checkEditStatus = true()">
+                <xf:dispatch name="check-editStatus" target="main-model">
+                    <xxf:context name="editStatus"
+                        select="xxf:instance('pageNavigationControl-instance')/editStatus"/>
+                </xf:dispatch>
             </xf:action>
 
-            <!-- A page is specified (not the home page)  -->
-            <xf:action if="$page != ''">
-                <!-- Call page specific actions for page before loading -->
-                <xf:dispatch name="{$page}" target="pageNavigation-model"/>
+            <!-- No edits on the current page - invoke navigation directly -->
+            <xf:action if="xxf:instance('pageNavigationControl-instance')/editStatus = ''">
 
-                <!-- Set the pageURL without parameters -->
-                <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/pageURL" value="concat(./@home,$page,'/')"/>
+                <!-- No page is specified, so load the home page  -->
+                <xf:action if="$page = ''">
+                    <xf:dispatch name="quit-session" target="pageNavigation-model"/>
+                </xf:action>
 
-                <!-- Get the page from page-flow.xml (assumes that all pages have unique name) -->
-                <xxf:variable name="pageSignature"
-                    select="xxf:instance('page-flow-instance')/controller:page[@path-info = xxf:instance('pageNavigationControl-instance')/pageURL]"/>
+                <!-- A page is specified (not the home page)  -->
+                <xf:action if="$page != ''">
+                    <!-- Call page specific actions for page before loading -->
+                    <xf:dispatch name="{$page}" target="pageNavigation-model"/>
 
-                <!-- Set the parameters for the URL.
+                    <!-- Set the pageURL without parameters -->
+                    <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/pageURL"
+                        value="concat(./@home,$page,'/')"/>
+
+                    <!-- Get the page from page-flow.xml (assumes that all pages have unique name) -->
+                    <xxf:variable name="pageSignature"
+                        select="xxf:instance('page-flow-instance')/controller:page[@path-info = xxf:instance('pageNavigationControl-instance')/pageURL]"/>
+
+                    <!-- Set the parameters for the URL.
              These are found from page-flow and the values must already be set in view-parameters.
              Append each parameter to pageURL.
              Special case for the page parameter, which is set to $page -->
-                <xf:action xxf:iterate="$pageSignature/controller:setvalue/@parameter">
-                    <xxf:variable name="parameter" select="."/>
-                    <xxf:variable name="connector" select="if (position() = 1) then '?' else '&amp;'"/>
-                    <xxf:variable name="parameterValue"
-                        select="if ($parameter='page') then encode-for-uri($page) else encode-for-uri(xxf:instance('view-parameters-instance')/*[name()= $parameter])"/>
+                    <xf:action xxf:iterate="$pageSignature/controller:setvalue/@parameter">
+                        <xxf:variable name="parameter" select="."/>
+                        <xxf:variable name="connector"
+                            select="if (position() = 1) then '?' else '&amp;'"/>
+                        <xxf:variable name="parameterValue"
+                            select="if ($parameter='page') then encode-for-uri($page) else encode-for-uri(xxf:instance('view-parameters-instance')/*[name()= $parameter])"/>
 
-                    <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/pageURL"
-                        value="concat(.,$connector,$parameter,'=',$parameterValue)"/>
-                </xf:action>
+                        <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/pageURL"
+                            value="concat(.,$connector,$parameter,'=',$parameterValue)"/>
+                    </xf:action>
 
-                <!-- Save the session info.
+                    <!-- Save the session info.
                  This transfers parameters from view-parameters to session-parameters.
                  Then saves the session for the user. -->
-                <xf:dispatch name="save-session-for-transition" target="session-model">
-                    <xxf:context name="sessionId" select="xxf:instance('view-parameters-instance')/sessionId"/>
-                    <xxf:context name="targetPage" select="$page"/>
-                    <xxf:context name="showPage" select="$showPage"/>
-                </xf:dispatch>
+                    <xf:dispatch name="save-session-for-transition" target="session-model">
+                        <xxf:context name="sessionId"
+                            select="xxf:instance('view-parameters-instance')/sessionId"/>
+                        <xxf:context name="targetPage" select="$page"/>
+                        <xxf:context name="showPage" select="$showPage"/>
+                    </xf:dispatch>
 
-                <!-- Make an entry in the auditLog.
+                    <!-- Make an entry in the auditLog.
                  Will only write the entry if audit logging is switched on (checked in write-auditLog)
                -->
-                <xf:dispatch name="write-auditLog" target="auditLog-model">
-                    <xxf:context name="model" select="'pageNavigation-model'"/>
-                    <xxf:context name="action" select="'load-cityEHR-page'"/>
-                    <xxf:context name="status" select="xxf:instance('pageNavigationControl-instance')/status"/>
-                </xf:dispatch>
-
-                <!-- If there was a problem with the audit log, then abort with error message -->
-                <xf:action if="xxf:instance('pageNavigationControl-instance')/status !=''">
-                    <xf:dispatch name="abort-session" target="pageNavigation-model">
-                        <xxf:context name="errorCode" select="xxf:instance('pageNavigationControl-instance')/status"/>
-                        <xxf:context name="context" select="'write-auditLog'"/>
+                    <xf:dispatch name="write-auditLog" target="auditLog-model">
+                        <xxf:context name="model" select="'pageNavigation-model'"/>
+                        <xxf:context name="action" select="'load-cityEHR-page'"/>
+                        <xxf:context name="status"
+                            select="xxf:instance('pageNavigationControl-instance')/status"/>
                     </xf:dispatch>
-                </xf:action>
 
-                <!-- Record patient access.
+                    <!-- If there was a problem with the audit log, then abort with error message -->
+                    <xf:action if="xxf:instance('pageNavigationControl-instance')/status !=''">
+                        <xf:dispatch name="abort-session" target="pageNavigation-model">
+                            <xxf:context name="errorCode"
+                                select="xxf:instance('pageNavigationControl-instance')/status"/>
+                            <xxf:context name="context" select="'write-auditLog'"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!-- Record patient access.
                  Only if patientId is set (update-recentPatients checks this before updating).
                  Note that patientId in view-parameters will already have been set to the new patient -->
-                <xf:dispatch name="update-recentPatients" target="session-model"/>
+                    <xf:dispatch name="update-recentPatients" target="session-model"/>
 
-                <!-- Load the page.
+                    <!-- Load the page.
                  Until 2021-11-18 this just had one call, using show="{$showPage}".
                  But show="new" causes a new tab to load temporarily, which isn't what we want. -->
-                <xf:action if="$showPage='new'">
-                    <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}" xxf:show-progress="false"/>
-                </xf:action>
-                <xf:action if="$showPage!='new'">
-                    <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}" show="{$showPage}" xxf:show-progress="false"/>
-                </xf:action>
+                    <xf:action if="$showPage='new'">
+                        <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}"
+                            xxf:show-progress="false"/>
+                    </xf:action>
+                    <xf:action if="$showPage!='new'">
+                        <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}"
+                            show="{$showPage}" xxf:show-progress="false"/>
+                    </xf:action>
 
+                </xf:action>
             </xf:action>
         </xf:action>
 
@@ -185,7 +209,8 @@
         <!-- Load new page after confirmation, since the current page has been edited -->
         <xf:action if="not(xxf:instance('pageNavigationControl-instance')/editStatus = '')">
             <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/nextPage" value="$page"/>
-            <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/nextPageShow" value="$show"/>
+            <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/nextPageShow"
+                value="$show"/>
 
             <xf:dispatch name="confirm-action" target="pageNavigation-model">
                 <xxf:context name="action" select="'loadNextPage'"/>
@@ -200,8 +225,10 @@
        -->
     <xf:action ev:event="load-cityEHR-nextPage">
         <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-            <xxf:context name="page" select="xxf:instance('pageNavigationControl-instance')/nextPage"/>
-            <xxf:context name="show" select="xxf:instance('pageNavigationControl-instance')/nextPageShow"/>
+            <xxf:context name="page"
+                select="xxf:instance('pageNavigationControl-instance')/nextPage"/>
+            <xxf:context name="show"
+                select="xxf:instance('pageNavigationControl-instance')/nextPageShow"/>
             <xxf:context name="checkEdits" select="false()"/>
         </xf:dispatch>
     </xf:action>
@@ -254,8 +281,10 @@
             select="if (exists($registrationEvent)) then replace(substring($registrationEvent/@composition,2),':','-') else 'blank'"/>
 
         <!-- Application and specialty -->
-        <xxf:variable name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
-        <xxf:variable name="specialtyId" select="xxf:instance('view-parameters-instance')/specialtyId"/>
+        <xxf:variable name="applicationId"
+            select="xxf:instance('view-parameters-instance')/applicationId"/>
+        <xxf:variable name="specialtyId"
+            select="xxf:instance('view-parameters-instance')/specialtyId"/>
 
         <!-- Set the compositionHandle -->
         <xxf:variable name="compositionLocation"
@@ -263,7 +292,8 @@
         <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$compositionLocation"/>
-            <xxf:context name="dalReadURL" select="xxf:instance('view-parameters-instance')/compositionHandle"/>
+            <xxf:context name="dalReadURL"
+                select="xxf:instance('view-parameters-instance')/compositionHandle"/>
         </xf:dispatch>
 
         <!-- Set the formCacheHandle -->
@@ -272,7 +302,8 @@
         <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$formCacheLocation"/>
-            <xxf:context name="dalReadURL" select="xxf:instance('view-parameters-instance')/formCacheHandle"/>
+            <xxf:context name="dalReadURL"
+                select="xxf:instance('view-parameters-instance')/formCacheHandle"/>
         </xf:dispatch>
 
         <!-- Set the compositionStatus -->
@@ -303,13 +334,16 @@
                  Then saves the session for the user.
                  Not loading any pages, so targetPage is the same as the current page (and probably not used, but just in case). -->
             <xf:dispatch name="save-session-for-transition" target="session-model">
-                <xxf:context name="sessionId" select="xxf:instance('view-parameters-instance')/sessionId"/>
-                <xxf:context name="targetPage" select="xxf:instance('view-parameters-instance')/page"/>
+                <xxf:context name="sessionId"
+                    select="xxf:instance('view-parameters-instance')/sessionId"/>
+                <xxf:context name="targetPage"
+                    select="xxf:instance('view-parameters-instance')/page"/>
                 <xxf:context name="showPage" select="''"/>
             </xf:dispatch>
 
             <!-- Set and run the pipeline -->
-            <xxf:variable name="pipelinePath" select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/',$pipeline)"/>
+            <xxf:variable name="pipelinePath"
+                select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/',$pipeline)"/>
             <xf:insert nodeset="$return-instance"
                 origin="xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , 'data')"
             />
@@ -351,7 +385,8 @@
              Sets the name in pageNavigationControl-instance -->
         <xf:dispatch name="get-imageResourceName" target="pageNavigation-model">
             <xxf:context name="imageElement" select="$logoElement"/>
-            <xxf:context name="imageResourceName" select="xxf:instance('pageNavigationControl-instance')/storageLocation"/>
+            <xxf:context name="imageResourceName"
+                select="xxf:instance('pageNavigationControl-instance')/storageLocation"/>
         </xf:dispatch>
 
         <!-- Load the logo -->
@@ -361,7 +396,8 @@
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$storageLocation"/>
             <xxf:context name="resource" select="xxf:instance('logo-instance')"/>
-            <xxf:context name="status" select="xxf:instance('pageNavigationControl-instance')/status"/>
+            <xxf:context name="status"
+                select="xxf:instance('pageNavigationControl-instance')/status"/>
         </xf:dispatch>
     </xf:action>
 
@@ -386,7 +422,8 @@
         <xxf:variable name="imageAttribute" select="$imageElement/@*[name()=$imageAttributeName]"/>
 
         <!-- The name is combination of image element name and the location from which it was loaded -->
-        <xxf:variable name="imageName" select="concat($imageElementName,xxf:instance('view-parameters-instance')/idSeparator,$imageAttribute)"/>
+        <xxf:variable name="imageName"
+            select="concat($imageElementName,xxf:instance('view-parameters-instance')/idSeparator,$imageAttribute)"/>
 
         <!-- Sanitize the image location, so that it can be used as a resource name.-->
         <xf:dispatch name="sanitize-databaseResourceName" target="databaseAccessLayer-model">
@@ -419,7 +456,9 @@
             <xf:insert nodeset="xxf:instance('displayXML-instance')" origin="$displayXML"/>
 
             <!-- Set the dialog title -->
-            <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/displayXML/@displayName" value="$title"/>
+            <xf:setvalue
+                ref="xxf:instance('pageNavigationControl-instance')/displayXML/@displayName"
+                value="$title"/>
 
             <!-- Show the viewXML dialog -->
             <xxf:show ev:event="DOMActivate" dialog="viewXML"/>
@@ -443,10 +482,13 @@
              Return the URL for the resource in the database (in view-parameters-instance) -->
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
+            <xxf:context name="storageLocation"
+                select="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
             <xxf:context name="resource" select="$xml-instance"/>
-            <xxf:context name="resourceURL" select="xxf:instance('view-parameters-instance')/resourceHandle"/>
-            <xxf:context name="status" select="xxf:instance('pageNavigationControl-instance')/status"/>
+            <xxf:context name="resourceURL"
+                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+            <xxf:context name="status"
+                select="xxf:instance('pageNavigationControl-instance')/status"/>
         </xf:dispatch>
 
     </xf:action>
@@ -461,9 +503,11 @@
         <!-- Load the xml-instance from the xml cache. -->
         <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
+            <xxf:context name="storageLocation"
+                select="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
             <xxf:context name="resource" select="$xml-instance"/>
-            <xxf:context name="status" select="xxf:instance('pageNavigationControl-instance')/status"/>
+            <xxf:context name="status"
+                select="xxf:instance('pageNavigationControl-instance')/status"/>
         </xf:dispatch>
 
     </xf:action>
@@ -478,7 +522,8 @@
         <xxf:variable name="export-instance" select="event('export-instance')"/>
         <xxf:variable name="exportName" select="event('exportName')"/>
         <xxf:variable name="exportType" select="event('exportType')"/>
-        <xxf:variable name="transformationXSL" select="if ( exists(event('transformationXSL'))) then event('transformationXSL') else ''"/>
+        <xxf:variable name="transformationXSL"
+            select="if ( exists(event('transformationXSL'))) then event('transformationXSL') else ''"/>
 
         <!-- Need to write the export-instance - can't just pass the parameter variable -->
         <xf:insert nodeset="xxf:instance('export-instance')" origin="$export-instance"/>
@@ -491,11 +536,13 @@
         <!-- Set the externalId for the resource (in session-parameters) -->
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
             <xxf:context name="type" select="if ($exportName!='') then $exportName else $exportType"/>
-            <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+            <xxf:context name="externalId"
+                select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
 
         <!-- Set the transformationXSL -->
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL" value="$transformationXSL"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+            value="$transformationXSL"/>
 
         <!-- Pipeline to return resource to the browser -->
         <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
@@ -527,15 +574,18 @@
         <!-- Set file name and extnesion for the exported resource -->
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
             <xxf:context name="type" select="if ($exportName!='') then $exportName else $exportType"/>
-            <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+            <xxf:context name="externalId"
+                select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceFileExtension" value="'xml'"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceFileExtension"
+            value="'xml'"/>
 
         <!-- Set the full URL of the resource in resourceHandle -->
         <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$exportHandle"/>
-            <xxf:context name="dalReadURL" select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+            <xxf:context name="dalReadURL"
+                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
         </xf:dispatch>
 
         <!-- Pipeline to return resource to the browser -->
@@ -561,10 +611,13 @@
         <!-- Write html-instance to the html cache -->
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="xxf:instance('view-parameters-instance')/htmlCacheHandle"/>
+            <xxf:context name="storageLocation"
+                select="xxf:instance('view-parameters-instance')/htmlCacheHandle"/>
             <xxf:context name="resource" select="xxf:instance('html-instance')"/>
-            <xxf:context name="resourceURL" select="xxf:instance('view-parameters-instance')/resourceHandle"/>
-            <xxf:context name="status" select="xxf:instance('pageNavigationControl-instance')/status"/>
+            <xxf:context name="resourceURL"
+                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+            <xxf:context name="status"
+                select="xxf:instance('pageNavigationControl-instance')/status"/>
         </xf:dispatch>
     </xf:action>
 
@@ -595,13 +648,15 @@
         <!-- Set the externalId for the resource (in session-parameters) -->
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
             <xxf:context name="type" select="'print'"/>
-            <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+            <xxf:context name="externalId"
+                select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
 
         <!-- Pipeline to return resource to the browser -->
         <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
             <xxf:context name="page" select="'cityEHRPrintCachedHTML'"/>
             <xxf:context name="show" select="'new'"/>
+            <xxf:context name="checkEdits" select="false()"/>
         </xf:dispatch>
 
         <!-- Submit HTML to print pipeline -->
@@ -613,14 +668,15 @@
     <!-- Submit the html-cohort-instance to the print pipeline 
          which runs the transform to XSL-FO and returns the PDF to the browser.
     -->
-    <xf:submission id="printHTML-submission" ref="xxf:instance('html-instance')" method="post" action="/ehr/cityEHRPrintHTML/" replace="all"
-        xxf:show-progress="false">
+    <xf:submission id="printHTML-submission" ref="xxf:instance('html-instance')" method="post"
+        action="/ehr/cityEHRPrintHTML/" replace="all" xxf:show-progress="false">
         <xf:action ev:event="xforms-submit-done">
             <!-- Not doing anything here -->
         </xf:action>
         <xf:action ev:event="xforms-submit-error">
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='printCohort-submission']"/>
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='printCohort-submission']"
+            />
         </xf:action>
     </xf:submission>
 
@@ -648,11 +704,14 @@
         <!-- patientId and patientDemographics-instance only get set in patient-specific views
              In other views these get ignored -->
         <xxf:variable name="patientId" select="xxf:instance('view-parameters-instance')/patientId"/>
-        <xxf:variable name="patientDemographics" select="xxf:instance('patientDemographics-instance')"/>
+        <xxf:variable name="patientDemographics"
+            select="xxf:instance('patientDemographics-instance')"/>
 
-        <xxf:variable name="compositionId" select="xxf:instance('control-instance')/current-form/compositionShortId"/>
+        <xxf:variable name="compositionId"
+            select="xxf:instance('control-instance')/current-form/compositionShortId"/>
 
-        <xxf:variable name="currentDateTime" select="replace(replace(string(current-dateTime()),':','-'),'\+','*')"/>
+        <xxf:variable name="currentDateTime"
+            select="replace(replace(string(current-dateTime()),':','-'),'\+','*')"/>
         <xxf:variable name="date" select="substring($currentDateTime,1,10)"/>
         <xxf:variable name="dateTime" select="substring($currentDateTime,1,19)"/>
 
@@ -681,16 +740,20 @@
 
         <!-- Set default if needed -->
         <xf:action if="not(exists($externalIdTemplate))">
-            <xxf:variable name="separator" select="xxf:instance('view-parameters-instance')/idSeparator"/>
-            <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/externalId" value="concat($type,$separator,$dateTime)"/>
+            <xxf:variable name="separator"
+                select="xxf:instance('view-parameters-instance')/idSeparator"/>
+            <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/externalId"
+                value="concat($type,$separator,$dateTime)"/>
         </xf:action>
 
         <!-- Finally, remove any blanks - externalId can't have blanks
              This is because it is used for filenames, where blanks may not be supported -->
-        <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/externalId" value="translate(., ' &#9;&#10;&#13;', '')"/>
+        <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/externalId"
+            value="translate(., ' &#9;&#10;&#13;', '')"/>
 
         <!-- Set the return parameter -->
-        <xf:setvalue ref="$externalId" value="xxf:instance('pageNavigationControl-instance')/externalId"/>
+        <xf:setvalue ref="$externalId"
+            value="xxf:instance('pageNavigationControl-instance')/externalId"/>
 
     </xf:action>
 
@@ -713,7 +776,7 @@
         <xxf:variable name="messageSet" select="event('messageSet')"/>
         <xxf:variable name="optionSet" select="event('optionSet')"/>
         <xxf:variable name="navigationTriggers" select="event('navigationTriggers')"/>
-
+        
         <!-- The action dialogue is found in the system-parameters -->
         <xxf:variable name="activeDialogue"
             select="xxf:instance('system-parameters-instance')/staticParameters/actionConfirmationDialogue/dialogue[@id=$action]"/>
@@ -721,17 +784,24 @@
         <!-- Dialogue must exist in order to set up and show it -->
         <xf:action if="exists($activeDialogue)">
             <!-- Set the dialogue in pageNavigationControl-instance -->
-            <xf:delete nodeset="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
-            <xf:insert context="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue" origin="$activeDialogue"/>
-            <xxf:variable name="dialogue" select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
+            <xf:delete
+                nodeset="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
+            <xf:insert
+                context="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue"
+                origin="$activeDialogue"/>
+            <xxf:variable name="dialogue"
+                select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
 
             <!-- Set dynamic messages from messageSet -->
             <xf:action if="exists($messageSet)" xxf:iterate="$messageSet">
                 <xxf:variable name="message" select="."/>
                 <xf:action if="$message !=''">
-                    <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/message/@displayName" value="$message"/>
+                    <xf:setvalue
+                        ref="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/message/@displayName"
+                        value="$message"/>
                     <xf:insert context="$dialogue" nodeset="message"
-                        origin="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/message" at="last()" position="after"/>
+                        origin="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/message"
+                        at="last()" position="after"/>
                 </xf:action>
             </xf:action>
 
@@ -741,14 +811,16 @@
                 <xf:action if="exists($optionSet)" xxf:iterate="$optionSet">
                     <xxf:variable name="option" select="."/>
                     <xf:action if="exists($option/@value) and exists($option/@displayName)">
-                        <xf:insert context="$dialogue/selection" nodeset="*" origin="$option" at="last()" position="after"/>
+                        <xf:insert context="$dialogue/selection" nodeset="*" origin="$option"
+                            at="last()" position="after"/>
                     </xf:action>
                 </xf:action>
 
                 <!-- Set options for selection from navigationTriggers -->
                 <xf:action if="exists($navigationTriggers)">
 
-                    <xxf:variable name="optionTemplate" select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/option"/>
+                    <xxf:variable name="optionTemplate"
+                        select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/option"/>
 
                     <!-- Set up selection of navigation targets for the dialogue -->
                     <xf:action xxf:iterate="$navigationTriggers">
@@ -762,16 +834,18 @@
                         <xf:action if="exists($displayName) and $displayName!=''">
                             <xf:setvalue ref="$optionTemplate/@value" value="$target"/>
                             <xf:setvalue ref="$optionTemplate/@displayName" value="$displayName"/>
-                            <xf:insert context="$dialogue/selection" nodeset="*" origin="$optionTemplate" at="last()" position="after"/>
+                            <xf:insert context="$dialogue/selection" nodeset="*"
+                                origin="$optionTemplate" at="last()" position="after"/>
                         </xf:action>
                     </xf:action>
 
                 </xf:action>
 
                 <!-- Set the initial value of the selection -->
-                <xf:setvalue ref="$dialogue/selection/@value" value="$dialogue/selection/*[1]/@value"/>
+                <xf:setvalue ref="$dialogue/selection/@value"
+                    value="$dialogue/selection/*[1]/@value"/>
             </xf:action>
-
+            
             <!-- Show the dialogue -->
             <xxf:show dialog="actionConfirmationDialog"/>
         </xf:action>

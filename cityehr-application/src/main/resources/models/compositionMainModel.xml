@@ -21,14 +21,20 @@
     **********************************************************************************************************
 -->
 
-<xf:model id="main-model" xxf:external-events="assign-sort-categories" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
-    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<xf:model id="main-model" xxf:external-events="assign-sort-categories"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
 
     <!-- Control of the view -->
     <xf:instance id="control-instance">
@@ -80,6 +86,8 @@
                 <!-- pathwayStatus is charted | inProgress | completed -->
                 <pathwayStatus/>
             </current-form>
+            <!-- Information about next form to load-->
+            <next-form/>
             <!-- For form display -->
             <section/>
             <crossRefId/>
@@ -109,7 +117,8 @@
                 <recordedDisplayName><!-- Filled with @displayName of the recorded value --></recordedDisplayName>
                 <selectedValue><!-- Value selected from the tree control--></selectedValue>
                 <selectedNodeType><!-- Leaf | Intermediate --></selectedNodeType>
-                <selectedNode code="" codeSystem="" value="" displayName="" units="" cityEHR:suppDataSet=""/>
+                <selectedNode code="" codeSystem="" value="" displayName="" units=""
+                    cityEHR:suppDataSet=""/>
             </enumeratedClass>
             <!-- For selecting the supplementary data -->
             <suppDataSet>
@@ -153,8 +162,10 @@
          ========================================================= -->
 
     <!-- Load the queries from file. -->
-    <xf:instance id="patientCompositionsListXQuery-instance" src="oxf:/apps/ehr/xquery/patientCompositionsListXQuery.xml"/>
-    <xf:instance id="getResourceHandlesXQuery-instance" src="oxf:/apps/ehr/xquery/getResourceHandlesXQuery.xml"/>
+    <xf:instance id="patientCompositionsListXQuery-instance"
+        src="oxf:/apps/ehr/xquery/patientCompositionsListXQuery.xml"/>
+    <xf:instance id="getResourceHandlesXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getResourceHandlesXQuery.xml"/>
 
     <!-- Generic query to be used when parameters need to be set before running -->
     <xf:instance id="query-instance">
@@ -196,8 +207,10 @@
             <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="'ehr'"/>
                 <xxf:context name="storageLocation" select="$storageLocation"/>
-                <xxf:context name="query" select="xxf:instance('patientCompositionsListXQuery-instance')"/>
-                <xxf:context name="response" select="xxf:instance('patientCompositionsList-instance')"/>
+                <xxf:context name="query"
+                    select="xxf:instance('patientCompositionsListXQuery-instance')"/>
+                <xxf:context name="response"
+                    select="xxf:instance('patientCompositionsList-instance')"/>
                 <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
             </xf:dispatch>
 
@@ -223,7 +236,8 @@
         <xf:action ev:event="xforms-submit-error">
             <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetResourceHandlesSubmission']"/>
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetResourceHandlesSubmission']"
+            />
         </xf:action>
     </xf:submission>
 
@@ -234,16 +248,45 @@
 
     <!-- Application defined action to load a new composition.
          The composition passed is an iso-13606:composition element from the dictionary instance -->
-    <xf:action ev:event="load-new-composition">
+    <xf:action ev:event="confirm-load-new-composition">
         <xxf:variable name="composition" select="event('composition')"/>
 
+        <!-- Set up next form to load after user confirmation -->
+        <xf:delete nodeset="xxf:instance('control-instance')/next-form/*"/>
+        <xf:insert context="xxf:instance('control-instance')/next-form" origin="$composition"/>
+
+        <!-- No form loaded, so just load new composition -->
+        <xf:action if="xxf:instance('control-instance')/current-form/status='none'">
+            <xf:dispatch name="load-new-composition" target="main-model"/>
+        </xf:action>
+
+        <!-- A composition is already loaded, so user must confirm -->
+        <xf:action if="not(xxf:instance('control-instance')/current-form/status='none')">
+            <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                <xxf:context name="action" select="'loadNewComposition'"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load a saved composition.
+         The composition passed is an iso-13606:composition element from the dictionary instance -->
+    <xf:action ev:event="load-new-composition">
+        <xxf:variable name="composition"
+            select="xxf:instance('control-instance')/next-form/iso-13606:composition"/>
+
         <!-- Application and specialty -->
-        <xxf:variable name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
-        <xxf:variable name="specialtyId" select="xxf:instance('view-parameters-instance')/specialtyId"/>
+        <xxf:variable name="applicationId"
+            select="xxf:instance('view-parameters-instance')/applicationId"/>
+        <xxf:variable name="specialtyId"
+            select="xxf:instance('view-parameters-instance')/specialtyId"/>
 
         <!-- Set the language variant location (if session is not using the base language) -->
-        <xxf:variable name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
-        <xxf:variable name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+        <xxf:variable name="languageCode"
+            select="xxf:instance('session-parameters-instance')/languageCode"/>
+        <xxf:variable name="baseLanguageCode"
+            select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
 
         <xxf:variable name="languageVariantLocation"
             select="if ($languageCode!= '' and $languageCode != $baseLanguageCode) then concat('/variants/',$languageCode) else ''"/>
@@ -259,7 +302,8 @@
         <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$compositionLocation"/>
-            <xxf:context name="dalReadURL" select="xxf:instance('view-parameters-instance')/compositionHandle"/>
+            <xxf:context name="dalReadURL"
+                select="xxf:instance('view-parameters-instance')/compositionHandle"/>
         </xf:dispatch>
 
         <!-- Set the formCacheHandle -->
@@ -268,7 +312,8 @@
         <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$formCacheLocation"/>
-            <xxf:context name="dalReadURL" select="xxf:instance('view-parameters-instance')/formCacheHandle"/>
+            <xxf:context name="dalReadURL"
+                select="xxf:instance('view-parameters-instance')/formCacheHandle"/>
         </xf:dispatch>
 
         <!-- Save the xmlCache with SVG image maps for the composition -->
@@ -293,6 +338,60 @@
     </xf:action>
 
 
+    <!-- Application defined action to load a saved composition.
+         The composition passed is a omposition element from the patientCompositionsList instance -->
+    <xf:action ev:event="confirm-load-saved-composition">
+        <xxf:variable name="composition" select="event('composition')"/>
+
+        <!-- Set up next form to load after user confirmation -->
+        <xf:delete nodeset="xxf:instance('control-instance')/next-form/*"/>
+        <xf:insert context="xxf:instance('control-instance')/next-form" origin="$composition"/>
+
+        <!-- No form loaded, so just load new composition -->
+        <xf:action if="xxf:instance('control-instance')/current-form/status='none'">
+            <xf:dispatch name="load-saved-composition" target="main-model"/>
+        </xf:action>
+
+        <!-- A composition is already loaded, so user must confirm -->
+        <xf:action if="not(xxf:instance('control-instance')/current-form/status='none')">
+            <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                <xxf:context name="action" select="'loadSavedComposition'"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load a saved composition.
+         The composition passed is a omposition element from the patientCompositionsList instance -->
+    <xf:action ev:event="load-saved-composition">
+        <xxf:variable name="composition"
+            select="xxf:instance('control-instance')/next-form/composition"/>
+
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus"
+            value="'saved'"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
+            value="concat(xxf:instance('view-parameters-instance')/databaseLocation,$composition/handle)"/>
+        <xxf:variable name="compositionTypeId"
+            select="replace(substring($composition/compositionTypeIRI,2),':','-')"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/formCacheHandle"
+            value="if (xxf:instance('system-parameters-instance')/dynamicParameters/useFormCache/@value!='true') then 'blank' else concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/cache/',$compositionTypeId)"/>
+
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/displayName"
+            value="$composition/displayName"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/title"
+            value="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/loadingLabel,xxf:instance('control-instance')/current-form/displayName,'...')"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
+            value="xxf:instance('control-instance')/current-form/title"/>
+
+        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+            <xxf:context name="page" select="xxf:instance('session-parameters-instance')/@page"/>
+            <xxf:context name="checkEdits" select="false()"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
     <!-- The XML document for the current form 
          This is defined in cdaModel, from 2018-06-21 -->
     <!-- 
@@ -309,7 +408,8 @@
     <!-- Set the 'dirty flag' whenever the form is changed and recalculate.  ***jc
          The recalculate is needed so that calculated values that are dependent on other calculations are evaluated using the current values.
          This is what we want, but it causes a major problem of recursive recalculation when the form is published -->
-    <xf:action ev:observer="form-instance" ev:event="xforms-insert xforms-delete xxforms-value-changed"
+    <xf:action ev:observer="form-instance"
+        ev:event="xforms-insert xforms-delete xxforms-value-changed"
         if="xxf:instance('cdaControl-instance')/formStatus='ready'">
         <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'edited'"/>
         <!-- Recaculate the model each time a value is changed - ***Don't do this*** 22-07-2015 -->
@@ -363,7 +463,8 @@
         -->
         <!-- Set the status flag - to be ok, both unsetMERequiredElementList and unsetRequiredElementList must be empty -->
         <xf:setvalue ref="xxf:instance('control-instance')/current-form/requiredElementsSet"
-            value="if (empty($unsetMERequiredElementList) and empty($unsetRequiredElementLocators)) then 'true' else 'false'"/>
+            value="if (empty($unsetMERequiredElementList) and empty($unsetRequiredElementLocators)) then 'true' else 'false'"
+        />
     </xf:action>
 
     <!-- Application defined action to get list of required elements.
@@ -406,26 +507,34 @@
 
     <xf:action ev:event="set-cda-header">
         <!-- id -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:id/@extension"
+        <xf:setvalue
+            ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:id/@extension"
             value="xxf:instance('view-parameters-instance')/patientId"/>
         <!-- family -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:family"
+        <xf:setvalue
+            ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:family"
             value="xxf:instance('patient-instance')/cdaheader/family"/>
         <!-- given -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:given"
+        <xf:setvalue
+            ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:given"
             value="xxf:instance('patient-instance')/cdaheader/given"/>
         <!-- prefix -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:prefix"
+        <xf:setvalue
+            ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:prefix"
             value="xxf:instance('patient-instance')/cdaheader/prefix"/>
         <!-- birthTime -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:birthTime/@value"
+        <xf:setvalue
+            ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:birthTime/@value"
             value="xxf:instance('patient-instance')/cdaheader/birthTime"/>
         <!-- administrativeGenderCode -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:administrativeGenderCode/@displayName"
+        <xf:setvalue
+            ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:patient/cda:administrativeGenderCode/@displayName"
             value="xxf:instance('patient-instance')/cdaheader/administrativeGenderCode"/>
         <!-- providerOrganization -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:providerOrganization/cda:id/@extension"
-            value="xxf:instance('application-parameters-instance')/patientRegistration/providerOrganization/@value"/>
+        <xf:setvalue
+            ref="xxf:instance('form-instance')/cda:recordTarget/cda:patientRole/cda:providerOrganization/cda:id/@extension"
+            value="xxf:instance('application-parameters-instance')/patientRegistration/providerOrganization/@value"
+        />
     </xf:action>
 
 
@@ -439,8 +548,10 @@
         <!-- Time the composition was published -->
         <xf:setvalue ref="$compositionAuthor/cda:time/@value" value="current-dateTime()"/>
         <!-- User id (root is the application, extension is the userIRI -->
-        <xf:setvalue ref="$compositionAuthor/cda:assignedAuthor/cda:id/@root" value="xxf:instance('view-parameters-instance')/applicationIRI"/>
-        <xf:setvalue ref="$compositionAuthor/cda:assignedAuthor/cda:id/@extension" value="xxf:instance('user-instance')/@id"/>
+        <xf:setvalue ref="$compositionAuthor/cda:assignedAuthor/cda:id/@root"
+            value="xxf:instance('view-parameters-instance')/applicationIRI"/>
+        <xf:setvalue ref="$compositionAuthor/cda:assignedAuthor/cda:id/@extension"
+            value="xxf:instance('user-instance')/@id"/>
         <!-- User name -->
         <xf:setvalue ref="$compositionAuthor/cda:assignedAuthor/cda:assignedPerson/cda:name"
             value="xxf:instance('user-instance')/credentials/username"/>
@@ -459,13 +570,16 @@
     <xf:action ev:event="publish-cda-composition">
 
         <!-- effectiveTime is set from current-form -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:effectiveTime/@value" value="xxf:instance('control-instance')/current-form/effectiveTime"/>
+        <xf:setvalue ref="xxf:instance('form-instance')/cda:effectiveTime/@value"
+            value="xxf:instance('control-instance')/current-form/effectiveTime"/>
 
         <!-- id (extension) is set from current-form (handleId) -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:id/@extension" value="xxf:instance('control-instance')/current-form/handleId"/>
+        <xf:setvalue ref="xxf:instance('form-instance')/cda:id/@extension"
+            value="xxf:instance('control-instance')/current-form/handleId"/>
 
         <!-- Get the composition type from the CDA -->
-        <xxf:variable name="compositionType" select="xxf:instance('form-instance')/cda:typeId/@extension"/>
+        <xxf:variable name="compositionType"
+            select="xxf:instance('form-instance')/cda:typeId/@extension"/>
 
         <!-- 
             Before the form is committed to the record, all hidden sections, entries, clusters and elements need to be removed.
@@ -484,11 +598,13 @@
             <!-- Reset calculated values -->
             <xf:action
                 xxf:iterate="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section/descendant::cda:value[@cityEHR:elementType=('#CityEHR:ElementProperty:calculatedValue','#CityEHR:ElementProperty:enumeratedCalculatedValue')]">
-                <xf:setvalue ref="./@cityEHR:elementType" value="'#CityEHR:ElementProperty:simpleType'"/>
+                <xf:setvalue ref="./@cityEHR:elementType"
+                    value="'#CityEHR:ElementProperty:simpleType'"/>
             </xf:action>
 
             <!-- Reset conditional display expressions from section, entry, value -->
-            <xf:action xxf:iterate="xxf:instance('form-instance')/cda:component/cda:structuredBody/descendant::*[@cityEHR:conditions]">
+            <xf:action
+                xxf:iterate="xxf:instance('form-instance')/cda:component/cda:structuredBody/descendant::*[@cityEHR:conditions]">
                 <xf:setvalue ref="./@cityEHR:conditions" value="''"/>
             </xf:action>
 
@@ -547,9 +663,12 @@
             Note the use of descendant::cda:value in case the registration entry contains clusters
             providerOrganization code for the healthcare provider organisation as set in the configuration parameters
         -->
-        <xxf:variable name="patientRegistration" select="xxf:instance('application-parameters-instance')/patientRegistration"/>
-        <xf:action if="exists($patientRegistration/registrationEvent[@composition=$compositionType])">
-            <xxf:variable name="patientDemographics" select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+        <xxf:variable name="patientRegistration"
+            select="xxf:instance('application-parameters-instance')/patientRegistration"/>
+        <xf:action
+            if="exists($patientRegistration/registrationEvent[@composition=$compositionType])">
+            <xxf:variable name="patientDemographics"
+                select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
             <!-- Family -->
             <xf:setvalue ref="xxf:instance('patient-instance')/cdaheader/family"
                 value="$patientDemographics/descendant::cda:observation[cda:id/@extension=$patientRegistration/family/@entry]/descendant::cda:value[@extension=$patientRegistration/family/@element][@value!=''][1]/@value"/>
@@ -613,18 +732,21 @@
         <!-- If this composition was the subject of a pathway or triggered action, then delete the notification for that action.
              This information is held in the CDA Header at: cda:documentationOf/cda:serviceEvent
              cda:id/@extension is set as the id of the notification, cda:id/@root is the orign (pathway id or '#CityEHR:Notification') -->
-        <xxf:variable name="sourceAction" select="xxf:instance('form-instance')/cda:documentationOf/cda:serviceEvent[cda:id/@extension!='']"/>
+        <xxf:variable name="sourceAction"
+            select="xxf:instance('form-instance')/cda:documentationOf/cda:serviceEvent[cda:id/@extension!='']"/>
         <xf:action if="exists($sourceAction)">
             <xxf:variable name="subjectHandleId" select="$sourceAction/cda:id/@extension"/>
 
             <!-- The handle for loading/saving notifications does not include the database location, since it must cater for the return of document-uri in a query.
             2017-10-31 The location of notifications was changed from data/notifications to data, so need to try both locations to support legacy databases -->
             <!-- Location from 2017-10-31 -->
-            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
+            <xf:setvalue
+                ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
                 value="concat(xxf:instance('view-parameters-instance')/applicationStorageLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$subjectHandleId)"/>
             <xf:dispatch name="delete-notification" target="notification-model"/>
             <!-- Location before 2017-10-31 -->
-            <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
+            <xf:setvalue
+                ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
                 value="concat(xxf:instance('view-parameters-instance')/applicationStorageLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/notifications/',$subjectHandleId)"/>
             <xf:dispatch name="delete-notification" target="notification-model"/>
         </xf:action>
@@ -632,7 +754,8 @@
         <!-- If this composition is not in a pathway then check triggers for notifications.
              The check is run on the storage-instance after the composition has been published.
              This ensures that triggers in non-visible elements have been removed before checking -->
-        <xf:action if="not(exists($sourceAction)) or $sourceAction/cda:id/@root='#CityEHR:Notification'">
+        <xf:action
+            if="not(exists($sourceAction)) or $sourceAction/cda:id/@root='#CityEHR:Notification'">
             <xf:dispatch name="check-triggers" target="main-model"/>
         </xf:action>
 
@@ -645,8 +768,9 @@
     <xf:action ev:event="check-editStatus">
         <xxf:variable name="editStatus" select="event('editStatus')"/>
 
-        <xf:setvalue ref="$editStatus" value="if (exists(xxf:instance('control-instance')/current-form[editStatus='edited'])) then 'edited' else ''"/>
-        
+        <xf:setvalue ref="$editStatus"
+            value="if (exists(xxf:instance('control-instance')/current-form[editStatus='edited'])) then 'edited' else ''"/>
+
     </xf:action>
 
 
@@ -656,8 +780,10 @@
     <xf:action ev:event="close-composition-view">
         <xxf:variable name="newCompositionIRI" select="event('newCompositionIRI')"/>
 
-        <xxf:variable name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
-        <xxf:variable name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+        <xxf:variable name="applicationId"
+            select="xxf:instance('view-parameters-instance')/applicationId"/>
+        <xxf:variable name="specialtyIRI"
+            select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
 
         <!-- Get navigation target, if selected by user.
              The newComposition must exist in the data dictionary as a composition in the current specialty -->
@@ -669,7 +795,8 @@
 
         <!-- Reset the compositionStatus and compositionHandle -->
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'none'"/>
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle" value="'blank'"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
+            value="'blank'"/>
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/formCacheHandle" value="'blank'"/>
 
         <!-- Check whether this form was in fulfillment of a pathway action -->
@@ -678,10 +805,12 @@
 
         <!-- If this form was in a pathway, then load the pathway -->
         <xf:action if="$documentationOfPathway='true'">
-            <xxf:variable name="pathwayHandleId" select="xxf:instance('form-instance')//cda:documentationOf/cda:serviceEvent/cda:id/@root"/>
+            <xxf:variable name="pathwayHandleId"
+                select="xxf:instance('form-instance')//cda:documentationOf/cda:serviceEvent/cda:id/@root"/>
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
                 value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$pathwayHandleId)"/>
-            <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'saved'"/>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus"
+                value="'saved'"/>
 
             <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
                 <xxf:context name="page" select="'cityEHRFolder-Pathways'"/>
@@ -691,9 +820,13 @@
 
         <!-- Not in a pathway, and user has selected to navigate to a specific composition - load the new composition -->
         <xf:action if="not($documentationOfPathway='true') and exists($newComposition)">
-            <xf:dispatch name="load-new-composition" target="main-model">
-                <xxf:context name="composition" select="$newComposition"/>
-            </xf:dispatch>
+            <!-- Set up next form to load -->
+            <xf:delete nodeset="xxf:instance('control-instance')/next-form/*"/>
+            <xf:insert context="xxf:instance('control-instance')/next-form" origin="$newComposition"/>
+
+            <!-- Load the composition -->
+            <xf:dispatch name="load-new-composition" target="main-model"/>
+
         </xf:action>
 
         <!-- Not in a pathway, no navigation target set, then load the specified pageTransition. -->
@@ -704,7 +837,8 @@
             <!-- If a pageTransition is specified, then use it.
                  Otherwise the default is cityEHRFolder-Events to show the patient record -->
             <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-                <xxf:context name="page" select="if (exists($targetPage)) then $targetPage else 'cityEHRFolder-Events'"/>
+                <xxf:context name="page"
+                    select="if (exists($targetPage)) then $targetPage else 'cityEHRFolder-Events'"/>
                 <xxf:context name="checkEdits" select="false()"/>
             </xf:dispatch>
 
@@ -720,10 +854,12 @@
          saveHandle has already been set when the form was loaded (as a new composition or from a previously saved composition) -->
     <xf:action ev:event="save-cda-composition">
         <!-- effectiveTime is set from current-form -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:effectiveTime/@value" value="xxf:instance('control-instance')/current-form/effectiveTime"/>
+        <xf:setvalue ref="xxf:instance('form-instance')/cda:effectiveTime/@value"
+            value="xxf:instance('control-instance')/current-form/effectiveTime"/>
 
         <!-- id (extension) is set from current-form (handleId) -->
-        <xf:setvalue ref="xxf:instance('form-instance')/cda:id/@extension" value="xxf:instance('control-instance')/current-form/handleId"/>
+        <xf:setvalue ref="xxf:instance('form-instance')/cda:id/@extension"
+            value="xxf:instance('control-instance')/current-form/handleId"/>
 
         <!-- Save the current form -->
         <xf:dispatch name="save-composition" target="main-model"/>
@@ -750,7 +886,8 @@
             <xxf:variable name="entryIRI" select="$trigger/@entryIRI"/>
             <xxf:variable name="elementIRI" select="$trigger/@elementIRI"/>
             <xxf:variable name="activationCondition" select="$trigger/@condition"/>
-            <xxf:variable name="triggerId" select="translate(concat($entryIRI,$elementIRI),':#','-')"/>
+            <xxf:variable name="triggerId"
+                select="translate(concat($entryIRI,$elementIRI),':#','-')"/>
             <xxf:variable name="effectiveTimeIRI" select="$trigger/effectiveTime/@elementIRI"/>
             <xxf:variable name="effectiveTimeOffset" select="$trigger/effectiveTime/@offset"/>
             <xxf:variable name="actionElementIRI" select="$trigger/action/@elementIRI"/>
@@ -775,7 +912,8 @@
             <!-- Create a notification for each activated trigger -->
             <xf:action xxf:iterate="$filteredTriggerObservationSet">
                 <xxf:variable name="triggerObservation" select="."/>
-                <xxf:variable name="triggerValue" select="$triggerObservation/descendant::cda:value[@extension=$elementIRI]/@value"/>
+                <xxf:variable name="triggerValue"
+                    select="$triggerObservation/descendant::cda:value[@extension=$elementIRI]/@value"/>
 
                 <!-- Check whether trigger is activated -->
                 <xxf:variable name="activatedTrigger"
@@ -792,7 +930,8 @@
                     <!-- Effective time of the notification is taken from the trigger.
                          Must be castable as xs:dateTime
                          Default is current-dateTime -->
-                    <xxf:variable name="effectiveTimeSpecified" select="$triggerObservation/cda:value[@extension=$effectiveTimeIRI]/@value"/>
+                    <xxf:variable name="effectiveTimeSpecified"
+                        select="$triggerObservation/cda:value[@extension=$effectiveTimeIRI]/@value"/>
 
                     <!-- xs:dayTimeDuration or xs:yearMonthDuration can be added to xs:dateTime
                          xs:date cannot always be cast to xs:dateTime if it includes a time zone 'Z' at the end-->
@@ -813,7 +952,8 @@
                     -->
 
                     <!-- Timestamp format replaces ':' and '+' in standard time format with - and * -->
-                    <xxf:variable name="timeStamp" select="replace(replace(string(current-dateTime()),':','-'),'\+','*')"/>
+                    <xxf:variable name="timeStamp"
+                        select="replace(replace(string(current-dateTime()),':','-'),'\+','*')"/>
 
                     <!-- Action is taken from the trigger observation.
                          Default is set in the trigger configuration -->
@@ -831,7 +971,8 @@
                             select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition[@code=$actionIRI]"/>
 
                         <!-- Generate the notificationHandleId -->
-                        <xxf:variable name="actionDisplayName" select="$triggerObservation/cda:value[@extension=$actionElementIRI]/@displayName"/>
+                        <xxf:variable name="actionDisplayName"
+                            select="$triggerObservation/cda:value[@extension=$actionElementIRI]/@displayName"/>
                         <!-- notificationHandleId replaces bad characters in action with '' (nothing) -->
                         <xxf:variable name="actionId" select="translate($actionIRI,':#/+$ ','')"/>
                         <xxf:variable name="notificationHandleId"
@@ -839,20 +980,29 @@
 
                         <!-- Get the action notification template (done on each iteration to make sure its empty).
                              The CDA Header is set on load. -->
-                        <xf:dispatch name="load-action-notification-template" target="notification-model"/>
+                        <xf:dispatch name="load-action-notification-template"
+                            target="notification-model"/>
 
                         <!-- Set the author details -->
                         <xf:dispatch name="set-author-details" target="main-model">
-                            <xxf:context name="composition" select="xxf:instance('action-notification-template-instance')"/>
+                            <xxf:context name="composition"
+                                select="xxf:instance('action-notification-template-instance')"/>
                         </xf:dispatch>
 
                         <!-- Set up notification template and store in data for patient.
                              The id of the notification is the same as the subjectHandleId - the id of the action composition -->
-                        <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:id/@extension" value="$notificationHandleId"/>
-                        <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:id/@root"
+                        <xf:setvalue
+                            ref="xxf:instance('action-notification-template-instance')/cda:id/@extension"
+                            value="$notificationHandleId"/>
+                        <xf:setvalue
+                            ref="xxf:instance('action-notification-template-instance')/cda:id/@root"
                             value="xxf:instance('control-instance')/current-form/handleId"/>
-                        <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:effectiveTime/@value" value="$effectiveTime"/>
-                        <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:code/@displayName" value="$triggerDisplayName"/>
+                        <xf:setvalue
+                            ref="xxf:instance('action-notification-template-instance')/cda:effectiveTime/@value"
+                            value="$effectiveTime"/>
+                        <xf:setvalue
+                            ref="xxf:instance('action-notification-template-instance')/cda:code/@displayName"
+                            value="$triggerDisplayName"/>
 
                         <!-- Participant is user, role or care team.
                              This is found from the trigger observation, or the trigger parameter (default).
@@ -870,7 +1020,8 @@
                      TBD - These need to be looked up properly -->
                         <!-- User -->
                         <xf:action if="starts-with($notifyActor,'#CityEHR:User')">
-                            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@root"
+                            <xf:setvalue
+                                ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@root"
                                 value="'#CityEHR:User'"/>
                             <!-- If this is the current user, then set their username as displayName, otherwise need to look up the user -->
 
@@ -880,17 +1031,20 @@
                         </xf:action>
                         <!-- Role -->
                         <xf:action if="starts-with($notifyActor,'#CityEHR:Role')">
-                            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@root"
+                            <xf:setvalue
+                                ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@root"
                                 value="'#CityEHR:Role'"/>
                             <xxf:variable name="roleDisplayName"
                                 select="xxf:instance('application-parameters-instance')/rbac/role[@value=$notifyActor]/@displayName"/>
                             <xf:setvalue
                                 ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:code/@displayName"
-                                value="if ($roleDisplayName!='') then $roleDisplayName else $notifyActor"/>
+                                value="if ($roleDisplayName!='') then $roleDisplayName else $notifyActor"
+                            />
                         </xf:action>
                         <!-- Care team -->
                         <xf:action if="starts-with($notifyActor,'#CityEHR:CareTeam')">
-                            <xf:setvalue ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@root"
+                            <xf:setvalue
+                                ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:id/@root"
                                 value="'#CityEHR:CareTeam'"/>
                             <xf:setvalue
                                 ref="xxf:instance('action-notification-template-instance')/cda:participant/cda:associatedEntity/cda:code/@displayName"
@@ -902,8 +1056,10 @@
                      -->
                         <xxf:variable name="notificationServiceEvent"
                             select="xxf:instance('action-notification-template-instance')/cda:documentationOf/cda:serviceEvent"/>
-                        <xf:setvalue ref="$notificationServiceEvent/cda:id/@root" value="xxf:instance('control-instance')/current-form/compositionIRI"/>
-                        <xf:setvalue ref="$notificationServiceEvent/cda:id/@extension" value="$entryIRI"/>
+                        <xf:setvalue ref="$notificationServiceEvent/cda:id/@root"
+                            value="xxf:instance('control-instance')/current-form/compositionIRI"/>
+                        <xf:setvalue ref="$notificationServiceEvent/cda:id/@extension"
+                            value="$entryIRI"/>
                         <xf:setvalue ref="$notificationServiceEvent/cda:code/@displayName"
                             value="concat($actionDisplayName,xxf:instance('view-parameters-instance')/notifications/serviceEvent/@connector,xxf:instance('control-instance')/current-form/displayName)"/>
 
@@ -912,34 +1068,51 @@
 
                         <!-- Insert the trigger entry into the notification as information about the action.
                          The notifcation section should contain a single observation -->
-                        <xxf:variable name="notificationObservationEntry" select="$notificationSection/cda:entry[cda:observation][1]"/>
+                        <xxf:variable name="notificationObservationEntry"
+                            select="$notificationSection/cda:entry[cda:observation][1]"/>
                         <xf:delete nodeset="$notificationObservationEntry/*"/>
-                        <xf:insert context="$notificationObservationEntry" origin="$triggerObservation"/>
+                        <xf:insert context="$notificationObservationEntry"
+                            origin="$triggerObservation"/>
 
                         <!-- Set the action for the trigger (if any)
                          The notification section should contain a single act.
                          The typeId holds the type of the composition in its root attrtibute (#CityEHR:Form, #CityEHR:letter, etc) 
                          and the IRI of the action composition in its extension attribute -->
                         <xf:action if="exists($actionComposition)">
-                            <xxf:variable name="notificationActionEntry" select="$notificationSection/cda:entry[cda:act][1]"/>
-                            <xf:setvalue ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@root" value="$actionComposition/@typeId"/>
-                            <xf:setvalue ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@extension" value="$actionIRI"/>
-                            <xf:setvalue ref="$notificationActionEntry/cda:act/cda:subject/cda:code/@displayName"
+                            <xxf:variable name="notificationActionEntry"
+                                select="$notificationSection/cda:entry[cda:act][1]"/>
+                            <xf:setvalue
+                                ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@root"
+                                value="$actionComposition/@typeId"/>
+                            <xf:setvalue
+                                ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@extension"
+                                value="$actionIRI"/>
+                            <xf:setvalue
+                                ref="$notificationActionEntry/cda:act/cda:subject/cda:code/@displayName"
                                 value="$actionComposition/@displayName"/>
                         </xf:action>
 
                         <!-- If no action, then make sure the action is reset, and use the action displayName from the trigger -->
                         <xf:action if="not(exists($actionComposition))">
-                            <xxf:variable name="notificationActionEntry" select="$notificationSection/cda:entry[cda:act][1]"/>
-                            <xf:setvalue ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@root" value="''"/>
-                            <xf:setvalue ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@extension" value="''"/>
-                            <xf:setvalue ref="$notificationActionEntry/cda:act/cda:subject/cda:code/@displayName" value="$defaultActionDisplayName"/>
+                            <xxf:variable name="notificationActionEntry"
+                                select="$notificationSection/cda:entry[cda:act][1]"/>
+                            <xf:setvalue
+                                ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@root"
+                                value="''"/>
+                            <xf:setvalue
+                                ref="$notificationActionEntry/cda:act/cda:subject/cda:typeId/@extension"
+                                value="''"/>
+                            <xf:setvalue
+                                ref="$notificationActionEntry/cda:act/cda:subject/cda:code/@displayName"
+                                value="$defaultActionDisplayName"/>
                         </xf:action>
 
                         <!-- Notification is stored for the patient -->
-                        <xf:setvalue ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
+                        <xf:setvalue
+                            ref="xxf:instance('notificationsControl-instance')/currentNotification/notification/handle"
                             value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$notificationHandleId)"/>
-                        <xf:send submission="save-action-notification-submission" target="notification-model"/>
+                        <xf:send submission="save-action-notification-submission"
+                            target="notification-model"/>
                     </xf:action>
 
                 </xf:action>
@@ -970,11 +1143,14 @@
             <!-- Remove data for each activated trigger -->
             <xf:action xxf:iterate="$matchedTriggers">
                 <xxf:variable name="triggerObservation" select="."/>
-                <xxf:variable name="triggerValue" select="$triggerObservation/descendant::cda:value[@extension=$elementIRI]/@value"/>
-                <xxf:variable name="activateTriggerExpression" select="concat('''',$triggerValue,''' ',$activationCondition)"/>
+                <xxf:variable name="triggerValue"
+                    select="$triggerObservation/descendant::cda:value[@extension=$elementIRI]/@value"/>
+                <xxf:variable name="activateTriggerExpression"
+                    select="concat('''',$triggerValue,''' ',$activationCondition)"/>
 
                 <!-- Check whether trigger is activated -->
-                <xxf:variable name="activatedTrigger" select="if ($activationCondition='') then true() else xxf:evaluate($activateTriggerExpression)"/>
+                <xxf:variable name="activatedTrigger"
+                    select="if ($activationCondition='') then true() else xxf:evaluate($activateTriggerExpression)"/>
 
                 <!-- Only process trigger if it is activated -->
                 <xf:action if="$activatedTrigger">
@@ -982,12 +1158,14 @@
                          These are compositions stored in the data collection for the patient, which match the criteria set in the trigger -->
                     <xf:setvalue ref="xxf:instance('getResourceHandlesXQuery-instance')/whereClause"
                         value="concat('[descendant::cda:ClinicalDocument/cda:typeId[contains(''',$compositionIRI,''',@extension) or contains(''',$compositionTypeIRI,''',@root)]]')"/>
-                    <xf:setvalue ref="xxf:instance('query-instance')/exist:text" value="xxf:instance('getResourceHandlesXQuery-instance')"/>
+                    <xf:setvalue ref="xxf:instance('query-instance')/exist:text"
+                        value="xxf:instance('getResourceHandlesXQuery-instance')"/>
                     <xf:send submission="getResourceHandles-submission"/>
                     <!-- Iterate through set of resource handles, deleting compositions from the patient data -->
                     <xf:action xxf:iterate="xxf:instance('resourceHandles-instance')/handle">
                         <xxf:variable name="handle" select="data(.)"/>
-                        <xf:setvalue ref="xxf:instance('control-instance')/deleteObject" value="$handle"/>
+                        <xf:setvalue ref="xxf:instance('control-instance')/deleteObject"
+                            value="$handle"/>
                         <xxf:variable name="handleComponents" select="tokenize($handle,'/')"/>
                         <!-- Make sure the deleteObject is set and includes the patientId in its path, then call the delete-resource-submission -->
                         <xf:action
@@ -1022,17 +1200,21 @@
         <!-- Reset the page displayName -->
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName" value="''"/>
         <!-- Reset the dirty flag -->
-        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+            value="'unedited'"/>
     </xf:action>
 
     <!-- Application defined action to load the composition, using parameters passed to the page in its URL
          The composition to load (template or saved form) is in session-parameters/compositionHandle 
          The compositionStatus is new, saved or none (load-composition does not get invoked if compositionStatus is none) ***jc -->
     <xf:action ev:event="load-composition">
-        <xxf:variable name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
+        <xxf:variable name="applicationId"
+            select="xxf:instance('view-parameters-instance')/applicationId"/>
 
-        <xf:setvalue ref="xxf:instance('control-instance')/current-form/handle" value="xxf:instance('session-parameters-instance')/compositionHandle"/>
-        <xf:setvalue ref="xxf:instance('control-instance')/current-form/status" value="xxf:instance('session-parameters-instance')/compositionStatus"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/handle"
+            value="xxf:instance('session-parameters-instance')/compositionHandle"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/status"
+            value="xxf:instance('session-parameters-instance')/compositionStatus"/>
         <xf:setvalue ref="xxf:instance('control-instance')/current-form/timeStamp"
             value="replace(replace(string(current-dateTime()),':','-'),'\+','*')"/>
 
@@ -1041,7 +1223,8 @@
         <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="physicalClusterNode" select="''"/>
-            <xxf:context name="storageLocation" select="xxf:instance('session-parameters-instance')/compositionHandle"/>
+            <xxf:context name="storageLocation"
+                select="xxf:instance('session-parameters-instance')/compositionHandle"/>
             <xxf:context name="resource" select="xxf:instance('form-instance')"/>
             <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
         </xf:dispatch>
@@ -1050,20 +1233,23 @@
         <xf:action if="xxf:instance('control-instance')/status=''">
 
             <!-- Set compositionIRI from the loaded composition -->
-            <xf:setvalue ref="xxf:instance('control-instance')/current-form/compositionTypeIRI" value="xxf:instance('form-instance')/cda:typeId/@root"/>
+            <xf:setvalue ref="xxf:instance('control-instance')/current-form/compositionTypeIRI"
+                value="xxf:instance('form-instance')/cda:typeId/@root"/>
             <xf:setvalue ref="xxf:instance('control-instance')/current-form/compositionIRI"
                 value="xxf:instance('form-instance')/cda:typeId/@extension"/>
             <!-- compositionId replaces ':' and '#' in standard compositionIRI with - and '' (nothing) -->
             <xf:setvalue ref="xxf:instance('control-instance')/current-form/compositionId"
                 value="replace(replace(xxf:instance('control-instance')/current-form/compositionIRI,':','-'),'#','')"/>
-            <xxf:variable name="prefix" select="concat(xxf:instance('control-instance')/current-form/compositionTypeIRI,':')"/>
+            <xxf:variable name="prefix"
+                select="concat(xxf:instance('control-instance')/current-form/compositionTypeIRI,':')"/>
             <xf:setvalue ref="xxf:instance('control-instance')/current-form/compositionShortId"
                 value="substring-after(xxf:instance('control-instance')/current-form/compositionIRI,$prefix)"/>
 
             <!-- Set externalId to use for print/export -->
             <xf:dispatch name="set-externalId" target="pageNavigation-model">
                 <xxf:context name="type" select="'patient'"/>
-                <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+                <xxf:context name="externalId"
+                    select="xxf:instance('view-parameters-instance')/externalId"/>
             </xf:dispatch>
 
             <!-- Set the list of required elements -->
@@ -1071,29 +1257,36 @@
 
             <!-- Set up the dictionary for enumeratedDirectory elements -->
             <xf:dispatch name="load-directoryElementsForForm" target="directory-model">
-                <xxf:context name="specialtyIRI" select="xxf:instance('view-parameters-instance')/specialtyIRI"/>
+                <xxf:context name="specialtyIRI"
+                    select="xxf:instance('view-parameters-instance')/specialtyIRI"/>
                 <xxf:context name="formInstance" select="xxf:instance('form-instance')"/>
             </xf:dispatch>
 
             <!-- Get the serviceEvent classCode - this is set for saved compositions created
                 as a result of a pathway action (#CityEHR:Pathway) or trigger notification (#CityEHR:Notification)-->
-            <xxf:variable name="serviceEvent" select="xxf:instance('form-instance')/cda:documentationOf/cda:serviceEvent/@classCode"/>
+            <xxf:variable name="serviceEvent"
+                select="xxf:instance('form-instance')/cda:documentationOf/cda:serviceEvent/@classCode"/>
 
             <!-- Set up a new form or a form saved as a result of an action (from a pathway or trigger)
                  Don't do this if reloading a saved form. -->
-            <xf:action if="xxf:instance('control-instance')/current-form[status='new'] or $serviceEvent=('#CityEHR:Notification','#CityEHR:Pathway')">
+            <xf:action
+                if="xxf:instance('control-instance')/current-form[status='new'] or $serviceEvent=('#CityEHR:Notification','#CityEHR:Pathway')">
                 <!-- Reset the serviceEvent -->
-                <xf:setvalue ref="xxf:instance('form-instance')/cda:documentationOf/cda:serviceEvent/@classCode" value="''"/>
+                <xf:setvalue
+                    ref="xxf:instance('form-instance')/cda:documentationOf/cda:serviceEvent/@classCode"
+                    value="''"/>
 
                 <!-- effectiveTime is set to the current time -->
                 <xxf:variable name="currentTime" select="current-dateTime()"/>
-                <xf:setvalue ref="xxf:instance('control-instance')/current-form/effectiveTime" value="$currentTime"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/effectiveTime"
+                    value="$currentTime"/>
                 <xf:setvalue ref="xxf:instance('form-instance')/cda:effectiveTime/@value"
                     value="xxf:instance('control-instance')/current-form/effectiveTime"/>
 
                 <!-- The timestamp is set to current-dateTime() and is used for creating the handleId -->
                 <!-- Timestamp format replaces ':' and '+' in standard time format with - and * -->
-                <xxf:variable name="timeStamp" select="replace(replace(string($currentTime),':','-'),'\+','*')"/>
+                <xxf:variable name="timeStamp"
+                    select="replace(replace(string($currentTime),':','-'),'\+','*')"/>
 
                 <!-- Set the handleId - used for saving the document in the xmlstore -->
                 <xf:setvalue ref="xxf:instance('control-instance')/current-form/handleId"
@@ -1125,7 +1318,8 @@
                 <xf:dispatch name="evaluate-preconditions" target="main-model"/>
 
                 <!-- Assign categories on sorted multipleEntries -->
-                <xxf:variable name="cdaBody" select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+                <xxf:variable name="cdaBody"
+                    select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
                 <xf:action
                     xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:categorizationCriteria!=''][cda:organizer[@classCode='MultipleEntry']]">
                     <xf:dispatch name="assign-sort-categories" target="main-model">
@@ -1149,7 +1343,8 @@
                  (saved forms already have media content set -->
             <xf:action if="xxf:instance('control-instance')/current-form/status='new'">
                 <xf:dispatch name="load-compositionMedia" target="dictionary-model">
-                    <xxf:context name="composition-instance" select="xxf:instance('form-instance')"/>
+                    <xxf:context name="composition-instance" select="xxf:instance('form-instance')"
+                    />
                 </xf:dispatch>
             </xf:action>
 
@@ -1164,8 +1359,10 @@
                 <!--
                     <xf:setvalue ref="xxf:instance('control-instance')/current-form/handleId" value="xxf:instance('form-instance')/cda:id/@extension"/>
                 -->
-                <xxf:variable name="storagePathSequence" select="tokenize(xxf:instance('control-instance')/current-form/handle,'/')"/>
-                <xf:setvalue ref="xxf:instance('control-instance')/current-form/handleId" value="$storagePathSequence[last()]"/>
+                <xxf:variable name="storagePathSequence"
+                    select="tokenize(xxf:instance('control-instance')/current-form/handle,'/')"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/handleId"
+                    value="$storagePathSequence[last()]"/>
 
                 <!-- Set the saveHandle as the handle being loaded -->
                 <xf:setvalue ref="xxf:instance('control-instance')/current-form/saveHandle"
@@ -1177,18 +1374,22 @@
 
             <!-- Set status flags -->
             <xf:action>
-                <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+                    value="'unedited'"/>
                 <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus" value="''"/>
                 <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError" value="''"/>
             </xf:action>
 
             <!-- Effective time for form has already been set when new or saved form was loaded
                 Now set other attributes of the current form -->
-            <xf:setvalue ref="xxf:instance('control-instance')/current-form/displayName" value="xxf:instance('form-instance')/cda:code/@displayName"/>
+            <xf:setvalue ref="xxf:instance('control-instance')/current-form/displayName"
+                value="xxf:instance('form-instance')/cda:code/@displayName"/>
             <xf:setvalue ref="xxf:instance('control-instance')/current-form/title"
                 value="if (xxf:instance('control-instance')/current-form/effectiveTime castable as xs:dateTime) then concat(format-dateTime(xs:dateTime(xxf:instance('control-instance')/current-form/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()),' - ',xxf:instance('control-instance')/current-form/displayName) else xxf:instance('control-instance')/current-form/displayName"/>
-            <xf:setvalue ref="xxf:instance('control-instance')/current-form/displayName" value="xxf:instance('form-instance')/cda:code/@displayName"/>
-            <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName" value="xxf:instance('control-instance')/current-form/title"/>
+            <xf:setvalue ref="xxf:instance('control-instance')/current-form/displayName"
+                value="xxf:instance('form-instance')/cda:code/@displayName"/>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
+                value="xxf:instance('control-instance')/current-form/title"/>
 
             <xf:setvalue ref="xxf:instance('control-instance')/current-form/formCache"
                 value="xxf:instance('view-parameters-instance')/formCacheHandle"/>
@@ -1223,7 +1424,8 @@
         <xf:dispatch name="refresh-allImageMapClasses" target="imageMap-model"/>
 
         <!-- Set editStatus -->
-        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+            value="'unedited'"/>
 
         <!-- Set the status of the cda document to 'ready' so that xforms-value-changed events on the form are activated -->
         <xf:setvalue ref="xxf:instance('cdaControl-instance')/formStatus" value="'ready'"/>
@@ -1242,25 +1444,31 @@
          Evaluate it and if false then remove the section/entry from the composition. 
     -->
     <xf:action ev:event="evaluate-preconditions">
-        <xxf:variable name="cdaBody" select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+        <xxf:variable name="cdaBody"
+            select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
         <!-- Iterate through sections with pre-conditions -->
         <xf:action xxf:iterate="$cdaBody/descendant::cda:section[@cityEHR:preConditions!='']">
             <xxf:variable name="section" select="."/>
-            <xf:setvalue ref="$section/@cityEHR:visibility" value="xxf:evaluate($section/@cityEHR:preConditions)"/>
+            <xf:setvalue ref="$section/@cityEHR:visibility"
+                value="xxf:evaluate($section/@cityEHR:preConditions)"/>
         </xf:action>
         <!-- Simple entries -->
-        <xf:action xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:preConditions!=''][not(cda:organizer/@classCode='MultipleEntry')]">
+        <xf:action
+            xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:preConditions!=''][not(cda:organizer/@classCode='MultipleEntry')]">
             <xxf:variable name="entry" select="."/>
-            <xf:setvalue ref="$entry/@cityEHR:visibility" value="xxf:evaluate($entry/@cityEHR:preConditions)"/>
+            <xf:setvalue ref="$entry/@cityEHR:visibility"
+                value="xxf:evaluate($entry/@cityEHR:preConditions)"/>
         </xf:action>
         <!-- This is being handled when setting pre-filled entries, so may not need to do it any more
              Multiple entries.
              Iterate through each entry and evaluate the conditions.
              Delete the entry if the conditions are false. -->
-        <xf:action xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:preConditions!=''][cda:organizer/@classCode='MultipleEntry']">
+        <xf:action
+            xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:preConditions!=''][cda:organizer/@classCode='MultipleEntry']">
             <xxf:variable name="entry" select="."/>
             <xxf:variable name="conditions" select="$entry/@cityEHR:preConditions"/>
-            <xf:action xxf:iterate="$entry/cda:organizer/cda:component[2]/cda:organizer/cda:component">
+            <xf:action
+                xxf:iterate="$entry/cda:organizer/cda:component[2]/cda:organizer/cda:component">
                 <xxf:variable name="entryInstance" select="."/>
                 <!--
                 <xf:delete nodeset="."/>
@@ -1278,18 +1486,23 @@
 
         <!-- Get the sort criteria for this entry
         The sort criteria is found using the root element that matches the sort criteria -->
-        <xxf:variable name="categorizationElementIRI" select="$entry/@cityEHR:categorizationCriteria"/>
+        <xxf:variable name="categorizationElementIRI"
+            select="$entry/@cityEHR:categorizationCriteria"/>
         <xxf:variable name="dictionaryElement"
             select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$categorizationElementIRI]"/>
-        <xxf:variable name="categorizationCriteria" select="if (exists($dictionaryElement)) then $dictionaryElement/iso-13606:data else ()"/>
+        <xxf:variable name="categorizationCriteria"
+            select="if (exists($dictionaryElement)) then $dictionaryElement/iso-13606:data else ()"/>
 
-        <xxf:variable name="categorizationElementType" select="if (exists($dictionaryElement)) then $dictionaryElement/@cityEHR:elementType else ''"/>
-        <xxf:variable name="categorizationElementExtension" select="if (exists($dictionaryElement)) then $dictionaryElement/@extension else ''"/>
+        <xxf:variable name="categorizationElementType"
+            select="if (exists($dictionaryElement)) then $dictionaryElement/@cityEHR:elementType else ''"/>
+        <xxf:variable name="categorizationElementExtension"
+            select="if (exists($dictionaryElement)) then $dictionaryElement/@extension else ''"/>
         <xxf:variable name="categorizationElementClass"
             select="if (exists($dictionaryElement)) then $dictionaryElement/iso-13606:data[1]/@code else ''"/>
 
         <!-- The multiple entries are in the entrySetContainer. Either as cda:components (simple multiple entry) [ deprecated 2024-03 - or as organizers for enumeratedClass entries] -->
-        <xxf:variable name="entrySetContainer" select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
+        <xxf:variable name="entrySetContainer"
+            select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
         <xxf:variable name="observationSet"
             select="if (exists($entrySetContainer)) then ($entrySetContainer/cda:component/cda:observation | $entrySetContainer/cda:component/cda:organizer/cda:component[1]/cda:observation) else ()"/>
 
@@ -1331,7 +1544,8 @@
                 select="if ($categorizationElementType='#CityEHR:ElementProperty:enumeratedValue') then () else if ($categorizationCategory!=$categorizationElementClass) then $class/descendant::iso-13606:data[@code=$categorizationCategory]/descendant::iso-13606:data
                 else $class/descendant::iso-13606:data"/>
 
-            <xxf:variable name="classNodeValues" select="if (exists($classNodes)) then distinct-values($classNodes/@value) else ()"/>
+            <xxf:variable name="classNodeValues"
+                select="if (exists($classNodes)) then distinct-values($classNodes/@value) else ()"/>
 
 
             <!-- If the categorizationElement is enumeratedValue then the categorizationCategory is the single value that matches observations in that category.
@@ -1354,9 +1568,11 @@
     <!-- Application defined action to perform look-up on all directory entries.
          This is needed when the key element gets set as a pre-filled, default or calculated value -->
     <xf:action ev:event="refresh-directory-entries">
-        <xxf:variable name="cdaBody" select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+        <xxf:variable name="cdaBody"
+            select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
 
-        <xf:action xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:CRUD=('#CityEHR:EntryProperty:L','#CityEHR:Property:CRUD:L')]">
+        <xf:action
+            xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:CRUD=('#CityEHR:EntryProperty:L','#CityEHR:Property:CRUD:L')]">
 
             <xxf:variable name="entry" select="."/>
 
@@ -1382,7 +1598,8 @@
     <!-- Application defined action to save the composition -->
     <xf:action ev:event="save-composition">
         <!-- Write the composition to the xmlstore -->
-        <xxf:variable name="storageLocation" select="xxf:instance('control-instance')/current-form/saveHandle"/>
+        <xxf:variable name="storageLocation"
+            select="xxf:instance('control-instance')/current-form/saveHandle"/>
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$storageLocation"/>
@@ -1398,7 +1615,8 @@
             <xf:dispatch name="write-auditLog" target="auditLog-model">
                 <xxf:context name="model" select="'compositionMainModel'"/>
                 <xxf:context name="action" select="'save-composition'"/>
-                <xxf:context name="resourceId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                <xxf:context name="resourceId"
+                    select="xxf:instance('control-instance')/current-form/handleId"/>
                 <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
             </xf:dispatch>
             <!-- If there was a problem with the audit log, then abort with error message -->
@@ -1410,21 +1628,24 @@
             </xf:action>
 
             <!-- Set the handle so that this is used if the user resets the form -->
-            <xf:setvalue ref="xxf:instance('control-instance')/current-form/handle" value="$storageLocation"/>
+            <xf:setvalue ref="xxf:instance('control-instance')/current-form/handle"
+                value="$storageLocation"/>
 
         </xf:action>
 
         <!-- Failed to write composition -->
         <xf:action if="not(xxf:instance('control-instance')/status='')">
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSaveFormSubmission']"/>
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSaveFormSubmission']"
+            />
         </xf:action>
     </xf:action>
 
 
     <!-- Application defined action to delete the composition that has previously been saved. -->
     <xf:action ev:event="delete-composition">
-        <xxf:variable name="storageLocation" select="xxf:instance('control-instance')/current-form/saveHandle"/>
+        <xxf:variable name="storageLocation"
+            select="xxf:instance('control-instance')/current-form/saveHandle"/>
 
         <xf:dispatch name="dal-delete" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
@@ -1437,7 +1658,8 @@
     <!-- Application defined action to publish the form as a new event.
          This uses storage-instance (which is set up to hold a copy of the cda:ClinicalDocument in form-instance) -->
     <xf:action ev:event="publish-composition">
-        <xxf:variable name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
+        <xxf:variable name="applicationId"
+            select="xxf:instance('view-parameters-instance')/applicationId"/>
 
         <!-- Write the composition to the xmlstore -->
         <xxf:variable name="storageLocation"
@@ -1456,7 +1678,8 @@
             <xf:dispatch name="write-auditLog" target="auditLog-model">
                 <xxf:context name="model" select="'compositionMainModel'"/>
                 <xxf:context name="action" select="'publish-composition'"/>
-                <xxf:context name="resourceId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                <xxf:context name="resourceId"
+                    select="xxf:instance('control-instance')/current-form/handleId"/>
                 <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
             </xf:dispatch>
             <!-- If there was a problem with the audit log, then abort with error message -->
@@ -1467,13 +1690,15 @@
                 </xf:dispatch>
             </xf:action>
 
-            <xf:setvalue ref="xxf:instance('control-instance')/current-form/status" value="'published'"/>
+            <xf:setvalue ref="xxf:instance('control-instance')/current-form/status"
+                value="'published'"/>
         </xf:action>
 
         <!-- Failed to write composition -->
         <xf:action if="not(xxf:instance('control-instance')/status='')">
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedPublishForm']"/>
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedPublishForm']"
+            />
         </xf:action>
     </xf:action>
 
@@ -1481,8 +1706,8 @@
     <!-- Submission to delete the resource set as deleteObject.
          The ref attribute needs to refer to an instance, but it doesn't matter what that is-->
     <xf:submission id="delete-resource-submission" ref="xxf:instance('resourceHandles-instance')"
-        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('control-instance')/deleteObject}" validate="false"
-        method="delete" replace="none" serialization="none">
+        action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('control-instance')/deleteObject}"
+        validate="false" method="delete" replace="none" serialization="none">
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
         </xf:action>
@@ -1513,14 +1738,16 @@
     </xf:bind>
 
     <!-- Upload the file containing the data to the server -->
-    <xf:submission id="load-file-submission" method="post" replace="none" ref="xxf:instance('file-instance')" resource="">
+    <xf:submission id="load-file-submission" method="post" replace="none"
+        ref="xxf:instance('file-instance')" resource="">
         <xf:action ev:event="xforms-submit-done">
             <xf:send submission="load-data-submission"/>
         </xf:action>
     </xf:submission>
 
     <!-- Read the server file into the import instance ** stub - needs work -->
-    <xf:submission id="load-data-submission" method="get" resource="{xxf:instance('file-instance')/file/content}" serialization="none"
+    <xf:submission id="load-data-submission" method="get"
+        resource="{xxf:instance('file-instance')/file/content}" serialization="none"
         replace="instance" xxf:instance="import-instance" f:url-type="resource">
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('control-instance')/uploadStatus" value="'loaded'"/>
@@ -1534,14 +1761,16 @@
 
     <!-- Submission to store a resource in the database -->
     <xf:submission id="store-resource-submission" ref="xxf:instance('control-instance')/resourceURL"
-        resource="{xxf:instance('control-instance')/storageObject}" method="put" replace="none" serialization="application/octet-stream">
+        resource="{xxf:instance('control-instance')/storageObject}" method="put" replace="none"
+        serialization="application/octet-stream">
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
         </xf:action>
         <xf:action ev:event="xforms-submit-error">
             <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedStoreResource']"/>
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedStoreResource']"
+            />
         </xf:action>
     </xf:submission>
 
@@ -1564,32 +1793,38 @@
     <xf:action ev:event="load-highlght-entries">
         <xxf:variable name="scheme" select="event('scheme')"/>
 
-        <xxf:variable name="specialtyId" select="replace(substring($scheme/@specialtyIRI,2),':','-')"/>
+        <xxf:variable name="specialtyId"
+            select="replace(substring($scheme/@specialtyIRI,2),':','-')"/>
 
         <!-- Only retrive entries if specialty is set -->
         <xf:action if="$specialtyId != ''">
             <xf:setvalue ref="xxf:instance('control-instance')/storageObject"
                 value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',$specialtyId)"/>
 
-            <xf:setvalue ref="xxf:instance('getCompositionEntriesXQuery-instance')/compositionIRI" value="$scheme/@compositionIRI"/>
-            <xf:setvalue ref="xxf:instance('highlightQuery-instance')/exist:text" value="xxf:instance('getCompositionEntriesXQuery-instance')"/>
+            <xf:setvalue ref="xxf:instance('getCompositionEntriesXQuery-instance')/compositionIRI"
+                value="$scheme/@compositionIRI"/>
+            <xf:setvalue ref="xxf:instance('highlightQuery-instance')/exist:text"
+                value="xxf:instance('getCompositionEntriesXQuery-instance')"/>
 
             <xf:send submission="getCompositionEntries-submission" target="main-model"/>
 
         </xf:action>
 
         <!-- Set view-parameter for scheme, so that its passed between pages -->
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/highlightScheme" value="$scheme/@value"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/highlightScheme"
+            value="$scheme/@value"/>
 
         <!-- Set style of highlight -->
-        <xf:setvalue ref="xxf:instance('control-instance')/highlightStyle" value="if (exists($scheme/@style)) then $scheme/@style else ''"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/highlightStyle"
+            value="if (exists($scheme/@style)) then $scheme/@style else ''"/>
         <!-- Rebuild to apply the highlight style -->
         <xf:rebuild model="main-model"/>
     </xf:action>
 
 
     <!-- Query to get entries for a composition -->
-    <xf:instance id="getCompositionEntriesXQuery-instance" src="oxf:/apps/ehr/xquery/getCompositionEntriesXQuery.xml"/>
+    <xf:instance id="getCompositionEntriesXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getCompositionEntriesXQuery.xml"/>
 
     <!-- Query and return instances -->
     <xf:instance id="highlightQuery-instance">
@@ -1603,11 +1838,14 @@
     </xf:instance>
 
     <!-- Submission to load entry set for highlighting -->
-    <xf:submission id="getCompositionEntries-submission" ref="xxf:instance('highlightQuery-instance')"
-        action="{xxf:instance('control-instance')/storageObject}" method="post" replace="instance" instance="highlightEntryList-instance">
+    <xf:submission id="getCompositionEntries-submission"
+        ref="xxf:instance('highlightQuery-instance')"
+        action="{xxf:instance('control-instance')/storageObject}" method="post" replace="instance"
+        instance="highlightEntryList-instance">
         <xf:action ev:event="xforms-submit-error">
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetEntryListSubmission']"/>
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetEntryListSubmission']"
+            />
         </xf:action>
     </xf:submission>
 
@@ -1639,7 +1877,8 @@
          ====================================================== -->
 
     <!-- Load the query from file -->
-    <xf:instance id="knowledgeMapsXQuery-instance" src="oxf:/apps/ehr/xquery/knowledgeMapsXQuery.xml"/>
+    <xf:instance id="knowledgeMapsXQuery-instance"
+        src="oxf:/apps/ehr/xquery/knowledgeMapsXQuery.xml"/>
 
     <!-- Response instance  -->
     <xf:instance id="knowledgeMap-instance">
@@ -1650,8 +1889,8 @@
 
     <!-- Submission to get all knowledge map rdf:Description as one big map -->
     <xf:submission id="knowledgeMap-submission" ref="xxf:instance('knowledgeMapsXQuery-instance')"
-        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/knowledgeMaps" method="post" replace="instance"
-        instance="knowledgeMap-instance">
+        action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/knowledgeMaps"
+        method="post" replace="instance" instance="knowledgeMap-instance">
         <xf:action ev:event="xforms-submit-done">
             <!-- Not doing anything on success -->
         </xf:action>
@@ -1677,7 +1916,8 @@
 
         <!-- Set the cache location (user specific) -->
         <xxf:variable name="userId" select="xxf:instance('view-parameters-instance')/userId"/>
-        <xxf:variable name="cacheStorageLocation" select="concat('/xmlstore/users/',$userId,'/cdaCache')"/>
+        <xxf:variable name="cacheStorageLocation"
+            select="concat('/xmlstore/users/',$userId,'/cdaCache')"/>
 
         <!-- Write cdaInstance to the user cache.
              Return the URL for the resource in the database (in view-parameters-instance) -->
@@ -1685,7 +1925,8 @@
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$cacheStorageLocation"/>
             <xxf:context name="resource" select="$cdaInstance"/>
-            <xxf:context name="resourceURL" select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+            <xxf:context name="resourceURL"
+                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
             <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
         </xf:dispatch>
     </xf:action>
@@ -1698,27 +1939,35 @@
 
             <!-- Get the stored letter templates -->
             <xf:dispatch name="get-storedLetterTemplateList" target="dictionary-model">
-                <xxf:context name="compositionIRI" select="xxf:instance('control-instance')/current-form/compositionIRI"/>
-                <xxf:context name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                <xxf:context name="compositionIRI"
+                    select="xxf:instance('control-instance')/current-form/compositionIRI"/>
+                <xxf:context name="applicationIRI"
+                    select="xxf:instance('view-parameters-instance')/applicationIRI"/>
             </xf:dispatch>
-            <xxf:variable name="letterTemplateList" select="xxf:instance('storedLetterTemplateList-instance')/*"/>
+            <xxf:variable name="letterTemplateList"
+                select="xxf:instance('storedLetterTemplateList-instance')/*"/>
 
             <!--  Only show if there are templates configured -->
-            <xf:setvalue ref="xxf:instance('viewControlsActions-instance')/view/select[@id='wordprocessorTemplate']/@display"
+            <xf:setvalue
+                ref="xxf:instance('viewControlsActions-instance')/view/select[@id='wordprocessorTemplate']/@display"
                 value="if (exists($letterTemplateList[1])) then 'show' else 'hidden'"/>
-            <xf:setvalue ref="xxf:instance('viewControlsActions-instance')/view/action[@id='wordprocessor']/@display"
+            <xf:setvalue
+                ref="xxf:instance('viewControlsActions-instance')/view/action[@id='wordprocessor']/@display"
                 value="if (exists($letterTemplateList[1])) then 'show' else 'hidden'"/>
 
             <!-- Set the set of word processor templates for selection -->
             <xf:action xxf:iterate="$letterTemplateList">
                 <xxf:variable name="letterTemplate" select="."/>
-                <xf:insert context="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']" nodeset="*"
-                    origin="$letterTemplate" at="last()" position="after"/>
+                <xf:insert
+                    context="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']"
+                    nodeset="*" origin="$letterTemplate" at="last()" position="after"/>
             </xf:action>
 
             <!-- Set the value for the first on the list (if it exists) -->
-            <xf:setvalue ref="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']/@value"
-                value="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']/*[1]/@value"/>
+            <xf:setvalue
+                ref="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']/@value"
+                value="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']/*[1]/@value"
+            />
         </xf:action>
     </xf:action>
 
@@ -1742,15 +1991,19 @@
         </xf:dispatch>
 
         <!-- The template (binary) is stored to the binaryCache -->
-        <xf:setvalue ref="xxf:instance('letterTemplateBinary-instance')" value="$letterTemplate/letterTemplateFile"/>
-        <xxf:variable name="binaryCacheLocation" select="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
+        <xf:setvalue ref="xxf:instance('letterTemplateBinary-instance')"
+            value="$letterTemplate/letterTemplateFile"/>
+        <xxf:variable name="binaryCacheLocation"
+            select="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
 
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$binaryCacheLocation"/>
             <xxf:context name="resource" select="xxf:instance('letterTemplateBinary-instance')"/>
-            <xxf:context name="resourceURL" select="xxf:instance('view-parameters-instance')/binaryCacheHandle"/>
-            <xxf:context name="status" select="xxf:instance('viewControlsActions-instance')/status"/>
+            <xxf:context name="resourceURL"
+                select="xxf:instance('view-parameters-instance')/binaryCacheHandle"/>
+            <xxf:context name="status" select="xxf:instance('viewControlsActions-instance')/status"
+            />
         </xf:dispatch>
 
         <!-- Call pipeline through page-flow.
@@ -1759,6 +2012,7 @@
         <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
             <xxf:context name="page" select="'cityEHRWordProcessorCDA'"/>
             <xxf:context name="show" select="'new'"/>
+            <xxf:context name="checkEdits" select="false()"/>
         </xf:dispatch>
 
     </xf:action>
@@ -1781,9 +2035,12 @@
         <!-- Load dictionary for current specialty.
              This is language dependent -->
         <xf:dispatch name="load-dictionary" target="dictionary-model">
-            <xxf:context name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
-            <xxf:context name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
-            <xxf:context name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+            <xxf:context name="specialtyIRI"
+                select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+            <xxf:context name="languageCode"
+                select="xxf:instance('session-parameters-instance')/languageCode"/>
+            <xxf:context name="baseLanguageCode"
+                select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
         </xf:dispatch>
 
         <!-- Set the Care Setting.
@@ -1792,8 +2049,10 @@
              Only needs to be set for pages that have the dictionary-instance loaded -->
         <xxf:variable name="careSetting"
             select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingDisplayName" value="$careSetting/@displayName"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI"
+            value="$careSetting/@code"/>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingDisplayName"
+            value="$careSetting/@displayName"/>
 
         <!-- Set up the care team 
              TBD - this may change when the care team is selectable -->
@@ -1806,7 +2065,8 @@
         <!-- Set the externalId for use in print and export -->
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
             <xxf:context name="type" select="'print'"/>
-            <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+            <xxf:context name="externalId"
+                select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
 
         <!-- Set the type of the composition.
@@ -1834,7 +2094,8 @@
                     careSettingIRI is passed in view-parameters, but use the default if it is not set -->
             <xxf:variable name="careSetting"
                 select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
-            <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI"
+                value="$careSetting/@code"/>
 
         </xf:action>
         <!-- End of actions for patient-specific compositions -->
@@ -1855,8 +2116,11 @@
             value="if (xxf:instance('view-parameters-instance')/compositionStatus='saved') then 'inProgress' else if (xxf:instance('view-parameters-instance')/compositionStatus='new') then 'new' else if (count(xxf:instance('patientCompositionsList-instance')/composition) !=0) then 'inProgress' else 'new'"/>
 
         <!-- Only show the view controls if there is a form to edit -->
-        <xxf:variable name="showControlSet" select="if (xxf:instance('control-instance')/current-form/status = 'none') then 'hidden' else 'show'"/>
-        <xf:setvalue ref="xxf:instance('application-parameters-instance')/viewControlsActions/@display" value="$showControlSet"/>
+        <xxf:variable name="showControlSet"
+            select="if (xxf:instance('control-instance')/current-form/status = 'none') then 'hidden' else 'show'"/>
+        <xf:setvalue
+            ref="xxf:instance('application-parameters-instance')/viewControlsActions/@display"
+            value="$showControlSet"/>
 
     </xf:action>
 
@@ -1892,8 +2156,12 @@
         </xf:action>
 
         <!-- Rebuild so that bindings are reset (e.g. for visibility)
-             and calculations are triggered (since these need current-form/status='loaded' which is set in initialise-form -->
+             and calculations are triggered (since these need current-form/status='loaded' which is set in initialise-form.
+             The observer for element changes will noe set the editStatus -->
         <xf:rebuild model="cda-model"/>
+
+        <!-- Reset the editStatus -->
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
 
     </xf:action>
 

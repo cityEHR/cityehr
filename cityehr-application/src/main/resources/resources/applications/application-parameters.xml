@@ -53,22 +53,25 @@
     **********************************************************************************************************
 -->
 <!-- To force the whole configuration to be replaced in the xmlstore when updated, set cityEHR:edit="replace" -->
-<parameters type="application" version="" date="" languageCode="en-GB" cityEHR:edit="replace" xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
-    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
+<parameters type="application" version="" date="" languageCode="en-GB" cityEHR:edit="replace"
+    xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
     <!-- Application configuration 
          Release 1 uses xml spreadsheet models (saved/exported from .ods)
          Release 2 uses ods spreadsheet models directly -->
     <application release="2" cityEHR:displayName="Application Configuration" cityEHR:edit="newApp">
         <cityEHR:selection>
-            <iso-13606:EHR_Extract commonModel="" defaultSpecialty="" cityEHR:selection="cityEHR:specialty"/>
+            <iso-13606:EHR_Extract commonModel="" defaultSpecialty=""
+                cityEHR:selection="cityEHR:specialty"/>
         </cityEHR:selection>
         <cityEHR:edit>
             <iso-13606:EHR_Extract id="" cityEHR:edit="readOnly"/>
         </cityEHR:edit>
 
         <!-- The application id (fixed - actually an IRI), language and default models -->
-        <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR" displayName="cityEHR" baseLanguageCode="en-GB"
-            commonModel="#ISO-13606:Folder:cityEHRBase" defaultSpecialty=""/>
+        <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR" displayName="cityEHR"
+            baseLanguageCode="en-GB" commonModel="#ISO-13606:Folder:cityEHRBase" defaultSpecialty=""/>
 
         <!-- The other parameters are all images which can be loaded from the location specified in the @value.
              These are stored as separate resources in systemConfiguration/images for the application in the xmlstore. -->
@@ -87,18 +90,23 @@
                 <welcomeSplash-1 hint="" cityEHR:edit="readOnly"/>
                 <welcomeSplash-2 hint="" cityEHR:edit="readOnly"/>
             </cityEHR:edit>
-            <logo cityEHR:displayName="Application logo" hint="60 x 60 px" value="/images/myEHRLogoTall-Small.png"/>
-            <favicon cityEHR:displayName="Application favicon" hint="16 x 16 px" value="/images/myEHRLogoTall-Favicon.ico"/>
-            <welcomeLogo cityEHR:displayName="Splash page header logo" hint="Recommended width is 720px" value=""/>
-            <welcomeSplash-1 cityEHR:displayName="Splash page image, left" hint="Recommended width 360px or 180px"
-                value="/images/myEHRLogoTall-Medium.png"/>
-            <welcomeSplash-2 cityEHR:displayName="Splash page image, right" hint="Recommended width 360px or 180px" value=""/>
+            <logo cityEHR:displayName="Application logo" hint="60 x 60 px"
+                value="/images/myEHRLogoTall-Small.png"/>
+            <favicon cityEHR:displayName="Application favicon" hint="16 x 16 px"
+                value="/images/myEHRLogoTall-Favicon.ico"/>
+            <welcomeLogo cityEHR:displayName="Splash page header logo"
+                hint="Recommended width is 720px" value=""/>
+            <welcomeSplash-1 cityEHR:displayName="Splash page image, left"
+                hint="Recommended width 360px or 180px" value="/images/myEHRLogoTall-Medium.png"/>
+            <welcomeSplash-2 cityEHR:displayName="Splash page image, right"
+                hint="Recommended width 360px or 180px" value=""/>
         </images>
     </application>
 
     <!-- Supported Languages.
          Use language codes from IETF RFC 5646 -->
-    <languagePacks cityEHR:displayName="Language Packs" cityEHR:hint="Use language codes from IETF RFC 5646">
+    <languagePacks cityEHR:displayName="Language Packs"
+        cityEHR:hint="Use language codes from IETF RFC 5646">
         <cityEHR:template>
             <language code="" displayName=""/>
         </cityEHR:template>
@@ -127,10 +135,12 @@
             <value code="" codeSystem="" value="" cityEHR:edit="readOnly"/>
         </cityEHR:edit>
         <unspecifiedElementValue>
-            <value code="#ISO-13606:Data:Built-in:Unspecified" codeSystem="cityEHR" value="" displayName="-- Select Value --"/>
+            <value code="#ISO-13606:Data:Built-in:Unspecified" codeSystem="cityEHR" value=""
+                displayName="-- Select Value --"/>
         </unspecifiedElementValue>
         <unspecifiedFullScopeElementValue>
-            <value code="#ISO-13606:Data:Built-in:Unspecified" codeSystem="cityEHR" value="" displayName="N/R"/>
+            <value code="#ISO-13606:Data:Built-in:Unspecified" codeSystem="cityEHR" value=""
+                displayName="N/R"/>
         </unspecifiedFullScopeElementValue>
 
         <!-- Date display and input.
@@ -209,13 +219,18 @@
         </cityEHR:selection>
         <registrationEvent composition="#CityEHR:Form:BaseRegistration"/>
         <!-- These entries must exist in the registrationEvent -->
-        <id deprecatedCharacters=" #:%£$@&amp;" displayName="Hospital Number" entry="#ISO-13606:Entry:Demographics"
-            element="#ISO-13606:Element:HospitalNumber"/>
-        <prefix displayName="Title" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Title"/>
-        <given displayName="Forename" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Forename"/>
-        <family displayName="Surname" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Surname"/>
-        <administrativeGenderCode displayName="Gender" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Gender"/>
-        <birthTime displayName="DoB" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:DateOfBirth"/>
+        <id deprecatedCharacters=" #:%£$@&amp;" displayName="Hospital Number"
+            entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:HospitalNumber"/>
+        <prefix displayName="Title" entry="#ISO-13606:Entry:Demographics"
+            element="#ISO-13606:Element:Title"/>
+        <given displayName="Forename" entry="#ISO-13606:Entry:Demographics"
+            element="#ISO-13606:Element:Forename"/>
+        <family displayName="Surname" entry="#ISO-13606:Entry:Demographics"
+            element="#ISO-13606:Element:Surname"/>
+        <administrativeGenderCode displayName="Gender" entry="#ISO-13606:Entry:Demographics"
+            element="#ISO-13606:Element:Gender"/>
+        <birthTime displayName="DoB" entry="#ISO-13606:Entry:Demographics"
+            element="#ISO-13606:Element:DateOfBirth"/>
         <!-- Provider organisation is set here -->
         <providerOrganization value="cityEHR"/>
     </patientRegistration>
@@ -236,28 +251,30 @@
                 <option value="demographics"/>
                 <option value="age"/>
             </controlItem>
-            <demographicsCheckService value="" cityEHR:selection="../webServices/service/@entryIRI"/>
+            <demographicsCheckService value="" cityEHR:selection="../webServices/service/@entryIRI"
+            />
         </cityEHR:selection>
         <demographicsCheckService cityEHR:displayName="Demographics check service" value=""/>
         <controlPanelGroup displayName="First Row">
-            <controlItem type="demographics" displayName="" prefix="" suffix="," class="family" entry="#ISO-13606:Entry:Demographics"
-                element="#ISO-13606:Element:Surname"/>
-            <controlItem type="demographics" displayName="" prefix="" suffix="" class="given" entry="#ISO-13606:Entry:Demographics"
-                element="#ISO-13606:Element:Forename"/>
-            <controlItem type="demographics" displayName="" prefix="(" suffix=")" class="prefix" entry="#ISO-13606:Entry:Demographics"
-                element="#ISO-13606:Element:Title"/>
-            <controlItem type="demographics" displayName="Born: " prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
-                element="#ISO-13606:Element:DateOfBirth"/>
+            <controlItem type="demographics" displayName="" prefix="" suffix="," class="family"
+                entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Surname"/>
+            <controlItem type="demographics" displayName="" prefix="" suffix="" class="given"
+                entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Forename"/>
+            <controlItem type="demographics" displayName="" prefix="(" suffix=")" class="prefix"
+                entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Title"/>
+            <controlItem type="demographics" displayName="Born: " prefix="" suffix="" class=""
+                entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:DateOfBirth"/>
             <controlItem type="age" displayName="" prefix="(" suffix=")" class=""/>
-            <controlItem type="demographics" displayName="Gender: " prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
-                element="#ISO-13606:Element:Gender"/>
+            <controlItem type="demographics" displayName="Gender: " prefix="" suffix="" class=""
+                entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Gender"/>
         </controlPanelGroup>
         <controlPanelGroup displayName="Second Row">
-            <controlItem type="demographics" displayName="Patient Id" prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
-                element="#ISO-13606:Element:HospitalNumber"/>
-            <controlItem type="demographics" displayName="NHS Number" prefix="" suffix="" class="" entry="#ISO-13606:Entry:Demographics"
-                element="#ISO-13606:Element:NHSNumber"/>
-            <controlItem type="alert" displayName="" show="" icon="warning.png" alertDisplay="There are alerts for this patient."
+            <controlItem type="demographics" displayName="Patient Id" prefix="" suffix="" class=""
+                entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:HospitalNumber"/>
+            <controlItem type="demographics" displayName="NHS Number" prefix="" suffix="" class=""
+                entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:NHSNumber"/>
+            <controlItem type="alert" displayName="" show="" icon="warning.png"
+                alertDisplay="There are alerts for this patient."
                 errorDisplay="There may be alerts for this patient. Check did not run due to system
                 configuration error."
                 view="#CityEHR:View:Alerts"/>
@@ -276,17 +293,25 @@
     <patientCohorts cityEHR:displayName="Patient Cohorts">
         <patientInfo page="cityEHRPatientSearch">
             <item displayName="Patient Id" entry="" element="" calculated="patientId"/>
-            <item displayName="Surname" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Surname" calculated=""/>
-            <item displayName="Forename" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Forename" calculated=""/>
-            <item displayName="Gender" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Gender" calculated=""/>
-            <item displayName="Date of Birth" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:DateOfBirth" calculated=""/>
+            <item displayName="Surname" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Surname" calculated=""/>
+            <item displayName="Forename" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Forename" calculated=""/>
+            <item displayName="Gender" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Gender" calculated=""/>
+            <item displayName="Date of Birth" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:DateOfBirth" calculated=""/>
         </patientInfo>
         <patientInfo page="cityEHRCohortSearch">
             <item displayName="Patient Id" entry="" element="" calculated="patientId"/>
-            <item displayName="Surname" referenceData="true" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Surname" calculated=""/>
-            <item displayName="Forename" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Forename" calculated=""/>
-            <item displayName="Gender" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:Gender" calculated=""/>
-            <item displayName="Date of Birth" entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:DateOfBirth" calculated=""/>
+            <item displayName="Surname" referenceData="true" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Surname" calculated=""/>
+            <item displayName="Forename" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Forename" calculated=""/>
+            <item displayName="Gender" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:Gender" calculated=""/>
+            <item displayName="Date of Birth" entry="#ISO-13606:Entry:Demographics"
+                element="#ISO-13606:Element:DateOfBirth" calculated=""/>
             <item displayName="Age" entry="" element="" calculated="age"/>
         </patientInfo>
     </patientCohorts>
@@ -311,39 +336,48 @@
     <patientSearch cityEHR:displayName="Patient Search">
         <controlPanelGroup initialFocus="ps1-3">
             <controlItem id="ps1-1" displayName="Patient Id" element="#ISO-13606:Element:String"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:HospitalNumber,#ISO-13606:Element:NHSNumber"/>
             <controlItem id="ps1-2" displayName="Surname" element="#ISO-13606:Element:String"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:Surname"/>
             <controlItem id="ps1-3" displayName="Forename" element="#ISO-13606:Element:String"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:Forename"/>
         </controlPanelGroup>
         <controlPanelGroup initialFocus="">
             <controlItem id="ps2-1" displayName="Gender" element="#ISO-13606:Element:Gender"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:Gender" searchPredicate="="/>
         </controlPanelGroup>
         <controlPanelGroup initialFocus="">
-            <controlItem id="ps3-1" displayName="Day of Birth" element="#ISO-13606:Element:DayPicker"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+            <controlItem id="ps3-1" displayName="Day of Birth"
+                element="#ISO-13606:Element:DayPicker"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="ends-with"/>
             <controlItem id="ps3-2" displayName="Month" element="#ISO-13606:Element:MonthPicker"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="contains"/>
             <controlItem id="ps3-3" displayName="Year" element="#ISO-13606:Element:Integer"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="starts-with"/>
             <controlItem id="ps3-4" displayName="Date" element="#ISO-13606:Element:Date"
-                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics" searchEntry="#ISO-13606:Entry:Demographics"
+                searchComposition="#CityEHR:Form:BaseRegistration,#CityEHR:Form:UpdateDemographics"
+                searchEntry="#ISO-13606:Entry:Demographics"
                 searchElement="#ISO-13606:Element:DateOfBirth" searchPredicate="="/>
         </controlPanelGroup>
         <controlPanelGroup initialFocus="">
             <controlItem id="ps4-1" displayName="Consultant" element="#ISO-13606:Element:String"
                 searchComposition="#CityEHR:Message:S12NewAppointment,#CityEHR:Message:#CityEHR:Message:A01Admission"
-                searchEntry="#ISO-13606:Entry:InpatientAdmission,#ISO-13606:Entry:ClinicBooking" entryType="cda:encounter"
-                searchElement="#ISO-13606:Element:ClinicianCode"/>
+                searchEntry="#ISO-13606:Entry:InpatientAdmission,#ISO-13606:Entry:ClinicBooking"
+                entryType="cda:encounter" searchElement="#ISO-13606:Element:ClinicianCode"/>
         </controlPanelGroup>
     </patientSearch>
 
@@ -373,8 +407,10 @@
          Default is used unless there is an entry for a specific composition
          Templates must exist in the appPath location, defined in view-parameters
          The path to the templates is relative to appPath -->
-    <wordTemplateURL cityEHR:displayName="MS Word Templates" appPath="" path="/resources/templates/" template="letterTemplate.docx">
-        <template compositionIRI="#CityEHR:Letter:patientletter" template="patientLetterTemplate.docx"/>
+    <wordTemplateURL cityEHR:displayName="MS Word Templates" appPath="" path="/resources/templates/"
+        template="letterTemplate.docx">
+        <template compositionIRI="#CityEHR:Letter:patientletter"
+            template="patientLetterTemplate.docx"/>
     </wordTemplateURL>
 
 
@@ -382,8 +418,10 @@
          Can be .ods or .docx documents - stored in the path under the application configuration.
          Path should always be /templates/
          -->
-    <attachmentTemplateURL cityEHR:displayName="Attachment Templates" appPath="" path="/templates/" displayName="Attachments">
-        <template value="patientLetterTemplate.odt" displayName="Patient Letter" compositionIRI="#CityEHR:Letter:patientLetter"/>
+    <attachmentTemplateURL cityEHR:displayName="Attachment Templates" appPath="" path="/templates/"
+        displayName="Attachments">
+        <template value="patientLetterTemplate.odt" displayName="Patient Letter"
+            compositionIRI="#CityEHR:Letter:patientLetter"/>
     </attachmentTemplateURL>
 
     <!-- Configuration of printed pages for XSL-FO.
@@ -419,7 +457,8 @@
             <task display="">
                 <adminTask>importLanguagePack</adminTask>
                 <adminTaskTitle hint="Import">Import Language Pack</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import language pack">Language Pack for upload</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import language pack">Language Pack for
+                    upload</adminTaskLoadFile>
             </task>
             <task display="">
                 <adminTask>applyAllLanguagePacks</adminTask>
@@ -438,7 +477,8 @@
             <task display="">
                 <adminTask>inspectSpreadsheet</adminTask>
                 <adminTaskTitle>Inspect Spreadsheet</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Inspect Spreadsheet">Load spreadsheet for inspection</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Inspect Spreadsheet">Load spreadsheet for
+                    inspection</adminTaskLoadFile>
                 <adminTaskInstructions>
                     <line>Spreadsheet in ODF or MS Office Open format (.ods or .xlsx)</line>
                     <line>Or a spreadhseet saved as MS 2003 XML format.</line>
@@ -466,12 +506,16 @@
             <task display="">
                 <adminTask>generateTestData</adminTask>
                 <adminTaskTitle hint="Generate">Generate Test Data</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Generate Test Data">Template CDA documents</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Generate Test Data">Template CDA
+                    documents</adminTaskLoadFile>
                 <adminTaskInstructions>
                     <line>XML file, or zip of XML file, containing a template record.</line>
-                    <line>Files created by the patient export function can be loaded directly.</line>
-                    <line>The file must contain a single iso-13606:EHR_Extract containing a set of cda:ClinicalDocument elements</line>
-                    <line>Every cda:ClinicalDocument must be for the same patient as defined by the iso-13606:EHR_Extract</line>
+                    <line>Files created by the patient export function can be loaded
+                        directly.</line>
+                    <line>The file must contain a single iso-13606:EHR_Extract containing a set of
+                        cda:ClinicalDocument elements</line>
+                    <line>Every cda:ClinicalDocument must be for the same patient as defined by the
+                        iso-13606:EHR_Extract</line>
                 </adminTaskInstructions>
             </task>
             <task display="">
@@ -496,10 +540,11 @@
             <task display="">
                 <adminTask>importInformationModel</adminTask>
                 <adminTaskTitle hint="Import">Import Information Model</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import information model">Information model for upload (Ontology, Spreadsheet or
-                    Graph)</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import information model">Information model
+                    for upload (Ontology, Spreadsheet or Graph)</adminTaskLoadFile>
                 <adminTaskInstructions>
-                    <line>The model must conform to the cityEHR specification in one of the following formats.</line>
+                    <line>The model must conform to the cityEHR specification in one of the
+                        following formats.</line>
                     <line>Ontology - OWL/XML</line>
                     <line>Graph - graphML (created by Yed) or mm (Mindmap)</line>
                     <line>Spreadsheet - MS 2003 XML format</line>
@@ -532,11 +577,14 @@
             <task display="">
                 <adminTask>importDirectory</adminTask>
                 <adminTaskTitle hint="Import">Import Directory</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import directory">Directory for upload (XML)</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import directory">Directory for upload
+                    (XML)</adminTaskLoadFile>
                 <adminTaskInstructions>
                     <line>Directory can be for entries or elements</line>
-                    <line>Entry directory format: iso-13606:EHR_Extract/iso-13606:entryCollection/iso-13606:entry/cda:component/cda:observation</line>
-                    <line>Element directory format: iso-13606:EHR_Extract/iso-13606:elementCollection/iso-13606:element/iso-13606:data</line>
+                    <line>Entry directory format:
+                        iso-13606:EHR_Extract/iso-13606:entryCollection/iso-13606:entry/cda:component/cda:observation</line>
+                    <line>Element directory format:
+                        iso-13606:EHR_Extract/iso-13606:elementCollection/iso-13606:element/iso-13606:data</line>
                 </adminTaskInstructions>
             </task>
         </task>
@@ -551,9 +599,11 @@
             <task display="">
                 <adminTask>importUsers</adminTask>
                 <adminTaskTitle>Import Users</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import users">User file for upload</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import users">User file for
+                    upload</adminTaskLoadFile>
                 <adminTaskInstructions>
-                    <line>The file must contain a set of user elements in the format required by cityEHR.</line>
+                    <line>The file must contain a set of user elements in the format required by
+                        cityEHR.</line>
                 </adminTaskInstructions>
             </task>
             <task display="">
@@ -564,9 +614,11 @@
             <task display="">
                 <adminTask>importCareTeams</adminTask>
                 <adminTaskTitle>Import Care Team(s)</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import care team">Care team file for upload</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import care team">Care team file for
+                    upload</adminTaskLoadFile>
                 <adminTaskInstructions>
-                    <line>The file must contain a set of careTeam elements in the format required by cityEHR.</line>
+                    <line>The file must contain a set of careTeam elements in the format required by
+                        cityEHR.</line>
                 </adminTaskInstructions>
             </task>
         </task>
@@ -581,11 +633,14 @@
             <task display="">
                 <adminTask>importKnowledgeMap</adminTask>
                 <adminTaskTitle>Import Knowledge Map</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import knowledge map">Knowledge map for upload</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import knowledge map">Knowledge map for
+                    upload</adminTaskLoadFile>
                 <adminTaskInstructions>
-                    <line>The file must contain an RDF knowledge map in the format required by cityEHR.</line>
+                    <line>The file must contain an RDF knowledge map in the format required by
+                        cityEHR.</line>
                     <line>The file may be zipped or plain XML text.</line>
-                    <line>Knowledge maps exported from cityEHR may be imported directly using this utility.</line>
+                    <line>Knowledge maps exported from cityEHR may be imported directly using this
+                        utility.</line>
                 </adminTaskInstructions>
             </task>
         </task>
@@ -600,12 +655,16 @@
             <task display="">
                 <adminTask>importRecords</adminTask>
                 <adminTaskTitle>Import Record Set</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import record set">Record set for upload</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import record set">Record set for
+                    upload</adminTaskLoadFile>
                 <adminTaskInstructions>
-                    <line>The file can be a spreadsheet (.ods or .xlsx), in the format required by cityEHR.</line>
-                    <line>Or the file may contain a set of iso-13606:EHR_Extract elements containing cityEHR HL7 CDA documents.</line>
+                    <line>The file can be a spreadsheet (.ods or .xlsx), in the format required by
+                        cityEHR.</line>
+                    <line>Or the file may contain a set of iso-13606:EHR_Extract elements containing
+                        cityEHR HL7 CDA documents.</line>
                     <line>The file may be zipped or plain XML text.</line>
-                    <line>Records exported from cityEHR may be imported directly using this utility.</line>
+                    <line>Records exported from cityEHR may be imported directly using this
+                        utility.</line>
                 </adminTaskInstructions>
             </task>
             <task display="">
@@ -626,7 +685,8 @@
             <task display="">
                 <adminTask>processPatientList</adminTask>
                 <adminTaskTitle>Process Patient List</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Check List">Patient list for upload</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Check List">Patient list for
+                    upload</adminTaskLoadFile>
                 <adminTaskInstructions>
                     <line>The patient list must be a spreadsheet (.ods or .xlsx).</line>
                     <line>Or an XML document containing &lt;patient id=""> elements</line>
@@ -658,7 +718,8 @@
             <task display="">
                 <adminTask>importCohortSearch</adminTask>
                 <adminTaskTitle>Import Cohort Search</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import chort search">Cohort search for import</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import chort search">Cohort search for
+                    import</adminTaskLoadFile>
             </task>
         </task>
         <task display="">
@@ -672,7 +733,8 @@
             <task display="">
                 <adminTask>importExportDataSet</adminTask>
                 <adminTaskTitle>Import Data Set</adminTaskTitle>
-                <adminTaskLoadFile importActionMessage="Import data set">Data set definition for upload</adminTaskLoadFile>
+                <adminTaskLoadFile importActionMessage="Import data set">Data set definition for
+                    upload</adminTaskLoadFile>
             </task>
         </task>
         <task display="">
@@ -714,6 +776,25 @@
             </task>
         </task>
         <task display="">
+            <adminTask>manageInterfaces</adminTask>
+            <adminTaskTitle>Manage Interfaces</adminTaskTitle>
+            <task display="">
+                <adminTask>manageImportExport</adminTask>
+                <adminTaskTitle>Import/Export Locations</adminTaskTitle>
+                <adminTaskLoadFile/>
+            </task>
+            <task display="">
+                <adminTask>manageScheduledImport</adminTask>
+                <adminTaskTitle>Import Scheduler</adminTaskTitle>
+                <adminTaskLoadFile/>
+            </task>
+            <task display="">
+                <adminTask>testWebService</adminTask>
+                <adminTaskTitle>Test Web Service</adminTaskTitle>
+                <adminTaskLoadFile/>
+            </task>
+        </task>
+        <task display="">
             <adminTask>redirectNotifications</adminTask>
             <adminTaskTitle>Redirect Notifications</adminTaskTitle>
             <adminTaskLoadFile/>
@@ -726,11 +807,6 @@
         <task display="">
             <adminTask>managePatientAccess</adminTask>
             <adminTaskTitle>Manage Patient Access</adminTaskTitle>
-            <adminTaskLoadFile/>
-        </task>
-        <task display="">
-            <adminTask>testWebService</adminTask>
-            <adminTaskTitle>Test Web Service</adminTaskTitle>
             <adminTaskLoadFile/>
         </task>
     </adminTaskList>
@@ -749,8 +825,10 @@
             <role id="" cityEHR:edit="distinct"/>
         </cityEHR:edit>
 
-        <role displayName="All Roles" id="System:AllRoles" value="#CityEHR:Role:System:AllRoles" cityEHR:edit="readOnly pinned"/>
-        <role displayName="System Administrator" id="System:Administrator" value="#CityEHR:Role:System:Administrator" cityEHR:edit="readOnly pinned"/>
+        <role displayName="All Roles" id="System:AllRoles" value="#CityEHR:Role:System:AllRoles"
+            cityEHR:edit="readOnly pinned"/>
+        <role displayName="System Administrator" id="System:Administrator"
+            value="#CityEHR:Role:System:Administrator" cityEHR:edit="readOnly pinned"/>
         <role displayName="Administrator" id="Administrator" value="#CityEHR:Role:Administrator"/>
         <role displayName="Consultant" id="Consultant" value="#CityEHR:Role:Consultant"/>
         <role displayName="Registrar" id="Registrar" value="#CityEHR:Role:Registrar"/>
@@ -780,26 +858,37 @@
             <taskAccess taskId="database" role="#CityEHR:Role:System:AllRoles" access="deny"/>
             <taskAccess taskId="database" role="#CityEHR:Role:System:Administrator" access="allow"/>
             <taskAccess taskId="informationModel" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="informationModel" role="#CityEHR:Role:System:Administrator" access="allow"/>
+            <taskAccess taskId="informationModel" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
             <taskAccess taskId="directory" role="#CityEHR:Role:System:AllRoles" access="deny"/>
             <taskAccess taskId="directory" role="#CityEHR:Role:System:Administrator" access="allow"/>
             <taskAccess taskId="users" role="#CityEHR:Role:System:AllRoles" access="deny"/>
             <taskAccess taskId="users" role="#CityEHR:Role:System:Administrator" access="allow"/>
             <taskAccess taskId="knowledgeSources" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="knowledgeSources" role="#CityEHR:Role:System:Administrator" access="allow"/>
+            <taskAccess taskId="knowledgeSources" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
             <taskAccess taskId="patientRecords" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="patientRecords" role="#CityEHR:Role:System:Administrator" access="allow"/>
+            <taskAccess taskId="patientRecords" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
             <taskAccess taskId="cohortSearch" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="cohortSearch" role="#CityEHR:Role:System:Administrator" access="allow"/>
+            <taskAccess taskId="cohortSearch" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
             <taskAccess taskId="exportDataSet" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="exportDataSet" role="#CityEHR:Role:System:Administrator" access="allow"/>
-            <taskAccess taskId="redirectNotifications" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="redirectNotifications" role="#CityEHR:Role:System:Administrator" access="allow"/>
-            <taskAccess taskId="manageUserAccount" role="#CityEHR:Role:System:AllRoles" access="allow"/>
-            <taskAccess taskId="managePatientAccess" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="managePatientAccess" role="#CityEHR:Role:System:Administrator" access="allow"/>
+            <taskAccess taskId="exportDataSet" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
+            <taskAccess taskId="redirectNotifications" role="#CityEHR:Role:System:AllRoles"
+                access="deny"/>
+            <taskAccess taskId="redirectNotifications" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
+            <taskAccess taskId="manageUserAccount" role="#CityEHR:Role:System:AllRoles"
+                access="allow"/>
+            <taskAccess taskId="managePatientAccess" role="#CityEHR:Role:System:AllRoles"
+                access="deny"/>
+            <taskAccess taskId="managePatientAccess" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
             <taskAccess taskId="testWebService" role="#CityEHR:Role:System:AllRoles" access="deny"/>
-            <taskAccess taskId="testWebService" role="#CityEHR:Role:System:Administrator" access="allow"/>
+            <taskAccess taskId="testWebService" role="#CityEHR:Role:System:Administrator"
+                access="allow"/>
         </adminTaskAccess>
 
         <!-- Composition Access Control
@@ -846,7 +935,8 @@
                 <systemNavigationAccess controlId="" role="" access="deny"/>
             </cityEHR:template>
             <cityEHR:selection>
-                <systemNavigationAccess controlId="" cityEHR:selection="//systemNavigationControls/descendant::control/@value"/>
+                <systemNavigationAccess controlId=""
+                    cityEHR:selection="//systemNavigationControls/descendant::control/@value"/>
                 <systemNavigationAccess role="" cityEHR:selection="//rbac/role/@value"/>
                 <systemNavigationAccess access="">
                     <option value="allow"/>
@@ -863,7 +953,8 @@
                 <systrecordNavigationAccessemNavigationAccess controlId="" role="" access="deny"/>
             </cityEHR:template>
             <cityEHR:selection>
-                <recordNavigationAccess controlId="" cityEHR:selection="//recordNavigationControls/control/@value"/>
+                <recordNavigationAccess controlId=""
+                    cityEHR:selection="//recordNavigationControls/control/@value"/>
                 <recordNavigationAccess role="" cityEHR:selection="//rbac/role/@value"/>
                 <recordNavigationAccess access="">
                     <option value="allow"/>
@@ -887,7 +978,8 @@
         <allowableCharacterString>1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</allowableCharacterString>
         <seedKey>ythaAhsPJSDKL18mqnscj</seedKey>
         <anonymiseElements>
-            <anonymise entry="#ISO-13606:Entry:HospitalNumber" element="#ISO-13606:Element:HospitalNumber"/>
+            <anonymise entry="#ISO-13606:Entry:HospitalNumber"
+                element="#ISO-13606:Element:HospitalNumber"/>
             <anonymise entry="#ISO-13606:Entry:NHSNumber" element="#ISO-13606:Element:String"/>
             <anonymise entry="#ISO-13606:Entry:Forename" element="#ISO-13606:Element:String"/>
             <anonymise entry="#ISO-13606:Entry:Surname" element="#ISO-13606:Element:String"/>
@@ -1027,7 +1119,8 @@
         -->
 
     <viewControlsActions cityEHR:displayName="View Controls">
-        <view viewType="cityEHRPatientSearch" displayName="Patient Search" showLabels="false" showIcons="true" separator="|" display="show">
+        <view viewType="cityEHRPatientSearch" displayName="Patient Search" showLabels="false"
+            showIcons="true" separator="|" display="show">
             <select id="careTeam" value="" displayName="Care Team " display="show">
                 <item displayName="-- Select --" value=""/>
             </select>
@@ -1115,11 +1208,13 @@
             <select id="highlight" value="none" displayName="Highlight Entries " display="show">
                 <item displayName="-- None --" value="none"/>
             </select>
-            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template " display="show"/>
+            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template "
+                display="show"/>
             <action id="wordprocessor" displayName="Word Processor" display="show"/>
             <action id="save" displayName="Save" display="show"/>
             <action id="publish" displayName="Publish" display="show"/>
-            <input id="effectiveTime" displayName="Effective Time" type="xs:dateTime" display="hidden"/>
+            <input id="effectiveTime" displayName="Effective Time" type="xs:dateTime"
+                display="hidden"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="print" displayName="Print" display="show"/>
@@ -1128,7 +1223,8 @@
             <action id="xml" displayName="Show XML" display="show"/>
             <input id="showISO13606" displayName="Show ISO-13606" type="xs:boolean" display="show"/>
             <input id="showIds" displayName="Show Ids" type="xs:boolean" display="show"/>
-            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template " display="show"/>
+            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template "
+                display="show"/>
             <action id="wordprocessor" displayName="Word Processor" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
@@ -1180,7 +1276,8 @@
     <!-- Highlight entries -->
     <highlight cityEHR:displayName="Highlight Schemes">
         <cityEHR:template>
-            <scheme value="scheme-1" displayName="" specialtyIRI="" compositionIRI="" style="background-color:#ffffcc"/>
+            <scheme value="scheme-1" displayName="" specialtyIRI="" compositionIRI=""
+                style="background-color:#ffffcc"/>
         </cityEHR:template>
     </highlight>
 
@@ -1222,7 +1319,7 @@
             &lt;category displayName="Specialty Models" value="{$modelCount - $classModelCount}"/>
             &lt;category displayName="Class Models" value="{$classModelCount}"/>
             &lt;/queryResults>
-        </dashboardQuery>       
+        </dashboardQuery>
         <dashboardQuery displayName="Total Patients" chart="" queryScope="application" queryPath="records" queryPipeline="" cityEHR:type="text" xml:space="preserve">
             xquery version "1.0"; 
             declare namespace cda="urn:hl7-org:v3"; 
@@ -1329,7 +1426,8 @@
         <cityEHR:template>
             <triggerSet compositionIRI="">
                 <cityEHR:template>
-                    <trigger type="notification" entryIRI="" elementIRI="" condition="" displayName="">
+                    <trigger type="notification" entryIRI="" elementIRI="" condition=""
+                        displayName="">
                         <effectiveTime offset="" elementIRI=""/>
                         <action prefix="" elementIRI="" suffix=""/>
                         <notifyActor elementIRI=""/>

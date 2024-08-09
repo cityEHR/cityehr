@@ -53,23 +53,12 @@
                  Reloads the same page, but with the saved form loaded -->
             <xf:action ev:event="DOMActivate">
                 <xxf:variable name="selectedComposition" select="$sortedCompositionList[index('patientComposition-repeat')]"/>
- 
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'saved'"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
-                    value="concat(xxf:instance('view-parameters-instance')/databaseLocation,$selectedComposition/handle)"/>
-                <xxf:variable name="compositionTypeId" select="replace(substring($selectedComposition/compositionTypeIRI,2),':','-')"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/formCacheHandle"
-                    value="if (xxf:instance('system-parameters-instance')/dynamicParameters/useFormCache/@value!='true') then 'blank' else concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/cache/',$compositionTypeId)"/>
-
-                <xf:setvalue ref="xxf:instance('control-instance')/current-form/displayName" value="$selectedComposition/displayName"/>
-                <xf:setvalue ref="xxf:instance('control-instance')/current-form/title"
-                    value="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/loadingLabel,xxf:instance('control-instance')/current-form/displayName,'...')"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
-                    value="xxf:instance('control-instance')/current-form/title"/>
-               
-               <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-                   <xxf:context name="page" select="xxf:instance('session-parameters-instance')/@page"/>
-               </xf:dispatch>
+                
+                <!-- The current page is reloaded with the saved composition set -->
+                <xf:dispatch name="confirm-load-saved-composition" target="main-model">
+                    <xxf:context name="composition" select="$selectedComposition"/>                            
+                </xf:dispatch>
+                 
             </xf:action>
         </xf:trigger>
     </xf:repeat>

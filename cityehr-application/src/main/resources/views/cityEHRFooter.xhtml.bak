@@ -38,7 +38,10 @@
             <!-- Load the release notes for display -->
             <xf:action ev:event="DOMActivate">
                 <!-- Get release notes -->
-                <xf:dispatch name="load-releaseNotes" target="releaseNotes-model"/>
+                <xf:send submission="load-release-notes-submission"/>
+                <!-- Remove any elements targetted at specific pages, but not this one -->
+                <xf:delete nodeset="xxf:instance('release-notes-instance')//*[@class!=xxf:instance('view-parameters-instance')/page]"/>
+                <xxf:show dialog="release-notes-dialog"/>
             </xf:action>
         </xf:trigger>
     </xhtml:span>
@@ -55,7 +58,7 @@
     </xhtml:span>
 
     <!-- Logged on for this session -->
-    <xhtml:span class="{if (exists(xxf:instance('session-parameters-instance')[@sessionId!='noSession'])) then 'footerItem' else 'hidden'}">
+    <xhtml:span class="{if (exists(xxf:instance('session-parameters-instance')[@sessionId!=''])) then 'footerItem' else 'hidden'}">
         <xxf:variable name="loginTime" select="xxf:instance('session-parameters-instance')/@loginTime"/>
         <xf:output
             ref="if ($loginTime castable as xs:dateTime) then xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/loggedOnLabel/@displayName else ''"/>
@@ -65,7 +68,7 @@
     </xhtml:span>
 
     <!-- Last logged on -->
-    <xhtml:span class="{if (exists(xxf:instance('session-parameters-instance')[@sessionId!='noSession'])) then 'footerItem' else 'hidden'}">
+    <xhtml:span class="{if (exists(xxf:instance('session-parameters-instance')[@sessionId!=''])) then 'footerItem' else 'hidden'}">
         <xxf:variable name="previousLoginTime" select="xxf:instance('session-parameters-instance')/@previousLoginTime"/>
         <xf:output
             ref="if ($previousLoginTime castable as xs:dateTime) then xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/lastLoggedOnLabel/@displayName else xxf:instance('system-parameters-instance')/staticParameters/cityEHRFooter/nolastLoggedOnMessage/@displayName"/>
@@ -87,14 +90,14 @@
         <!--
         <xf:output ref="concat(xxf:instance('view-parameters-instance')/appPath,'/resources/releaseNotes/',xxf:instance('view-parameters-instance')/versionNumber/@version,'.html')"/>
             
-        <xf:output ref="count(xxf:instance('releaseNotes-instance')/*)"/>
-        <xf:output ref="xxf:instance('releaseNotes-instance')/*[1]/name(.)"/>
+        <xf:output ref="count(xxf:instance('release-notes-instance')/*)"/>
+        <xf:output ref="xxf:instance('release-notes-instance')/*[1]/name(.)"/>
         <p>Release notes instance:<br/>
-            <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('releaseNotes-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+            <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('release-notes-instance'), 'data')/*, 'html')" mediatype="text/html"/>
         </p>
         -->
         <xhtml:div class="ScrollingContainer">
-            <xf:output ref="xxf:serialize(xxf:instance('releaseNotes-instance'), 'html')" mediatype="text/html"/>
+            <xf:output ref="xxf:serialize(xxf:instance('release-notes-instance'), 'html')" mediatype="text/html"/>
         </xhtml:div>
 
     </xxf:dialog>
