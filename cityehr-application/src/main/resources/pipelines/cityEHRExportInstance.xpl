@@ -7,6 +7,8 @@
     Input is view-parameters
     The following parameters must have been set in session-parameters:
         runXqueryQueryText, runXqueryContext, transformationXSL
+        
+    Executes the query to get an instance, then runs the transformation (if specified), then zips to return to browser
     
     Copyright (C) 2013-2021 John Chelsom.
     

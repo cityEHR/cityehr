@@ -211,6 +211,14 @@
     <setvalue ref="/parameters/userId" parameter="userId"/>
     <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
   </page>
+  
+  <!-- (Transform and) Export Resource to the exportDirectory specified in application-parameters
+       This one is a 'model' not a 'view' so that the output resource can be serialized and returned to the bowser as an attachment.
+       Must be called with a load, not submission -->
+  <page path-info="/ehr/cityEHRExportResourceToFolder/" model="pipelines/cityEHRExportResourceToFolder.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
 
   <!-- Backup database from manifest
        Exports database resources as described in the (cached) manifest
@@ -268,7 +276,8 @@
 
   
   <!-- === These pages with just an action do not return any output.
-           The submission is view-parameters, set up with the variables needed in the pipeline, unless otherwise stated === -->
+           The submission is view-parameters, set up with the variables needed in the pipeline, unless otherwise stated
+           This view-parameters.xml is posted ot the service === -->
 
   <!-- Transform and Store Resource -->
   <page path-info="/ehr/cityEHRTransformAndStoreResource/">
@@ -286,22 +295,34 @@
   </page>
 
 
-  <!-- Test web services.
+  <!-- Web services.
        The submission is webServiceData-instance set up in webServiceModel -->
   <page path-info="/ehr/webService/">
     <action action="pipelines/webService.xpl"/>
   </page>
   
+  <!-- demographics web service
+       takes URL parameters and invvokes webService -->
+  <page path-info="/ehr/demographicsWebService/" model="pipelines/demographicsWebService.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/patientId" parameter="patientId"/>
+  </page>
+  
+  
+  
   
   
   <!-- ====== Application Programming Interface ==============
-       The API for cityEHR
+       The API for cityEHR supports two styles
+       	  /ehr/api/authenticate/?userId=user&password=secret
+        or
+	         /ehr/api/?command=authenticate&userId=user&password=secret
        ======================================================= -->
   
   <page path-info="/ehr/api/" model="pipelines/cityEHRapi.xpl" default-submission="view-parameters.xml">
     <setvalue ref="/parameters/userId" parameter="userId"/>
     <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
     <setvalue ref="/parameters/command" parameter="command"/>
+    <setvalue ref="/parameters/password" parameter="password"/>
     <setvalue ref="/parameters/patientId" parameter="patientId"/>
     <setvalue ref="/parameters/compositionId" parameter="compositionId"/>
   </page> 

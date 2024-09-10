@@ -779,13 +779,8 @@
             <adminTask>manageInterfaces</adminTask>
             <adminTaskTitle>Manage Interfaces</adminTaskTitle>
             <task display="">
-                <adminTask>manageImportExport</adminTask>
-                <adminTaskTitle>Import/Export Locations</adminTaskTitle>
-                <adminTaskLoadFile/>
-            </task>
-            <task display="">
-                <adminTask>manageScheduledImport</adminTask>
-                <adminTaskTitle>Import Scheduler</adminTaskTitle>
+                <adminTask>importExportCompositions</adminTask>
+                <adminTaskTitle>Import/Export Compositions</adminTaskTitle>
                 <adminTaskLoadFile/>
             </task>
             <task display="">
@@ -1197,6 +1192,13 @@
             <action id="annotations" displayName="Annotations" display="show"/>
             <action id="save" displayName="Save" display="show"/>
             <action id="print" displayName="Print" display="show"/>
+            <select id="exportFormat" value="cda" displayName="Export Format " display="show">
+                <item displayName="HL7 CDA" value="cda"/>
+                <item displayName="ISO 13606" value="ISO-13606"/>
+                <item displayName="HL7 v2 XML (pseudo)" value="HL7-V2-XML"/>
+                <item displayName="HL7 v2 (Z Segment)" value="HL7-V2"/>
+                <item displayName="HL7 FHIR" value="HL7-FHIR"/>
+            </select>
             <action id="export" displayName="Export Event" display="show"/>
             <action id="exportAll" displayName="Export Record" display="show"/>
         </view>
@@ -1402,7 +1404,7 @@
         Set for composition / entry / element combinations.
         The value of the entry/element is evaluated with the conditions 
         (e.g. condition could be "= 'Ambulance'" which would evaluate to true if the value of the entry/element was Ambulance)
-        Note that badly formed consitions will cause the form to crash, so they need to be properly tested
+        Note that badly formed conditions will cause the form to crash, so they need to be properly tested
         If the condition empty or is satisfied then create a notification for the patient, setting:
         
         effectiveTime
@@ -1437,6 +1439,71 @@
         </cityEHR:template>
     </triggers>
 
+
+    <!-- Import and export of patient records.
+         These are dependent on the information model.
+         Originally these were in the view-parameters
+         Mirroed there until coed has been refactored 
+        -->
+    <importExport cityEHR:displayName="Import and Export">
+
+        <!-- Import pipeline.
+          -->
+        <importPipeline>
+            <importDirectory cityEHR:type="text"
+                >/home/john/Desktop/watchedFolder/import</importDirectory>
+            <processedDirectory cityEHR:type="text"
+                >/home/john/Desktop/watchedFolder/processed</processedDirectory>
+            <errorDirectory cityEHR:type="text"
+                >/home/john/Desktop/watchedFolder/error</errorDirectory>
+        </importPipeline>
+
+        <!-- Export pipeline.
+         For export of compositions and export data sets
+         Values for allowableCharacterString and characterSelectionKey are default.
+         Actual values are filled from parameters specified in application-parameters
+         The allowable values for anonymisationType are defined in cityEHRExportDataDialog -->
+        <exportPipeline>
+            <cityEHR:type>
+                <exportOnCommit value="" xsi:type="xs:boolean"/>
+            </cityEHR:type>
+            <exportOnCommit value="false"/>
+            <exportDirectory cityEHR:type="text">/home/john/Desktop/exportFolder</exportDirectory>
+            <queryContext/>
+            <queryText/>
+            <exportDataFormat>ms-spreadsheet</exportDataFormat>
+            <spreadsheetFormat>singleSheet</spreadsheetFormat>
+            <anonymisation>
+                <anonymisationType>anonymised</anonymisationType>
+                <allowableCharacterString>1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</allowableCharacterString>
+                <seedKey>ythaAhsPJSDKL18mqnscj</seedKey>
+                <anonymiseElements>
+                    <cityEHR:selection>
+                        <anonymise entry="" cityEHR:selection="cityEHR:entry"/>
+                        <anonymise element="" cityEHR:selection="cityEHR:element"/>
+                    </cityEHR:selection>
+                    <cityEHR:template>
+                        <anonymise entry="" element=""/>
+                    </cityEHR:template>
+                    <anonymise entry="#ISO-13606:Entry:HospitalNumber"
+                        element="#ISO-13606:Element:HospitalNumber"/>
+                    <anonymise entry="#ISO-13606:Entry:NHSNumber"
+                        element="#ISO-13606:Element:String"/>
+                    <anonymise entry="#ISO-13606:Entry:Forename" element="#ISO-13606:Element:String"/>
+                    <anonymise entry="#ISO-13606:Entry:Surname" element="#ISO-13606:Element:String"
+                    />
+                </anonymiseElements>
+            </anonymisation>
+            <demographicsDisplayName>demographics</demographicsDisplayName>
+            <dataSetDisplayName>data</dataSetDisplayName>
+            <patientIdDisplayName>patientId</patientIdDisplayName>
+            <effectiveTimeDisplayName>effectiveTime</effectiveTimeDisplayName>
+            <idSeparator>-</idSeparator>
+        </exportPipeline>
+
+
+
+    </importExport>
 
     <!-- Web services.
          These are dependent on the information model.

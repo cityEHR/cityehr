@@ -14,7 +14,10 @@
         The context of this query is the records collection which contains a set of child collections, named for each patientId
         So the query does get-child-collections for those collections where the name matches a patientId in <patientIdList/>
         
-        Returns the full set of ClinicalDocument elements for each matching patientId
+        Returns the full set of cda:ClinicalDocument elements for each matching patientId
+        Wrapped in iso-13606:EHR_Extract
+        
+        The return XML is an <export> containing a collection of iso-13606:EHR_Extract elements
                 
         Copyright (C) 2013-2021 John Chelsom.
         

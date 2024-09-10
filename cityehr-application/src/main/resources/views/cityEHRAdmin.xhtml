@@ -497,6 +497,7 @@
 
                     <generateTestData>
                         <status/>
+                        <specialtyIRI/>
                         <debug/>
                         <reportProgress/>
                         <startTime/>
@@ -823,6 +824,7 @@
             <!-- Application defined action to set the gender values from the information model.
                  Get gender element from patient registration configuration.
                  Get set of values for the gender element from the information model dictionary 
+                 That dictionary must be for the model that contains the registration events/elements
                  Set up gender values in the control-instance generateTestData/genderValueSet.
                  Uses the template generateTestData/genderValue
             -->
@@ -3085,7 +3087,7 @@
 
 
             <!-- === Manage Image Maps in Information Models === 
-                  manageImageMaps ***jc1
+                  manageImageMaps 
                  ======================================= -->
 
             <!-- Application defined action to reset the manageImageMaps task -->
@@ -3846,8 +3848,9 @@
                 </xf:action>
 
                 <!-- Check format of file for inspectSpreadsheet and importRecords
+                     Note that this sets the spreadsheetFormat for inspectSpreadsheet
                      Must be cityEHR database format, transformed from a spreadsheet 
-                     <recordFormat>database | invalid </recordFormat>
+                     <spreadsheetFormat>database | invalid </spreadsheetFormat>
                 -->
                 <xf:action
                     if="xxf:instance('control-instance')/adminTask/adminTask=('inspectSpreadsheet','importRecords')">
@@ -3867,7 +3870,8 @@
                 </xf:action>
 
                 <!-- Check format of file for importRecords.
-                     Must have a root document containing a set of EHR_Extract
+                     Must have a root document containing a set of cda:ClinicalDocument
+                     or a root of iso-13606:EHR_Extract containing iso-13606:Composition
                      or be XML exported from MS Access
                      or be cityEHR database format, transformed from a spreadsheet 
                      <recordFormat>msAccess | xml | database | invalid </recordFormat>
@@ -3875,14 +3879,17 @@
                 <xf:action if="xxf:instance('control-instance')/adminTask/adminTask='importRecords'">
                     <xf:setvalue ref="xxf:instance('control-instance')/importRecords/recordFormat"
                         value="if (exists(xxf:instance('import-instance')[name(.)='dataroot'])) then 'msAccess' 
-                        else if (exists(xxf:instance('import-instance')/descendant-or-self::cda:ClinicalDocument)) then 'xml'
+                        else if (exists(xxf:instance('import-instance')/descendant-or-self::cda:ClinicalDocument)) then 'cda'
+                        else if (exists(xxf:instance('import-instance')//iso-13606:Composition)) then 'iso-13606'
                         else if (exists(xxf:instance('import-instance')[name(.)='database']/table)) then 'database'
                         else 'invalid'"/>
+
+                    <xf:message ref="xxf:instance('control-instance')/importRecords/recordFormat"/>
 
                     <!-- For msAccess and xml, the status is 'ready' to import (so display the Import button).
                          For database or invalid, then the import-instance is 'loaded' but not ready to import -->
                     <xf:setvalue ref="xxf:instance('control-instance')/importStatus"
-                        value="if (xxf:instance('control-instance')/importRecords/recordFormat=('msAccess','xml')) then 'ready' else 'loaded'"/>
+                        value="if (xxf:instance('control-instance')/importRecords/recordFormat=('msAccess','cda')) then 'ready' else 'loaded'"/>
 
                     <!-- Set up for database.
                          Note that details of the database sheets, records and fields are recorded in inspectSpreadsheet -->
@@ -4100,7 +4107,7 @@
 
 
             <!-- ===
-                importRecords ***jc
+                importRecords 
                 Importing record sets 
                 (Also uses some data and actions from inspectSpreadsheet)
                 === -->
@@ -4726,7 +4733,7 @@
                         origin="xxf:instance('control-instance')/statusMessage/entry"/>
 
                     <!-- Set up pipeline
-                         For class models, V2 format has a sheet for 'Class' ***jc1 -->
+                         For class models, V2 format has a sheet for 'Class'  -->
                     <xf:setvalue
                         ref="xxf:instance('control-instance')/manageInformationModel/informationModelType"
                         value="if (exists(xxf:instance('import-instance')/table[@id='Class'])) then 'Class' else 'Specialty'"/>
@@ -4871,7 +4878,7 @@
                     <xf:setvalue
                         ref="xxf:instance('control-instance')/importInformationModel/editStatus"
                         value="''"/>
-                    
+
                     <!-- Set new adminTask to manageInformationModel -->
                     <xf:dispatch name="set-adminTask" target="main-model">
                         <xxf:context name="adminTask" select="'manageInformationModel'"/>
@@ -5496,13 +5503,6 @@
                         <xxf:context name="exportName" select="$node/@name"/>
                         <xxf:context name="exportType" select="'xml'"/>
                     </xf:dispatch>
-                    <!--
-                    <xf:dispatch name="export-xmlHandle" target="pageNavigation-model">
-                        <xxf:context name="exportHandle" select="$node/@path"/>
-                        <xxf:context name="exportName" select="$node/@name"/>
-                        <xxf:context name="exportType" select="'xml'"/>
-                    </xf:dispatch>
-                    -->
                 </xf:action>
             </xf:action>
 
@@ -6004,16 +6004,23 @@
 
             <!-- Application defined action to reset the wizard. -->
             <xf:action ev:event="reset-newApplicationWizard">
+                <!-- Get the list of shipped applications.
+                         The list is created in shippedApplicationList-instance -->
+                <xf:dispatch name="get-shippedApplicationList" target="application-model"/>
+
                 <!-- Clear the processExecution controls -->
                 <xf:dispatch name="clear-processExecutionParameters" target="process-model"/>
+
                 <!-- Clear the application Id -->
                 <xf:setvalue
                     ref="xxf:instance('control-instance')/newApplicationWizard/applicationIdBase"
                     value="''"/>
+
                 <!-- Clear the application IRI -->
                 <xf:setvalue
                     ref="xxf:instance('control-instance')/newApplicationWizard/applicationIRI"
                     value="''"/>
+
                 <!-- Reset the status -->
                 <xf:setvalue ref="xxf:instance('control-instance')/newApplicationWizard/status"
                     value="'waiting'"/>
@@ -9228,37 +9235,37 @@
                 <xxf:variable name="adminTask" select="event('adminTask')"/>
                 <xf:setvalue ref="xxf:instance('control-instance')/adminTask/nextAdminTask"
                     value="$adminTask"/>
-                
+
                 <!-- Get the process status in case there is a process running -->
                 <xf:dispatch name="get-processStatus" target="process-model">
                     <xxf:context name="status"
                         select="xxf:instance('control-instance')/processStatus"/>
                 </xf:dispatch>
-                
+
                 <!-- User action is disabled while a process is running -->
                 <xf:action if="xxf:instance('control-instance')/processStatus != 'running'">
 
-                <!-- Check the editStatus of the current task -->
-                <xf:dispatch name="check-editStatus" target="main-model">
-                    <xxf:context name="editStatus"
-                        select="xxf:instance('control-instance')/editStatus"/>
-                </xf:dispatch>
-
-                <!-- No edits, so set up the next task -->
-                <xf:action if="xxf:instance('control-instance')/editStatus = ''">
-                    <xf:dispatch name="set-nextAdminTask" target="main-model"/>
-                </xf:action>
-
-                <!-- Unsaved edits on current task -->
-                <xf:action if="not(xxf:instance('control-instance')/editStatus = '')">
-                    <xxf:variable name="confirmationMessage"
-                        select="xxf:instance('control-instance')/adminTask/adminTaskTitle"/>
-                    <xf:dispatch name="confirm-action" target="pageNavigation-model">
-                        <xxf:context name="action" select="'setNextAdminTask'"/>
-                        <xxf:context name="messageSet" select="$confirmationMessage"/>
+                    <!-- Check the editStatus of the current task -->
+                    <xf:dispatch name="check-editStatus" target="main-model">
+                        <xxf:context name="editStatus"
+                            select="xxf:instance('control-instance')/editStatus"/>
                     </xf:dispatch>
-                </xf:action>
-                    
+
+                    <!-- No edits, so set up the next task -->
+                    <xf:action if="xxf:instance('control-instance')/editStatus = ''">
+                        <xf:dispatch name="set-nextAdminTask" target="main-model"/>
+                    </xf:action>
+
+                    <!-- Unsaved edits on current task -->
+                    <xf:action if="not(xxf:instance('control-instance')/editStatus = '')">
+                        <xxf:variable name="confirmationMessage"
+                            select="xxf:instance('control-instance')/adminTask/adminTaskTitle"/>
+                        <xf:dispatch name="confirm-action" target="pageNavigation-model">
+                            <xxf:context name="action" select="'setNextAdminTask'"/>
+                            <xxf:context name="messageSet" select="$confirmationMessage"/>
+                        </xf:dispatch>
+                    </xf:action>
+
                 </xf:action>
 
             </xf:action>
@@ -9497,10 +9504,32 @@
 
                 <!-- Generate test data -->
                 <xf:action if="$adminTask='generateTestData'">
-                    <!-- Test data is only generated for the default specialty of the managedApplication  -->
+                    <!-- Must use specialty that contains the registrationEvent composition -->
+                    <xxf:variable name="registrationCompositionIRI"
+                        select="xxf:instance('application-parameters-instance')/patientRegistration/registrationEvent/@composition"/>
+
+                    <!-- Test data is only generated for the managedApplication.
+                         Iterate through the information models to find one with the registrationEvent.
+                         Since the event is likely to be in the base model and that is inherited by all specialties, there is likely to be more than one-->
+                    <xxf:variable name="specialtyIRIList"
+                        select="xxf:instance('specialtyList-instance')/iso-13606:Folder/@id"/>
+
+                    <xf:action xxf:iterate="$specialtyIRIList">
+                        <xxf:variable name="specialtyIRI" select="."/>
+                        <xf:dispatch name="load-dictionary" target="dictionary-model">
+                            <xxf:context name="specialtyIRI" select="$specialtyIRI"/>
+                        </xf:dispatch>
+                        <xxf:variable name="registrationComposition"
+                            select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition[@code=$registrationCompositionIRI]"/>
+                        <xf:action if="exists($registrationComposition)">
+                            <xf:setvalue
+                                ref="xxf:instance('control-instance')/generateTestData/specialtyIRI"
+                                value="$specialtyIRI"/>
+                        </xf:action>
+                    </xf:action>
                     <xf:dispatch name="load-dictionary" target="dictionary-model">
                         <xxf:context name="specialtyIRI"
-                            select="xxf:instance('control-instance')/managedApplication/defaultSpecialtyIRI"
+                            select="xxf:instance('control-instance')/generateTestData/specialtyIRI"
                         />
                     </xf:dispatch>
 
@@ -9646,6 +9675,10 @@
 
                 <!-- Manage application configuration -->
                 <xf:action if="$adminTask='manageApplicationParameters'">
+
+                    <!-- Get the list of shipped applications.
+                         The list is created in shippedApplicationList-instance -->
+                    <xf:dispatch name="get-shippedApplicationList" target="application-model"/>
 
                     <!-- Set the application to the managedApplication -->
                     <xf:setvalue
@@ -13559,7 +13592,6 @@
                             manageLetterTemplates
                             
                          All use the specialty set in manageInformationModel/specialtyIRI
-                         ***jc1
                          ====================================================== -->
                     <xhtml:div
                         class="{if ($adminTask=('manageInformationModel','manageMedia','manageImageMaps')) then '' else 'hidden'}">
@@ -13610,7 +13642,7 @@
                                          and the data dictionary (for the specialty or class) is loaded to dictionary-instance
                                          -->
                                     <xhtml:span class="controlItem">
-                                        <!-- Select the ontology model to manage. ****jc
+                                        <!-- Select the ontology model to manage.
                                  The list is limited to the specialty selected.
                                  Selection is of the database handle, since this is the only value guaranteed to be unique across all models -->
                                         <xxf:variable name="fullModelSet"
@@ -15665,7 +15697,7 @@
                                     </xf:action>
                                     <!-- If imported record set is an extract of CDA documents (as created in a record export) -->
                                     <xf:action
-                                        if="xxf:instance('control-instance')/importRecords/recordFormat='xml'">
+                                        if="xxf:instance('control-instance')/importRecords/recordFormat='cda'">
                                         <!-- Set message to describe the action -->
                                         <xf:setvalue
                                             ref="xxf:instance('control-instance')/statusMessage/entry"
@@ -15932,6 +15964,7 @@
                             </xf:trigger>
                             <!-- End of actions on uploaded file -->
                         </xhtml:li>
+
 
                         <!-- === Other user input for the tasks with an uploaded file - before and after the file is imported 
                                  Displayed on LHS when importStatus is loaded, imported or ready
@@ -16362,7 +16395,7 @@
                                 class="{if ($adminTask='importRecords') then '' else 'hidden'}">
                                 <!-- Importing from XML file - set composition id (or not) -->
                                 <xhtml:span
-                                    class="{if (xxf:instance('control-instance')/importRecords/recordFormat='xml') then '' else 'hidden'}">
+                                    class="{if (xxf:instance('control-instance')/importRecords/recordFormat='cda') then '' else 'hidden'}">
                                     <xf:select1
                                         ref="xxf:instance('control-instance')/importRecords/setCompositionId">
                                         <xf:label
@@ -16377,7 +16410,7 @@
                                         </xf:action>
                                     </xf:select1>
                                 </xhtml:span>
-                                <!-- Importing from spreadsheet (cityEHR database format). ***JC
+                                <!-- Importing from spreadsheet (cityEHR database format).
                                      These controls appear below the inspectSpreadsheet controls (hence use xhtml:p) -->
                                 <xhtml:p
                                     class="{if (xxf:instance('control-instance')/importRecords/recordFormat='database') then '' else 'hidden'}">
@@ -16535,7 +16568,7 @@
                                     </xf:action>
                                 </xf:trigger>
                             </xhtml:span>
-                            <!-- Import records from spreadsheet  ***JC
+                            <!-- Import records from spreadsheet 
                                  Control of recordMap - new, save, save as, delete -->
                             <xhtml:span
                                 class="{if ($adminTask='importRecords' and xxf:instance('control-instance')/importRecords/recordFormat='database') then '' else 'hidden'}">
@@ -18312,7 +18345,7 @@
                     </xhtml:div>
 
 
-                    <!-- === Manage image maps for a specialty information model ***jc1 === 
+                    <!-- === Manage image maps for a specialty information model === 
                          ================================================================== -->
                     <xhtml:div
                         class="{if ($adminTask='manageImageMaps') then 'tableContainer' else 'hidden'}">
@@ -18506,6 +18539,7 @@
                              Reset the status to 'waiting' when user changes the identifier -->
                         <xhtml:p
                             class="{if ($status=('waiting','applicationExists')) then '' else 'hidden'}">
+                            <!-- Input the applicationIdBase directly -->
                             <xf:input
                                 ref="xxf:instance('control-instance')/newApplicationWizard/applicationIdBase"
                                 incremental="true">
@@ -18519,6 +18553,29 @@
                                     <xf:setvalue ref="$status" value="'waiting'"/>
                                 </xf:action>
                             </xf:input>
+                            <!-- Select the applicationIdBase from the shipped applications -->
+                            <xxf:variable name="applicationFolderPrefix"
+                                select="xxf:instance('view-parameters-instance')/applicationFolderPrefix"/>
+                            <xxf:variable name="shippedApplicationEmptySelection"
+                                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/newApplicationWizard/shippedApplicationEmptySelection/directory"/>
+                            <xxf:variable name="shippedApplicationSelection"
+                                select="$shippedApplicationEmptySelection | xxf:instance('shippedApplicationList-instance')/directory"/>
+                            <xxf:variable name="shippedApplicationSelectionClass"
+                                select="if (xxf:instance('control-instance')/newApplicationWizard/applicationIdBase = $shippedApplicationSelection/substring-after(@name,$applicationFolderPrefix)) then '' else 'hidden'"/>
+                            <!-- Only show selection if applicationIdBase is set to one of its values.
+                                 This means the secltion is displayed when applicationIdBase is blank
+                                 or when one of its values has been selected -->
+                            <xf:select1 class="{$shippedApplicationSelectionClass}"
+                                ref="xxf:instance('control-instance')/newApplicationWizard/applicationIdBase">
+                                <xf:itemset nodeset="$shippedApplicationSelection">
+                                    <xf:label ref="@name"/>
+                                    <xf:value ref="substring-after(@name,$applicationFolderPrefix)"
+                                    />
+                                </xf:itemset>
+                                <xf:action ev:event="xforms-value-changed">
+                                    <!-- TBD -->
+                                </xf:action>
+                            </xf:select1>
                         </xhtml:p>
 
                     </xhtml:div>
@@ -18560,55 +18617,85 @@
                         ============================================================== -->
                     <xhtml:div
                         class="{if ($adminTask='manageApplicationParameters') then '' else 'hidden'}">
-                        <!-- Show parameters for the selected application -->
-                        <xhtml:div
-                            class="{if (xxf:instance('control-instance')/managedParameters/editType='') then '' else 'hidden'}">
 
-                            <xhtml:p>
-                                <!-- Application name -->
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/displayNameLabel,xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@displayName)"/>
-                                <xhtml:br />
-                                <!-- Base Language Code -->
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/baseLanguageCodeLabel,xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@baseLanguageCode)"/>
-                                <xhtml:br />
-                                <!-- Version number of configuration -->
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/versionLabel,xxf:instance('working-application-parameters-instance')/@version)"/>
-                                <xhtml:br />
-                                <!-- Date configuration was set -->
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/dateLabel,xxf:instance('working-application-parameters-instance')/@date)"
-                                />
-                            </xhtml:p>
+                        <xhtml:table  class="{if (xxf:instance('control-instance')/managedParameters/editType='') then '' else 'hidden'}">
+                            <xhtml:tbody>
+                                <xhtml:tr>
+                                    <!-- Show parameters for the selected application -->
+                                    <xhtml:td valign="top">
+                                        <xf:output
+                                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/selectedApplicationsLabel"/>
+                                        <xhtml:div>
 
-                            <xhtml:p>
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/usersLabel,xxf:instance('control-instance')/manageApplicationParameters/userCount)"
-                                />
-                            </xhtml:p>
-                            <xhtml:p>
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/specialtyLabel,xxf:instance('control-instance')/manageApplicationParameters/specialtyCount)"
-                                />
-                            </xhtml:p>
-                            <xhtml:p>
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/informationModelLabel,xxf:instance('control-instance')/manageApplicationParameters/informationModelCount)"
-                                />
-                            </xhtml:p>
-                            <xhtml:p>
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/recordLabel,xxf:instance('control-instance')/manageApplicationParameters/recordCount)"
-                                />
-                            </xhtml:p>
-                            <xhtml:p>
-                                <xf:output
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/compositionLabel,xxf:instance('control-instance')/manageApplicationParameters/compositionCount)"
-                                />
-                            </xhtml:p>
-                        </xhtml:div>
+                                            <xhtml:p>
+                                                <!-- Application name -->
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/displayNameLabel,xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@displayName)"/>
+                                                <xhtml:br />
+                                                <!-- Base Language Code -->
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/baseLanguageCodeLabel,xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@baseLanguageCode)"/>
+                                                <xhtml:br />
+                                                <!-- Version number of configuration -->
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/versionLabel,xxf:instance('working-application-parameters-instance')/@version)"/>
+                                                <xhtml:br />
+                                                <!-- Date configuration was set -->
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/dateLabel,xxf:instance('working-application-parameters-instance')/@date)"
+                                                />
+                                            </xhtml:p>
+
+                                            <xhtml:p>
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/usersLabel,xxf:instance('control-instance')/manageApplicationParameters/userCount)"
+                                                />
+                                            </xhtml:p>
+                                            <xhtml:p>
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/specialtyLabel,xxf:instance('control-instance')/manageApplicationParameters/specialtyCount)"
+                                                />
+                                            </xhtml:p>
+                                            <xhtml:p>
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/informationModelLabel,xxf:instance('control-instance')/manageApplicationParameters/informationModelCount)"
+                                                />
+                                            </xhtml:p>
+                                            <xhtml:p>
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/recordLabel,xxf:instance('control-instance')/manageApplicationParameters/recordCount)"
+                                                />
+                                            </xhtml:p>
+                                            <xhtml:p>
+                                                <xf:output
+                                                  ref="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/compositionLabel,xxf:instance('control-instance')/manageApplicationParameters/compositionCount)"
+                                                />
+                                            </xhtml:p>
+                                        </xhtml:div>
+                                    </xhtml:td>
+
+                                    <!-- Spacer -->
+                                    <xhtml:td>&#160; &#160; &#160; &#160;</xhtml:td>
+
+                                    <!-- Show the list of shipped applications -->
+                                    <xhtml:td valign="top">
+                                        <!--
+                                        <xf:output
+                                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('shippedApplicationList-instance'), 'data')/*, 'html')"
+                                            mediatype="text/html"/>
+                                            -->
+                                        <xf:output
+                                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageApplicationParameters/shippedApplicationsLabel"/>
+                                        <xhtml:ul>
+                                            <xf:repeat
+                                                nodeset="xxf:instance('shippedApplicationList-instance')/directory">
+                                                <xhtml:li><xf:output ref="@name"/></xhtml:li>
+                                            </xf:repeat>
+                                        </xhtml:ul>
+                                    </xhtml:td>
+                                </xhtml:tr>
+                            </xhtml:tbody>
+                        </xhtml:table>
                     </xhtml:div>
 
 
@@ -19140,7 +19227,7 @@
 
 
                     <!-- === Inspect Spreadsheet or Import Records === 
-                         inspectSpreadsheet ***jc
+                         inspectSpreadsheet
                          Also used to display the spreadsheet in importRecords
                          Display the selected table in the spreadsheet that has been loaded to import-instance
                          =========================== -->

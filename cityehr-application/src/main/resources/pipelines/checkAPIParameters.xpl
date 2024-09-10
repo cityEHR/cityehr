@@ -26,7 +26,7 @@
     <!-- Standard pipeline output -->
     <p:param name="checkResult" type="output"/>
     
-    <!-- Run XSLT to convert OWL/XML to a Composition template for CityEHR -->
+    <!-- Run XSLT to check the parameters -->
     <p:processor name="oxf:xslt">
         <p:input name="config"
             href="../xslt/checkAPIParameters.xsl"/>

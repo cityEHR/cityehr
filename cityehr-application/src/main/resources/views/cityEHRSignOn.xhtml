@@ -13,7 +13,7 @@
         Then after confirmation by the user:
             Generate and store the application-parameters for the default application.
             Generate and store the information model(s) shipped with the default application (only after the default user has been authenticated)        
-            Set and store the credentials for the default user (only after the default user has been authenticated)
+            Set and store the credentials for the default user (only after the default user has been authenticated and a session has been started)
         
     The page may also be loaded when a new (possibly empty) database has been deployed 
     (with system-parameters and database parameters already created in the built-in database)
@@ -46,7 +46,7 @@
         recovery - something went wrong, but system-parameters are readable - the system may be recoverable and/or debugging information can be displayed, after the default user is authenticated.
         disabled - there is something wrong with the cityEHR installation and the system-parameters are unreadable - the system is not recoverable and the user has no access to do anything.
  
-    In normal or debug mode the user is authenticated against users stored in the database, unless there are none (first time system is run) in which case the default user is created and stored.
+    In normal or debug mode the user is authenticated (authenticate-cityEHR-user) against users stored in the database, unless there are none (first time system is run) in which case the default user is created and stored.
     In recovery mode there is no database available and the user is authenticated against the default user specified in view-parameters.
     In disabled mode there are no system parameters avalable and the user cannot log on - just displays the error message and default logo shipped with the installation.
     
@@ -307,6 +307,32 @@
 
             <!-- test-action can be coded for any necessary testing -->
             <xf:action ev:event="test-action">
+                
+                <!--
+                <xf:dispatch name="invoke-pipelineScheduler" target="pageNavigation-model">
+                    <xxf:context name="command" select="'start'"/>
+                    <xxf:context name="pipeline" select="'importWatchedResources.xpl'"/>
+                    <xxf:context name="return-instance" select="xxf:instance('test-instance')"/>
+                </xf:dispatch>
+                -->
+                
+                <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/systemConfiguration/schedulerLog/importWatchedResorces')"/>
+                    <xxf:context name="dalReadURL"
+                        select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+                </xf:dispatch>
+                
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/externalId" value="'exportTest.xml'"/>
+                
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'exportResourceToFolder.xpl'"/>
+                    <xxf:context name="return-instance" select="xxf:instance('test-instance')"/>
+                </xf:dispatch>
+                
+                <xf:message ref="xxf:instance('application-parameters-instance')[@type='application']/importExport/exportPipeline/exportDirectory"/>
+                
+                             
                 <!--
                 <xxf:show dialog="testDialog"/>
                 -->
@@ -1171,7 +1197,7 @@
 
 
                     <!-- Application status records one of seven states, with four options for action:
-                    (1) initialRun
+                    (1) loadResources
                     
                     2) noApplications OR
                     3) singleApplicationDefault
@@ -1223,9 +1249,9 @@
                     <!-- === Further actions now depend on the applicationStatus that hs been set === -->
 
                     <!-- (1) loadResources - first time the system has run or if the process was interupted
-                              Load the default models, directories and images from disk.
-                              (Which resets the specialtyList)
-                              But only after confirmation by the user.-->
+                              Load the default models, directories and images from disk. (Which resets the specialtyList)
+                              But only after confirmation by the user.
+                              Then invokes aither load-default-configuration or skip-default-configuration-->
                     <xf:action
                         if="xxf:instance('control-instance')/applicationStatus = 'loadResources'">
                         <xf:dispatch name="confirm-action" target="pageNavigation-model">

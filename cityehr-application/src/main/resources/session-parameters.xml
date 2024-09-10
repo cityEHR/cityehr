@@ -86,6 +86,8 @@
     <applicationStorageLocation/>
     <applicationDatabaseLocation/>
     
+    <schedulerLogLocation/>
+    
     <javascriptParameters/>
     <imageMapCommand/>
 

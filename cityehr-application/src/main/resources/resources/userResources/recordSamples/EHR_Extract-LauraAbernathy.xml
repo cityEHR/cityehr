@@ -2136,7 +2136,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BMDData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-01-20T08-35-41.363Z-CityEHR-Message-BMDData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="BMD Data"/>
             <effectiveTime value="2012-01-06T09:55:45.671Z"/>
             <recordTarget>
@@ -2694,7 +2694,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:RiskFactors" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-01-23T12-43-39.407Z-CityEHR-Message-RiskFactors-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Risk Factors"/>
             <effectiveTime value="2012-01-06T09:55:17.437Z"/>
             <recordTarget>
@@ -2759,7 +2759,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:Medications" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-02-23T12-43-39.407Z-CityEHR-Message-Medications-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Medications"/>
             <effectiveTime value="2012-01-06T09:50:59.125Z"/>
             <recordTarget>
@@ -2966,7 +2966,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-03-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2011-10-28T00:00:00"/>
             <recordTarget>
@@ -3181,7 +3181,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-04-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2011-10-28T00:00:00"/>
             <recordTarget>
@@ -3358,7 +3358,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-05-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2011-05-23T00:00:00"/>
             <recordTarget>
@@ -3554,7 +3554,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-06-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2011-04-04T00:00:00"/>
             <recordTarget>
@@ -3712,7 +3712,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-07-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2011-04-04T00:00:00"/>
             <recordTarget>
@@ -3870,7 +3870,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-08-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2011-02-22T00:00:00"/>
             <recordTarget>
@@ -3989,7 +3989,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-09-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2010-11-01T00:00:00"/>
             <recordTarget>
@@ -4108,7 +4108,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-10-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2010-04-08T00:00:00"/>
             <recordTarget>
@@ -4265,7 +4265,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-11-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2010-03-15T00:00:00"/>
             <recordTarget>
@@ -4422,7 +4422,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2016-12-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2010-03-15T00:00:00"/>
             <recordTarget>
@@ -4598,7 +4598,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-01-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2009-11-09T00:00:00"/>
             <recordTarget>
@@ -4755,7 +4755,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-02-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2009-11-09T00:00:00"/>
             <recordTarget>
@@ -4950,7 +4950,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-03-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2009-01-09T00:00:00"/>
             <recordTarget>
@@ -5164,7 +5164,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-04-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2008-10-08T00:00:00"/>
             <recordTarget>
@@ -5302,7 +5302,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-05-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2008-10-08T00:00:00"/>
             <recordTarget>
@@ -5535,7 +5535,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-06-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2007-07-27T00:00:00"/>
             <recordTarget>
@@ -5692,7 +5692,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-07-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2007-07-27T00:00:00"/>
             <recordTarget>
@@ -5906,7 +5906,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-08-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2007-06-05T00:00:00"/>
             <recordTarget>
@@ -6063,7 +6063,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-09-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2007-06-05T00:00:00"/>
             <recordTarget>
@@ -6182,7 +6182,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:BoneChemistry" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-10-23T12-43-39.407Z-CityEHR-Message-BoneChemistry-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Bone Chemistry Results"/>
             <effectiveTime value="2007-03-06T00:00:00"/>
             <recordTarget>
@@ -6377,7 +6377,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <typeId extension="#CityEHR:Message:LabData" root="#CityEHR:Message"/>
             <templateId extension="#ISO-13606:Folder:Rheumatology" root="#ISO-13606:EHR_Extract:cityEHR"/>
-            <id extension="timeStamp" root="cityEHR"/>
+            <id extension="2017-11-23T12-43-39.407Z-CityEHR-Message-LabData-admin" root="cityEHR"/>
             <code code="" codeSystem="cityEHR" displayName="Laboratory Test Results"/>
             <effectiveTime value="2007-03-06T00:00:00"/>
             <recordTarget>

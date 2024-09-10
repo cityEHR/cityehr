@@ -38,14 +38,20 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
-    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
 
     <!-- ========= HTML Head - Includes the Xforms Model ========= 
         ========================================================= -->
@@ -61,7 +67,8 @@
 
         <!-- Stylesheet -->
         <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
+            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
+            media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
@@ -206,7 +213,8 @@
                 </event>
                 ============================================== -->
 
-            <xf:instance id="patientEventsXQuery-instance" src="oxf:/apps/ehr/xquery/patientEventsXQuery.xml"/>
+            <xf:instance id="patientEventsXQuery-instance"
+                src="oxf:/apps/ehr/xquery/patientEventsXQuery.xml"/>
 
             <xf:instance id="storedEvents-instance">
                 <compositions/>
@@ -241,17 +249,20 @@
                      Use the storedEvents-instance sorted by effectiveTime (order by in the xquery is lost in dal-query)
                      We eventually want the lists descending, but this will sort ascending because the xf:insert reverses the order.
                      The insert into categories will reverse the order back to descending -->
-                <xf:action xxf:iterate="xxf:sort(xxf:instance('storedEvents-instance')/event,effectiveTime,'text','descending')">
+                <xf:action
+                    xxf:iterate="xxf:sort(xxf:instance('storedEvents-instance')/event,effectiveTime,'text','descending')">
                     <xxf:variable name="storedEvent" select="."/>
 
                     <!-- Annotation -->
                     <xf:action if="$storedEvent/compositionTypeIRI='#CityEHR:Annotation'">
-                        <xf:insert context="xxf:instance('patientAnnotationsList-instance')" origin="$storedEvent"/>
+                        <xf:insert context="xxf:instance('patientAnnotationsList-instance')"
+                            origin="$storedEvent"/>
                     </xf:action>
 
                     <!-- Not an Annotation -->
                     <xf:action if="not($storedEvent/compositionTypeIRI='#CityEHR:Annotation')">
-                        <xf:insert context="xxf:instance('patientEventsList-instance')" origin="$storedEvent"/>
+                        <xf:insert context="xxf:instance('patientEventsList-instance')"
+                            origin="$storedEvent"/>
                     </xf:action>
                 </xf:action>
             </xf:action>
@@ -288,7 +299,8 @@
                 <xf:delete nodeset="xxf:instance('html-instance')/*"/>
 
                 <!-- Clear the page display name -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName" value="''"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
+                    value="''"/>
 
                 <!-- Clear annotations -->
                 <xf:delete nodeset="xxf:instance('annotations-instance')/*"/>
@@ -301,27 +313,40 @@
             <!--  Application defined action to set the current event details -->
             <xf:action ev:event="set-currentEvent">
                 <xxf:variable name="categorySet" select="event('categorySet')"/>
-                <xxf:variable name="currentEvent" select="if (exists(event('currentEvent'))) then event('currentEvent') else $categorySet//event[1] "/>
+                <xxf:variable name="currentEvent"
+                    select="if (exists(event('currentEvent'))) then event('currentEvent') else $categorySet//event[1] "/>
 
                 <xf:action if="exists($currentEvent)">
                     <!-- Set the event category - this is the parent node of the currentEvent  -->
                     <xxf:variable name="currentEventCategory" select="$currentEvent/.."/>
-                    <xf:setvalue ref="$categorySet/@currentEventCategory" value="$currentEventCategory/@id"/>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList" value="'true'"/>
+                    <xf:setvalue ref="$categorySet/@currentEventCategory"
+                        value="$currentEventCategory/@id"/>
+                    <xf:setvalue
+                        ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                        value="'true'"/>
 
                     <!-- Set details of the currentEvent -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/handle" value="$currentEvent/handle"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/compositionHandle" value="$currentEvent/compositionHandle"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/compositionTypeIRI" value="$currentEvent/compositionTypeIRI"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/compositionIRI" value="$currentEvent/compositionIRI"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/effectiveTime" value="$currentEvent/effectiveTime"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/displayName" value="$currentEvent/displayName"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/handle"
+                        value="$currentEvent/handle"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/currentEvent/compositionHandle"
+                        value="$currentEvent/compositionHandle"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/currentEvent/compositionTypeIRI"
+                        value="$currentEvent/compositionTypeIRI"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/compositionIRI"
+                        value="$currentEvent/compositionIRI"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/effectiveTime"
+                        value="$currentEvent/effectiveTime"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/currentEvent/displayName"
+                        value="$currentEvent/displayName"/>
 
                     <!-- Load the current event -->
                     <xf:dispatch name="load-cityEHR-event" target="main-model"/>
 
                     <!-- Set the event handle in the categorySet -->
-                    <xf:setvalue ref="$categorySet/@currentEventHandle" value="$currentEvent/compositionHandle"/>
+                    <xf:setvalue ref="$categorySet/@currentEventHandle"
+                        value="$currentEvent/compositionHandle"/>
                 </xf:action>
 
                 <!-- No event  - clear the currentEvent -->
@@ -338,7 +363,8 @@
                 <!-- Load the current event to event-instance -->
                 <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
                     <xxf:context name="system" select="'ehr'"/>
-                    <xxf:context name="storageLocation" select="xxf:instance('control-instance')/currentEvent/handle"/>
+                    <xxf:context name="storageLocation"
+                        select="xxf:instance('control-instance')/currentEvent/handle"/>
                     <xxf:context name="resource" select="xxf:instance('event-instance')"/>
                     <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
                 </xf:dispatch>
@@ -369,9 +395,10 @@
                         <cda:id extension="storageId"/>
                         </cda:serviceEvent>
                     </cda:documentationOf>    
-                --> 
+                -->
                 <xf:dispatch name="get-storedAnnotations" target="annotation-model">
-                    <xxf:context name="compositionId" select="xxf:instance('control-instance')/currentEvent/storageId"/>
+                    <xxf:context name="compositionId"
+                        select="xxf:instance('control-instance')/currentEvent/storageId"/>
                 </xf:dispatch>
 
                 <!-- If this event has annotations set, then make sure they are displayed -->
@@ -400,24 +427,29 @@
                   . -->
             <xf:action ev:event="initialise-annotationSet">
                 <!-- Get the list of annotations types recorded for this patient -->
-                <xxf:variable name="annotationList" select="xxf:instance('patientAnnotationsList-instance')/event"/>
+                <xxf:variable name="annotationList"
+                    select="xxf:instance('patientAnnotationsList-instance')/event"/>
 
                 <!-- Set up the annotations category.
                      Displayname is set (configurable) in view-parameters
                      Set the current selected composition (composition type) to the all events category
                      And make sure the expanded category is shown when the page is loaded - 
                      showViewNavigationItemList determines whether a category is expanded or not. -->
-                <xxf:variable name="allAnnotationsCategory" select="xxf:instance('control-instance')/allAnnotationsCategory/eventCategory"/>
+                <xxf:variable name="allAnnotationsCategory"
+                    select="xxf:instance('control-instance')/allAnnotationsCategory/eventCategory"/>
                 <xf:setvalue ref="$allAnnotationsCategory/@displayName"
                     value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/allAnnotations"/>
 
                 <xf:delete nodeset="xxf:instance('control-instance')/annotationSet/*"/>
-                <xf:insert context="xxf:instance('control-instance')/annotationSet" origin="$allAnnotationsCategory"/>
+                <xf:insert context="xxf:instance('control-instance')/annotationSet"
+                    origin="$allAnnotationsCategory"/>
 
                 <!-- Insert all annotations -->
                 <xf:action xxf:iterate="$annotationList">
                     <xxf:variable name="annotation" select="."/>
-                    <xf:insert context="xxf:instance('control-instance')/annotationSet/eventCategory" origin="$annotation"/>
+                    <xf:insert
+                        context="xxf:instance('control-instance')/annotationSet/eventCategory"
+                        origin="$annotation"/>
                 </xf:action>
 
             </xf:action>
@@ -434,24 +466,30 @@
             -->
             <xf:action ev:event="initialise-compositionSet">
                 <!-- Get the list of composition types recorded for this patient -->
-                <xxf:variable name="eventList" select="xxf:instance('patientEventsList-instance')/event"/>
-                <xxf:variable name="compositionIRIList" select="distinct-values($eventList/compositionIRI)"/>
+                <xxf:variable name="eventList"
+                    select="xxf:instance('patientEventsList-instance')/event"/>
+                <xxf:variable name="compositionIRIList"
+                    select="distinct-values($eventList/compositionIRI)"/>
 
                 <!-- Set up the 'All Events' category.
                      Displayname is set (configurable) in view-parameters
                      Set the current selected composition (composition type) to the all events category
                      And make sure the expanded category is shown when the page is loaded - 
                      showViewNavigationItemList determines whether a category is expanded or not. -->
-                <xxf:variable name="allEventsCategory" select="xxf:instance('control-instance')/allEventsCategory/eventCategory"/>
+                <xxf:variable name="allEventsCategory"
+                    select="xxf:instance('control-instance')/allEventsCategory/eventCategory"/>
                 <xf:setvalue ref="$allEventsCategory/@displayName"
                     value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/allEventsCategory"/>
 
                 <xf:delete nodeset="xxf:instance('control-instance')/compositionSet/*"/>
-                <xf:insert context="xxf:instance('control-instance')/compositionSet" origin="$allEventsCategory"/>
+                <xf:insert context="xxf:instance('control-instance')/compositionSet"
+                    origin="$allEventsCategory"/>
 
                 <xf:action xxf:iterate="$eventList">
                     <xxf:variable name="event" select="."/>
-                    <xf:insert context="xxf:instance('control-instance')/compositionSet/eventCategory" origin="$event"/>
+                    <xf:insert
+                        context="xxf:instance('control-instance')/compositionSet/eventCategory"
+                        origin="$event"/>
                 </xf:action>
 
                 <!-- Set up composition types, for this patient.
@@ -460,7 +498,8 @@
                 <xf:delete nodeset="xxf:instance('control-instance')/eventCategoryList/*"/>
                 <xf:action xxf:iterate="$compositionIRIList">
                     <xxf:variable name="compositionIRI" select="."/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/eventCategory/@id" value="$compositionIRI"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/eventCategory/@id"
+                        value="$compositionIRI"/>
 
                     <!-- Get displayName and rank from the dictionary, but important to still display the event even if its type is no longer in the dictionary -->
                     <xxf:variable name="dictionaryComposition"
@@ -473,10 +512,12 @@
                     <!-- Set rank, displayName and count, then add to the composition set -->
                     <xf:setvalue ref="xxf:instance('control-instance')/eventCategory/@displayName"
                         value="if ($dictionaryDisplayName!='') then $dictionaryDisplayName else xxf:instance('patientEventsList-instance')/event[compositionIRI=$compositionIRI][1]/displayName"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/eventCategory/@rank" value="$compositionRank"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/eventCategory/@rank"
+                        value="$compositionRank"/>
 
                     <!-- Insert eventCategory into eventCategoryList -->
-                    <xf:insert context="xxf:instance('control-instance')/eventCategoryList" origin="xxf:instance('control-instance')/eventCategory"/>
+                    <xf:insert context="xxf:instance('control-instance')/eventCategoryList"
+                        origin="xxf:instance('control-instance')/eventCategory"/>
                 </xf:action>
 
                 <!-- Set up events by composition type, for this patient.
@@ -493,8 +534,8 @@
                     </xf:action>
 
                     <!-- Add the category to the compositionSet -->
-                    <xf:insert context="xxf:instance('control-instance')/compositionSet" nodeset="*" origin="$eventCategory" at="last()"
-                        position="after"/>
+                    <xf:insert context="xxf:instance('control-instance')/compositionSet" nodeset="*"
+                        origin="$eventCategory" at="last()" position="after"/>
 
                 </xf:action>
 
@@ -507,15 +548,18 @@
             <!--  Application defined action to initialise the lifeLine. -->
             <xf:action ev:event="initialise-lifeLine">
                 <xxf:variable name="eventList" select="xxf:instance('storedEvents-instance')/event"/>
-                <xxf:variable name="eventCategory" select="xxf:instance('control-instance')/eventCategory"/>
+                <xxf:variable name="eventCategory"
+                    select="xxf:instance('control-instance')/eventCategory"/>
 
                 <!-- Get the range of dates for events (as duration).
                      Use the date, which is the first 10 characters of the string -->
                 <xxf:variable name="eventDates"
                     select="$eventList/effectiveTime[. castable as xs:date or . castable as xs:dateTime]/substring(.,1,10)"/>
 
-                <xxf:variable name="minDate" select="if (count($eventDates) gt 0) then min($eventDates) else ''"/>
-                <xxf:variable name="maxDate" select="if (count($eventDates) gt 0) then max($eventDates) else ''"/>
+                <xxf:variable name="minDate"
+                    select="if (count($eventDates) gt 0) then min($eventDates) else ''"/>
+                <xxf:variable name="maxDate"
+                    select="if (count($eventDates) gt 0) then max($eventDates) else ''"/>
                 <xxf:variable name="dateRangeDuration"
                     select="if (($minDate castable as xs:date) and ($maxDate castable as xs:date)) then xs:date($maxDate) - xs:date($minDate) else 'P0D'"/>
                 <xxf:variable name="dateRangeDays" select="days-from-duration($dateRangeDuration)"/>
@@ -523,31 +567,37 @@
                 <!-- Create time intervals for the lifeLine -->
                 <xxf:variable name="intervalCount"
                     select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/lifeLine/@intervalCount"/>
-                <xxf:variable name="intervalDays" select="ceiling($dateRangeDays div $intervalCount)"/>
+                <xxf:variable name="intervalDays"
+                    select="ceiling($dateRangeDays div $intervalCount)"/>
                 <xxf:variable name="intervalDuration" select="concat('P',$intervalDays,'D')"/>
 
                 <!-- Create categories - must have a minDate -->
                 <xf:action if="$minDate != ''" xxf:iterate="1 to $intervalCount">
                     <xxf:variable name="intervalStep" select="."/>
 
-                    <xxf:variable name="endDate" select="xs:date($minDate) + (xs:integer($intervalStep) * xs:dayTimeDuration($intervalDuration))"/>
-                    <xxf:variable name="startDate" select="xs:date($endDate) - xs:dayTimeDuration($intervalDuration)"/>
+                    <xxf:variable name="endDate"
+                        select="xs:date($minDate) + (xs:integer($intervalStep) * xs:dayTimeDuration($intervalDuration))"/>
+                    <xxf:variable name="startDate"
+                        select="xs:date($endDate) - xs:dayTimeDuration($intervalDuration)"/>
 
                     <xf:setvalue ref="$eventCategory/@id" value="$intervalStep"/>
-                    <xf:setvalue ref="$eventCategory/@displayName" value="concat($startDate, ' - ', $endDate)"/>
+                    <xf:setvalue ref="$eventCategory/@displayName"
+                        value="concat($startDate, ' - ', $endDate)"/>
                     <xf:setvalue ref="$eventCategory/@startDate" value="$startDate"/>
                     <xf:setvalue ref="$eventCategory/@endDate" value="$endDate"/>
                     <xf:setvalue ref="$eventCategory/@id" value="$intervalStep"/>
 
                     <xf:delete nodeset="$eventCategory/*"/>
                     <!-- Add the events to this category -->
-                    <xf:action xxf:iterate="$eventList[effectiveTime ge xs:string($startDate) and effectiveTime lt xs:string($endDate)]">
+                    <xf:action
+                        xxf:iterate="$eventList[effectiveTime ge xs:string($startDate) and effectiveTime lt xs:string($endDate)]">
                         <xxf:variable name="event" select="."/>
                         <xf:insert context="$eventCategory" origin="$event"/>
                     </xf:action>
 
                     <!-- Add the category to the lifeLine -->
-                    <xf:insert context="xxf:instance('control-instance')/lifeLine" nodeset="*" origin="$eventCategory" at="last()" position="after"/>
+                    <xf:insert context="xxf:instance('control-instance')/lifeLine" nodeset="*"
+                        origin="$eventCategory" at="last()" position="after"/>
 
                 </xf:action>
 
@@ -563,16 +613,20 @@
                 <!-- Load dictionary for current specialty
                      This is language dependent -->
                 <xf:dispatch name="load-dictionary" target="dictionary-model">
-                    <xxf:context name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
-                    <xxf:context name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
-                    <xxf:context name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+                    <xxf:context name="specialtyIRI"
+                        select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                    <xxf:context name="languageCode"
+                        select="xxf:instance('session-parameters-instance')/languageCode"/>
+                    <xxf:context name="baseLanguageCode"
+                        select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
                 </xf:dispatch>
 
                 <!-- Set the Care Setting.
                      careSettingIRI is passed in view-parameters, but use the default if it is not set -->
                 <xxf:variable name="careSetting"
                     select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI"
+                    value="$careSetting/@code"/>
 
 
                 <!-- Set the care teams and care team users -->
@@ -583,10 +637,12 @@
                 </xf:dispatch>
 
                 <!-- Set the initial view navigation type -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'events'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType"
+                    value="'events'"/>
 
                 <!-- Expand composition selection view if specified -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                <xf:setvalue
+                    ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
                     value="xxf:instance('view-parameters-instance')/pageInformation/page[@page=xxf:instance('view-parameters-instance')/page]/@showViewNavigationItemList"/>
 
                 <!-- Load all compositions for current patient
@@ -614,7 +670,8 @@
 
                 <!-- Set the current event -->
                 <xf:dispatch name="set-currentEvent" target="main-model">
-                    <xxf:context name="categorySet" select="xxf:instance('control-instance')/compositionSet"/>
+                    <xxf:context name="categorySet"
+                        select="xxf:instance('control-instance')/compositionSet"/>
                     <xxf:context name="currentEvent" select="$selectedEvent"/>
                 </xf:dispatch>
 
@@ -660,20 +717,23 @@
                     calculate="if (exists(xxf:instance('annotations-instance')/annotation)) then 'show' else 'hidden'"/>
                 <!-- Show XML only when debugging -->
                 <xf:bind nodeset="action[@id='xml']/@display"
-                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
+                />
             </xf:bind>
 
 
             <!-- Application defined action when view navigation type changes -->
             <xf:action ev:event="viewNavigationTypeChanged">
-                <xxf:variable name="viewNavigationType" select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
+                <xxf:variable name="viewNavigationType"
+                    select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
 
                 <!-- Category set of events for annotations, lifeLine or (default) events -->
                 <xxf:variable name="categorySet"
                     select="if ($viewNavigationType = 'annotations') then xxf:instance('control-instance')/annotationSet else if ($viewNavigationType = 'lifeLine') then xxf:instance('control-instance')/lifeLine else xxf:instance('control-instance')/compositionSet"/>
 
                 <!-- Get current event recorded for the categorySet -->
-                <xxf:variable name="currentEventCategory" select="$categorySet/@currentEventCategory"/>
+                <xxf:variable name="currentEventCategory"
+                    select="$categorySet/@currentEventCategory"/>
                 <xxf:variable name="currentEventHandle" select="$categorySet/@currentEventHandle"/>
                 <xxf:variable name="currentEvent"
                     select="$categorySet/eventCategory[@id=$currentEventCategory]/event[compositionHandle=$currentEventHandle][1]"/>
@@ -698,7 +758,8 @@
 
             <!-- Application defined action to toggle the display of annotations on/off -->
             <xf:action ev:event="annotations">
-                <xf:setvalue ref="xxf:instance('control-instance')/showAnnotations" value="if (.='true') then 'false' else 'true'"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/showAnnotations"
+                    value="if (.='true') then 'false' else 'true'"/>
             </xf:action>
 
             <!-- Application defined action to save the annotations.
@@ -707,7 +768,8 @@
 
                 <!-- Save annotations as HL7 CDA -->
                 <xf:dispatch name="save-annotations" target="annotation-model">
-                    <xxf:context name="currentEvent" select="xxf:instance('control-instance')/currentEvent"/>
+                    <xxf:context name="currentEvent"
+                        select="xxf:instance('control-instance')/currentEvent"/>
                 </xf:dispatch>
 
                 <!-- Finally reload the annotations so that the newly saved annotations are in the stored annotations list.
@@ -725,7 +787,8 @@
                 <!-- Set externalId for the patient -->
                 <xf:dispatch name="set-externalId" target="pageNavigation-model">
                     <xxf:context name="type" select="'patient'"/>
-                    <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+                    <xxf:context name="externalId"
+                        select="xxf:instance('view-parameters-instance')/externalId"/>
                 </xf:dispatch>
 
                 <xf:dispatch name="print-html" target="pageNavigation-model"/>
@@ -744,9 +807,12 @@
 
                 <!-- Set the Word template to use as the base for conversion.
                      The template location is relative to staticFileRoot -->
-                <xxf:variable name="compositionIRI" select="xxf:instance('control-instance')/currentEvent/compositionIRI"/>
-                <xxf:variable name="templatePath" select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
-                <xxf:variable name="templateList" select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
+                <xxf:variable name="compositionIRI"
+                    select="xxf:instance('control-instance')/currentEvent/compositionIRI"/>
+                <xxf:variable name="templatePath"
+                    select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
+                <xxf:variable name="templateList"
+                    select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
                 <xxf:variable name="template"
                     select="if ($templateList/template[@compositionIRI=$compositionIRI]) then $templateList/template[@compositionIRI=$compositionIRI]/@template else $templateList/@template"/>
 
@@ -764,7 +830,8 @@
                  Uses action from the exportData-model-->
             <xf:action ev:event="exportAll">
                 <xf:dispatch name="export-patientSet" target="exportData-model">
-                    <xxf:context name="patientSet" select="xxf:instance('view-parameters-instance')/patientId"/>
+                    <xxf:context name="patientSet"
+                        select="xxf:instance('view-parameters-instance')/patientId"/>
                     <xxf:context name="transformationXSL" select="''"/>
                 </xf:dispatch>
             </xf:action>
@@ -773,10 +840,20 @@
             <!-- Application defined action to export the current event.
                  Uses action from the pageNavigation-model -->
             <xf:action ev:event="export">
+
+                <xxf:variable name="exportFormat"
+                    select="xxf:instance('viewControls-input-instance')/select[@id='exportFormat']/@value"/>
+
+                <xxf:variable name="transformationXSL"
+                    select="xxf:instance('system-parameters-instance')/staticParameters/cdaTransformation/transform[@format=$exportFormat]/@transformationXSL"/>
+                
                 <xf:dispatch name="export-xmlHandle" target="pageNavigation-model">
-                    <xxf:context name="exportHandle" select="xxf:instance('control-instance')/currentEvent/handle"/>
-                    <xxf:context name="exportName" select="xxf:instance('control-instance')/currentEvent/storageId"/>
+                    <xxf:context name="exportHandle"
+                        select="xxf:instance('control-instance')/currentEvent/handle"/>
+                    <xxf:context name="exportName"
+                        select="xxf:instance('control-instance')/currentEvent/storageId"/>
                     <xxf:context name="exportType" select="'xml'"/>
+                    <xxf:context name="transformationXSL" select="$transformationXSL"/>
                 </xf:dispatch>
 
             </xf:action>
@@ -834,7 +911,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'landscape'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'landscape'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -854,10 +933,12 @@
                             Events are displayed by time slots, distributed evenly over the life of the patient
                          -->
                     <!-- Composition type list only has compositions that have an instance in this patient's record -->
-                    <xxf:variable name="viewNavigationType" select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
+                    <xxf:variable name="viewNavigationType"
+                        select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
                     <xxf:variable name="categorySet"
                         select="if ($viewNavigationType='lifeLine') then xxf:instance('control-instance')/lifeLine else if ($viewNavigationType='annotations') then xxf:instance('control-instance')/annotationSet else xxf:instance('control-instance')/compositionSet"/>
-                    <xxf:variable name="currentCategoryId" select="$categorySet/@currentEventCategory"/>
+                    <xxf:variable name="currentCategoryId"
+                        select="$categorySet/@currentEventCategory"/>
 
                     <!-- Show list of events in this record for each category.
                          Note that in cityEHRFolder-Events, composition refers to the type of composition in the model,
@@ -882,17 +963,21 @@
                             <!-- Action when category is selected -->
                             <xf:action ev:event="DOMActivate">
                                 <!-- Toggle display of viewNavigationItemList on currently selected viewNavigationItem -->
-                                <xxf:variable name="selectedCategory" select="$categorySet/*[index('category-repeat')]"/>
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
+                                <xxf:variable name="selectedCategory"
+                                    select="$categorySet/*[index('category-repeat')]"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
                                     value="if ($selectedCategory/@id=$currentCategoryId and .='true') then 'false'  else 'true'"/>
 
                                 <!-- Set the current categoryId and displayName.
                                      Use category for the current view navigation type -->
-                                <xf:setvalue ref="$categorySet/@currentEventCategory" value="$selectedCategory/@id"/>
+                                <xf:setvalue ref="$categorySet/@currentEventCategory"
+                                    value="$selectedCategory/@id"/>
 
                                 <!-- If viewNavigationItemList is true, then set the currentEvent
                                      Set first event in list as the current event and load it -->
-                                <xf:action if="xxf:instance('view-parameters-instance')/showViewNavigationItemList = 'true'">
+                                <xf:action
+                                    if="xxf:instance('view-parameters-instance')/showViewNavigationItemList = 'true'">
                                     <xxf:variable name="selectedEvent" select="$eventList[1]"/>
                                     <!-- Set the current event (handles case where event does not exist)-->
                                     <xf:dispatch name="set-currentEvent" target="main-model">
@@ -902,7 +987,8 @@
                                 </xf:action>
 
                                 <!-- If viewNavigationItemList is false, then clear the currentEvent -->
-                                <xf:action if="xxf:instance('view-parameters-instance')/showViewNavigationItemList != 'true'">
+                                <xf:action
+                                    if="xxf:instance('view-parameters-instance')/showViewNavigationItemList != 'true'">
                                     <!-- Clear the current event -->
                                     <xf:dispatch name="clear-currentEvent" target="main-model"/>
                                 </xf:action>
@@ -937,7 +1023,8 @@
                                 <!-- Action when event is selected -->
                                 <xf:action ev:event="DOMActivate">
                                     <!-- Set the current event -->
-                                    <xxf:variable name="selectedEvent" select="$selectableEventList[index('event-repeat')]"/>
+                                    <xxf:variable name="selectedEvent"
+                                        select="$selectableEventList[index('event-repeat')]"/>
                                     <xf:dispatch name="set-currentEvent" target="main-model">
                                         <xxf:context name="categorySet" select="$categorySet"/>
                                         <xxf:context name="currentEvent" select="$selectedEvent"/>
@@ -952,8 +1039,10 @@
                             <xf:repeat nodeset="$contentsList">
                                 <xxf:variable name="sectionCount" select="position()"/>
                                 <xxf:variable name="sectionTitle" select="./cda:title"/>
-                                <xxf:variable name="crossRef" select="concat('''Composition-1-Section-',string($sectionCount),'''')"/>
-                                <xhtml:span class="contentIndex" onclick="javascript:scrollToElement({$crossRef})">
+                                <xxf:variable name="crossRef"
+                                    select="concat('''Composition-1-Section-',string($sectionCount),'''')"/>
+                                <xhtml:span class="contentIndex"
+                                    onclick="javascript:scrollToElement({$crossRef})">
                                     <xf:output ref="$sectionTitle"/>
                                 </xhtml:span>
                             </xf:repeat>
@@ -986,7 +1075,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'portrait'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'portrait'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -1004,7 +1095,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandInfo']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/ehrInfoLayout" value="''"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/ehrInfoLayout"
+                                    value="''"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -1022,7 +1115,8 @@
                             select="if (xxf:instance('view-parameters-instance')/viewNavigationType='lifeLine') then 'lifeLine' else 'hidden'"/>
 
                         <xhtml:div class="{$lifeLineClass}">
-                            <xf:repeat nodeset="xxf:instance('control-instance')/lifeLine/eventCategory">
+                            <xf:repeat
+                                nodeset="xxf:instance('control-instance')/lifeLine/eventCategory">
                                 <xxf:variable name="timeSlot" select="."/>
                                 <xhtml:div class="lifeLineSlot">
                                     <xf:repeat nodeset="$timeSlot/event">
@@ -1031,11 +1125,14 @@
                                             select="if ($event/effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($event/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $event/effectiveTime"/>
                                         <xf:trigger appearance="minimal" class="lifeLineEvent">
                                             <xf:label ref="'&#9632;'"/>
-                                            <xf:hint ref="concat($eventTimeDisplay,' ',$event/displayName)"/>
+                                            <xf:hint
+                                                ref="concat($eventTimeDisplay,' ',$event/displayName)"/>
                                             <xf:action ev:event="DOMActivate">
-                                                <xf:dispatch name="set-currentEvent" target="main-model">
-                                                    <xxf:context name="categorySet" select="xxf:instance('control-instance')/lifeLine"/>
-                                                    <xxf:context name="currentEvent" select="$event"/>
+                                                <xf:dispatch name="set-currentEvent"
+                                                  target="main-model">
+                                                  <xxf:context name="categorySet"
+                                                  select="xxf:instance('control-instance')/lifeLine"/>
+                                                  <xxf:context name="currentEvent" select="$event"/>
                                                 </xf:dispatch>
                                             </xf:action>
                                         </xf:trigger>
@@ -1071,7 +1168,8 @@
                             -->
                                 <xf:action ev:event="DOMActivate" xxf:if="$linkedEventIRI!=''">
                                     <xf:dispatch name="set-currentEvent" target="main-model">
-                                        <xxf:context name="categorySet" select="xxf:instance('control-instance')/compositionSet"/>
+                                        <xxf:context name="categorySet"
+                                            select="xxf:instance('control-instance')/compositionSet"/>
                                         <xxf:context name="currentEvent" select="$linkedEvent"/>
                                     </xf:dispatch>
                                 </xf:action>
@@ -1090,17 +1188,22 @@
                         -->
 
                         <!-- Set up variables for displaying and processing annotations -->
-                        <xxf:variable name="notificationActions" select="xxf:instance('view-parameters-instance')/notifications/notificationActions"/>
+                        <xxf:variable name="notificationActions"
+                            select="xxf:instance('view-parameters-instance')/notifications/notificationActions"/>
                         <xxf:variable name="annotationTemplate"
                             select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/annotation"/>
 
                         <!-- New annotations -->
-                        <xxf:variable name="annotationsSet" select="xxf:instance('annotations-instance')"/>
-                        <xxf:variable name="annotationsCount" select="count($annotationsSet/annotation)"/>
+                        <xxf:variable name="annotationsSet"
+                            select="xxf:instance('annotations-instance')"/>
+                        <xxf:variable name="annotationsCount"
+                            select="count($annotationsSet/annotation)"/>
 
                         <!-- Stored annotations -->
-                        <xxf:variable name="storedAnnotationsSet" select="xxf:instance('stored-annotations-instance')"/>
-                        <xxf:variable name="storedAnnotationsCount" select="count($storedAnnotationsSet/annotation)"/>
+                        <xxf:variable name="storedAnnotationsSet"
+                            select="xxf:instance('stored-annotations-instance')"/>
+                        <xxf:variable name="storedAnnotationsCount"
+                            select="count($storedAnnotationsSet/annotation)"/>
 
                         <!-- Show annotations if user has selected showAnnotations but only for events and only if one os selected -->
                         <xxf:variable name="annotationsDisplayClass"
@@ -1111,16 +1214,21 @@
                             <!-- Button to add new annotation -->
                             <xf:trigger appearance="minimal">
                                 <xf:label>
-                                    <img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/add.png"/>
+                                    <img
+                                        src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/add.png"
+                                    />
                                 </xf:label>
                                 <xf:hint>
-                                    <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/addAnnotationsHint"
+                                    <xf:output
+                                        ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/addAnnotationsHint"
                                     />
                                 </xf:hint>
                                 <xf:action ev:event="DOMActivate">
                                     <!-- Add new annotation -->
                                     <xf:dispatch name="add-annotation" target="annotation-model">
-                                        <xxf:context name="eventStorageId" select="xxf:instance('control-instance')/currentEvent/storageId"/>
+                                        <xxf:context name="eventStorageId"
+                                            select="xxf:instance('control-instance')/currentEvent/storageId"
+                                        />
                                     </xf:dispatch>
                                     <!-- Make sure save button is displayed -->
                                     <xf:recalculate model="viewControlsActions-model"/>
@@ -1142,10 +1250,12 @@
                         -->
 
                             <!-- Get the columns to display for parameters -->
-                            <xxf:variable name="annotationsParameters" select="$annotationTemplate/parameterSet/parameter/@id"/>
+                            <xxf:variable name="annotationsParameters"
+                                select="$annotationTemplate/parameterSet/parameter/@id"/>
                             <xxf:variable name="storedAnnotationsParameters"
                                 select="distinct-values($storedAnnotationsSet/annotation/parameterSet/parameter/@id)"/>
-                            <xxf:variable name="allParameters" select="distinct-values(($annotationsParameters,$storedAnnotationsParameters))"/>
+                            <xxf:variable name="allParameters"
+                                select="distinct-values(($annotationsParameters,$storedAnnotationsParameters))"/>
 
 
                             <!-- New annotations -->
@@ -1177,13 +1287,16 @@
                                         </xf:repeat>
                                         <!-- Notifications -->
                                         <xhtml:th align="left">
-                                            <xf:output ref="$annotationTemplate/notification/@label"/>
+                                            <xf:output ref="$annotationTemplate/notification/@label"
+                                            />
                                         </xhtml:th>
                                         <xhtml:th align="left">
-                                            <xf:output ref="$annotationTemplate/notifyActor/@label"/>
+                                            <xf:output ref="$annotationTemplate/notifyActor/@label"
+                                            />
                                         </xhtml:th>
                                         <xhtml:th align="left">
-                                            <xf:output ref="$annotationTemplate/effectiveTime/@label"/>
+                                            <xf:output
+                                                ref="$annotationTemplate/effectiveTime/@label"/>
                                         </xhtml:th>
                                     </xhtml:tr>
                                 </xhtml:thead>
@@ -1200,20 +1313,23 @@
                                             <!-- First cell allows delete of new annotations (i.e. annotations added in this session) -->
                                             <xhtml:td>
                                                 <xf:trigger appearance="minimal">
-                                                    <xf:label>
-                                                        <xhtml:img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/remove.png" />
-                                                    </xf:label>
-                                                    <xf:action ev:event="DOMActivate">
-                                                        <xf:delete nodeset="$annotation"/>
-                                                        <!-- Make sure save button is displayed -->
-                                                        <xf:recalculate model="viewControlsActions-model"/>
-                                                    </xf:action>
+                                                  <xf:label>
+                                                  <xhtml:img
+                                                  src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/remove.png"
+                                                   />
+                                                  </xf:label>
+                                                  <xf:action ev:event="DOMActivate">
+                                                  <xf:delete nodeset="$annotation"/>
+                                                  <!-- Make sure save button is displayed -->
+                                                  <xf:recalculate model="viewControlsActions-model"
+                                                  />
+                                                  </xf:action>
                                                 </xf:trigger>
                                             </xhtml:td>
                                             <!-- Second cell is the authorTime (cannot be changed) -->
                                             <xhtml:td>
                                                 <xf:output
-                                                    ref="if ($annotation/authorTime/@value castable as xs:dateTime) then format-dateTime(xs:dateTime($annotation/authorTime/@value), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $annotation/authorTime/@value"
+                                                  ref="if ($annotation/authorTime/@value castable as xs:dateTime) then format-dateTime(xs:dateTime($annotation/authorTime/@value), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $annotation/authorTime/@value"
                                                 />
                                             </xhtml:td>
                                             <!-- Third cell is the author (cannot be changed) -->
@@ -1223,50 +1339,53 @@
                                             <!-- Other cells are for edit of parameters of the annotation. -->
                                             <xf:repeat nodeset="$allParameters">
                                                 <xxf:variable name="parameterId" select="."/>
-                                                <xxf:variable name="annotationElement" select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
+                                                <xxf:variable name="annotationElement"
+                                                  select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
                                                 <xxf:variable name="annotationElementType"
-                                                    select="if (exists($annotationElement)) then $annotationElement/@type else ''"/>
+                                                  select="if (exists($annotationElement)) then $annotationElement/@type else ''"/>
                                                 <xhtml:td>
-                                                    <!-- If the parameter model has changed then there may be stored annotations with parameters 
+                                                  <!-- If the parameter model has changed then there may be stored annotations with parameters 
                                                        which are not in the current model. so the cell may be blank -->
-                                                    <xf:group ref="$annotationElement">
-                                                        <!-- Element has selection list defined -->
-                                                        <xxf:variable name="selectionDisplayClass"
-                                                            select="if (exists($annotationElement/option)) then '' else 'hidden'"/>
-                                                        <xhtml:span class="{$selectionDisplayClass}">
-                                                            <xf:group ref="$annotationElement/option">
-                                                                <xf:select1 ref="$annotationElement/@value">
-                                                                    <xf:itemset nodeset="$annotationElement/option">
-                                                                        <xf:label ref="@displayName"/>
-                                                                        <xf:value ref="@value"/>
-                                                                    </xf:itemset>
-                                                                    <xf:action ev:event="xforms-value-changed">
-                                                                        <!-- First get the node that was selected -->
-                                                                        <xxf:variable name="optionValue" select="$annotationElement/@value"/>
-                                                                        <xxf:variable name="selectedOption"
-                                                                           select="$annotationElement/option[@value=$optionValue]"/>
-                                                                        <xf:setvalue ref="$annotationElement/@displayName"
-                                                                           value="$selectedOption/@displayName"/>
-                                                                    </xf:action>
-                                                                </xf:select1>
-                                                            </xf:group>
-                                                        </xhtml:span>
-                                                        <!-- Element is memo type -->
-                                                        <xxf:variable name="memoDisplayClass"
-                                                            select="if ($selectionDisplayClass='hidden' and $annotationElement/@type='memo') then '' else 'hidden'"/>
-                                                        <xhtml:span class="{$memoDisplayClass}">
-                                                            <xf:group ref="$annotationElement[@type='memo']">
-                                                                <xf:textarea ref="$annotationElement/@value" appearance="xxf:autosize"
-                                                                    style="width: 100%">
-                                                                    <xf:label/>
-                                                                </xf:textarea>
-                                                            </xf:group>
-                                                        </xhtml:span>
-                                                        <!-- Element is recognised XML type -->
-                                                        <xxf:variable name="simpleTypeDisplayClass"
-                                                            select="if ($selectionDisplayClass='hidden' and $memoDisplayClass='hidden') then '' else 'hidden'"/>
-                                                        <xf:input class="{$simpleTypeDisplayClass}" ref="$annotationElement/@value"/>
-                                                    </xf:group>
+                                                  <xf:group ref="$annotationElement">
+                                                  <!-- Element has selection list defined -->
+                                                  <xxf:variable name="selectionDisplayClass"
+                                                  select="if (exists($annotationElement/option)) then '' else 'hidden'"/>
+                                                  <xhtml:span class="{$selectionDisplayClass}">
+                                                  <xf:group ref="$annotationElement/option">
+                                                  <xf:select1 ref="$annotationElement/@value">
+                                                  <xf:itemset nodeset="$annotationElement/option">
+                                                  <xf:label ref="@displayName"/>
+                                                  <xf:value ref="@value"/>
+                                                  </xf:itemset>
+                                                  <xf:action ev:event="xforms-value-changed">
+                                                  <!-- First get the node that was selected -->
+                                                  <xxf:variable name="optionValue"
+                                                  select="$annotationElement/@value"/>
+                                                  <xxf:variable name="selectedOption"
+                                                  select="$annotationElement/option[@value=$optionValue]"/>
+                                                  <xf:setvalue ref="$annotationElement/@displayName"
+                                                  value="$selectedOption/@displayName"/>
+                                                  </xf:action>
+                                                  </xf:select1>
+                                                  </xf:group>
+                                                  </xhtml:span>
+                                                  <!-- Element is memo type -->
+                                                  <xxf:variable name="memoDisplayClass"
+                                                  select="if ($selectionDisplayClass='hidden' and $annotationElement/@type='memo') then '' else 'hidden'"/>
+                                                  <xhtml:span class="{$memoDisplayClass}">
+                                                  <xf:group ref="$annotationElement[@type='memo']">
+                                                  <xf:textarea ref="$annotationElement/@value"
+                                                  appearance="xxf:autosize" style="width: 100%">
+                                                  <xf:label/>
+                                                  </xf:textarea>
+                                                  </xf:group>
+                                                  </xhtml:span>
+                                                  <!-- Element is recognised XML type -->
+                                                  <xxf:variable name="simpleTypeDisplayClass"
+                                                  select="if ($selectionDisplayClass='hidden' and $memoDisplayClass='hidden') then '' else 'hidden'"/>
+                                                  <xf:input class="{$simpleTypeDisplayClass}"
+                                                  ref="$annotationElement/@value"/>
+                                                  </xf:group>
                                                 </xhtml:td>
                                             </xf:repeat>
 
@@ -1274,22 +1393,26 @@
                                             <!-- Type of notification - user, care tean, role (or empty) -->
                                             <xhtml:td>
                                                 <xf:select1 ref="$annotation/notification/@value">
-                                                    <xf:itemset nodeset="$notificationActions/option">
-                                                        <xf:label ref="@displayName"/>
-                                                        <xf:value ref="@value"/>
-                                                    </xf:itemset>
-                                                    <xf:action ev:event="xforms-value-changed">
-                                                        <!-- First get the node that was selected -->
-                                                        <xxf:variable name="notificationValue" select="$annotation/notification/@value"/>
-                                                        <xxf:variable name="notificationOption"
-                                                            select="$notificationActions/option[@value=$notificationValue]"/>
-                                                        <xf:setvalue ref="$annotation/notification/@displayName"
-                                                            value="$notificationOption/@displayName"/>
-                                                        <xxf:variable name="firstNotifyActor" select="$notifyActorSelectionList[1]"/>
-                                                        <!-- Set the value of the notifyActor (displayName will get set by the xforms-value-changed event below) -->
-                                                        <xf:setvalue ref="$annotation/notifyActor/@value"
-                                                            value="if (exists($firstNotifyActor)) then $firstNotifyActor/@value else ''"/>
-                                                    </xf:action>
+                                                  <xf:itemset nodeset="$notificationActions/option">
+                                                  <xf:label ref="@displayName"/>
+                                                  <xf:value ref="@value"/>
+                                                  </xf:itemset>
+                                                  <xf:action ev:event="xforms-value-changed">
+                                                  <!-- First get the node that was selected -->
+                                                  <xxf:variable name="notificationValue"
+                                                  select="$annotation/notification/@value"/>
+                                                  <xxf:variable name="notificationOption"
+                                                  select="$notificationActions/option[@value=$notificationValue]"/>
+                                                  <xf:setvalue
+                                                  ref="$annotation/notification/@displayName"
+                                                  value="$notificationOption/@displayName"/>
+                                                  <xxf:variable name="firstNotifyActor"
+                                                  select="$notifyActorSelectionList[1]"/>
+                                                  <!-- Set the value of the notifyActor (displayName will get set by the xforms-value-changed event below) -->
+                                                  <xf:setvalue ref="$annotation/notifyActor/@value"
+                                                  value="if (exists($firstNotifyActor)) then $firstNotifyActor/@value else ''"
+                                                  />
+                                                  </xf:action>
                                                 </xf:select1>
                                             </xhtml:td>
                                             <!-- Selection to notify actor is only shown if notification has a value.
@@ -1297,19 +1420,23 @@
                                                  If selection list is empty, then don't display it. -->
                                             <xhtml:td>
                                                 <xxf:variable name="notifyActorDisplayClass"
-                                                    select="if ($annotation/notification/@value!='' and not(empty($notifyActorSelectionList))) then '' else 'hidden'"/>
-                                                <xf:select1 class="{$notifyActorDisplayClass}" ref="$annotation/notifyActor/@value">
-                                                    <xf:itemset nodeset="$notifyActorSelectionList">
-                                                        <xf:label ref="@displayName"/>
-                                                        <xf:value ref="@value"/>
-                                                    </xf:itemset>
-                                                    <xf:action ev:event="xforms-value-changed">
-                                                        <!-- First get the node that was selected -->
-                                                        <xxf:variable name="notifyActorId" select="."/>
-                                                        <xxf:variable name="notifyActor" select="$notifyActorSelectionList[@value=$notifyActorId]"/>
-                                                        <xf:setvalue ref="$annotation/notifyActor/@displayName"
-                                                            value="if (exists($notifyActor)) then $notifyActor/@displayName else ''"/>
-                                                    </xf:action>
+                                                  select="if ($annotation/notification/@value!='' and not(empty($notifyActorSelectionList))) then '' else 'hidden'"/>
+                                                <xf:select1 class="{$notifyActorDisplayClass}"
+                                                  ref="$annotation/notifyActor/@value">
+                                                  <xf:itemset nodeset="$notifyActorSelectionList">
+                                                  <xf:label ref="@displayName"/>
+                                                  <xf:value ref="@value"/>
+                                                  </xf:itemset>
+                                                  <xf:action ev:event="xforms-value-changed">
+                                                  <!-- First get the node that was selected -->
+                                                  <xxf:variable name="notifyActorId" select="."/>
+                                                  <xxf:variable name="notifyActor"
+                                                  select="$notifyActorSelectionList[@value=$notifyActorId]"/>
+                                                  <xf:setvalue
+                                                  ref="$annotation/notifyActor/@displayName"
+                                                  value="if (exists($notifyActor)) then $notifyActor/@displayName else ''"
+                                                  />
+                                                  </xf:action>
                                                 </xf:select1>
                                             </xhtml:td>
                                             <!-- Effective time -->
@@ -1329,7 +1456,7 @@
                                             <!-- Second cell is the Author time -->
                                             <xhtml:td>
                                                 <xf:output
-                                                    ref="if ($annotation/authorTime/@value castable as xs:dateTime) then format-dateTime(xs:dateTime($annotation/authorTime/@value), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $annotation/authorTime/@value"
+                                                  ref="if ($annotation/authorTime/@value castable as xs:dateTime) then format-dateTime(xs:dateTime($annotation/authorTime/@value), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $annotation/authorTime/@value"
                                                 />
                                             </xhtml:td>
                                             <!-- Third cell is the author  -->
@@ -1339,22 +1466,25 @@
                                             <!-- One cell for each parameter -->
                                             <xf:repeat nodeset="$allParameters">
                                                 <xxf:variable name="parameterId" select="."/>
-                                                <xxf:variable name="annotationElement" select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
+                                                <xxf:variable name="annotationElement"
+                                                  select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
                                                 <xhtml:td>
-                                                    <xf:output
-                                                        ref="if (exists($annotationElement)) then (if ($annotationElement/@displayName!='') then $annotationElement/@displayName else $annotationElement/@value) else ''"
-                                                    />
+                                                  <xf:output
+                                                  ref="if (exists($annotationElement)) then (if ($annotationElement/@displayName!='') then $annotationElement/@displayName else $annotationElement/@value) else ''"
+                                                  />
                                                 </xhtml:td>
                                             </xf:repeat>
 
                                             <!-- Notifications -->
                                             <!-- Type of notification -->
                                             <xhtml:td>
-                                                <xf:output ref="$annotation/notification/@displayName"/>
+                                                <xf:output
+                                                  ref="$annotation/notification/@displayName"/>
                                             </xhtml:td>
                                             <!-- Actor -->
                                             <xhtml:td>
-                                                <xf:output ref="$annotation/notifyActor/@displayName"/>
+                                                <xf:output
+                                                  ref="$annotation/notifyActor/@displayName"/>
                                             </xhtml:td>
                                             <!-- Effective time -->
                                             <xhtml:td>
@@ -1379,7 +1509,8 @@
                 <xhtml:div id="viewDisplay">
 
                     <!-- Display the formatted event -->
-                    <xf:output ref="xxf:serialize(xxf:instance('html-instance'), 'html')" mediatype="text/html"/>
+                    <xf:output ref="xxf:serialize(xxf:instance('html-instance'), 'html')"
+                        mediatype="text/html"/>
 
                     <!-- Include filler so that sections at foot of composition can scroll to the top -->
                     <xi:include href="cityEHRFormFootPadding.xhtml"/>

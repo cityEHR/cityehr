@@ -52,7 +52,7 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<parameters type="system" cityEHR:edit="" date="" version="" databaseChecksum=""
+<parameters type="system" cityEHR:edit="replace" date="" version="" databaseChecksum=""
     baseLanguageCode="en-GB" languageCode="en-GB" xmlns=""
     xmlns:iso-13606="http://www.iso.org/iso-13606"
     xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -69,6 +69,7 @@
             <debug value="" xsi:type="xs:boolean"/>
             <auditLogRecording value="" xsi:type="xs:boolean"/>
             <useFormCache value="" xsi:type="xs:boolean"/>
+            <enableAPI value="" xsi:type="xs:boolean"/>
             <sessionPageLoad value="" xsi:type="xs:dayTimeDuration"/>
             <checkNodeStatus value="" xsi:type="xs:boolean"/>
             <language userSelection="" xsi:type="xs:boolean"/>
@@ -92,6 +93,9 @@
 
         <!-- Cache forms (recommended) value = true | false -->
         <useFormCache cityEHR:displayName="Cache Forms" value="false"/>
+
+        <!-- Enable API (recommended) value = true | false -->
+        <enableAPI cityEHR:displayName="API Access" value="false"/>
 
         <!-- Maximum time allowance for a page load.
          Must be castable as xs:dayTimeDuration 
@@ -120,11 +124,11 @@
         -->
 
     <coreParameters cityEHR:displayName="Core Parameters" cityEHR:edit="recovery">
-        
+
         <!-- Shipped resources configuration - waiting!completed!aborted -->
         <shippedResourcesConfiguration/>
-        
-        
+
+
         <!-- Database configuration.
              Parameters for the installed databases and how they are used by the cityEHR applications:
                 ehr
@@ -299,7 +303,7 @@
          For application-specific configuration see the application-parameters.xml files.
          ============================================================================================= -->
     <staticParameters cityEHR:displayName="Static Parameters">
-        
+
         <!-- System and configuration parameters display/edit -->
         <parametersDisplay cityEHR:displayName="System and configuration parameters display/edit">
             <fontScaleFactor value="1.5"/>
@@ -369,7 +373,7 @@
                     displayName="Load the default configuration (recommended) or start with an empty database."/>
                 <action label="Load Default Configuration" model="main-model"
                     event="load-default-configuration"/>
-                <action label="Use Empty Database" model="main-model" event="skip-default-configuration"/>
+                <action label="Skip" model="main-model" event="skip-default-configuration"/>
             </dialogue>
 
             <dialogue id="resumeSession">
@@ -652,19 +656,17 @@
                 <action label="Leave" model="pageNavigation-model" event="load-cityEHR-nextPage"/>
                 <action label="Cancel" model="dummy" event="do-nothing"/>
             </dialogue>
-            
+
             <dialogue id="loadNewComposition">
                 <title displayName="Load New Composition"/>
-                <message
-                    displayName="Load new composition - all unsaved data will be lost."/>
+                <message displayName="Load new composition - all unsaved data will be lost."/>
                 <action label="Load" model="main-model" event="load-new-composition"/>
                 <action label="Cancel" model="dummy" event="do-nothing"/>
             </dialogue>
-            
+
             <dialogue id="loadSavedComposition">
                 <title displayName="Load Saved Composition"/>
-                <message
-                    displayName="Load saved composition - all unsaved data will be lost."/>
+                <message displayName="Load saved composition - all unsaved data will be lost."/>
                 <action label="Load" model="main-model" event="load-saved-composition"/>
                 <action label="Cancel" model="dummy" event="do-nothing"/>
             </dialogue>
@@ -810,6 +812,17 @@
             <closeButton displayName="Close"/>
             <selectButton displayName="Select"/>
         </cityEHRClassSelectionDialog>
+
+
+        <!-- Transformation of HL7 CDA.
+             The formats are as specified in the exportFormat selection in application-parameters -->
+        <cdaTransformation>
+            <transform format="cda" transformationXSL=""/>
+            <transform format="ISO-13606" transformationXSL="CDA2ISO-13606"/>
+            <transform format="HL7-V2-XML" transformationXSL="CDA2HL7-V2-XML"/>
+            <transform format="HL7-V2" transformationXSL="CDA2HL7-V2"/>
+            <transform format="HL7-FHIR" transformationXSL="CDA2HL7-FHIR"/>
+        </cdaTransformation>
 
     </staticParameters>
 

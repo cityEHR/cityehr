@@ -327,8 +327,9 @@
         <xxf:variable name="input-instance" select="event('input-instance')"/>
         <xxf:variable name="return-instance" select="event('return-instance')"/>
 
-        <!-- Only if the input-instance exists -->
-        <xf:action if="exists($input-instance)">
+        <!-- Only if a pipeline is specified -->
+        <xf:action if="$pipeline != ''">
+
             <!-- Save the session info.
                  This transfers parameters from view-parameters to session-parameters.
                  Then saves the session for the user.
@@ -341,12 +342,26 @@
                 <xxf:context name="showPage" select="''"/>
             </xf:dispatch>
 
-            <!-- Set and run the pipeline -->
+            <!-- Set the pipeline -->
             <xxf:variable name="pipelinePath"
                 select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/',$pipeline)"/>
-            <xf:insert nodeset="$return-instance"
-                origin="xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , 'data')"
-            />
+
+            <!-- If the input-instance exists
+                 Invoke the pipeline with the inatance and view-parameters as inputs-->
+            <xf:action if="exists($input-instance)">
+                <xf:insert nodeset="$return-instance"
+                    origin="xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , 'data')"
+                />
+            </xf:action>
+
+            <!-- If the input-instance does not exist
+                 Invoke the pipeline with just view-parameters as inout -->
+            <xf:action if="not(exists($input-instance))">
+                <xf:insert nodeset="$return-instance"
+                    origin="xxf:call-xpl($pipelinePath, 'instance',  xxf:instance('view-parameters-instance') , 'data')"
+                />
+            </xf:action>
+
         </xf:action>
 
     </xf:action>
@@ -361,6 +376,30 @@
         <xxf:variable name="input-instance" select="event('input-instance')"/>
 
     </xf:action>
+
+    <!-- Application defined action to start and stop the scheduler
+         Sets the command and then invokes the pipeline.
+         -->
+    <xf:instance id="return-instance">
+        <return xmlns=""/>
+    </xf:instance>
+
+    <xf:action ev:event="invoke-pipelineScheduler">
+        <xxf:variable name="command" select="event('command')"/>
+        <xxf:variable name="pipeline" select="event('pipeline')"/>
+        <xxf:variable name="return-instance" select="event('return-instance')"/>
+
+        <!-- Set the command in view-parameters -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/schedulerCommand"
+            value="$command"/>
+
+        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+            <xxf:context name="pipeline" select="$pipeline"/>
+            <xxf:context name="input-instance" select="xxf:instance('view-parameters-instance')"/>
+            <xxf:context name="return-instance" select="$return-instance"/>
+        </xf:dispatch>
+    </xf:action>
+
 
     <!-- =====================================================================================
          The application logo and images
@@ -561,24 +600,34 @@
         <export/>
     </xf:instance>
 
-    <!-- Application defined action to export the xml stored in the database as a zip file.
+    <!-- Application defined action to export the xml stored in the database 
+         as a zip file to the browser or as a file to the dilesystem.
+         
          The database resource is located at exportHandle.
          exportType is a string used to set the externalId for the export
          Then load cityEHRExportResource (pipeline) to transform (if specified), zip and return to the browser.
+         Or the cityEHRExportResourceToFolder pipleline.
+         The location for export (browser or fileSystem) is passed in the exportDelivery parameter (default is to browser)
          Note that this action can be invoked on the signOn page before a session is started, so the sessionId may be 'noSession' -->
     <xf:action ev:event="export-xmlHandle">
         <xxf:variable name="exportHandle" select="event('exportHandle')"/>
         <xxf:variable name="exportName" select="event('exportName')"/>
         <xxf:variable name="exportType" select="event('exportType')"/>
+        <xxf:variable name="transformationXSL" select="event('transformationXSL')"/>
+        <xxf:variable name="exportDelivery" select="event('exportDelivery')"/>
 
-        <!-- Set file name and extnesion for the exported resource -->
+        <!-- Set file name and extension for the exported resource -->
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
             <xxf:context name="type" select="if ($exportName!='') then $exportName else $exportType"/>
             <xxf:context name="externalId"
                 select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceFileExtension"
-            value="'xml'"/>
+            value="if ($exportType='') then 'xml' else $exportType"/>
+
+        <!-- Set transformation to perform on resource -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+            value="$transformationXSL"/>
 
         <!-- Set the full URL of the resource in resourceHandle -->
         <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
@@ -588,11 +637,21 @@
                 select="xxf:instance('view-parameters-instance')/resourceHandle"/>
         </xf:dispatch>
 
-        <!-- Pipeline to return resource to the browser -->
-        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-            <xxf:context name="page" select="'cityEHRExportResource'"/>
-            <xxf:context name="show" select="'new'"/>
-        </xf:dispatch>
+        <!-- Pipeline to return resource to the file system -->
+        <xf:action if="$exportDelivery = 'fileSystem'">
+            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                <xxf:context name="page" select="'cityEHRExportResourceToFolder'"/>
+                <xxf:context name="show" select="'new'"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Pipeline to return resource to the browser - the default -->
+        <xf:action if="not($exportDelivery = 'fileSystem')">
+            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                <xxf:context name="page" select="'cityEHRExportResource'"/>
+                <xxf:context name="show" select="'new'"/>
+            </xf:dispatch>
+        </xf:action>
 
     </xf:action>
 
@@ -776,7 +835,7 @@
         <xxf:variable name="messageSet" select="event('messageSet')"/>
         <xxf:variable name="optionSet" select="event('optionSet')"/>
         <xxf:variable name="navigationTriggers" select="event('navigationTriggers')"/>
-        
+
         <!-- The action dialogue is found in the system-parameters -->
         <xxf:variable name="activeDialogue"
             select="xxf:instance('system-parameters-instance')/staticParameters/actionConfirmationDialogue/dialogue[@id=$action]"/>
@@ -845,7 +904,7 @@
                 <xf:setvalue ref="$dialogue/selection/@value"
                     value="$dialogue/selection/*[1]/@value"/>
             </xf:action>
-            
+
             <!-- Show the dialogue -->
             <xxf:show dialog="actionConfirmationDialog"/>
         </xf:action>

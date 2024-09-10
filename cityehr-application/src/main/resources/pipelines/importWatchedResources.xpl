@@ -28,7 +28,8 @@
     **********************************************************************************************************
 -->
 
-<p:pipeline xmlns:p="http://www.orbeon.com/oxf/pipeline" xmlns:oxf="http://www.orbeon.com/oxf/processors" xmlns:xf="http://www.w3.org/2002/xforms"
+<p:pipeline xmlns:p="http://www.orbeon.com/oxf/pipeline"
+    xmlns:oxf="http://www.orbeon.com/oxf/processors" xmlns:xf="http://www.w3.org/2002/xforms"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
     <!-- Input to pipeline is xml/patient-view-parameters.xml as set in the page-flow.xml file 
@@ -38,16 +39,25 @@
     <!-- Standard pipeline output -->
     <p:param name="data" type="output"/>
 
+    <!-- Run the getPipelineParameters pipeline.
+         Returns the combined application-parameters, session-parameters, system-parameters, database-parameters,  view-parameters -->
+    <p:processor name="oxf:pipeline">
+        <p:input name="config" href="getPipelineParameters.xpl"/>
+        <p:input name="instance" href="#instance"/>
+        <p:output name="parameters" id="parameters"/>
+    </p:processor>
+
     <!-- Get list of files/folders in watchedDirectory folder.
-        <directory name="address-book" path="c:\Documents and Settings\John Doe\OPS\src\examples\web\examples\address-book">
+       <directory name="address-book" path="c:\Documents and Settings\John Doe\OPS\src\examples\web\examples\address-book">
             <file last-modified-ms="1120343217984" last-modified-date="2005-07-03T00:26:57.984" size="961130" path="image0001.jpg" name="image0001.jpg"/>
         </directory>    
          -->
     <p:processor name="oxf:directory-scanner">
-        <p:input name="config" transform="oxf:xslt" href="#instance">
+        <p:input name="config" transform="oxf:xslt" href="#parameters">
             <config xsl:version="2.0">
                 <base-directory>
-                    <xsl:value-of select="parameters/watchedDirectory"/>
+                    <xsl:value-of
+                        select="concat('file://',//parameters/importPipeline/watchedDirectory)"/>
                 </base-directory>
                 <include> *.* </include>
                 <include> */*.* </include>
@@ -58,16 +68,42 @@
     </p:processor>
 
     <!-- The exception catcher behaves like the identity processor if there is no exception -->
-    <!-- However if there is an exception, it catches it, and you get a serialized form of the exception -->
     <p:processor name="oxf:exception-catcher">
         <p:input name="data" href="#directoryListing"/>
-        <p:output name="data" ref="directoryListingChecked"/>
+        <p:output name="data" id="directoryListingChecked"/>
     </p:processor>
 
     <!-- Iterate through the directoryListing
-         Read each file
+         Read each file which is defined bt
+         
+            <file last-modified-ms="1719915616000" last-modified-date="2024-07-02T11:20:16.000" size="23" path="test.xml" name="test.xml"/>      
          -->
-    <p:for-each href="#directoryListingChecked" select="//file" root="fileLocations" id="fileInfoChecked">
+
+    <p:for-each href="#directoryListingChecked" select="//file" root="fileOperations"
+        id="fileOperationChecked">
+
+        <!-- Read file -->
+        <p:processor name="oxf:url-generator">
+            <p:input name="config" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#parameters)">
+                <config xsl:version="2.0">
+                    <url>
+                        <xsl:value-of
+                            select="concat('file://',//parameters/importPipeline/watchedDirectory,'/',configuration/file/@name)"
+                        />
+                    </url>
+                    <content-type>application/xml</content-type>
+                </config>
+            </p:input>
+            <p:output name="data" id="fileContent"/>
+        </p:processor>
+
+        <!-- Exception catcher - reading file content -->
+        <p:processor name="oxf:exception-catcher">
+            <p:input name="data" href="#fileContent"/>
+            <p:output name="data" id="fileContentChecked"/>
+        </p:processor>
+
 
         <!-- Convert the XML instance to serialized XML -->
         <p:processor name="oxf:text-serializer">
@@ -76,41 +112,108 @@
                     <encoding>utf-8</encoding>
                 </config>
             </p:input>
-            <p:input name="data" href="current()"/>
+            <p:input name="data" href="#fileContentChecked"/>
             <p:output name="data" id="serializedFile"/>
         </p:processor>
 
-        <!-- Write the serializedFile to the processed directory
-             File name is passed out on data as <url>...</url>-->
-        <p:processor name="oxf:file-serializer">
-            <p:input name="config">
-                <config>
-                    <scope>session</scope>
-                </config>
-            </p:input>
+        <!-- Exception catcher - serializing file -->
+        <p:processor name="oxf:exception-catcher">
             <p:input name="data" href="#serializedFile"/>
-            <p:output name="data" ref="imageFileLocations"/>
+            <p:output name="data" id="serializedFileChecked"/>
         </p:processor>
 
-        <!-- Remove the file from the watchedDirectory -->
-        <p:config xmlns:oxf="http://www.orbeon.com/oxf/processors">
-            <p:processor name="oxf:file">
-                <p:input name="config">
-                    <config>
-                        <delete>
-                            <file>SomeImpossibleFileName.jpg</file>
-                            <directory>C:/TEMP</directory>
-                        </delete>
-                    </config>
-                </p:input>
-            </p:processor>
-        </p:config>
 
+        <!-- Write file -->
+        <p:processor name="oxf:file-serializer">
+            <p:input name="config" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#parameters)">
+                <config xsl:version="2.0">
+                    <directory>
+                        <xsl:value-of select="//parameters/exportPipeline/exportDirectory"/>
+                    </directory>
+                    <file>
+                        <xsl:value-of select="configuration/file/@name"/>
+                    </file>
+                    <make-directories>true</make-directories>
+                    <append>false</append>
+                </config>
+            </p:input>
+            <p:input name="data" href="#serializedFileChecked"/>
+        </p:processor>
+
+        <!-- Exception catcher - writing file -->
+        <p:processor name="oxf:exception-catcher">
+            <p:input name="data" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#parameters)">
+                <fileWrite xsl:version="2.0">
+                    <xsl:value-of select="configuration/file/@name"/>
+                </fileWrite>
+            </p:input>
+            <p:output name="data" id="fileWritehecked"/>
+        </p:processor>
+
+
+        <!-- Delete the file from the watchedDirectory -->
+        <p:processor name="oxf:file">
+            <p:input name="config" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#parameters)">
+                <config xsl:version="2.0">
+                    <delete>
+                        <directory>
+                            <xsl:value-of select="//parameters/importPipeline/watchedDirectory"/>
+                        </directory>
+                        <file>
+                            <xsl:value-of select="configuration/file/@name"/>
+                        </file>
+                    </delete>
+                </config>
+            </p:input>
+        </p:processor>
+
+        <!-- Exception catcher - deleting file -->
+        <p:processor name="oxf:exception-catcher">
+            <p:input name="data" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#parameters)">
+                <fileDelete xsl:version="2.0">
+                    <xsl:value-of select="configuration/file/@name"/>
+                </fileDelete>
+            </p:input>
+            <p:output name="data" id="fileDeleteChecked"/>
+        </p:processor>
+
+        <!-- Report file operations -->
+        <p:processor name="oxf:identity">
+            <p:input name="data"
+                href="aggregate('processedFile',#fileWritehecked,#fileDeleteChecked)"/>
+            <p:output name="data" ref="fileOperationChecked"/>
+        </p:processor>
     </p:for-each>
 
-    <!-- Not using the location -->
-    <p:processor name="oxf:null-serializer">
-        <p:input name="data" href="#imageFileLocations"/>
+
+    <!-- REST submission to record audit information.
+         Write fileOperationChecked to the database each time the pipeline is run -->
+    <p:processor name="oxf:xforms-submission">
+        <p:input name="submission" transform="oxf:xslt" href="#parameters">
+            <xf:submission xsl:version="2.0"
+                action="{//parameters[@type='session']/resourceHandle}" validate="false"
+                method="put" replace="none" includenamespacesprefixes=""/>
+        </p:input>
+        <p:input name="request" transform="oxf:xslt" href="#fileOperationChecked">
+            <schedulerLog xsl:version="2.0"> 
+                <timeStamp>
+                    <xsl:value-of select="current-dateTime()"/>
+                </timeStamp>
+                <xsl:copy-of select="fileOperations"/>
+            </schedulerLog>
+        </p:input>
+        <p:output name="response" id="saveResponse"/>
+    </p:processor>
+    
+    
+    <!-- Exception catcher - audit information -->
+    <p:processor name="oxf:exception-catcher">
+        <p:input name="data" href="aggregate('status',#saveResponse,#fileOperationChecked)"/>
+        <p:output name="data" ref="data"/>
     </p:processor>
 
 

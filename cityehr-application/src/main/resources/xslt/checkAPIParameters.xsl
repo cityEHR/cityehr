@@ -35,7 +35,7 @@
             <xsl:variable name="commandParameterNames" select="$commandDefinition/parameters/parameter/@name"/>
 
             <!-- Get the parameters for the API call.
-                 These are the parameters in view-parameters that maych the API command-->
+                 These are the parameters in view-parameters that match the API command-->
             <xsl:variable name="commandParameters" select="parameters/*[name() = $commandParameterNames]"/>
 
             <!-- The output depends on whether any of the paramsters are not set -->

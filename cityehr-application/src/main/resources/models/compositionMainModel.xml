@@ -758,6 +758,12 @@
             if="not(exists($sourceAction)) or $sourceAction/cda:id/@root='#CityEHR:Notification'">
             <xf:dispatch name="check-triggers" target="main-model"/>
         </xf:action>
+        
+        <!-- Export the composition if configured -->
+        <xf:action
+            if="xxf:instance('application-parameters-instance')/importExport/exportPipeline/exportOnCommit/@value='true'">
+            <xf:message ref="xxf:instance('control-instance')/current-form/publishHandle"/>
+        </xf:action>
 
     </xf:action>
     <!-- End of publish-cda-composition -->
@@ -2161,7 +2167,11 @@
         <xf:rebuild model="cda-model"/>
 
         <!-- Reset the editStatus -->
-        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+            value="'unedited'"/>
+
+        <!-- Update controls -->
+        <xf:recalculate model="viewControlsActions-model"/>
 
     </xf:action>
 

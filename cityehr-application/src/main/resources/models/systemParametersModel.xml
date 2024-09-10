@@ -219,6 +219,8 @@
     </xf:instance>
 
     <!-- Application defined action to update system parameters.
+         This is only invoked whenthe version number of the stored system-parameters is different from the version in view-parameters.
+         
          Comparison for update is between system-parameters-instance and default-system-parameters-instance
          The rebuilt parameters are made in system-parameters-instance, so need to set up stored-system-parameters-instance before rebuilding
          Use the general action for rebuilding parameters defined in manageParameters-model
@@ -263,6 +265,11 @@
                     select="xxf:instance('systemParametersControl-instance')/status"/>
             </xf:dispatch>
         </xf:action>
+
+        <!-- Set the shippedResourcesConfiguration to completed - which it must be if system=parameters are updated -->
+        <xf:setvalue
+            ref="xxf:instance('system-parameters-instance')/coreParameters/shippedResourcesConfiguration"
+            value="'completed'"/>
 
         <!-- Save the updated system-parameters.
              This will also invoke build-database-parameters, since the databaseChecksum is blank in the default-system-parameters-instance -->
@@ -329,7 +336,7 @@
         <xf:setvalue
             ref="xxf:instance('system-parameters-instance')/coreParameters/shippedResourcesConfiguration"
             value="$status"/>
-        
+
         <xf:dispatch name="save-system-parameters" target="systemParameters-model"/>
 
     </xf:action>
