@@ -41,8 +41,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
         </dependency>
 
         <dependency>
@@ -108,7 +108,7 @@
                         </goals>
                         <configuration>
                             <ignoredUnusedDeclaredDependencies>
-                                <ignoredUnusedDeclaredDependency>com.google.code.findbugs:jsr305</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.jspecify:jspecify</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>com.seveninformatics.cityehr:cityehr-webapp</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.tomcat.embed:tomcat-embed-jasper</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>ch.qos.logback:logback-classic</ignoredUnusedDeclaredDependency>

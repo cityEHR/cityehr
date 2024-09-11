@@ -1,6 +1,6 @@
 package com.seveninformatics.cityehr.standalone.common.configuration;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
