@@ -25,6 +25,7 @@
         <module>cityehr-webapp</module>
         <module>cityehr-standalone-jetty</module>
         <module>cityehr-standalone-tomcat</module>
+        <module>cityehr-jlink-jetty</module>
     </modules>
 
     <profiles>

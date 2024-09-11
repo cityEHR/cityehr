@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.seveninformatics.cityehr</groupId>
+        <artifactId>cityehr-parent</artifactId>
+        <version>1.8.0-SNAPSHOT</version>
+        <relativePath>../../cityehr-parent</relativePath>
+    </parent>
+
+    <artifactId>cityehr-jlink-jetty</artifactId>
+    <packaging>jlink</packaging>
+
+    <name>cityEHR jlink Jetty Application</name>
+    <description>cityEHR jlink Jetty Application package</description>
+
+    <scm>
+        <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
+        <developerConnection>scm:git:https://github.com/cityehr/cityehr.git</developerConnection>
+        <url>scm:git:https://github.com/cityehr/cityehr.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cityehr-webapp</artifactId>
+            <version>${project.version}</version>
+            <type>war</type>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cityehr-jetty-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>${project.groupId}</groupId>-->
+<!--            <artifactId>cityehr-server-jetty</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--            <exclusions>-->
+<!--                &lt;!&ndash; NOTE(AR) we need to exclude transitive dependencies of cityehr-standalone-jetty &ndash;&gt;-->
+<!--                <exclusion>-->
+<!--                    <groupId>${project.parent.groupId}</groupId>-->
+<!--                    <artifactId>cityehr-webapp</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>${project.parent.groupId}</groupId>-->
+<!--                    <artifactId>cityehr-server-common</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.jspecify</groupId>-->
+<!--                    <artifactId>jspecify</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.slf4j</groupId>-->
+<!--                    <artifactId>slf4j-api</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.eclipse.jetty</groupId>-->
+<!--                    <artifactId>jetty-server</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.eclipse.jetty</groupId>-->
+<!--                    <artifactId>jetty-util</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.eclipse.jetty</groupId>-->
+<!--                    <artifactId>jetty-webapp</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>javax.servlet</groupId>-->
+<!--                    <artifactId>javax.servlet-api</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>ch.qos.logback</groupId>-->
+<!--                    <artifactId>logback-classic</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jlink-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <compress>zip-9</compress>
+                    <noHeaderFiles>true</noHeaderFiles>
+                    <noManPages>true</noManPages>
+                    <stripDebug>false</stripDebug> <!-- TODO(AR) should this be `true` for release builds? -->
+                    <verbose>true</verbose>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
