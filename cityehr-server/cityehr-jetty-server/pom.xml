@@ -8,11 +8,11 @@
         <relativePath>../../cityehr-parent</relativePath>
     </parent>
 
-    <artifactId>cityehr-standalone-jetty</artifactId>
+    <artifactId>cityehr-jetty-server</artifactId>
     <packaging>jar</packaging>
 
-    <name>cityEHR Standalone Jetty Application</name>
-    <description>cityEHR Standalone Jetty Application package</description>
+    <name>cityEHR Embedded Jetty Server</name>
+    <description>cityEHR Embedded Jetty Server</description>
 
     <scm>
         <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
@@ -29,7 +29,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>cityehr-standalone-common</artifactId>
+            <artifactId>cityehr-server-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 

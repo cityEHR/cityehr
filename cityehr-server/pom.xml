@@ -5,14 +5,14 @@
         <groupId>com.seveninformatics.cityehr</groupId>
         <artifactId>cityehr-parent</artifactId>
         <version>1.8.0-SNAPSHOT</version>
-        <relativePath>../../cityehr-parent</relativePath>
+        <relativePath>../cityehr-parent</relativePath>
     </parent>
 
-    <artifactId>cityehr-standalone-common</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>cityehr-server</artifactId>
+    <packaging>pom</packaging>
 
-    <name>cityEHR Standalone Common Code</name>
-    <description>cityEHR Standalone Common Code</description>
+    <name>cityEHR Servers</name>
+    <description>cityEHR Server Modules</description>
 
     <scm>
         <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
@@ -21,11 +21,10 @@
         <tag>HEAD</tag>
     </scm>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.jspecify</groupId>
-            <artifactId>jspecify</artifactId>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>cityehr-server-common</module>
+        <module>cityehr-jetty-server</module>
+        <module>cityehr-tomcat-server</module>
+    </modules>
 
 </project>

@@ -8,11 +8,11 @@
         <relativePath>../../cityehr-parent</relativePath>
     </parent>
 
-    <artifactId>cityehr-standalone-tomcat</artifactId>
+    <artifactId>cityehr-tomcat-server</artifactId>
     <packaging>jar</packaging>
 
-    <name>cityEHR Standalone Tomcat Application</name>
-    <description>cityEHR Standalone Tomcat Application package</description>
+    <name>cityEHR Embedded Tomcat Server</name>
+    <description>cityEHR Embedded Tomcat Server</description>
 
     <scm>
         <connection>scm:git:https://github.com/cityehr/cityehr.git</connection>
@@ -29,7 +29,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>cityehr-standalone-common</artifactId>
+            <artifactId>cityehr-server-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
