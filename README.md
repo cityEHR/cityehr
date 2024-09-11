@@ -1,6 +1,6 @@
 # cityEHR
 [![Build Status](https://github.com/evolvedbinary/cityehr/actions/workflows/ci.yml/badge.svg)](https://github.com/evolvedbinary/cityehr/actions/workflows/ci.yml)
-[![Java 8](https://img.shields.io/badge/java-8-blue.svg)](https://adoptopenjdk.net/)
+[![Java 11](https://img.shields.io/badge/java-11-blue.svg)](https://adoptopenjdk.net/)
 [![License](https://img.shields.io/badge/license-LGPL%202.1-blue.svg)](https://www.gnu.org/licenses/lgpl-2.1.html)
 
 cityEHR is an Open Source Electronic Health Records system designed to support patient-centred shared care, and reuse of data for clinical studies.
@@ -33,7 +33,7 @@ built by combining the output of one or more other modules.
 
 ## Building cityEHR from Source Code
 Requires:
-* [Java](https://bell-sw.com/pages/downloads/#jdk-8-lts) 8+
+* [Java](https://bell-sw.com/pages/downloads/#jdk-11-lts) 11+
 * [Apache Maven](https://maven.apache.org/download.cgi) 3.9.6+
 * (Optional) [Docker](https://docs.docker.com/engine/install/)
 

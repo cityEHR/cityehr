@@ -50,8 +50,8 @@
     </scm>
 
     <properties>
-        <project.build.source>1.8</project.build.source>
-        <project.build.target>1.8</project.build.target>
+        <project.build.source>11</project.build.source>
+        <project.build.target>11</project.build.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <saxon.version>9.9.1-8</saxon.version>
         <slf4j.version>2.0.13</slf4j.version>
