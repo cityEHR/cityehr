@@ -108,6 +108,20 @@
                                         <exclude>META-INF/LICENSE</exclude>
                                     </excludes>
                                 </filter>
+
+                                <filter>
+                                    <artifact>${project.groupId}:cityehr-server-common</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                                <!--                                <filter>-->
+                                <!--                                    <artifact>${project.groupId}:cityehr-standalone-jetty</artifact>-->
+                                <!--                                    <excludes>-->
+                                <!--                                        <exclude>module-info.class</exclude>-->
+                                <!--                                    </excludes>-->
+                                <!--                                </filter>-->
+
                             </filters>
                         </configuration>
                     </execution>

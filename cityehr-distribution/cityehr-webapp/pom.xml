@@ -96,6 +96,16 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
                     <outdatedCheckPath>WEB-INF/__none__</outdatedCheckPath>
+                    <webResources>
+                        <resource>
+                            <directory>${project.build.outputDirectory}</directory>
+                            <includes>
+                                <include>module-info.class</include>
+                            </includes>
+                            <!-- it's not a good idea to filter binary files -->
+                            <filtering>false</filtering>
+                        </resource>
+                    </webResources>
                 </configuration>
             </plugin>
 
