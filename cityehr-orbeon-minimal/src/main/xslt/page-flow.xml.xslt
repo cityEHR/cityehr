@@ -10,6 +10,11 @@
   <xsl:template match="c:page[@id eq 'home']">
     <page id="home" path-info="/ehr/" model="apps/ehr/page-flow.xml"/>
   </xsl:template>
+  
+  
+  <xsl:template match="/JOHN">
+    <blah/>
+  </xsl:template>
 
   <xsl:template match="c:not-found-handler">
     <not-found-handler page="home"/>
