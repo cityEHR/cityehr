@@ -25,8 +25,8 @@
         <module>cityehr-parent</module>
         <module>cityehr-application</module>
         <module>cityehr-orbeon-minimal</module>
+        <module>cityehr-server</module>
         <module>cityehr-distribution</module>
-        <module>cityehr-mac-installer</module>
     </modules>
 
 </project>
