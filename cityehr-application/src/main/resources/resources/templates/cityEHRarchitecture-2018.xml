@@ -178,6 +178,9 @@
         <ObjectProperty IRI="#hasElementType"/>
     </Declaration>
     <Declaration>
+        <ObjectProperty IRI="#hasEntryRelationship"/>
+    </Declaration>
+    <Declaration>
         <ObjectProperty IRI="#hasEntryType"/>
     </Declaration>
     <Declaration>
@@ -269,6 +272,12 @@
     </Declaration>
     <Declaration>
         <ObjectProperty IRI="#isElementTypeOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isEntryRelationshipOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#isEntryTypeOf"/>
     </Declaration>
     <Declaration>
         <ObjectProperty IRI="#isExtensionOf"/>
@@ -489,6 +498,10 @@
     <InverseObjectProperties>
         <ObjectProperty IRI="#hasElementType"/>
         <ObjectProperty IRI="#isElementTypeOf"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasEntryRelationship"/>
+        <ObjectProperty IRI="#isEntryRelationshipOf"/>
     </InverseObjectProperties>
     <InverseObjectProperties>
         <ObjectProperty IRI="#hasEntryType"/>

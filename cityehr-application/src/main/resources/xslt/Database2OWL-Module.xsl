@@ -65,7 +65,7 @@
 
     <!-- Set the Application for this Information Model -->
     <xsl:variable name="applicationId" select="$configurationSheet/record[field[1] = 'ApplicationId']/field[2]"/>
-    <xsl:variable name="applicationOwner" select="$configurationSheet/record[field[1] = 'ApplicationOwner']/field[2]"/>
+    <xsl:variable name="modelOwner" select="$configurationSheet/record[field[1] = 'ModelOwner']/field[2]"/>
 
 
     <!-- Set the Specialty for this Information Model -->
@@ -144,7 +144,7 @@
 
     <!-- Key for Properties    
          propertySetFields returns set of fields for a cityEHR property.
-         The properties are dfined on the sheet named 'Properties'
+         The properties are defined on the sheet named 'Properties'
     -->
     <xsl:key name="propertySetFields" match="/database/table[@id = 'Properties']/record[position() gt 1][field[1]/normalize-space(.) != '']/field"
         use="normalize-space(../field[1])"/>
@@ -762,7 +762,8 @@
 
         <!-- The first property must be the identifier -->
         <xsl:if test="$propertySet[1] = 'Identifier' and $propertyValues[1] != ''">
-            <!-- Set the componentId and componentIRI-->
+            <!-- Set the componentId and componentIRI
+                 Identifier for the component (componentId) is always the first property value -->
             <xsl:variable name="componentId" select="$propertyValues[1]"/>
             <xsl:variable name="componentIRI" select="cityEHRFunction:getIRI($componentTypeIRI, $componentId)"/>
 
@@ -809,7 +810,7 @@
                     </xsl:when>
 
                     <!-- spacer that is ignored -->
-                    <xsl:when test="$propertyTypeId = '-'"/>
+                    <xsl:when test="$propertyTypeId = '-'"/>                             
 
                     <!-- references to the content of the component -->
                     <xsl:when test="$propertyTypeId = 'Content'">

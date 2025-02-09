@@ -781,7 +781,7 @@
 
 
     <!-- Application defined action close the composition view and navigate to the next page.
-         Invoked afte rthe composition has been successfully publsihed to the record
+         Invoked after the composition has been successfully publsihed to the record
           -->
     <xf:action ev:event="close-composition-view">
         <xxf:variable name="newCompositionIRI" select="event('newCompositionIRI')"/>
@@ -1653,6 +1653,8 @@
         <xxf:variable name="storageLocation"
             select="xxf:instance('control-instance')/current-form/saveHandle"/>
 
+        <!-- Only delete if the saveHandle has been set.
+             This is handled by dal-delete, so don't need to check it here -->
         <xf:dispatch name="dal-delete" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$storageLocation"/>

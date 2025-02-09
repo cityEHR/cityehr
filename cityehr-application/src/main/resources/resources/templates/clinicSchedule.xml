@@ -69,12 +69,14 @@
 
     <dailySchedule displayName="Daily Schedule">
         <operatingHours>
-            <startTime value="" displayName="Start Time "/>
-            <endTime value="" displayName="End Time "/>
-            <lastSlotTime value="" displayName="Last appointment "/>
+            <startTime value="" displayName="Start time "/>
+            <endTime value="" displayName="End time "/>
+            <lastSlotTime value="" displayName="Last slot starts "/>
         </operatingHours>
+        <sessions value="1" displayName="Parallel sessions "/>
         <slotDuration value="15" displayName="Appointment Duration "/>
         <slotCapacity value="1" displayName="Bookings per slot "/>
         <intervalDuration value="5" displayName="Interval Duration "/>
+        <breaks  value="3" displayName="Number of breaks "/>
     </dailySchedule>
 </clinicSchedule>

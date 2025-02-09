@@ -372,8 +372,9 @@
         <control displayName="Forms" value="cityEHRFolder-Forms"/>
         <control displayName="Letters" value="cityEHRFolder-Letters"/>
         <control displayName="Pathways" value="cityEHRFolder-Pathways"/>
-        <control displayName="Booking" value="cityEHRFolder-Bookings"/>
         <control displayName="Ordering" value="cityEHRFolder-Orders"/>
+        <control displayName="Prescribing" value="cityEHRFolder-Prescriptions"/>
+        <control displayName="Booking" value="cityEHRFolder-Bookings"/>
     </recordNavigationControls>
 
     <!-- Controls for cohort search navigation. -->
@@ -414,6 +415,11 @@
             <viewNavigationType value="annotations" displayName="Annotations" display="show"/>
             <viewNavigationType value="lifeLine" displayName="LifeLine" display="show"/>
         </view>
+        <view viewType="cityEHRFolder-Views">
+            <viewNavigationType value="summaries" displayName="Summaries" display="show"/>
+            <viewNavigationType value="reports" displayName="Reports" display="show"/>
+            <viewNavigationType value="notifications" displayName="Notifications" display="hidden"/>
+        </view>
         <view viewType="cityEHRFolder-Forms">
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
@@ -422,7 +428,7 @@
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Bookings">
+        <view viewType="cityEHRFolder-Pathways">
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
@@ -430,14 +436,13 @@
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Pathways">
+        <view viewType="cityEHRFolder-Prescriptions">
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Views">
-            <viewNavigationType value="summaries" displayName="Summaries" display="show"/>
-            <viewNavigationType value="reports" displayName="Reports" display="show"/>
-            <viewNavigationType value="notifications" displayName="Notifications" display="hidden"/>
+        <view viewType="cityEHRFolder-Bookings">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
     </viewNavigationTypeSelection>
 
@@ -456,7 +461,8 @@
         -->
 
     <viewControlsActions cityEHR:displayName="View Controls">
-        <view viewType="cityEHRPatientSearch" displayName="Patient Search" showLabels="false" showIcons="true" separator="|" display="show">
+        <view viewType="cityEHRPatientSearch" displayName="Patient Search" showLabels="false"
+            showIcons="true" separator="|" display="show">
             <select id="careTeam" value="" displayName="Care Team " display="show">
                 <item displayName="-- Select --" value=""/>
             </select>
@@ -537,10 +543,21 @@
                 <item displayName="HL7 CDA" value="cda"/>
                 <item displayName="ISO 13606" value="ISO-13606"/>
                 <item displayName="HL7 v2 XML (pseudo)" value="HL7-V2-XML"/>
-                <item displayName="HL7 v2 (pseudo)" value="HL7-V2"/>
+                <item displayName="HL7 v2 (Z Segment)" value="HL7-V2"/>
+                <item displayName="HL7 FHIR" value="HL7-FHIR"/>
             </select>
             <action id="export" displayName="Export Event" display="show"/>
             <action id="exportAll" displayName="Export Record" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Views" displayName="Patient Summaries" display="show">
+            <select id="view" value="current" displayName="View " display="show">
+                <item displayName="Current Data" value="current"/>
+                <item displayName="Historic Data" value="historic"/>
+            </select>
+            <action id="xml" displayName="Show XML" display="show"/>
+            <action id="reset" displayName="Reset Charted Variables" display="show"/>
+            <action id="svgChart" displayName="Chart" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Forms" displayName="Patient Forms" display="show">
             <action id="xml" displayName="Show XML" display="show"/>
@@ -550,9 +567,13 @@
             <select id="highlight" value="none" displayName="Highlight Entries " display="show">
                 <item displayName="-- None --" value="none"/>
             </select>
+            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template "
+                display="show"/>
+            <action id="wordprocessor" displayName="Word Processor" display="show"/>
             <action id="save" displayName="Save" display="show"/>
             <action id="publish" displayName="Publish" display="show"/>
-            <input id="effectiveTime" displayName="Effective Time" type="xs:dateTime" display="hidden"/>
+            <input id="effectiveTime" displayName="Effective Time" type="xs:dateTime"
+                display="hidden"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="print" displayName="Print" display="show"/>
@@ -561,25 +582,12 @@
             <action id="xml" displayName="Show XML" display="show"/>
             <input id="showISO13606" displayName="Show ISO-13606" type="xs:boolean" display="show"/>
             <input id="showIds" displayName="Show Ids" type="xs:boolean" display="show"/>
-            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template " display="show"/>
+            <select id="wordprocessorTemplate" value="" displayName="Word Processor Template "
+                display="show"/>
             <action id="wordprocessor" displayName="Word Processor" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="publish" displayName="Publish" display="show"/>
-            <action id="save" displayName="Save" display="show"/>
-            <action id="print" displayName="Print" display="show"/>
-        </view>
-        <view viewType="cityEHRFolder-Bookings" displayName="Patient Appointments" display="show">
-            <action id="delete" displayName="Delete" display="show"/>
-            <action id="reset" displayName="Reset" display="show"/>
-            <action id="order" displayName="Book" display="show"/>
-            <action id="save" displayName="Cancel" display="show"/>
-            <action id="print" displayName="Print" display="show"/>
-        </view>
-        <view viewType="cityEHRFolder-Orders" displayName="Patient Orders" display="show">
-            <action id="delete" displayName="Delete" display="show"/>
-            <action id="reset" displayName="Reset" display="show"/>
-            <action id="order" displayName="Order" display="show"/>
             <action id="save" displayName="Save" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
@@ -598,16 +606,28 @@
             <action id="progress" displayName="Progress" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Views" displayName="Patient Summaries" display="show">
-            <select id="view" value="current" displayName="View " display="show">
-                <item displayName="Current Data" value="current"/>
-                <item displayName="Historic Data" value="historic"/>
-            </select>
-            <action id="xml" displayName="Show XML" display="show"/>
-            <action id="reset" displayName="Reset Charted Variables" display="show"/>
-            <action id="svgChart" displayName="Chart" display="show"/>
+        <view viewType="cityEHRFolder-Orders" displayName="Patient Orders" display="show">
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="order" displayName="Order" display="show"/>
+            <action id="save" displayName="Save" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
+        <view viewType="cityEHRFolder-Prescriptions" displayName="Patient Presciptions" display="show">
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="order" displayName="Prescribe" display="show"/>
+            <action id="save" displayName="Save" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Bookings" displayName="Patient Appointments" display="show">
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="order" displayName="Book" display="show"/>
+            <action id="save" displayName="Cancel" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        
     </viewControlsActions>
 
     <!-- Highlight entries -->

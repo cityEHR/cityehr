@@ -438,7 +438,7 @@
                      Only if a composition is set - selecting a composition reloads the page
                      So this only needs to happen here -->
                 <xf:dispatch name="initialize-wordProcessorTemplates" target="main-model"/>
-                
+
 
             </xf:action>
         </xf:model>
@@ -461,6 +461,11 @@
         <xi:include href="cityEHRSDSDialog.xhtml"/>
         <!-- Fixed Header Information -->
         <xhtml:div id="ehrHeader">
+            <!-- Patient label image -->
+            <xhtml:div id="patientLabelImage">
+                <xf:output ref="xxf:instance('patient-instance')/labelImage" mediatype="image/*"/>
+            </xhtml:div>
+
             <!-- Patient label pane -->
             <xhtml:div id="patientLabel">
                 <xi:include href="cityEHRPatientLabel.xhtml"/>
@@ -604,8 +609,6 @@
                 <!-- View Display - contains display of the currently selected composition 
                     ===================================================================== -->
                 <xhtml:div id="viewDisplay" class="content">
-
-
                     <!-- Include generated form content 
                          The include instruction is targetted at the Orbeon pipeline processor
                          The pipeline running is cityEHRFolder-Compositions.xpl
@@ -613,12 +616,8 @@
                          The generated form content is included here when the pipeline is run.
                     -->
                     <xi:include href="input:formContent" xxi:omit-xml-base="true"/>
-
-
                     <!-- Include filler so that sections at foot of form can scroll to the top -->
                     <xi:include href="cityEHRFormFootPadding.xhtml"/>
-
-
                     <!-- For debugging - query to get the form XML -->
                     <!--
                         <xf:group ref="xxf:instance('application-parameters-instance')[debug='false']">
@@ -635,7 +634,6 @@
                             mediatype="text/html"/>
                     </xhtml:p>
 -->
-
                     <!-- For debugging - results of search to get enumerated class values -->
                     <!--
                     <xhtml:p class="message">
@@ -652,7 +650,6 @@
                             mediatype="text/html"/>
                     </xhtml:p>
 -->
-
                     <!-- Debugging -->
                     <!--
                     <xhtml:p class="message">
@@ -661,7 +658,6 @@
                             mediatype="text/html"/>
                     </xhtml:p>
 -->
-
                     <!-- For debugging - display the form XML -->
                     <!--
                         <xf:group ref="xxf:instance('application-parameters-instance')[debug='false']">
@@ -670,7 +666,6 @@
                         </xhtml:p>
                         </xf:group>
                     -->
-
                     <!-- For debugging - list of in progress forms -->
                     <!--
                         <xhtml:p>
@@ -683,6 +678,12 @@
                     </xhtml:p>
                     -->
                     <!--
+                    <xhtml:p class="message">
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('dictionary-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->- <!--
                     <xhtml:p class="message">
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('dictionaryEntry-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                     </xhtml:p>
@@ -714,7 +715,6 @@
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('enumeratedClass-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                     </xhtml:p>
 -->
-
                     <!--
                     <xhtml:p class="message">
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('enumeratedClassHierarchy-instance'), 'data')/*, 'html')" mediatype="text/html"/>
@@ -725,7 +725,6 @@
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patient-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                     </xhtml:p>
                     -->
-
                     <!--
                     <xhtml:p> highlightEntryList: <xhtml:br/>
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('highlightEntryList-instance'), 'data')/*, 'html')" mediatype="text/html"/>
@@ -753,10 +752,7 @@
                         
                     </xhtml:p>
 -->
-
                     <!-- End of debugging -->
-
-
                 </xhtml:div>
             </xhtml:div>
 
@@ -764,6 +760,8 @@
             <xi:include href="cityEHRInformation.xhtml"/>
 
         </xhtml:div>
+        
+        
         <!-- Fixed footer -->
         <xi:include href="cityEHRFooter.xhtml"/>
         <!-- Javascript functions specific to this page -->

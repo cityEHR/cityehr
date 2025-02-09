@@ -971,7 +971,8 @@
     <xf:action ev:event="expand-entry">
         <xxf:variable name="expandedEntryOrganizer" select="event('expandedEntryOrganizer')"/>
         <xxf:variable name="entryTemplate" select="$expandedEntryOrganizer/cda:component[1]"/>
-
+        
+        
         <!-- Find the expanded element (2018-04-13 there may be more than one, so use the first).
             The descendant axis takes care of enumeratedClass entries and the expanded element being inside a cluster.
             Need to use the root of the id.
@@ -980,6 +981,7 @@
         <xxf:variable name="expandedElementTemplate"
             select="($entryTemplate/descendant::cda:value[@cityEHR:Scope=('#CityEHR:ElementProperty:Expanded','#CityEHR:ElementProperty:Full')])[1]"/>
         <xxf:variable name="expandedElementIRI" select="$expandedElementTemplate/@root"/>
+        
 
         <!-- If the element has a calculatedValue set, then evaluate to get the list of allowed values -->
         <xxf:variable name="calculatedValue" select="$expandedElementTemplate/@cityEHR:calculatedValue"/>
@@ -994,7 +996,7 @@
             select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$expandedElementIRI]"/>
         <xxf:variable name="dictionaryElementType" select="$dictionaryElement/@cityEHR:elementType"/>
 
-
+        
         <!-- Dictionary values -->
         <xxf:variable name="dictionaryValues"
             select="if ($dictionaryElementType=('#CityEHR:ElementProperty:enumeratedValue','#CityEHR:ElementProperty:enumeratedCalculatedValue')) then $dictionaryElement/iso-13606:data else ()"/>
@@ -1005,8 +1007,7 @@
         <xxf:variable name="entryNodeIRI"
             select="if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $dictionaryElement/iso-13606:data[1]/@value else ''"/>
 
-
-        <!-- Get the enumerationClass here by query to class dictionary.
+         <!-- Get the enumerationClass here by query to class dictionary.
              Only want to do this if needed for enumeratedClass.
              Sets up enumeratedClassHierarchy-instance with the element values for enumeration -->
         <xf:action if="$dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass'">
@@ -1016,9 +1017,9 @@
                 <xxf:context name="elementScope" select="''"/>
             </xf:dispatch>
         </xf:action>
-
+        
         <xxf:variable name="classElement"
-            select="if ($classIRI!='') then xxf:instance('enumeratedClassHierarchy-instance')/descendant::iso-13606:element[@extension=$classIRI][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass'] else ()"/>
+            select="if ($classIRI!='') then xxf:instance('enumeratedClassHierarchy-instance')/descendant::iso-13606:element[@extension=$classIRI][@cityEHR:elementType=('#CityEHR:ElementProperty:enumeratedClass','#CityEHR:Property:ElementType:enumeratedClass')] else ()"/>
         <xxf:variable name="classValues"
             select="if (not(exists($classElement))) then () else if ($entryNodeIRI!=$classIRI) then $classElement/descendant::iso-13606:data[@code=$entryNodeIRI][1]/descendant::iso-13606:data[not(child::*)] else $classElement/descendant::iso-13606:data[not(child::*)]"/>
 
@@ -1026,14 +1027,14 @@
         <xxf:variable name="directoryValues"
             select="xxf:instance('directoryElements-instance')/iso-13606:elementCollection/iso-13606:element[@root=$expandedElementIRI]/iso-13606:data"/>
 
-
         <!-- Get the (pre-)defined set of values for the expanded element -->
         <xxf:variable name="definedValueSet"
             select="if ($dictionaryElementType=('#CityEHR:ElementProperty:enumeratedValue','#CityEHR:ElementProperty:enumeratedCalculatedValue')) then $dictionaryValues
             else if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedClass') then $classValues
             else if ($dictionaryElementType='#CityEHR:ElementProperty:enumeratedDirectory') then $directoryValues
             else ()"/>
-
+        
+              
         <!-- Set the valueSet for the expaned element.
              If definedValueSet is empty and enumeratedCalculatedValue then set to calculatedValueSet
              else if there is a calculation then it is used to constrain the definedValueSet

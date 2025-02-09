@@ -61,7 +61,7 @@
         appPath - the URL of the cityEHR application, using oxf: protocol
         staticFileRoot - the path to the static resources
         staticFileURL - the URL of the static resources, using oxf: protocol
-        versionNumber - the version number of the cityEHR installation
+        versionNumber - the version number of the cityEHR installation (transfered from version-parameters by set-version in session-model)
     
     The remaining set up is done when the page is ready, in the set-default-application-splash action:
     
@@ -307,7 +307,18 @@
 
             <!-- test-action can be coded for any necessary testing -->
             <xf:action ev:event="test-action">
+
+                <xf:dispatch name="dal-getResourceList" target="databaseAccessLayer-model">
+                    <xxf:context name="resourceLocation" select="'/blob'"/>
+                    <xxf:context name="resourceList-instance" select="xxf:instance('test-instance')"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
                 
+                <xf:message ref="xxf:instance('control-instance')/status"/>
+
+                <!--
+                <xf:dispatch name="check-builtinDatabase" target="databaseAccessLayer-model"/>
+-->
                 <!--
                 <xf:dispatch name="invoke-pipelineScheduler" target="pageNavigation-model">
                     <xxf:context name="command" select="'start'"/>
@@ -315,7 +326,8 @@
                     <xxf:context name="return-instance" select="xxf:instance('test-instance')"/>
                 </xf:dispatch>
                 -->
-                
+
+                <!--            
                 <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
                     <xxf:context name="system" select="'ehr'"/>
                     <xxf:context name="storageLocation" select="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/systemConfiguration/schedulerLog/importWatchedResorces')"/>
@@ -332,7 +344,8 @@
                 
                 <xf:message ref="xxf:instance('application-parameters-instance')[@type='application']/importExport/exportPipeline/exportDirectory"/>
                 
-                             
+                -->
+
                 <!--
                 <xxf:show dialog="testDialog"/>
                 -->
@@ -742,10 +755,10 @@
                     target="systemParameters-model">
                     <xxf:context name="status" select="'completed'"/>
                 </xf:dispatch>
-                
+
                 <!-- Reset the processingStatus (used to block the UI) -->
                 <xf:setvalue ref="xxf:instance('control-instance')/processingStatus" value="''"/>
-                
+
             </xf:action>
 
             <!-- Application defined action to load the default configuration.
@@ -759,7 +772,8 @@
                     select="xxf:instance('view-parameters-instance')/applicationIRI"/>
 
                 <!-- Set the processingStatus (used to block the UI) -->
-                <xf:setvalue ref="xxf:instance('control-instance')/processingStatus" value="'processRunning'"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/processingStatus"
+                    value="'processRunning'"/>
 
 
                 <!-- Run process to import shipped resources for the application.
@@ -792,17 +806,17 @@
                     <!-- TBD is we want to block the session.
                           Otherwsie the error message has already been set -->
                 </xf:action>
-                
+
                 <!-- Record the status of the import-shippedResources action.
                      If it is anything other than 'completed' then the action will be prompted for again when the system is next run -->
                 <xf:dispatch name="record-shippedResourcesConfiguration"
                     target="systemParameters-model">
                     <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
                 </xf:dispatch>
-                
+
                 <!-- Reset the processingStatus (used to block the UI) -->
                 <xf:setvalue ref="xxf:instance('control-instance')/processingStatus" value="''"/>
-                
+
 
             </xf:action>
 
@@ -1241,7 +1255,7 @@
                     <xf:setvalue ref="xxf:instance('control-instance')/applicationStatus"
                         value="if (.='multipleApplications' and $userDefaultApplication) then 'multipleApplicationsDefault' else ."/>
 
-                    <!-- loadResources -->                    
+                    <!-- loadResources -->
                     <xf:setvalue ref="xxf:instance('control-instance')/applicationStatus"
                         value="if (xxf:instance('system-parameters-instance')/coreParameters/shippedResourcesConfiguration = 'completed') then . else 'loadResources'"/>
 
@@ -1714,66 +1728,7 @@
                         select="concat('Starting up in mode: ',$initialMode)"/>
                 </xf:dispatch>
 
-                <!-- Load the system-parameters and log status -->
-                <xf:dispatch name="load-system-parameters" target="systemParameters-model">
-                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
-                </xf:dispatch>
-                <!-- This may set the status to an error, but could get handled by build-system-parameters -->
-                <xf:dispatch name="record-log" target="main-model">
-                    <xxf:context name="logElement" select="xxf:instance('control-instance')/status"/>
-                    <xxf:context name="context" select="'load-system-parameters'"/>
-                </xf:dispatch>
-
-                <!-- System parameters failed to load.
-                     Either the first time the installation has run, or there is a terminal problem with the built-in database.
-                     Build the system parameters - will save the default system parameters or set the staus to an error if there is a problem with the built-in database. -->
-                <xf:action if="xxf:instance('control-instance')/status != ''">
-                    <xf:dispatch name="build-system-parameters" target="systemParameters-model">
-                        <xxf:context name="status" select="xxf:instance('control-instance')/status"
-                        />
-                    </xf:dispatch>
-                    <!-- If there is still a problem with system-parameters, then we can't continue.
-                         This means the parameters didn't load and couldn't be built.
-                         Set the mode to 'disabled' -->
-                    <xf:dispatch name="set-mode" target="main-model">
-                        <xxf:context name="mode" select="'disabled'"/>
-                        <xxf:context name="context" select="'build-system-parameters'"/>
-                    </xf:dispatch>
-                </xf:action>
-
-                <!-- Load the database-parameters.
-                     But not if there was a problem with system-parameters (mode has been set to 'disabled') -->
-                <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
-                    <xf:dispatch name="load-database-parameters" target="databaseAccessLayer-model">
-                        <xxf:context name="status" select="xxf:instance('control-instance')/status"
-                        />
-                    </xf:dispatch>
-                    <!-- If there was a problem with database-parameters, then we can't continue.
-                         Set mode to 'disabled' -->
-                    <xf:dispatch name="set-mode" target="main-model">
-                        <xxf:context name="mode" select="'disabled'"/>
-                        <xxf:context name="context" select="'load-database-parameters'"/>
-                    </xf:dispatch>
-                </xf:action>
-
-                <!-- Check the system-parameters to see if an update is needed.
-                     But not if there was a problem with system-parameters or database-parameters (mode has been set to 'disabled')
-                     Updates the system-parameters and database-parameters if the version number of the installation (in view-parameters) has changed. -->
-                <xf:action
-                    if="xxf:instance('control-instance')/mode != 'disabled' and xxf:instance('system-parameters-instance')/@version != xxf:instance('view-parameters-instance')/versionNumber/@version">
-                    <xf:dispatch name="update-system-parameters" target="systemParameters-model">
-                        <xxf:context name="status" select="xxf:instance('control-instance')/status"
-                        />
-                    </xf:dispatch>
-                    <!-- If there was a problem updating system-parameters, then we can't continue -->
-                    <xf:dispatch name="set-mode" target="main-model">
-                        <xxf:context name="mode" select="'disabled'"/>
-                        <xxf:context name="context" select="'update-system-parameters'"/>
-                    </xf:dispatch>
-                </xf:action>
-
                 <!-- Load the default session-parameters.
-                     But not if there was a problem with system-parameters or database-parameters (mode has been set to 'disabled')
                      The session doesn't actually start until resume-session or start-new-session.
                      But session-parameters are needed for some actions used during set up and to display information in the footer. -->
                 <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
@@ -1788,142 +1743,219 @@
                     </xf:dispatch>
                 </xf:action>
 
+                <!-- Check the builtin database.
+                     On the first run this will create the database folder in view-parameters/builtinDatabaseLocation 
+                     This is normally /WEB-INF/exist-data relative to the application installation folder -->
+                
+                <!-- This causes problems with file permissions.
+                     Instead need to ship cityEHR with an empty exist-data folder -->
+                <xf:dispatch name="check-builtinDatabase" target="databaseAccessLayer-model"/>
 
-                <!-- Load the system icons (to iconList-instance) 
+
+                <xf:action if="true()">
+
+                    <!-- Load the system-parameters and log status -->
+                    <xf:dispatch name="load-system-parameters" target="systemParameters-model">
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"
+                        />
+                    </xf:dispatch>
+                    <!-- This may set the status to an error, but could get handled by build-system-parameters -->
+                    <xf:dispatch name="record-log" target="main-model">
+                        <xxf:context name="logElement"
+                            select="xxf:instance('control-instance')/status"/>
+                        <xxf:context name="context" select="'load-system-parameters'"/>
+                    </xf:dispatch>
+
+                    <!-- System parameters failed to load.
+                     Either the first time the installation has run, or there is a terminal problem with the built-in database.
+                     Build the system parameters - will save the default system parameters or set the staus to an error if there is a problem with the built-in database. -->
+                    <xf:action if="xxf:instance('control-instance')/status != ''">
+                        <xf:dispatch name="build-system-parameters" target="systemParameters-model">
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+                        <!-- If there is still a problem with system-parameters, then we can't continue.
+                         This means the parameters didn't load and couldn't be built.
+                         Set the mode to 'disabled' -->
+                        <xf:dispatch name="set-mode" target="main-model">
+                            <xxf:context name="mode" select="'disabled'"/>
+                            <xxf:context name="context" select="'build-system-parameters'"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!-- Load the database-parameters.
+                     But not if there was a problem with system-parameters (mode has been set to 'disabled') -->
+                    <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
+                        <xf:dispatch name="load-database-parameters"
+                            target="databaseAccessLayer-model">
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+                        <!-- If there was a problem with database-parameters, then we can't continue.
+                         Set mode to 'disabled' -->
+                        <xf:dispatch name="set-mode" target="main-model">
+                            <xxf:context name="mode" select="'disabled'"/>
+                            <xxf:context name="context" select="'load-database-parameters'"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!-- Check the system-parameters to see if an update is needed.
+                     But not if there was a problem with system-parameters or database-parameters (mode has been set to 'disabled')
+                     Updates the system-parameters and database-parameters if the version number of the installation (in view-parameters) has changed. -->
+                    <xf:action
+                        if="xxf:instance('control-instance')/mode != 'disabled' and xxf:instance('system-parameters-instance')/@version != xxf:instance('view-parameters-instance')/versionNumber/@version">
+                        <xf:dispatch name="update-system-parameters" target="systemParameters-model">
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+                        <!-- If there was a problem updating system-parameters, then we can't continue -->
+                        <xf:dispatch name="set-mode" target="main-model">
+                            <xxf:context name="mode" select="'disabled'"/>
+                            <xxf:context name="context" select="'update-system-parameters'"/>
+                        </xf:dispatch>
+                    </xf:action>
+
+                    <!-- Load the system icons (to iconList-instance) 
                      This is just done to check the icons exist - if not, then initialize them 
                      Must be done after the session-parameters have been created -->
-                <xf:dispatch name="load-system-icons" target="systemParameters-model"/>
-                <xf:action if="not(exists(xxf:instance('iconList-instance')/*))">
-                    <xf:dispatch name="initialize-system-icons" target="systemParameters-model"/>
-                </xf:action>
+                    <xf:dispatch name="load-system-icons" target="systemParameters-model"/>
+                    <xf:action if="not(exists(xxf:instance('iconList-instance')/*))">
+                        <xf:dispatch name="initialize-system-icons" target="systemParameters-model"
+                        />
+                    </xf:action>
 
-                <!-- Check the database configuration.
+                    <!-- Check the database configuration.
                      This checks the deployed database clusters as specified in database-parameters.
                      So will use the latest parameters if system-parameters or database-parameters were updated above.
                      Iterates through each database cluster and checks that each node is accessible.
                      Then checks that the btu-parameters read from the cluster match the specification in database-parameters.
                      As a result of the checks, it is confirmed that each node can be accessed, read and queried. -->
-                <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
-                    <xf:dispatch name="check-databases" target="databaseAccessLayer-model">
-                        <xxf:context name="system" select="'ehr'"/>
-                        <xxf:context name="status" select="xxf:instance('control-instance')/status"
-                        />
-                    </xf:dispatch>
-                    <!-- If there was a problem found by check-databases, then we can't continue, but we might be able to recover -->
-                    <xf:dispatch name="set-mode" target="main-model">
-                        <xxf:context name="mode" select="'recovery'"/>
-                        <xxf:context name="context" select="'check-databases'"/>
-                    </xf:dispatch>
-                </xf:action>
+                    <xf:action if="xxf:instance('control-instance')/mode != 'disabled'">
+                        <xf:dispatch name="check-databases" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+                        <!-- If there was a problem found by check-databases, then we can't continue, but we might be able to recover -->
+                        <xf:dispatch name="set-mode" target="main-model">
+                            <xxf:context name="mode" select="'recovery'"/>
+                            <xxf:context name="context" select="'check-databases'"/>
+                        </xf:dispatch>
+                    </xf:action>
 
-                <!-- If system parameters and database-parameters are OK and disabled/recovery mode was not forced in URL.
+                    <!-- If system parameters and database-parameters are OK and disabled/recovery mode was not forced in URL.
                      Then we can continue with the set up.
                      If any of the remaining set up actions encounters an error, then recovery mode will be set. -->
 
 
-                <!-- Set the default application
+                    <!-- Set the default application
                          Default application is defined in system-parameters                           
                          Loads the application-parameters for the application from the database
                          If this fails, the application-parameters are built and then stored
                          If the application-parameters are out of date, then they are rebuilt and stored in the launch-application action.
                          If this is the first time the system has run, create the configuration for the default application -->
-                <xxf:variable name="defaultApplicationIRI"
-                    select="xxf:instance('system-parameters-instance')/dynamicParameters/defaultApplicationIRI/@value"/>
+                    <xxf:variable name="defaultApplicationIRI"
+                        select="xxf:instance('system-parameters-instance')/dynamicParameters/defaultApplicationIRI/@value"/>
 
-                <!-- Set the languageCode found in the default system-parameters, in case they get replaced in load-variant-system-parameters.
+                    <!-- Set the languageCode found in the default system-parameters, in case they get replaced in load-variant-system-parameters.
                      This is needed in case the user reverts to the default language, after a variant has been loaded -->
-                <xf:setvalue ref="xxf:instance('control-instance')/systemParametersBaseLanguageCode"
-                    value="lower-case(xxf:instance('system-parameters-instance')/@baseLanguageCode)"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/systemParametersBaseLanguageCode"
+                        value="lower-case(xxf:instance('system-parameters-instance')/@baseLanguageCode)"/>
 
-                <!-- Set the systemLanguageCode (will get transfered to session-parameters when/if the user starts a session.
+                    <!-- Set the systemLanguageCode (will get transfered to session-parameters when/if the user starts a session.
                      This is the language set for the cityEHR installation and can only be changed through the admin page -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemLanguageCode"
-                    value="lower-case(xxf:instance('system-parameters-instance')/dynamicParameters/language/@code)"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemLanguageCode"
+                        value="lower-case(xxf:instance('system-parameters-instance')/dynamicParameters/language/@code)"/>
 
-                <!-- Load the variant system parameters, if necessary, now that we know the language for the session splash screen -->
-                <xf:dispatch name="load-variant-system-parameters" target="systemParameters-model">
-                    <xxf:context name="sessionLanguageCode"
-                        select="xxf:instance('view-parameters-instance')/systemLanguageCode"/>
-                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
-                </xf:dispatch>
-
-                <!-- Load application list.
-                     The applicationList may be empty the first time the installation is run.
-                     This can happen when a new database cluster is configured.
-                     But the query to get the list will only fail if there is a problem with the database -->
-                <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
-                    <xf:dispatch name="get-applicationList" target="application-model">
+                    <!-- Load the variant system parameters, if necessary, now that we know the language for the session splash screen -->
+                    <xf:dispatch name="load-variant-system-parameters"
+                        target="systemParameters-model">
+                        <xxf:context name="sessionLanguageCode"
+                            select="xxf:instance('view-parameters-instance')/systemLanguageCode"/>
                         <xxf:context name="status" select="xxf:instance('control-instance')/status"
                         />
                     </xf:dispatch>
-                    <!-- Set to recovery mode if load failed (something is wrong with the database) -->
-                    <!--
+
+                    <!-- Load application list.
+                     The applicationList may be empty the first time the installation is run.
+                     This can happen when a new database cluster is configured.
+                     But the query to get the list will only fail if there is a problem with the database -->
+                    <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
+                        <xf:dispatch name="get-applicationList" target="application-model">
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+                        <!-- Set to recovery mode if load failed (something is wrong with the database) -->
+                        <!--
                          2022-09-21 Note that failure of dal-query currently returns an empty status
                          This is becasue queries can fail if the collection context does not exist.
                          And this is currently not handled crrectly -->
-                    <xf:dispatch name="set-mode" target="main-model">
-                        <xxf:context name="mode" select="'recovery'"/>
-                        <xxf:context name="context" select="'get-applicationList'"/>
-                    </xf:dispatch>
-                </xf:action>
+                        <xf:dispatch name="set-mode" target="main-model">
+                            <xxf:context name="mode" select="'recovery'"/>
+                            <xxf:context name="context" select="'get-applicationList'"/>
+                        </xf:dispatch>
+                    </xf:action>
 
-                <!-- Set the application for user log in - will trigger xforms-value-changed event that invokes set-application.
+                    <!-- Set the application for user log in - will trigger xforms-value-changed event that invokes set-application.
                      If this is the first time the application has run, then set-application will create the configuration for the default application -->
-                <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
-                    <xf:setvalue ref="xxf:instance('user-credentials-instance')/applicationIRI"
-                        value="$defaultApplicationIRI"/>
-                </xf:action>
+                    <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
+                        <xf:setvalue ref="xxf:instance('user-credentials-instance')/applicationIRI"
+                            value="$defaultApplicationIRI"/>
+                    </xf:action>
 
-                <!-- Set default-user-instance, if it exists.
+                    <!-- Set default-user-instance, if it exists.
                      If there are any users stored, then the default user should be one of them.
                      If there are no users, then this is the first session for this installation, or there may be a problem with the database.
                      defaultUserLoaded will be set to true or false - this action does not set the status -->
-                <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
-                    <xf:dispatch name="set-default-user" target="main-model"/>
-                    <xf:dispatch name="record-log" target="main-model">
-                        <xxf:context name="logElement"
-                            select="xxf:instance('control-instance')/defaultUserLoaded"/>
-                        <xxf:context name="context" select="'set-default-user'"/>
-                    </xf:dispatch>
-                </xf:action>
+                    <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
+                        <xf:dispatch name="set-default-user" target="main-model"/>
+                        <xf:dispatch name="record-log" target="main-model">
+                            <xxf:context name="logElement"
+                                select="xxf:instance('control-instance')/defaultUserLoaded"/>
+                            <xxf:context name="context" select="'set-default-user'"/>
+                        </xf:dispatch>
+                    </xf:action>
 
-                <!-- Set the debug mode - if configured in system-parameters.
+                    <!-- Set the debug mode - if configured in system-parameters.
                      Only if we've reached this point and mode is still 'normal'.
                      Need to set the staus first, otherwise set-mode won't reset the mode -->
-                <xf:action
-                    if="xxf:instance('control-instance')/mode = 'normal' and exists(xxf:instance('system-parameters-instance')/dynamicParameters/debug[@value = 'true'])">
-                    <xf:setvalue ref="xxf:instance('control-instance')/mode" value="'debug'"/>
-                </xf:action>
+                    <xf:action
+                        if="xxf:instance('control-instance')/mode = 'normal' and exists(xxf:instance('system-parameters-instance')/dynamicParameters/debug[@value = 'true'])">
+                        <xf:setvalue ref="xxf:instance('control-instance')/mode" value="'debug'"/>
+                    </xf:action>
 
-                <!-- Set up for debugging, but only needed for recovery or debug modes -->
-                <xf:action if="xxf:instance('control-instance')/mode =('recovery','debug')">
-                    <!-- Debugging instance (will only be selected if mode is recovery or debug) -->
-                    <xxf:variable name="debugInstance"
-                        select="xxf:instance('view-parameters-instance')/debuggingInformation/debugInstance/option[1]/@value"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/debugInstance"
-                        value="$debugInstance"/>
-                </xf:action>
+                    <!-- Set up for debugging, but only needed for recovery or debug modes -->
+                    <xf:action if="xxf:instance('control-instance')/mode =('recovery','debug')">
+                        <!-- Debugging instance (will only be selected if mode is recovery or debug) -->
+                        <xxf:variable name="debugInstance"
+                            select="xxf:instance('view-parameters-instance')/debuggingInformation/debugInstance/option[1]/@value"/>
+                        <xf:setvalue ref="xxf:instance('control-instance')/debugInstance"
+                            value="$debugInstance"/>
+                    </xf:action>
 
-                <!-- Load static splash image, for disabled or recovery mode -->
-                <xf:action if="xxf:instance('control-instance')/mode =('disabled','recovery')">
-                    <xf:dispatch name="set-static-image" target="configurationManagement-model">
-                        <xxf:context name="imageElement"
-                            select="xxf:instance('control-instance')/staticWelcomeSplash"/>
-                        <xxf:context name="imageLocation"
-                            select="xxf:instance('control-instance')/mode"/>
-                    </xf:dispatch>
-                </xf:action>
+                    <!-- Load static splash image, for disabled or recovery mode -->
+                    <xf:action if="xxf:instance('control-instance')/mode =('disabled','recovery')">
+                        <xf:dispatch name="set-static-image" target="configurationManagement-model">
+                            <xxf:context name="imageElement"
+                                select="xxf:instance('control-instance')/staticWelcomeSplash"/>
+                            <xxf:context name="imageLocation"
+                                select="xxf:instance('control-instance')/mode"/>
+                        </xf:dispatch>
+                    </xf:action>
 
-                <!-- Set up action message.
+                    <!-- Set up action message.
                      Depends on the mode. -->
-                <xf:setvalue ref="xxf:instance('control-instance')/actionMessage"
-                    value="if (xxf:instance('control-instance')/mode='disabled') then 'actionMessageDisabled' else if (xxf:instance('control-instance')/mode='recovery') then 'actionMessageRecovery' else 'actionMessage'"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/actionMessage"
+                        value="if (xxf:instance('control-instance')/mode='disabled') then 'actionMessageDisabled' else if (xxf:instance('control-instance')/mode='recovery') then 'actionMessageRecovery' else 'actionMessage'"/>
 
-                <!-- Authentication message has already been set in set-default-user
+                    <!-- Authentication message has already been set in set-default-user
                      But override this if now in recovery mode. -->
-                <xf:action if="xxf:instance('control-instance')/mode='recovery'">
-                    <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage"
-                        value="'defaultUserAuthenticationMessage'"/>
+                    <xf:action if="xxf:instance('control-instance')/mode='recovery'">
+                        <xf:setvalue ref="xxf:instance('control-instance')/authenticationMessage"
+                            value="'defaultUserAuthenticationMessage'"/>
+                    </xf:action>
+
                 </xf:action>
             </xf:action>
 
@@ -1931,7 +1963,7 @@
             <!-- === Set up view when model is first loaded =============
                  ======================================================== -->
             <xf:action ev:event="xforms-model-construct-done">
-                <!-- Not doing anything here - see xforms-ready -->
+                <!-- Done in xforms-ready -->
             </xf:action>
 
 

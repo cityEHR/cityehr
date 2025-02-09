@@ -61,7 +61,7 @@
   <xsl:variable name="applicationId"
     select="if (exists($setApplicationId) and $setApplicationId!='') then $setApplicationId else $defaultApplicationId"/>
   <xsl:variable name="applicationDisplayName" select="$applicationId"/>
-  <xsl:variable name="applicationOwner" select="$applicationId"/>
+  <xsl:variable name="modelOwner" select="$applicationId"/>
 
   <!-- Set the Specialty for this Information Model -->
   <xsl:variable name="defaultSpecialtyId"
@@ -169,7 +169,7 @@
         <AnnotationProperty abbreviatedIRI="rdfs:copyright"/>
         <Literal xml:lang="{$baseLanguageCode}" datatypeIRI="rdf:PlainLiteral">Copyright (c)
             <xsl:value-of select="year-from-date(current-date())"/>
-          <xsl:value-of select="$applicationOwner"/>
+          <xsl:value-of select="$modelOwner"/>
         </Literal>
       </Annotation>
 
@@ -214,7 +214,7 @@
         <DataProperty IRI="#hasOwner"/>
         <NamedIndividual IRI="{$applicationIRI}"/>
         <Literal xml:lang="en" datatypeIRI="&rdf;PlainLiteral">
-          <xsl:value-of select="$applicationOwner"/>
+          <xsl:value-of select="$modelOwner"/>
         </Literal>
       </DataPropertyAssertion>
 

@@ -615,13 +615,16 @@
         (1) simple entry, form rendition uses cda:observation or cda:encounter (may handle other type of CDA events in the future)
         (2) simple entry, image map rendition displays the image map
         (2a) Simple entry - image rendition
-        (3) simple entry with supplementary data use cda:organiser with classCode attribute of EnumeratedClassEntry
-        (4) simple entry, image map rendition and supplementary data
+        (3) simple entry with supplementary data using cda:entryRelationship
+        (4) simple entry, image map rendition and supplementary data using cda:entryRelationship
         
         (5) multiple occurrences of the same entry use cda:organizer with classCode attribute of MultipleEntry
         (6) multiple occurrences of the same entry, image map rendition
-        (7) multiple occurrences of the same entry, with supplementary data
-        (8) multiple occurrences of the same entry, image map rendition and supplementary data
+         
+        A multiple entry contains a cda:organizer with two components, the first with the template
+        and the second with another organizer with one component for each multiple entry
+        
+        Supplementatry data sets are contained in cda:entryRelationship within the cda:observation, cda:encounter, etc
         ===================================================================================================== -->
 
     <xsl:template name="renderCDAEntryContent">
@@ -720,7 +723,7 @@
         </xsl:if>
 
         <!-- === (3) Simple Entry with supplementary data for supplementary data sets on elements with emumerated class values ===
-             Entry contains an organizer for EnumeratedClassEntry 
+             Entry contains an entryRelationship for each EnumeratedClassEntry with a supplementary data set
             
              First component is an entry that calls in supplementary entries.
              Second component is organizer with the supplementary entries
@@ -747,12 +750,12 @@
                 <!-- Set up the main entry that has enumeratedClass element -->
                 <xsl:variable name="mainEntry" select="$entryInstance/cda:component[1]/cda:observation"/>
                 <!-- Set up the supplementary entry for processing on selection of element -->
-                <xsl:variable name="supplementary-entry-organizer" select="$entryInstance/cda:component[2]/cda:organizer"/>
+                <xsl:variable name="supplementary-entry-set" select="$entryInstance/cda:component[2]/cda:organizer"/>
 
                 <xsl:call-template name="renderEntryWithSDS">
                     <xsl:with-param name="mainEntry" select="$mainEntry"/>
                     <xsl:with-param name="entryLayout" select="$entryLayout"/>
-                    <xsl:with-param name="supplementary-entry-organizer" select="$supplementary-entry-organizer"/>
+                    <xsl:with-param name="supplementary-entry-organizer" select="$supplementary-entry-set"/>
                     <xsl:with-param name="labelWidth" select="$labelWidth"/>
                 </xsl:call-template>
             </xsl:for-each>
@@ -837,14 +840,6 @@
         -->
 
 
-        <!-- === (7) Multiple occurrences of the same entry, supplementary data ==
-              This is now covered by (5) 
-        -->
-
-
-        <!-- === (8) Multiple occurrences of the same entry, supplementary data, image map rendition ==
-            
-        -->
 
 
     </xsl:template>
@@ -1645,7 +1640,7 @@
          Handles each entry in the multiple entry, when the data pattern is not one of the plotted types.
          The organizer is from the second component in the multiple entry and contains a set of components with
              cda:observation    (simple entry)
-             cda:organizer      (enuermated class entry)
+             containing cda:entryRelationship      (enuermated class entry)
              
          Multiple entries are laid out as a table, unless there is only one element in the entry
          In this case a (simpler) list is used.
@@ -1794,7 +1789,7 @@
         
         Recursive call to handle clusters.
         
-        Can be called without the supplementary-entry-organizer if necessary.
+        Can be called without the supplementaryEntry if necessary.
         
         ======================================================================================= -->
 
@@ -1805,10 +1800,6 @@
         <xsl:param name="entryLayout"/>
         <xsl:param name="labelWidth"/>
         <xsl:param name="supplementaryEntry"/>
-
-        <!--
-        <xsl:param name="supplementary-entry-organizer"/>
-        -->
 
         <xsl:variable name="elementIRI" select="$element/@extension"/>
         <xsl:variable name="id" select="substring-after($elementIRI, 'Element:')"/>

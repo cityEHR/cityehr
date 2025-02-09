@@ -40,6 +40,19 @@
             <patient id=""/>
         </control>
     </xf:instance>
+    
+    
+    <!-- === Version parameters.
+             ersion-parameters.xml is set during the release build.
+             The version number is transfered to view-parameters as the first step in xforms-ready
+         ========================================================================= -->
+    
+    <xf:instance id="version-parameters-instance" src="oxf:/apps/ehr/version-parameters.xml"/>
+    
+    <xf:action ev:event="set-version">
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/versionNumber/@version"
+            value="xxf:instance('version-parameters-instance')/versionNumber/@version"/>
+    </xf:action>
 
 
     <!-- === Set the parameters for the view. =============================================================
@@ -51,7 +64,7 @@
         ====================================================================================================
     -->
     <xf:instance id="view-parameters-instance" src="input:instance"/>
-
+    
     <!-- Set the view-parameters from the session-parameters.
          Only invoked after validate-session, so page, userId and sessionId have been confirmed as valid -->
     <xf:action ev:event="set-view-parameters">
@@ -477,6 +490,7 @@
         <!-- Return the status -->
         <xf:setvalue ref="$status" value="xxf:instance('sessionControl-instance')/status"/>
     </xf:action>
+    
 
     <!-- Application defined action to load the previous session.
          Invoked from cityEHRSignOn page -->
@@ -649,7 +663,10 @@
     <!-- ========= Set up session when it is first loaded ========= 
          ======================================================== -->
     <xf:action ev:event="xforms-model-construct-done">
-        <!-- Not doing anything here - actions are invoked from configurationModel -->
+        <!-- Set the cityEHR version from version-parameters.xml -->
+        <xf:dispatch name="set-version" target="session-model"/>   
+        
+        <!-- Other actions are invoked from configurationModel -->
     </xf:action>
 
 

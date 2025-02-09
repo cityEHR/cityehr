@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!-- ====================================================================
+    ontology.xml
+    OWL/XML ontology used with cityEHR .
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    ==================================================================== -->
+<!--
+<!DOCTYPE Ontology [
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY xml "http://www.w3.org/XML/1998/namespace" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+-->
+
+<Ontology xmlns="http://www.w3.org/2002/07/owl#" xml:base="http://www.openhealthinformatics.org/cityEHR.owl"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:xml="http://www.w3.org/XML/1998/namespace"
+    ontologyIRI="http://www.openhealthinformatics.org/cityEHR.owl">
+    <Prefix name="x2" IRI="http://schemas.microsoft.com/office/excel/2003/xml"/>
+    <Prefix name="ss" IRI="urn:schemas-microsoft-com:office:spreadsheet"/>
+    <Prefix name="o" IRI="urn:schemas-microsoft-com:office:office"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="c" IRI="urn:schemas-microsoft-com:office:component:spreadsheet"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="cda" IRI="urn:hl7-org:v3"/>
+    <Prefix name="x" IRI="urn:schemas-microsoft-com:office:excel"/>
+    <Prefix name="xsi" IRI="http://www.w3.org/2001/XMLSchema-instance"/>
+    <Prefix name="office2003Spreadsheet" IRI="urn:schemas-microsoft-com:office:spreadsheet"/>
+    <Prefix name="" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Prefix name="html" IRI="http://www.w3.org/TR/REC-html40"/>
+    <Annotation>
+        <AnnotationProperty abbreviatedIRI="rdfs:cityEHR"/>
+        <Literal datatypeIRI="http://www.openhealthinformatics.org">Copyright (C) 2013-2021 John Chelsom.</Literal>
+    </Annotation>
+    
+</Ontology>

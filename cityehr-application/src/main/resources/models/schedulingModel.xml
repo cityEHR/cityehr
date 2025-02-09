@@ -30,7 +30,7 @@
 
 
     <!-- ========= Create New Annotations and Save Annotations for an event ========= 
-    ================================================================================ -->
+         ================================================================================ -->
 
     <!-- Control of scheduling -->
     <xf:instance id="schedulingControl-instance">
@@ -155,7 +155,7 @@
     </xf:action>
       
     <!-- Application defined action to generate a clinic.
-         Takes a clinic schedule and clinic templae input
+         Takes a clinic schedule and clinic template input
          Write clinics to xmlstore - one instance of the clinic for each scheduled date  -->
     <xf:action ev:event="schedule-clinics">
         <xxf:variable name="clinic" select="event('clinic')"/>

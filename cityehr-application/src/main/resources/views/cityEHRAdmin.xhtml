@@ -569,6 +569,7 @@
                         <informationModelResource/>
                         <informationModelType><!-- Specialty | Class | Summary --></informationModelType>
                         <informationModelDisplayType/>
+                        <exportExtract/>
                         <exportFormat/>
                     </manageInformationModel>
 
@@ -637,6 +638,7 @@
                         <clinicSchedule id="" specialty="" displayName="">
                             <!-- schedule inserted from template -->
                         </clinicSchedule>
+
                     </createClinic>
 
                     <manageClinic>
@@ -2163,8 +2165,76 @@
 
 
             <!-- ===Manage Information Models === 
-                 manageInformationModel
+                 manageInformationModel ***jc
                  ================================= -->
+
+            <!-- Application defined action to reset for manageInformationModel.
+                 This happens when the manageInformationModel task is first selected, on delete-managedSpecialty or on import-shippedResourcesComplete
+            -->
+            <xf:action ev:event="reset-manageInformationModel">
+                <xxf:variable name="applicationId"
+                    select="xxf:instance('control-instance')/managedApplication/applicationId"/>
+
+                <!-- Load list of information models -->
+                <xf:dispatch name="get-informationModelList" target="application-model">
+                    <xxf:context name="applicationId" select="$applicationId"/>
+                    <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- If previousAdminTask was importInformationModel, then show the imported model -->
+                <xf:action
+                    if="xxf:instance('control-instance')/adminTask/previousAdminTask = 'importInformationModel'">
+
+                    <xxf:variable name="specialtyIRI"
+                        select="xxf:instance('control-instance')/importInformationModel/specialtyIRI"/>
+                    <xxf:variable name="modelIRI"
+                        select="xxf:instance('control-instance')/importInformationModel/modelIRI"/>
+
+                    <!-- Set the informationModelResource - this will trigger setting of specialtyIRI, modelIRI and load of the model -->
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/informationModelResource"
+                        value="xxf:instance('informationModelList-instance')/informationModel[specialtyIRI=$specialtyIRI][modelIRI=$modelIRI]/handle"
+                    />
+                </xf:action>
+
+                <!-- Otherwise reset the model parameters 
+                     No specialtyIRI means that the summary of all models is displayed -->
+                <xf:action
+                    if="not(xxf:instance('control-instance')/adminTask/previousAdminTask = 'importInformationModel')">
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"
+                        value="''"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/modelIRI"
+                        value="''"/>
+                    <!-- Reset for the specialty -->
+                    <xf:dispatch name="resetSpecialty-manageInformationModel" target="main-model"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/informationModelResource"
+                        value="''"/>
+                </xf:action>
+
+                <!-- Set exportExtract -->
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/manageInformationModel/exportExtract"
+                    value="''"/>
+
+                <!-- Set exportFormat -->
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/manageInformationModel/exportFormat"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageInformationModel/exportFormat/option[1]/@value"/>
+
+                <!-- Set language pack -->
+                <xxf:variable name="option"
+                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/managedLanguagePack/exportFormat/option[1]"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/managedLanguagePack/exportFormat"
+                    value="$option/@value"/>
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/managedLanguagePack/transformationXSL"
+                    value="$option/@transformationXSL"/>
+
+            </xf:action>
+
 
             <!-- Application defined action to load an information model.
                  informationModelResource, specialtyIRI, modelIRI and informationModelType are set from the informationModelList-instance
@@ -2315,6 +2385,7 @@
                  and loaded to the resource-instance and ISO-13606-instance
             -->
             <xf:action ev:event="export-informationModel">
+                <xxf:variable name="exportExtract" select="event('exportExtract')"/>
                 <xxf:variable name="exportFormat" select="event('exportFormat')"/>
 
                 <!-- Export uses modelId -->
@@ -2327,28 +2398,37 @@
                      The information model OWL/XML is already loaded to resource-instance 
                      Call cityEHRExportResource pipeline to return zip file to browser -->
                     <xf:action if="$exportFormat='ontology'">
-                        <xf:action ev:event="DOMActivate">
-                            <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                        <!-- Extract the specified composition model is exportExtract us set -->
+                        <xf:action if="$exportExtract!=''">
+                            <xf:dispatch name="extract-ontology" target="main-model">
+                                <xxf:context name="ontology-instance"
+                                    select="xxf:instance('resource-instance')"/>
+                                <xxf:context name="exportExtract" select="$exportExtract"/>
                                 <xxf:context name="export-instance"
                                     select="xxf:instance('resource-instance')"/>
-                                <xxf:context name="exportName" select="$modelId"/>
-                                <xxf:context name="exportType" select="'owl'"/>
                             </xf:dispatch>
                         </xf:action>
+
+                        <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                            <xxf:context name="export-instance"
+                                select="xxf:instance('resource-instance')"/>
+                            <xxf:context name="exportName" select="$modelId"/>
+                            <xxf:context name="exportType" select="'owl'"/>
+                        </xf:dispatch>
                     </xf:action>
+
 
                     <!-- Export ISO-13606 XML
                      The information model is ISO-13606 format XML is already loaded to ISO-13606-instance
                      Call cityEHRExportResource pipeline to return zip file to browser -->
                     <xf:action if="$exportFormat='ISO-13606'">
-                        <xf:action ev:event="DOMActivate">
-                            <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
-                                <xxf:context name="export-instance"
-                                    select="xxf:instance('ISO-13606-instance')"/>
-                                <xxf:context name="exportName" select="$modelId"/>
-                                <xxf:context name="exportType" select="'owl'"/>
-                            </xf:dispatch>
-                        </xf:action>
+                        <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                            <xxf:context name="export-instance"
+                                select="xxf:instance('ISO-13606-instance')"/>
+                            <xxf:context name="exportName" select="$modelId"/>
+                            <xxf:context name="exportType" select="'owl'"/>
+                        </xf:dispatch>
+
                     </xf:action>
 
                     <!-- Export Mind Map
@@ -2392,68 +2472,45 @@
                 </xf:action>
             </xf:action>
 
-            <!-- Application defined action to reset for manageInformationModel.
-                 This happens when the manageInformationModel task is first selected, on delete-managedSpecialty or on import-shippedResourcesComplete
-            -->
-            <xf:action ev:event="reset-manageInformationModel">
-                <xxf:variable name="applicationId"
-                    select="xxf:instance('control-instance')/managedApplication/applicationId"/>
 
-                <!-- Load list of information models -->
-                <xf:dispatch name="get-informationModelList" target="application-model">
-                    <xxf:context name="applicationId" select="$applicationId"/>
+            <!-- Application defined action to create extract of an information model.
+                 The extract composition is passed as a parameter exportExtract
+                 Builds the extract in working-ontology-instance and then transfers to the specific export instance
+            -->
+            <!-- Instance for the test record -->
+            <xf:instance id="working-ontology-instance">
+                <Ontology/>
+            </xf:instance>
+
+            <xf:action ev:event="extract-ontology">
+                <xxf:variable name="ontology-instance" select="event('ontology-instance')"/>
+                <xxf:variable name="exportExtract" select="event('exportExtract')"/>
+                <xxf:variable name="export-instance" select="event('export-instance')"/>
+
+                <!-- Set up the working-ontology-instance -->
+                <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+                    <xxf:context name="staticResourceLocation" select="'/templates/ontology.xml'"/>
+                    <xxf:context name="resource" select="xxf:instance('working-ontology-instance')"/>
                     <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
                 </xf:dispatch>
 
-                <!-- If previousAdminTask was importInformationModel, then show the imported model -->
-                <xf:action
-                    if="xxf:instance('control-instance')/adminTask/previousAdminTask = 'importInformationModel'">
+                <!-- Get all assertions involving the exportExtract as a NamedIndividual -->
+                <xxf:variable name="exportExtractIndividualSet"
+                    select="$ontology-instance/*[owl:NamedIndividual/@IRI=$exportExtract]"/>
 
-                    <xxf:variable name="specialtyIRI"
-                        select="xxf:instance('control-instance')/importInformationModel/specialtyIRI"/>
-                    <xxf:variable name="modelIRI"
-                        select="xxf:instance('control-instance')/importInformationModel/modelIRI"/>
+                <!-- Write namedIndividuals to the ontology extract -->
+                <xf:action xxf:iterate="$exportExtractIndividualSet">
+                    <xxf:variable name="exportExtractIndividual" select="."/>
 
-                    <!-- Set the informationModelResource - this will trigger setting of specialtyIRI, modelIRI and load of the model-->
-                    <xf:setvalue
-                        ref="xxf:instance('control-instance')/manageInformationModel/informationModelResource"
-                        value="xxf:instance('informationModelList-instance')/informationModel[specialtyIRI=$specialtyIRI][modelIRI=$modelIRI]/handle"
-                    />
+                    <xf:insert context="xxf:instance('working-ontology-instance')" nodeset="*"
+                        origin="$exportExtractIndividual" at="last()" position="after"/>
                 </xf:action>
 
-                <!-- Otherwise reset the model parameters 
-                     No specialtyIRI means that the summary of all models is displayed -->
-                <xf:action
-                    if="not(xxf:instance('control-instance')/adminTask/previousAdminTask = 'importInformationModel')">
-                    <xf:setvalue
-                        ref="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"
-                        value="''"/>
-                    <xf:setvalue
-                        ref="xxf:instance('control-instance')/manageInformationModel/modelIRI"
-                        value="''"/>
-                    <!-- Reset for the specialty -->
-                    <xf:dispatch name="resetSpecialty-manageInformationModel" target="main-model"/>
-                    <xf:setvalue
-                        ref="xxf:instance('control-instance')/manageInformationModel/informationModelResource"
-                        value="''"/>
-                </xf:action>
-
-                <!-- Set exportFormat -->
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/exportFormat"
-                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageInformationModel/exportFormat/option[1]/@value"/>
-
-                <!-- Set language pack -->
-                <xxf:variable name="option"
-                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/managedLanguagePack/exportFormat/option[1]"/>
-                <xf:setvalue ref="xxf:instance('control-instance')/managedLanguagePack/exportFormat"
-                    value="$option/@value"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/managedLanguagePack/transformationXSL"
-                    value="$option/@transformationXSL"/>
+                <!-- Return the working ontology -->
+                <xf:insert nodeset="$export-instance"
+                    origin="xxf:instance('working-ontology-instance')"/>
 
             </xf:action>
-
 
             <!-- Application defined action to reset the specialty for manageInformationModel task -->
             <xf:action ev:event="resetSpecialty-manageInformationModel">
@@ -4862,7 +4919,7 @@
 
 
 
-            <!-- Application defined action invoked after completion of the import-shippedResources process. 
+            <!-- Application defined action invoked after completion of the import-informationModel process. 
                  If the import was successful then reset adminTask to manageInformationModel 
                  Otherwise display an error message -->
             <xf:action ev:event="import-informationModelComplete">
@@ -4885,10 +4942,10 @@
                     </xf:dispatch>
                 </xf:action>
 
-                <!-- There was an error in import-shippedResources -->
+                <!-- There was an error in import-informationModel -->
                 <xf:action if="not(xxf:instance('control-instance')/status='completed')">
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                        value="concat(xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedImportShippedResources'],' / ',xxf:instance('control-instance')/status)"
+                        value="concat(xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedImportInformationModel'],' / ',xxf:instance('control-instance')/status)"
                     />
                 </xf:action>
 
@@ -14112,9 +14169,31 @@
                                             </xf:trigger>
                                         </xhtml:span>
                                     </xhtml:span>
-                                    <!-- Controls that are only active when a model is selected -->
+                                    <!-- Controls that are only active when a specialty model is selected -->
                                     <xhtml:span
                                         class="{if (xxf:instance('control-instance')/manageInformationModel/informationModelResource !='') then '' else 'hidden'}">
+                                        <!-- Select export extract.
+                                             Only for ontology format-->
+                                        <xhtml:span
+                                            class="{if (xxf:instance('control-instance')/manageInformationModel/exportFormat='ontology') then '' else 'hidden'}">
+                                            <xxf:variable name="exportExtractConfiguration"
+                                                select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/manageInformationModel/exportExtract"/>
+                                            <xxf:variable name="compositionList"
+                                                select="$exportExtractConfiguration/iso-13606:composition | xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition"/>
+                                            <xf:select1
+                                                ref="xxf:instance('control-instance')/manageInformationModel/exportExtract">
+                                                <xf:label
+                                                  ref="$exportExtractConfiguration/@displayName"/>
+                                                <xf:itemset nodeset="$compositionList">
+                                                  <xf:label ref="@displayName"/>
+                                                  <xf:value ref="@code"/>
+                                                </xf:itemset>
+                                                <!-- New export extract selected -->
+                                                <xf:action ev:event="xforms-value-changed">
+                                                  <!-- Nothing to do here  -->
+                                                </xf:action>
+                                            </xf:select1>
+                                        </xhtml:span>
                                         <!-- Select export format -->
                                         <xf:select1
                                             ref="xxf:instance('control-instance')/manageInformationModel/exportFormat">
@@ -14148,6 +14227,8 @@
                                                 <xf:action ev:event="DOMActivate">
                                                   <xf:dispatch name="export-informationModel"
                                                   target="main-model">
+                                                  <xxf:context name="exportExtract"
+                                                  select="xxf:instance('control-instance')/manageInformationModel/exportExtract"/>
                                                   <xxf:context name="exportFormat"
                                                   select="xxf:instance('control-instance')/manageInformationModel/exportFormat"
                                                   />
@@ -14864,7 +14945,7 @@
                                             />
                                         </xf:hint>
                                         <!-- Show confirmation dialog.
-                                                     Calls the action reload-shippedResources in main-model if Confirm is pressed -->
+                                             Calls the action reload-shippedResources in main-model if Confirm is pressed -->
                                         <xf:action ev:event="DOMActivate">
                                             <xf:dispatch name="confirm-action"
                                                 target="pageNavigation-model">
@@ -18212,7 +18293,10 @@
                                                 ref="if (./@displayName!='') then ./@displayName else ./@code"/>
                                             <!-- Data type -->
                                             <xf:output
-                                                ref="if (./@dataType!='') then concat(' (',substring-after(./@dataType,'#CityEHR:DataType:'),')') else ''"/>
+                                                ref="if (./@dataType!='') then concat(' (',substring-after(./@dataType,'DataType:'),')') else ''"/>
+                                            <!-- Unit -->
+                                            <xf:output
+                                                ref="if (./@unit!='') then concat(' (',substring-after(./@unit,'Unit:'),')') else ''"/>
                                             <!-- Values (for enumeratedValue elements -->
                                             <xf:output ref="./@values"/>
                                         </xf:label>
@@ -18618,7 +18702,8 @@
                     <xhtml:div
                         class="{if ($adminTask='manageApplicationParameters') then '' else 'hidden'}">
 
-                        <xhtml:table  class="{if (xxf:instance('control-instance')/managedParameters/editType='') then '' else 'hidden'}">
+                        <xhtml:table
+                            class="{if (xxf:instance('control-instance')/managedParameters/editType='') then '' else 'hidden'}">
                             <xhtml:tbody>
                                 <xhtml:tr>
                                     <!-- Show parameters for the selected application -->
@@ -19766,59 +19851,99 @@
 
 
                     <!-- === Display clinic schedule === 
+                             Uses the clinicSchedule imported from the template clinicSchedule.xml
                              ============================== -->
                     <xhtml:div class="{if ($adminTask='createClinic') then '' else 'hidden'}">
                         <!-- Set parameters for the clinic schedule -->
                         <xxf:variable name="clinicSchedule"
                             select="xxf:instance('control-instance')/createClinic/clinicSchedule"/>
 
-                        <!-- Booking horizon -->
-                        <xf:input ref="$clinicSchedule/bookingHorizon/startDate/@value">
-                            <xf:label ref="../@displayName"/>
-                        </xf:input>
-                        <xf:input ref="$clinicSchedule/bookingHorizon/horizon/@value" xxf:size="3">
-                            <xf:label ref="../@displayName"/>
-                        </xf:input>
-                        <xf:input ref="$clinicSchedule/bookingHorizon/rollingHorizon/@value">
-                            <xf:label ref="../@displayName"/>
-                        </xf:input>
+                        <xhtml:table>
+                            <!-- Two columns - clinic schedule and daily schedule -->
+                            <xhtml:thead>
+                                <xhtml:tr>
+                                    <xhtml:th>
+                                        <xf:output
+                                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/createClinic/clinicScheduleLabel"
+                                        />
+                                    </xhtml:th>
+                                    <xhtml:th>
+                                        <xf:output
+                                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/createClinic/dailyScheduleLabel"
+                                        />
+                                    </xhtml:th>
+                                </xhtml:tr>
+                            </xhtml:thead>
 
-                        <!-- Schedule Pattern - months, weeks, days -->
-                        <xxf:variable name="schedulePattern"
-                            select="$clinicSchedule/schedulePattern/*"/>
-
-                        <xf:repeat nodeset="$schedulePattern">
-                            <xxf:variable name="schedulePatternPeriodType" select="."/>
-                            <xhtml:p>
-                                <xf:output ref="$schedulePatternPeriodType/@displayName"/>
-                                <xhtml:br />
-                                <xf:repeat nodeset="$schedulePatternPeriodType/*">
-                                    <xxf:variable name="schedulePatternPeriod" select="."/>
-                                    <xf:input ref="$schedulePatternPeriod/@selected">
-                                        <xf:label ref="$schedulePatternPeriod/@displayName"/>
-                                        <xf:action ev:event="xforms-value-changed">
-                                            <!-- If 'all' was selected then select all other values -->
-                                            <xf:action
-                                                if="$schedulePatternPeriod/@value='all' and $schedulePatternPeriod/@selected='true'"
-                                                xxf:iterate="$schedulePatternPeriodType/*">
-                                                <xf:setvalue ref="./@selected" value="'true'"/>
-                                            </xf:action>
-                                            <!-- If any value was deselected, then all must also be deselected -->
-                                            <xf:action
-                                                if="$schedulePatternPeriod/@value!='all' and $schedulePatternPeriod/@selected='false'">
-                                                <xf:setvalue
+                            <!-- Controls for setting up the schedules -->
+                            <xhtml:body>
+                                <xhtml:tr>
+                                    <!-- Clinic schedule -->
+                                    <xhtml:td>
+                                        <!-- Booking horizon -->
+                                        <xf:input
+                                            ref="$clinicSchedule/bookingHorizon/startDate/@value">
+                                            <xf:label ref="../@displayName"/>
+                                        </xf:input>
+                                        <xf:input
+                                            ref="$clinicSchedule/bookingHorizon/horizon/@value"
+                                            xxf:size="3">
+                                            <xf:label ref="../@displayName"/>
+                                        </xf:input>
+                                        <xf:input
+                                            ref="$clinicSchedule/bookingHorizon/rollingHorizon/@value">
+                                            <xf:label ref="../@displayName"/>
+                                        </xf:input>
+                                        <!-- Schedule Pattern - months, weeks, days -->
+                                        <xxf:variable name="schedulePattern"
+                                            select="$clinicSchedule/schedulePattern/*"/>
+                                        <xf:repeat nodeset="$schedulePattern">
+                                            <xxf:variable name="schedulePatternPeriodType"
+                                                select="."/>
+                                            <xhtml:p>
+                                                <xf:output
+                                                  ref="$schedulePatternPeriodType/@displayName"/>
+                                                <xhtml:br />
+                                                <xf:repeat nodeset="$schedulePatternPeriodType/*">
+                                                  <xxf:variable name="schedulePatternPeriod"
+                                                  select="."/>
+                                                  <xf:input ref="$schedulePatternPeriod/@selected">
+                                                  <xf:label
+                                                  ref="$schedulePatternPeriod/@displayName"/>
+                                                  <xf:action ev:event="xforms-value-changed">
+                                                  <!-- If 'all' was selected then select all other values -->
+                                                  <xf:action
+                                                  if="$schedulePatternPeriod/@value='all' and $schedulePatternPeriod/@selected='true'"
+                                                  xxf:iterate="$schedulePatternPeriodType/*">
+                                                  <xf:setvalue ref="./@selected" value="'true'"/>
+                                                  </xf:action>
+                                                  <!-- If any value was deselected, then all must also be deselected -->
+                                                  <xf:action
+                                                  if="$schedulePatternPeriod/@value!='all' and $schedulePatternPeriod/@selected='false'">
+                                                  <xf:setvalue
                                                   ref="$schedulePatternPeriodType/*[@value='all']/@selected"
                                                   value="'false'"/>
-                                            </xf:action>
-                                        </xf:action>
-                                    </xf:input>
-                                </xf:repeat>
-                            </xhtml:p>
+                                                  </xf:action>
+                                                  </xf:action>
+                                                  </xf:input>
+                                                </xf:repeat>
+                                            </xhtml:p>
+                                        </xf:repeat>
+                                        <xf:output
+                                            ref="xxf:instance('control-instance')/createClinic/status"
+                                        />
+                                    </xhtml:td>
 
-                        </xf:repeat>
+                                    <!-- Daily schedule -->
+                                    <xhtml:td> dailySchedule </xhtml:td>
+                                </xhtml:tr>
+                            </xhtml:body>
 
+
+                        </xhtml:table>
 
                     </xhtml:div>
+
 
 
                     <!-- === Display clinic daily details === 
@@ -20871,6 +20996,14 @@
                     <xhtml:p>compositionSet-instance:<xhtml:br />
                         <xf:output
                             ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('compositionSet-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    
+                    -->
+                    <!--
+                    <xhtml:p>ISO-13606-instance:<xhtml:br />
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('ISO-13606-instance'), 'data')/*, 'html')"
                             mediatype="text/html"/>
                     </xhtml:p>
                     -->

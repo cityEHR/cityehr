@@ -79,7 +79,7 @@
         select="$configurationSheet/office2003Spreadsheet:Row/office2003Spreadsheet:Cell[1][normalize-space(office2003Spreadsheet:Data)='Application']/../office2003Spreadsheet:Cell[2]/office2003Spreadsheet:Data"/>
     <xsl:variable name="applicationDisplayName"
         select="$configurationSheet/office2003Spreadsheet:Row/office2003Spreadsheet:Cell[1][normalize-space(office2003Spreadsheet:Data)='Application']/../office2003Spreadsheet:Cell[3]/office2003Spreadsheet:Data"/>
-    <xsl:variable name="applicationOwner"
+    <xsl:variable name="modelOwner"
         select="$configurationSheet/office2003Spreadsheet:Row[office2003Spreadsheet:Cell[1]/normalize-space(office2003Spreadsheet:Data)='Application']/office2003Spreadsheet:Cell[4]/office2003Spreadsheet:Data"/>
 
     <!-- Set the Specialty for this Information Model -->

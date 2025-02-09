@@ -20,14 +20,20 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
-    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
 
     <!-- ========= HTML Head - Includes the Xforms Model ========= 
     ========================================================= -->
@@ -44,7 +50,8 @@
 
         <!-- Stylesheet -->
         <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
+            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
+            media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
@@ -110,7 +117,7 @@
             The compositionType (forms, letters) is set from the page passed in view-parameters
             =================================================================== -->
         <xi:include href="../models/compositionMainModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ===  Manage image maps   === -->
         <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
 
@@ -127,7 +134,8 @@
             </xf:instance>
 
             <!-- Bindings for dynamic change of display of view controls  -->
-            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display" calculate="'show'"/>
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display"
+                calculate="'show'"/>
 
             <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view">
                 <!-- Register only when patientId is filled out (and visible) -->
@@ -146,20 +154,19 @@
                     calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
                 <!-- Show Ids. ISO13606 stucture only when debugging -->
                 <xf:bind nodeset="input[@id=('showISO13606','showIds')]/@display"
-                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
+                />
             </xf:bind>
 
-            <!-- Application defined action to show XML -->
+            <!-- Application defined action to show XML - user presses button -->
             <xf:action ev:event="xml">
                 <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
                     <xxf:context name="title" select="''"/>
                     <xxf:context name="displayXML" select="xxf:instance('form-instance')"/>
                 </xf:dispatch>
             </xf:action>
-            
-            
 
-            <!-- Application defined action to reset the form -->
+            <!-- Application defined action to reset the form - user presses button -->
             <xf:action ev:event="reset">
                 <!-- Confirmation dialogue calls reload-composition in main-model -->
                 <xf:dispatch name="confirm-action" target="pageNavigation-model">
@@ -167,26 +174,38 @@
                 </xf:dispatch>
             </xf:action>
 
-            <!-- Application defined action to register the patient.
-                 Checks all is Ok and then displays dialogue box to confirm. -->
+            <!-- Application defined action to register the patient  - user presses button -->
             <xf:action ev:event="register">
+                <!-- Prepare to register the patient.
+                     Then displays confirmation dialog to complete the action -->
+                <xf:dispatch name="prepare-register-patient" target="viewControlsActions-model"/>
+            </xf:action>
+
+
+            <!-- Prepare to register a new patient.
+                 Checks all is Ok and then displays dialogue box to confirm. -->
+            <xf:action ev:event="prepare-register-patient">
 
                 <!-- If required values are unset, then display the information about them.
                      Otherwise can do the actions to register -->
                 <xf:dispatch name="check-requiredElements" target="main-model"/>
 
-                <xf:setvalue ref="xxf:instance('control-instance')/current-form/showRequiredElements"
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/current-form/showRequiredElements"
                     value="xxf:instance('control-instance')/current-form/requiredElementsSet"/>
 
-                <xf:action if="xxf:instance('control-instance')/current-form/requiredElementsSet != 'true'">
+                <xf:action
+                    if="xxf:instance('control-instance')/current-form/requiredElementsSet != 'true'">
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
                         value="normalize-space(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/requiredDataNotSet/@displayName)"
                     />
                 </xf:action>
 
 
-                <xf:action if="xxf:instance('control-instance')/current-form/requiredElementsSet = 'true'">
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus" value="''"/>
+                <xf:action
+                    if="xxf:instance('control-instance')/current-form/requiredElementsSet = 'true'">
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+                        value="''"/>
                     <xf:setvalue ref="xxf:instance('control-instance')/error" value="''"/>
 
                     <!-- Get the patient identifier specified in the parameters-instance - e.g. NHS Number.
@@ -194,7 +213,8 @@
                          Note that there may be more than one patientRegistrationEntry if there are aliased entries/elements 
                          (for example if using lookup for demographics)
                          Get the first visible (i.e. not with @cityEHR:visibility='false') entry, which is assumed to be the one with the valid patient id -->
-                    <xxf:variable name="patientRegistration" select="xxf:instance('application-parameters-instance')/patientRegistration"/>
+                    <xxf:variable name="patientRegistration"
+                        select="xxf:instance('application-parameters-instance')/patientRegistration"/>
 
                     <!-- There could be more than one of these visible on the form (although unlikely).
                          The observation may be in an organizer, if the entry is an enumeratedClass entry-->
@@ -207,7 +227,8 @@
                     <xxf:variable name="patientIdDisplayName"
                         select="normalize-space(concat($patientRegistrationEntry/cda:code[@codeSystem='cityEHR']/@displayName,' ',$patientRegistrationElement/@cityEHR:elementDisplayName))"/>
 
-                    <xxf:variable name="patientId" select="normalize-space($patientRegistrationElement/@value)"/>
+                    <xxf:variable name="patientId"
+                        select="normalize-space($patientRegistrationElement/@value)"/>
 
                     <!-- Check for invalid characters in the patientId -->
                     <xxf:variable name="validIdentifier"
@@ -228,7 +249,8 @@
 
                         <!-- This is needed in publish-cda-composition.
                              But should be refactored, since we no longer want to use view-parameters for holding session data -->
-                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/patientId" value="$patientId"/>
+                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/patientId"
+                            value="$patientId"/>
 
                         <!-- Record location for this patient -->
                         <xxf:variable name="patientRecordLocation"
@@ -238,7 +260,8 @@
                         <xf:dispatch name="collection-exists" target="databaseAccessLayer-model">
                             <xxf:context name="system" select="'ehr'"/>
                             <xxf:context name="storageLocation" select="$patientRecordLocation"/>
-                            <xxf:context name="result" select="xxf:instance('control-instance')/status"/>
+                            <xxf:context name="result"
+                                select="xxf:instance('control-instance')/status"/>
                         </xf:dispatch>
 
                         <!-- Patient already has record, so don't register -->
@@ -251,7 +274,8 @@
                         <!-- Patient doesn't already have record, so can register as new patient -->
                         <xf:action if="xxf:instance('control-instance')/status = 'false'">
                             <xxf:variable name="dialogueId" select="'registerPatient'"/>
-                            <xf:setvalue ref="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/activeDialogue"
+                            <xf:setvalue
+                                ref="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/activeDialogue"
                                 value="$dialogueId"/>
                             <xxf:variable name="activeDialogue"
                                 select="xxf:instance('view-parameters-instance')/staticConfirmationDialogue/dialogue[@id=$dialogueId]"/>
@@ -261,17 +285,20 @@
                                 select="xxf:instance('application-parameters-instance')/triggers/triggerSet[@compositionIRI = xxf:instance('control-instance')/current-form/compositionIRI]/trigger[@type='navigation']"/>
 
                             <!-- Compositions for the current specialty (only with displayName set, which should be all of them) -->
-                            <xxf:variable name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                            <xxf:variable name="specialtyIRI"
+                                select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
                             <xxf:variable name="specialtyCompositions"
                                 select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@displayName!='']/@code"/>
 
                             <!-- Active navigation triggers - must exist in the specialty -->
-                            <xxf:variable name="activeNavigationTriggers" select="$navigationTriggers[@compositionIRI=$specialtyCompositions]"/>
+                            <xxf:variable name="activeNavigationTriggers"
+                                select="$navigationTriggers[@compositionIRI=$specialtyCompositions]"/>
 
                             <!-- Show the dialogue -->
                             <xf:dispatch name="confirm-action" target="pageNavigation-model">
                                 <xxf:context name="action" select="'registerPatient'"/>
-                                <xxf:context name="navigationTriggers" select="$activeNavigationTriggers"/>
+                                <xxf:context name="navigationTriggers"
+                                    select="$activeNavigationTriggers"/>
                             </xf:dispatch>
                         </xf:action>
 
@@ -279,14 +306,19 @@
                 </xf:action>
 
             </xf:action>
-            <!-- End register action -->
+            <!-- End prepare-register-patient -->
 
 
             <!-- Register patient after the user has confirmed.
                  May navigate to the next form if trigger has been set.
                  TBD - start a pathway, if trigger has been set. -->
             <xf:action ev:event="register-patient">
-                <xxf:variable name="navigationTarget" select="event('context')"/>
+                <xxf:variable name="newCompositionIRI" select="event('context')"/>
+
+                <!-- Debugging -->
+                <!--
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError" value="if (exists($navigationTarget) and $navigationTarget!='') then $navigationTarget else xxf:instance('session-parameters-instance')/specialtyIRI "/>
+                -->
 
                 <!-- Create an entry for the patient in the EMPI -->
                 <!-- TBD -->
@@ -294,43 +326,57 @@
                 <!-- Publish the composition as the first event for this patient -->
                 <xf:dispatch name="publish-cda-composition" target="main-model"/>
 
-                <!-- Successfully published -->
+                <!-- Action on successful publish -->
                 <xf:action if="xxf:instance('control-instance')/status=''">
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
-                        value="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/createdRecord/@displayName,xxf:instance('view-parameters-instance')/patientId)"/>
- 
-                    <!-- Must reset editStatus, so that load-new-composition does not post another confirmation dialogue -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/status" value="'published'"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="''"/>
-
-                    <!-- Get selection made by user in the confirmation dialogue
-                         Then load the next page for the new patient-->
-                    <xxf:variable name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
-                    <xxf:variable name="newComposition"
-                        select="if (exists($navigationTarget) and $navigationTarget!='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@displayName!=''][@code=$navigationTarget] else ()"/>
-
-                    <!-- User selected to navigate to a specific form -->
-                    <xf:action if="exists($newComposition)">
-                        <xf:dispatch name="load-new-composition" target="main-model">
-                            <xxf:context name="composition" select="$newComposition"/>
-                        </xf:dispatch>
-                    </xf:action>
-
-                    <!-- No form specified for navigation, so go to the URL configured as the home page for patient views -->
-                    <xf:action if="not(exists($newComposition))">
-                        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-                            <xxf:context name="page"
-                                select="xxf:instance('application-parameters-instance')/pageTransition/patientFolderURL/@value"/>
-                        </xf:dispatch>
-                    </xf:action>
-                    <!-- Don't display actions now that the form is published -->
-                    <!-- TBD -->
-                    <!-- Reset dirty flag -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                    <xf:dispatch name="close-composition-view" target="main-model">
+                        <xxf:context name="newCompositionIRI" select="$newCompositionIRI"/>
+                    </xf:dispatch>
                 </xf:action>
 
+                <xf:action if="false()">
+                    <!-- Successfully published -->
+                    <xf:action if="xxf:instance('control-instance')/status=''">
+                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
+                            value="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/createdRecord/@displayName,xxf:instance('view-parameters-instance')/patientId)"/>
 
+                        <!-- Must reset editStatus, so that load-new-composition does not post another confirmation dialogue -->
+                        <xf:setvalue ref="xxf:instance('control-instance')/current-form/status"
+                            value="'published'"/>
+                        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+                            value="''"/>
+
+                        <!-- Get selection made by user in the confirmation dialogue
+                         Then load the next page for the new patient-->
+                        <xxf:variable name="specialtyIRI"
+                            select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                        <xxf:variable name="newComposition"
+                            select="if (exists($navigationTarget) and $navigationTarget!='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@displayName!=''][@code=$navigationTarget] else ()"/>
+
+                        <!-- User selected to navigate to a specific form -->
+                        <xf:action if="exists($newComposition)">
+                            <xf:dispatch name="load-new-composition" target="main-model">
+                                <xxf:context name="composition" select="$newComposition"/>
+                            </xf:dispatch>
+                        </xf:action>
+
+                        <!-- No form specified for navigation, so go to the URL configured as the home page for patient views -->
+                        <xf:action if="not(exists($newComposition))">
+                            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                                <xxf:context name="page"
+                                    select="xxf:instance('application-parameters-instance')/pageTransition/patientFolderURL/@value"
+                                />
+                            </xf:dispatch>
+                        </xf:action>
+                        <!-- Don't display actions now that the form is published -->
+                        <!-- TBD -->
+                        <!-- Reset dirty flag -->
+                        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+                            value="'unedited'"/>
+                    </xf:action>
+
+                </xf:action>
             </xf:action>
+            <!-- End register-patient -->
 
         </xf:model>
 
@@ -500,7 +546,7 @@
                             mediatype="text/html"/>
                     </xhtml:p>
 -->
-<!--
+                    <!--
                     <xhtml:p>getDirectoryEntryXQuery-instance:<xhtml:br/>
                         <xf:output
                             ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('getDirectoryEntryXQuery-instance'), 'data')/*, 'html')"

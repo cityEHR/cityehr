@@ -19,9 +19,11 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     ==================================================================== -->
 
-<xsl:stylesheet exclude-result-prefixes="xs" version="2.0" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:cda="urn:hl7-org:v3" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+<xsl:stylesheet exclude-result-prefixes="xs" version="2.0"
+    xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:cda="urn:hl7-org:v3" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
 
     <!-- Document element -->
@@ -137,8 +139,9 @@
                     layout for all pages of the text
                 -->
                 <!-- layout information -->
-                <fo:simple-page-master master-name="simple" page-height="{$pageheight}cm" page-width="{$pagewidth}cm" margin-top="1.3"
-                    margin-bottom="1cm" margin-left="{$marginleft}cm" margin-right="{$marginright}cm">
+                <fo:simple-page-master master-name="simple" page-height="{$pageheight}cm"
+                    page-width="{$pagewidth}cm" margin-top="1.3" margin-bottom="1cm"
+                    margin-left="{$marginleft}cm" margin-right="{$marginright}cm">
                     <fo:region-body margin-top="2cm" margin-bottom="1cm"/>
                     <fo:region-before extent="1.2cm"/>
                     <fo:region-after extent="1cm"/>
@@ -219,7 +222,8 @@
 
                     <!-- Horizontal border on header -->
                     <fo:block>
-                        <fo:leader leader-pattern="rule" leader-length.optimum="100%" rule-style="double" rule-thickness="1pt"/>
+                        <fo:leader leader-pattern="rule" leader-length.optimum="100%"
+                            rule-style="double" rule-thickness="1pt"/>
                     </fo:block>
                 </fo:static-content>
 
@@ -227,7 +231,8 @@
 
                     <!-- Horizontal border on footer -->
                     <fo:block>
-                        <fo:leader leader-pattern="rule" leader-length.optimum="100%" rule-style="double" rule-thickness="1pt"/>
+                        <fo:leader leader-pattern="rule" leader-length.optimum="100%"
+                            rule-style="double" rule-thickness="1pt"/>
                     </fo:block>
 
                     <fo:table>
@@ -272,7 +277,9 @@
     <xsl:template match="exceptions">
         <fo:block font-size="12pt" font-weight="bold" space-before="1em">
             <fo:block font-size="12pt" font-weight="bold" space-before="1em">
-                <xsl:value-of select="normalize-space($parameters/printPipeline/printText/text[@type = 'errorMessage']/@displayName)"/>
+                <xsl:value-of
+                    select="normalize-space($parameters/printPipeline/printText/text[@type = 'errorMessage']/@displayName)"
+                />
             </fo:block>
             <fo:block font-size="12pt" font-weight="bold" space-before="1em">
                 <xsl:value-of select="$parameters/htmlCacheHandle"/>
@@ -429,14 +436,16 @@
             <xsl:apply-templates/>
         </fo:block>
     </xsl:template>
-    <xsl:template match="ul[contains(@class, 'ISO13606-Section')][li/@class = 'Ranked']/li[@class = 'ISO13606-Section-DisplayName']">
+    <xsl:template
+        match="ul[contains(@class, 'ISO13606-Section')][li/@class = 'Ranked']/li[@class = 'ISO13606-Section-DisplayName']">
         <fo:block font-size="12pt" font-weight="bold" space-before="1em">
             <xsl:apply-templates/>
         </fo:block>
     </xsl:template>
 
     <!-- Unranked -->
-    <xsl:template match="ul[contains(@class, 'ISO13606-Section')][li/@class = 'Unranked'][descendant::text()]">
+    <xsl:template
+        match="ul[contains(@class, 'ISO13606-Section')][li/@class = 'Unranked'][descendant::text()]">
         <xsl:variable name="rendition"
             select="
                 if (contains(@class, 'Standalone')) then
@@ -470,7 +479,9 @@
                         <!-- Always need each cell, even if empty -->
                         <xsl:for-each select="li[contains(@class, 'Unranked')]">
                             <fo:table-cell>
-                                <xsl:apply-templates/>
+                                <fo:block>
+                                    <xsl:apply-templates/>
+                                </fo:block>
                             </fo:table-cell>
                         </xsl:for-each>
                     </fo:table-row>
@@ -482,16 +493,17 @@
 
     <!-- Entries are either ranked (blocks) or unranked (inline) -->
     <!-- Ranked entry -->
-    <xsl:template match="ul[@class = 'ISO13606-Entry'][li/@class = 'Ranked'][descendant::text()]">
+    <xsl:template match="ul[contains(@class,'ISO13606-Entry')][li/@class = 'Ranked'][descendant::text()]">
         <fo:block space-before="1em">
             <xsl:apply-templates/>
         </fo:block>
     </xsl:template>
     <!-- This matches elements where there is an entry displayName but not the displayName itself -->
-    <xsl:template match="ul[@class = 'ISO13606-Entry']/li[@class = 'Ranked'][descendant::text()]">
+    <xsl:template match="ul[contains(@class,'ISO13606-Entry')]/li[@class = 'Ranked'][descendant::text()]">
         <fo:block space-before="0.2em">
             <!-- Indent elements if there is a displayName for the entry -->
-            <xsl:if test="preceding-sibling::li[@class = 'ISO13606-Entry-DisplayName Ranked'][descendant::text()]">
+            <xsl:if
+                test="preceding-sibling::li[@class = 'ISO13606-Entry-DisplayName Ranked'][descendant::text()]">
                 <xsl:attribute name="margin-left">
                     <xsl:value-of select="'1em'"/>
                 </xsl:attribute>
@@ -500,12 +512,13 @@
         </fo:block>
     </xsl:template>
     <!-- Unranked -->
-    <xsl:template match="ul[@class = 'ISO13606-Entry'][li/@class = 'Unranked'][descendant::text()]">
+    <xsl:template match="ul[contains(@class,'ISO13606-Entry')][li/@class = 'Unranked'][descendant::text()]">
         <fo:block space-before="0.5em">
             <xsl:apply-templates/>
         </fo:block>
     </xsl:template>
-    <xsl:template match="ul[@class = 'ISO13606-Entry']/li[contains(@class, 'Unranked')][descendant::text()]">
+    <xsl:template
+        match="ul[contains(@class,'ISO13606-Entry')]/li[contains(@class, 'Unranked')][descendant::text()]">
         <xsl:apply-templates/>
     </xsl:template>
 
@@ -522,16 +535,30 @@
 
 
     <!-- Elements -->
-    <xsl:template match="ul[@class = 'ISO13606-Element']/li[@class != 'LayoutFooter'][descendant::text()]">
+    <xsl:template
+        match="ul[@class = 'ISO13606-Element']/li[@class != 'LayoutFooter'][descendant::text()]">
         <xsl:text> </xsl:text>
         <xsl:apply-templates/>
+    </xsl:template>
+    <xsl:template
+        match="ul[@class = 'ISO13606-Element']/li[@class='ISO13606-Element-DisplayName'][descendant::text()]">
+        <fo:inline font-style="italic">
+            <xsl:apply-templates/>
+        </fo:inline>
+    </xsl:template>
+    <xsl:template
+        match="ul[@class = 'ISO13606-Element']/li[contains(@class,'ISO13606-Data')][descendant::text()]">
+        <fo:inline font-weight="bold">
+            <xsl:apply-templates/>
+        </fo:inline>
     </xsl:template>
 
     <!-- Spacer for layout footer is ignored -->
     <xsl:template match="li[@class = 'LayoutFooter']"/>
 
     <!-- Empty entry header is ignored -->
-    <xsl:template match="li[contains(@class, 'ISO13606-Entry-DisplayName')][empty(descendant::text())]"/>
+    <xsl:template
+        match="li[contains(@class, 'ISO13606-Entry-DisplayName')][empty(descendant::text())]"/>
 
     <!-- Table.
          xsl-fo (or FOP) doesn't like empty table elements, 
@@ -662,7 +689,7 @@
                     @src
                 else
                     if (starts-with(@src, 'data:image/*')) then
-                    concat('data:image/png',substring-after(@src,'data:image/*'))
+                        concat('data:image/png', substring-after(@src, 'data:image/*'))
                     else
                         if (starts-with(@src, 'data:image')) then
                             @src
@@ -683,7 +710,7 @@
         <!--
         <fo:external-graphic width="100%" src="{$src}" content-width="{$content-width}" scaling="uniform" content-height="{$content-height}"/>
 -->
-        <fo:external-graphic src="{$src}"/> 
+        <fo:external-graphic src="{$src}"/>
         <!-- Debugging -->
         <!--
         <xsl:value-of select="$src"/>
@@ -712,7 +739,8 @@
 
     <xsl:template match="hr">
         <fo:block>
-            <fo:leader leader-pattern="rule" leader-length.optimum="100%" rule-style="double" rule-thickness="1pt"/>
+            <fo:leader leader-pattern="rule" leader-length.optimum="100%" rule-style="double"
+                rule-thickness="1pt"/>
         </fo:block>
     </xsl:template>
 
@@ -750,9 +778,11 @@
                 <xsl:value-of select="@width"/>
             </xsl:when>
             <xsl:when test="@style">
-                <xsl:value-of select="
+                <xsl:value-of
+                    select="
                         substring-before(
-                        substring-after(@style, ':'), ';')"/>
+                        substring-after(@style, ':'), ';')"
+                />
             </xsl:when>
             <xsl:otherwise>0</xsl:otherwise>
         </xsl:choose>
@@ -764,7 +794,8 @@
     <xsl:template name="generate-column-specifications">
         <xsl:param name="table"/>
         <!-- Number of columns -->
-        <xsl:variable name="columnCount" select="max(($table/descendant::tr/count(td), $table/descendant::tr/count(th)))"/>
+        <xsl:variable name="columnCount"
+            select="max(($table/descendant::tr/count(td), $table/descendant::tr/count(th)))"/>
         <!-- Specified columns - note that this list may be empty -->
         <xsl:variable name="columnWidthList" select="$table/col/@width[. castable as xs:double]"/>
         <xsl:variable name="specifiedColumnCount" select="count($columnWidthList)"/>
@@ -798,14 +829,16 @@
 
         <xsl:variable name="nextColumnNumber" select="$columnNumber + 1"/>
 
-        <xsl:variable name="specifiedColumnWidth" select="$columnWidthList[position() = $columnNumber]"/>
+        <xsl:variable name="specifiedColumnWidth"
+            select="$columnWidthList[position() = $columnNumber]"/>
         <xsl:variable name="proportionalColumnWidth"
             select="
                 if (exists($specifiedColumnWidth)) then
                     $specifiedColumnWidth
                 else
                     $defaultColumnWidth"/>
-        <xsl:variable name="columnWidth" select="number($columnWidthUnit) * number($proportionalColumnWidth)"/>
+        <xsl:variable name="columnWidth"
+            select="number($columnWidthUnit) * number($proportionalColumnWidth)"/>
 
         <fo:table-column column-width="{$columnWidth}cm" column-number="{$columnNumber}"/>
 

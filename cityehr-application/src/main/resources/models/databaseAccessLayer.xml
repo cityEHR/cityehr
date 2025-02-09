@@ -90,18 +90,23 @@
     **********************************************************************************************************
 -->
 
-<xf:model id="databaseAccessLayer-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
-    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
-    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+<xf:model id="databaseAccessLayer-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
 
     <!-- Parameters for control of the database -->
     <xf:instance id="databaseControl-instance">
         <control xmlns="">
             <status/>
+            <builtinDatabasePath/>
             <checkDatabaseStatus/>
             <indexStatus/>
             <databaseURL databaseVersion=""/>
@@ -115,6 +120,77 @@
     </xf:instance>
 
 
+
+    <!-- === Operations with the built-in exist database 
+             Check that the database folder exists.
+             Create the folder, with version.txt written === -->
+
+    <xf:instance id="resourceList-instance">
+        <directory/>
+    </xf:instance>
+
+    <!-- Application defined action to check whether the builtin database folder exisrs.
+         If not, then write the cityehr verson, which creates the database folder -->
+    <xf:action ev:event="check-builtinDatabase">
+        <!-- Get the instalation directory -->
+        <xf:dispatch name="get-builtinDatabasePath" target="databaseAccessLayer-model">
+            <xxf:context name="builtinDatabasePath"
+                select="xxf:instance('view-parameters-instance')/filePath"/>
+        </xf:dispatch>
+
+        <!-- Check whether the builtinDatabasePath exists.
+             This is done by listing the directory - if that fails, then the directory does not exist.
+             Note that the directory must start with the file: prefix -->
+        <xxf:variable name="resourceLocation"
+            select="concat('file:',xxf:instance('view-parameters-instance')/filePath)"/>
+        <xf:dispatch name="dal-getResourceList" target="databaseAccessLayer-model">
+            <xxf:context name="resourceLocation" select="$resourceLocation"/>
+            <xxf:context name="resourceList-instance" select="xxf:instance('test-instance')"/>
+            <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+        </xf:dispatch>
+
+
+        <!-- If the database directory does not exist (status returned as 'directory-not-found' (i.e. not blank)
+             Write cityEHR version to the database directory.
+             This will create the directory when it doesn't exist -->
+        <xf:action if="xxf:instance('control-instance')/status != ''">
+            <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                <xxf:context name="pipeline" select="'createDatabaseFolder.xpl'"/>
+                <xxf:context name="input-instance" select="xxf:instance('view-parameters-instance')"
+                />
+            </xf:dispatch>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to get the cityEHR installation dorectory
+         Reads the static resources directory, which returns its location 
+         /opt/tomcat/webapps/cityehr/WEB-INF/resources/apps/ehr/resources/
+     -->
+    <xf:action ev:event="get-builtinDatabasePath">
+        <xxf:variable name="builtinDatabasePath" select="event('builtinDatabasePath')"/>
+
+        <!-- Get the list of resources - returns the directory location -->
+        <xf:dispatch name="dal-getStaticResourceList" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="'/'"/>
+            <xxf:context name="staticResourceList-instance"
+                select="xxf:instance('resourceList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set the installation location from the resources directory location -->
+        <xxf:variable name="applicationLocation"
+            select="xxf:instance('view-parameters-instance')/applicationLocation"/>
+        <xxf:variable name="builtinDatabaseLocation"
+            select="xxf:instance('view-parameters-instance')/builtinDatabaseLocation"/>
+        <xxf:variable name="installationLocation"
+            select="substring-before(xxf:instance('resourceList-instance')/@path,$applicationLocation)"/>
+
+        <xf:setvalue ref="$builtinDatabasePath"
+            value="concat($installationLocation,$builtinDatabaseLocation)"/>
+
+    </xf:action>
+
     <!-- === Load, generate and save the database-parameters ========
          The database-parameters-instance is stored in the built-in database at databaseParametersURL, defined in view-parameters.
          The database-parameters-instance is loaded as each page is loaded.
@@ -124,7 +200,8 @@
          and the databaseChecksum changes
          ============================================================ -->
 
-    <xf:instance id="default-database-parameters-instance" src="oxf:/apps/ehr/database-parameters.xml"/>
+    <xf:instance id="default-database-parameters-instance"
+        src="oxf:/apps/ehr/database-parameters.xml"/>
 
     <xf:instance id="database-parameters-instance">
         <parameters/>
@@ -133,13 +210,16 @@
 
     <!-- Submission to load the database-parameters.
          Uses the fixed databaseLocation defined in view-parameters -->
-    <xf:submission id="load-database-parameters" resource="{xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation}" method="get"
-        replace="instance" instance="database-parameters-instance">
+    <xf:submission id="load-database-parameters"
+        resource="{xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation}"
+        method="get" replace="instance" instance="database-parameters-instance">
         <!-- If loaded successfully, check that the database-parameters-instance is not corrupt -->
         <xf:action ev:event="xforms-submit-done">
             <!-- Structure not as expected -->
-            <xf:action if="not(exists(xxf:instance('database-parameters-instance')/deployedDatabases))">
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'database-paramters-bad-format'"/>
+            <xf:action
+                if="not(exists(xxf:instance('database-parameters-instance')/deployedDatabases))">
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                    value="'database-paramters-bad-format'"/>
             </xf:action>
             <!-- Structure looks OK -->
             <xf:action if="exists(xxf:instance('database-parameters-instance')/deployedDatabases)">
@@ -149,7 +229,8 @@
         <!-- Load fails only if there is a problem with the database or the url in view-parameters.
              Even on first run, because system-parameters loads first and rebulds database-parameters as needed-->
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'failed-load-database-parameters'"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                value="'failed-load-database-parameters'"/>
         </xf:action>
     </xf:submission>
 
@@ -161,21 +242,24 @@
 
         <!-- load-database-parameters will hang if databaseParametersURL is empty, so check it
              Sets xxf:instance('databaseControl-instance')/status -->
-        <xf:action if="xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation != ''">
+        <xf:action
+            if="xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation != ''">
             <xf:send submission="load-database-parameters" target="databaseAccessLayer-model"/>
 
             <!-- Database parameters were loaded, so can do some other set up -->
             <xf:action if="xxf:instance('databaseControl-instance')/status=''">
                 <!-- Set the maximum query results default -->
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/maxResultsDefault" value="xxf:instance('dalQuery-instance')/@max"/>
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/maxResultsDefault"
+                    value="xxf:instance('dalQuery-instance')/@max"/>
             </xf:action>
-            
+
             <!-- Return the status -->
             <xf:setvalue ref="$status" value="xxf:instance('databaseControl-instance')/status"/>
         </xf:action>
 
         <!-- Raise error if there's a problem with databaseParametersURL -->
-        <xf:action if="xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation = ''">
+        <xf:action
+            if="xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation = ''">
             <xf:setvalue ref="$status" value="xxf:instance('bad-databaseParametersURL'"/>
         </xf:action>
     </xf:action>
@@ -184,8 +268,8 @@
     <!-- Submission to save the database-parameters that have been built in database-parameters-instance
          Uses the fixed databaseLocation defined in view-parameters-->
     <xf:submission id="save-database-parameters" ref="xxf:instance('database-parameters-instance')"
-        action="{xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation}" method="put" replace="none" f:url-type="resource"
-        includenamespacesprefixes="">
+        action="{xxf:instance('view-parameters-instance')/databaseParametersURL/@databaseLocation}"
+        method="put" replace="none" f:url-type="resource" includenamespacesprefixes="">
         <xf:action ev:event="xforms-submit-done">
             <!-- Success - set status to blank -->
             <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
@@ -193,7 +277,8 @@
         <!-- Can't continue with session if there is a problem here -->
         <xf:action ev:event="xforms-submit-error">
             <!-- TBD -->
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'failed-save-database-parameters'"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                value="'failed-save-database-parameters'"/>
         </xf:action>
     </xf:submission>
 
@@ -214,7 +299,8 @@
 
         <!-- Set up the base database-parameters-instance.
              The parameters for the deployed databases will be built in the physicalDatabases element -->
-        <xf:insert nodeset="xxf:instance('database-parameters-instance')" origin="xxf:instance('default-database-parameters-instance')"/>
+        <xf:insert nodeset="xxf:instance('database-parameters-instance')"
+            origin="xxf:instance('default-database-parameters-instance')"/>
         <xf:delete nodeset="xxf:instance('database-parameters-instance')/deployedDatabases/*"/>
 
         <!-- The system-parameters define system databases, logical databases and physical databases -->
@@ -230,7 +316,8 @@
         <xf:action xxf:iterate="$systemDatabaseSet">
             <xxf:variable name="systemDatabase" select="."/>
             <xxf:variable name="logicalDatabaseId" select="$systemDatabase/@logicalDatabase"/>
-            <xxf:variable name="logicalDatabase" select="$logicalDatabaseSet[@id=$logicalDatabaseId]"/>
+            <xxf:variable name="logicalDatabase"
+                select="$logicalDatabaseSet[@id=$logicalDatabaseId]"/>
 
             <!-- Each logical database has one or more deployed database clusters.
                  For each physical database deployed for any logical database.
@@ -248,11 +335,13 @@
                 <xxf:variable name="physicalCluster" select="$physicalDatabaseSet[@id=$clusterId]"/>
 
                 <!-- Insert physical cluster and clear out the nodesets. -->
-                <xf:insert context="xxf:instance('database-parameters-instance')/deployedDatabases" nodeset="physicalCluster"
-                    origin="$physicalCluster" at="last()" position="after"/>
-                <xxf:variable name="deployedCluster" select="xxf:instance('database-parameters-instance')/deployedDatabases/physicalCluster[last()]"/>
+                <xf:insert context="xxf:instance('database-parameters-instance')/deployedDatabases"
+                    nodeset="physicalCluster" origin="$physicalCluster" at="last()" position="after"/>
+                <xxf:variable name="deployedCluster"
+                    select="xxf:instance('database-parameters-instance')/deployedDatabases/physicalCluster[last()]"/>
                 <xf:delete nodeset="$deployedCluster/*"/>
-                <xf:setvalue ref="$deployedCluster/@id" value="concat($clusterId,'-',$logicalDatabaseId)"/>
+                <xf:setvalue ref="$deployedCluster/@id"
+                    value="concat($clusterId,'-',$logicalDatabaseId)"/>
 
                 <!-- Set the system, logicalDatabase and primary flag for the cluster -->
                 <xf:setvalue ref="$deployedCluster/@system" value="$systemDatabase/@system"/>
@@ -260,11 +349,14 @@
                 <xf:setvalue ref="$deployedCluster/@primary" value="$primary"/>
 
                 <!-- physicalDatabaseLocation and logicalDatabaseLocation -->
-                <xxf:variable name="physicalDatabaseLocation" select="$deployedCluster/@physicalDatabaseLocation"/>
-                <xxf:variable name="logicalDatabaseLocation" select="$logicalDatabase/@logicalDatabaseLocation"/>
+                <xxf:variable name="physicalDatabaseLocation"
+                    select="$deployedCluster/@physicalDatabaseLocation"/>
+                <xxf:variable name="logicalDatabaseLocation"
+                    select="$logicalDatabase/@logicalDatabaseLocation"/>
 
                 <!-- btuLocation is concatentation of physicalDatabaseLocation and logicalDatabaseLocation -->
-                <xxf:variable name="btuLocation" select="concat($physicalDatabaseLocation,$logicalDatabaseLocation)"/>
+                <xxf:variable name="btuLocation"
+                    select="concat($physicalDatabaseLocation,$logicalDatabaseLocation)"/>
                 <xf:setvalue ref="$deployedCluster/@btuLocation" value="$btuLocation"/>
 
                 <!-- Generate nodes in the $deployedCluster from the nodeset(s) in $physicalCluster.
@@ -285,7 +377,8 @@
                         select="if ($baseHost = '') then 'blank' else if (count($baseHostOctets)=4 and not($baseHostOctets='') and string-join($baseHostOctets,'') castable as xs:integer) then 'ip' else 'name'"/>
 
                     <!-- IP address found - may have multiple nodes in the nodeset -->
-                    <xf:action if="$baseHostType='ip' and $nodeCount castable as xs:integer and xs:integer($nodeCount) gt 0"
+                    <xf:action
+                        if="$baseHostType='ip' and $nodeCount castable as xs:integer and xs:integer($nodeCount) gt 0"
                         xxf:iterate="1 to xs:integer($nodeCount)">
                         <xxf:variable name="nodeNumber" select="."/>
                         <xxf:variable name="baseIncrement" select="$nodeNumber - 1"/>
@@ -298,13 +391,15 @@
                             <xxf:context name="port" select="$port"/>
                             <xxf:context name="user" select="$user"/>
                             <xxf:context name="password" select="$password"/>
-                            <xxf:context name="physicalDatabaseLocation" select="$physicalDatabaseLocation"/>
+                            <xxf:context name="physicalDatabaseLocation"
+                                select="$physicalDatabaseLocation"/>
                             <xxf:context name="btuLocation" select="$btuLocation"/>
                         </xf:dispatch>
                     </xf:action>
 
                     <!-- Base host is not IP address - can only have one node in the nodeset -->
-                    <xf:action if="$nodeCount=1 and (($baseHostType='blank' and $port='') or $baseHostType='name')">
+                    <xf:action
+                        if="$nodeCount=1 and (($baseHostType='blank' and $port='') or $baseHostType='name')">
                         <xf:dispatch name="deployClusterNode" target="databaseAccessLayer-model">
                             <xxf:context name="deployedCluster" select="$deployedCluster"/>
                             <xxf:context name="baseHost" select="$baseHost"/>
@@ -312,7 +407,8 @@
                             <xxf:context name="port" select="$port"/>
                             <xxf:context name="user" select="$user"/>
                             <xxf:context name="password" select="$password"/>
-                            <xxf:context name="physicalDatabaseLocation" select="$physicalDatabaseLocation"/>
+                            <xxf:context name="physicalDatabaseLocation"
+                                select="$physicalDatabaseLocation"/>
                             <xxf:context name="btuLocation" select="$btuLocation"/>
                         </xf:dispatch>
                     </xf:action>
@@ -320,7 +416,8 @@
                     <!-- Set status if there is a problem with nodeset specification -->
                     <xf:action
                         if="($baseHostType='blank' and $port!='') or ( (($baseHostType='blank' and $port='') or $baseHostType='name') and $nodeCount!=1) ">
-                        <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'build-failed-bad-nodeset-specification'"/>
+                        <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                            value="'build-failed-bad-nodeset-specification'"/>
                     </xf:action>
 
                     <!-- End iteration through nodesets -->
@@ -375,10 +472,12 @@
 
 
         <!-- Template for the node is found in the default-database-parameters-instance -->
-        <xxf:variable name="nodeTemplate" select="xxf:instance('default-database-parameters-instance')/deployedDatabases/physicalCluster[1]/node[1]"/>
+        <xxf:variable name="nodeTemplate"
+            select="xxf:instance('default-database-parameters-instance')/deployedDatabases/physicalCluster[1]/node[1]"/>
 
         <!-- Insert the deployed node and clear out btu's -->
-        <xf:insert context="$deployedCluster" nodeset="node" origin="$nodeTemplate" at="last()" position="after"/>
+        <xf:insert context="$deployedCluster" nodeset="node" origin="$nodeTemplate" at="last()"
+            position="after"/>
         <xxf:variable name="deployedNode" select="$deployedCluster/node[last()]"/>
         <xf:delete nodeset="$deployedNode/*"/>
 
@@ -387,7 +486,8 @@
         <xxf:variable name="octetCount" select="count($baseHostOctets)"/>
         <xxf:variable name="baseHostType"
             select="if ($baseHost='') then 'blank' else if ($octetCount=4 and not($baseHostOctets='') and string-join($baseHostOctets,'') castable as xs:integer) then 'ip' else 'name'"/>
-        <xxf:variable name="finalOctet" select="if ($baseHostType='ip') then $baseHostOctets[4] else ''"/>
+        <xxf:variable name="finalOctet"
+            select="if ($baseHostType='ip') then $baseHostOctets[4] else ''"/>
 
         <!-- Set the host string
              Increment final octet and reform the ip address, but only if the baseHost is a valid IP address.
@@ -401,10 +501,12 @@
         <!-- Set the port string.
              Can't use the port number if the host is blank.
              If there is a port number then prefix it with ':' -->
-        <xxf:variable name="portString" select="if ($baseHostType!='blank' and $port castable as xs:integer) then concat(':',$port) else ''"/>
+        <xxf:variable name="portString"
+            select="if ($baseHostType!='blank' and $port castable as xs:integer) then concat(':',$port) else ''"/>
 
         <!-- Set the database credentials string -->
-        <xxf:variable name="credentialsString" select="if ($user ='') then '' else concat($user,':',$password,'@')"/>
+        <xxf:variable name="credentialsString"
+            select="if ($user ='') then '' else concat($user,':',$password,'@')"/>
 
         <!-- Set the URL and URN, without database location -->
         <xxf:variable name="databaseURL"
@@ -430,10 +532,12 @@
 
         <!-- Set the node parameters.
              The id for blank host/portString is set as 'built-in' -->
-        <xf:setvalue ref="$deployedNode/@id" value="concat($deployedCluster/@id,$hostString,$portString)"/>
+        <xf:setvalue ref="$deployedNode/@id"
+            value="concat($deployedCluster/@id,$hostString,$portString)"/>
         <xf:setvalue ref="$deployedNode/@host" value="$hostString"/>
         <xf:setvalue ref="$deployedNode/@port" value="$port"/>
-        <xf:setvalue ref="$deployedNode/@databaseVersion" value="xxf:instance('databaseVersion-instance')/version"/>
+        <xf:setvalue ref="$deployedNode/@databaseVersion"
+            value="xxf:instance('databaseVersion-instance')/version"/>
         <xf:setvalue ref="$deployedNode/@databaseURL" value="$databaseURL"/>
         <xf:setvalue ref="$deployedNode/@databaseURN" value="$databaseURN"/>
         <xf:setvalue ref="$deployedNode/@btuLocation" value="$btuLocation"/>
@@ -479,7 +583,8 @@
             <xf:action if="xxf:instance('databaseControl-instance')/checkDatabaseStatus=''">
 
                 <!-- Clear out the BTU parameters found on the cluster -->
-                <xf:delete nodeset="xxf:instance('databaseControl-instance')/deployedBTUParameters/*"/>
+                <xf:delete
+                    nodeset="xxf:instance('databaseControl-instance')/deployedBTUParameters/*"/>
 
                 <!-- Iterate through nodes in the database cluster
                      For each node, set status online/offline and get the btu-parameters -->
@@ -494,7 +599,8 @@
                     <!-- Get the btu-parameters for the node.
                          But only if the node is online -->
                     <xf:action if="$node/@status='online'">
-                        <xf:dispatch name="get-node-btu-parameters" target="databaseAccessLayer-model">
+                        <xf:dispatch name="get-node-btu-parameters"
+                            target="databaseAccessLayer-model">
                             <xxf:context name="system" select="$system"/>
                             <xxf:context name="node" select="$node"/>
                         </xf:dispatch>
@@ -519,7 +625,8 @@
         </xf:action>
 
         <!-- Set the return status -->
-        <xf:setvalue ref="$status" value="xxf:instance('databaseControl-instance')/checkDatabaseStatus"/>
+        <xf:setvalue ref="$status"
+            value="xxf:instance('databaseControl-instance')/checkDatabaseStatus"/>
 
     </xf:action>
 
@@ -534,7 +641,8 @@
 
         <!-- Check whether this is the internal database.
              Signature is blank host and port, with databaseURL of '/exist/rest' -->
-        <xf:action if="exists($node) and $node/@host='' and $node/@port='' and $node/@databaseURL='/exist/rest'">
+        <xf:action
+            if="exists($node) and $node/@host='' and $node/@port='' and $node/@databaseURL='/exist/rest'">
             <xf:setvalue ref="$node/@status" value="'online'"/>
         </xf:action>
 
@@ -568,7 +676,8 @@
 
         <!-- Parameters were read OK -->
         <xf:action if="xxf:instance('databaseControl-instance')/status =''">
-            <xf:insert context="xxf:instance('databaseControl-instance')/deployedBTUParameters" origin="xxf:instance('btu-parameters-instance')"/>
+            <xf:insert context="xxf:instance('databaseControl-instance')/deployedBTUParameters"
+                origin="xxf:instance('btu-parameters-instance')"/>
         </xf:action>
 
     </xf:action>
@@ -597,12 +706,14 @@
             select="xxf:instance('system-parameters-instance')/coreParameters/databaseConfiguration/logicalDatabases/database[@id=$logicalDatabaseId]"/>
 
         <!-- Get the BTUs that have been deployed on the cluster (which should have id set) -->
-        <xxf:variable name="deployedBTUParameters" select="xxf:instance('databaseControl-instance')/deployedBTUParameters//btu[@id!='']"/>
+        <xxf:variable name="deployedBTUParameters"
+            select="xxf:instance('databaseControl-instance')/deployedBTUParameters//btu[@id!='']"/>
         <!-- Get BTUs that have been specified (which may or may not have an id, depending on whether they have yet been deployed -->
         <xxf:variable name="specifiedBTUParameters" select="$logicalDatabase/transactionUnits/btu"/>
 
         <!-- Check for not-configured -->
-        <xf:setvalue ref="$deployedCluster/@status" value="if (not(exists($deployedBTUParameters))) then 'not-configured' else ''"/>
+        <xf:setvalue ref="$deployedCluster/@status"
+            value="if (not(exists($deployedBTUParameters))) then 'not-configured' else ''"/>
 
         <!-- Check for badly-configured.
              Set if any of the deployedBTUParameters is duplicated -->
@@ -613,7 +724,9 @@
              Set if any of the deployedBTUParameters does not exist in specifiedBTUParameters -->
         <xf:action xxf:iterate="$deployedBTUParameters">
             <xxf:variable name="btuId" select="./@id"/>
-            <xf:setvalue ref="$deployedCluster/@status" value="if (exists($specifiedBTUParameters[@id=$btuId])) then . else 'badly-configured'"/>
+            <xf:setvalue ref="$deployedCluster/@status"
+                value="if (exists($specifiedBTUParameters[@id=$btuId])) then . else 'badly-configured'"
+            />
         </xf:action>
 
         <!-- Check for partly-configured, badly-configured or well-configured, if not already set -->
@@ -665,15 +778,17 @@
     </xf:instance>
 
     <!-- Submission to read static file to dalStaticFile-instance -->
-    <xf:submission id="readStaticFile-submission" resource="{xxf:instance('databaseControl-instance')/staticFileURL}" method="get" replace="instance"
-        instance="dalStaticFile-instance" serialization="none">
+    <xf:submission id="readStaticFile-submission"
+        resource="{xxf:instance('databaseControl-instance')/staticFileURL}" method="get"
+        replace="instance" instance="dalStaticFile-instance" serialization="none">
         <!-- Submit done -->
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
         </xf:action>
         <!-- Submit failed -->
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'failedLoadStaticFile'"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                value="'failedLoadStaticFile'"/>
         </xf:action>
     </xf:submission>
 
@@ -688,7 +803,8 @@
         <xxf:variable name="status" select="event('status')"/>
 
         <!-- Clear out the dalStaticFile-instance, in case the read fails -->
-        <xf:insert nodeset="xxf:instance('dalStaticFile-instance')" origin="xxf:instance('dalEmpty-instance')"/>
+        <xf:insert nodeset="xxf:instance('dalStaticFile-instance')"
+            origin="xxf:instance('dalEmpty-instance')"/>
 
         <xf:action if="$staticFileLocation != ''">
             <!-- Set the staticFileURL and send submission to read file -->
@@ -701,10 +817,12 @@
             <xf:action if="xxf:instance('databaseControl-instance')/status != ''">
                 <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
                     value="xxf:instance('databaseControl-instance')/staticFileURL"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType" value="./@default"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType"
+                    value="./@default"/>
                 <xxf:variable name="pipeline"
                     select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedBinary.xpl')"/>
-                <xf:insert nodeset="xxf:instance('dalStaticFile-instance')" origin="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
+                <xf:insert nodeset="xxf:instance('dalStaticFile-instance')"
+                    origin="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
 
                 <!-- If binary data was found then set the dalStaticFile-instance and reset the status.
                      The binary data is returned in the form                     
@@ -713,19 +831,24 @@
                             KKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q==
                          </document>
                      -->
-                <xf:action if="xxf:instance('dalStaticFile-instance')/name()='document' and xxf:instance('dalStaticFile-instance') castable as xs:base64Binary">
+                <xf:action
+                    if="xxf:instance('dalStaticFile-instance')/name()='document' and xxf:instance('dalStaticFile-instance') castable as xs:base64Binary">
                     <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
                 </xf:action>
-                <xf:action if="not(xxf:instance('dalStaticFile-instance')/name()='document' and xxf:instance('dalStaticFile-instance') castable as xs:base64Binary)">
-                    <xf:insert nodeset="xxf:instance('dalStaticFile-instance')" origin="xxf:instance('dalEmpty-instance')"/>
-                    <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'staticFile-not-read'"/>
+                <xf:action
+                    if="not(xxf:instance('dalStaticFile-instance')/name()='document' and xxf:instance('dalStaticFile-instance') castable as xs:base64Binary)">
+                    <xf:insert nodeset="xxf:instance('dalStaticFile-instance')"
+                        origin="xxf:instance('dalEmpty-instance')"/>
+                    <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                        value="'staticFile-not-read'"/>
                 </xf:action>
-                
+
             </xf:action>
         </xf:action>
 
         <xf:action if="$staticFileLocation = ''">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'staticFileLocation-not-set'"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                value="'staticFileLocation-not-set'"/>
         </xf:action>
 
         <!-- Set the return resource and status -->
@@ -772,14 +895,16 @@
         <xxf:variable name="status" select="event('status')"/>
 
         <!-- Clear out the dalStaticFile-instance, in case the read fails -->
-        <xf:insert nodeset="xxf:instance('dalStaticFile-instance')" origin="xxf:instance('dalEmpty-instance')"/>
+        <xf:insert nodeset="xxf:instance('dalStaticFile-instance')"
+            origin="xxf:instance('dalEmpty-instance')"/>
 
         <!-- Get the resource as XML.
              This is done by calling the cityEHRGetUploadedData pipeline -->
         <xf:action if="starts-with($staticResourceLocation,'/')">
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
                 value="concat(xxf:instance('view-parameters-instance')/appPath,xxf:instance('view-parameters-instance')/staticFileLocation,$staticResourceLocation)"/>
-            <xxf:variable name="pipeline" select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedData.xpl')"/>
+            <xxf:variable name="pipeline"
+                select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedData.xpl')"/>
             <xf:insert nodeset="xxf:instance('dalStaticFile-instance')"
                 origin="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
             <xf:insert nodeset="$resource" origin="xxf:instance('dalStaticFile-instance')"/>
@@ -822,7 +947,8 @@
         <xxf:variable name="staticResourceLocation" select="event('staticResourceLocation')"/>
         <xxf:variable name="staticResourcePattern"
             select="if (not(exists(event('staticResourcePattern'))) or event('staticResourcePattern')='') then '*' else event('staticResourcePattern')"/>
-        <xxf:variable name="staticResourceList-instance" select="event('staticResourceList-instance')"/>
+        <xxf:variable name="staticResourceList-instance"
+            select="event('staticResourceList-instance')"/>
         <xxf:variable name="fileTemplate" select="event('fileTemplate')"/>
         <xxf:variable name="status" select="event('status')"/>
 
@@ -830,9 +956,11 @@
         <xf:action if="starts-with($staticResourceLocation,'/')">
             <xf:setvalue ref="xxf:instance('session-parameters-instance')/resourceDirectory"
                 value="concat(xxf:instance('view-parameters-instance')/staticFileURL,$staticResourceLocation)"/>
-            <xf:setvalue ref="xxf:instance('session-parameters-instance')/resourcePattern" value="$staticResourcePattern"/>
+            <xf:setvalue ref="xxf:instance('session-parameters-instance')/resourcePattern"
+                value="$staticResourcePattern"/>
 
-            <xxf:variable name="pipeline" select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/listStaticResources.xpl')"/>
+            <xxf:variable name="pipeline"
+                select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/listStaticResources.xpl')"/>
 
             <!-- Pipeline returns a <directory> element, unless there was an exception.
                  Files are listed as:
@@ -846,7 +974,8 @@
                         </image-metadata>
                     </file>
               -->
-            <xxf:variable name="staticResourceList" select="xxf:call-xpl($pipeline, 'instance', xxf:instance('session-parameters-instance') , 'data')"/>
+            <xxf:variable name="staticResourceList"
+                select="xxf:call-xpl($pipeline, 'instance', xxf:instance('session-parameters-instance') , 'data')"/>
 
             <!-- Template passed for returning just files (not the directory structure).
                  Iterate through the files, insert the template and set any corresponding attributes -->
@@ -857,8 +986,10 @@
                 <xf:action xxf:iterate="$staticResourceList//file">
                     <xxf:variable name="file" select="."/>
 
-                    <xf:insert context="xxf:instance('dalStaticFileList-instance')" nodeset="*" origin="$fileTemplate" at="last()" position="after"/>
-                    <xxf:variable name="returnedFile" select="xxf:instance('dalStaticFileList-instance')/*[last()]"/>
+                    <xf:insert context="xxf:instance('dalStaticFileList-instance')" nodeset="*"
+                        origin="$fileTemplate" at="last()" position="after"/>
+                    <xxf:variable name="returnedFile"
+                        select="xxf:instance('dalStaticFileList-instance')/*[last()]"/>
 
                     <!-- Set the attributes.
                          These may be attrbutes o the file element returned, or elements in the image-metadata -->
@@ -870,11 +1001,13 @@
                         <xxf:variable name="fileMetaData" select="$file//*[name()=$attributeName]"/>
 
                         <xf:setvalue ref="$attribute"
-                            value="if (exists($fileAttribute)) then $fileAttribute else if (exists($fileMetaData)) then $fileMetaData else ''"/>
+                            value="if (exists($fileAttribute)) then $fileAttribute else if (exists($fileMetaData)) then $fileMetaData else ''"
+                        />
                     </xf:action>
                 </xf:action>
 
-                <xf:insert nodeset="$staticResourceList-instance" origin="xxf:instance('dalStaticFileList-instance')"/>
+                <xf:insert nodeset="$staticResourceList-instance"
+                    origin="xxf:instance('dalStaticFileList-instance')"/>
             </xf:action>
 
             <!-- No file template was passed - juat return the staticResourceList from the pipeline -->
@@ -895,7 +1028,13 @@
 
     <!-- Application defined action to get the listing of resources in any directory.
          Scans resourceLocation at specified directory and returns list of contents found there (files and directories).
-         resourceLocation must start with / 
+         
+         ResourceLocation is of the form 
+            file:/full/path/to/directory
+         or /relative/path/to/directory
+         
+         The relative path is relative to the oxf: directory (e.g. /opt/tomcat/webapps/cityehr/WEB-INF/resources)
+         when cityEHR is in the ehr directory at this location
          
          resourcePattern is the pattern of resources - defaults to *.* if not passed as a parameter
          
@@ -915,6 +1054,8 @@
                         </image-metadata>
                 </file>
          </directory>  
+         
+         The status returned is either blank (if the directory was found) or 'directory-not-found'
          -->
 
     <xf:action ev:event="dal-getResourceList">
@@ -924,10 +1065,13 @@
         <xxf:variable name="resourceList-instance" select="event('resourceList-instance')"/>
         <xxf:variable name="status" select="event('status')"/>
 
-        <xf:setvalue ref="xxf:instance('session-parameters-instance')/resourceDirectory" value="$resourceLocation"/>
-        <xf:setvalue ref="xxf:instance('session-parameters-instance')/resourcePattern" value="$resourcePattern"/>
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/resourceDirectory"
+            value="$resourceLocation"/>
+        <xf:setvalue ref="xxf:instance('session-parameters-instance')/resourcePattern"
+            value="$resourcePattern"/>
 
-        <xxf:variable name="pipeline" select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/listStaticResources.xpl')"/>
+        <xxf:variable name="pipeline"
+            select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/listStaticResources.xpl')"/>
 
         <!-- Pipeline returns a <directory> element, unless there was an exception.
                  Files are listed as:
@@ -941,10 +1085,17 @@
                         </image-metadata>
                     </file>
               -->
-        <xxf:variable name="resourceList" select="xxf:call-xpl($pipeline, 'instance', xxf:instance('session-parameters-instance') , 'data')"/>
+        <xxf:variable name="resourceList"
+            select="xxf:call-xpl($pipeline, 'instance', xxf:instance('session-parameters-instance') , 'data')"/>
         <xf:insert nodeset="$resourceList-instance" origin="$resourceList"/>
 
-        <xf:setvalue ref="$status" value="''"/>
+        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+            <xxf:context name="pipeline" select="'listStaticResources.xpl'"/>
+            <xxf:context name="input-instance" select="xxf:instance('view-parameters-instance')"/>
+        </xf:dispatch>
+
+        <xf:setvalue ref="$status"
+            value="if ($resourceList/name()='directory') then '' else 'directory-not-found'"/>
 
     </xf:action>
 
@@ -957,15 +1108,19 @@
         <version/>
     </xf:instance>
 
-    <xf:instance id="getDatabaseVersionXQuery-instance" src="oxf:/apps/ehr/xquery/getDatabaseVersionXQuery.xml"/>
+    <xf:instance id="getDatabaseVersionXQuery-instance"
+        src="oxf:/apps/ehr/xquery/getDatabaseVersionXQuery.xml"/>
 
-    <xf:submission id="getDatabaseVersion-submission" ref="xxf:instance('getDatabaseVersionXQuery-instance')"
-        action="{xxf:instance('databaseControl-instance')/databaseURL}" method="post" replace="instance" instance="databaseVersion-instance">
+    <xf:submission id="getDatabaseVersion-submission"
+        ref="xxf:instance('getDatabaseVersionXQuery-instance')"
+        action="{xxf:instance('databaseControl-instance')/databaseURL}" method="post"
+        replace="instance" instance="databaseVersion-instance">
         <xf:action ev:event="xforms-submit-done">
             <!-- Not doing anything here -->
         </xf:action>
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('databaseVersion-instance')/version" value="'version-not-available'"/>
+            <xf:setvalue ref="xxf:instance('databaseVersion-instance')/version"
+                value="'version-not-available'"/>
         </xf:action>
     </xf:submission>
 
@@ -976,7 +1131,8 @@
     <xf:action ev:event="getDatabaseVersion">
         <xxf:variable name="databaseURL" select="event('databaseURL')"/>
 
-        <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL" value="if ($databaseURL = '') then 'force-error' else $databaseURL"/>
+        <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+            value="if ($databaseURL = '') then 'force-error' else $databaseURL"/>
 
         <!-- Clear databaseVersion -->
         <xf:setvalue ref="xxf:instance('databaseVersion-instance')/version" value="''"/>
@@ -995,18 +1151,23 @@
         <xxf:variable name="resourceName" select="event('resourceName')"/>
         <xxf:variable name="sanitizedResourceName" select="event('sanitizedResourceName')"/>
 
-        <xf:setvalue ref="$sanitizedResourceName" value="translate($resourceName,'_:#/+$ &#9;&#10;&#13;','')"/>
+        <xf:setvalue ref="$sanitizedResourceName"
+            value="translate($resourceName,'_:#/+$ &#9;&#10;&#13;','')"/>
     </xf:action>
 
 
     <!-- === Set the index for a database node
         ======================================= -->
 
-    <xf:instance id="xmlstoreIndex-instance" src="oxf:/apps/ehr/resources/databaseIndex/xmlstore-collection.xconf"/>
-    <xf:instance id="auditlogIndex-instance" src="oxf:/apps/ehr/resources/databaseIndex/auditlog-collection.xconf"/>
-    <xf:instance id="empiIndex-instance" src="oxf:/apps/ehr/resources/databaseIndex/empi-collection.xconf"/>
+    <xf:instance id="xmlstoreIndex-instance"
+        src="oxf:/apps/ehr/resources/databaseIndex/xmlstore-collection.xconf"/>
+    <xf:instance id="auditlogIndex-instance"
+        src="oxf:/apps/ehr/resources/databaseIndex/auditlog-collection.xconf"/>
+    <xf:instance id="empiIndex-instance"
+        src="oxf:/apps/ehr/resources/databaseIndex/empi-collection.xconf"/>
 
-    <xf:instance id="databaseReindexXQuery-instance" src="oxf:/apps/ehr/xquery/databaseReindexXQuery.xml"/>
+    <xf:instance id="databaseReindexXQuery-instance"
+        src="oxf:/apps/ehr/xquery/databaseReindexXQuery.xml"/>
 
     <!-- Application defined action to set the database index.
         
@@ -1034,31 +1195,40 @@
         <xf:setvalue ref="xxf:instance('databaseControl-instance')/indexStatus" value="''"/>
 
         <!-- Set base databaseURL and index location, used for all indexes -->
-        <xxf:variable name="databaseURLBase" select="if ($databaseURL = '') then 'force-error' else $databaseURL"/>
-        <xxf:variable name="indexLocationBase" select="concat($databaseURL,$physicalDatabaseLocation,$indexLocation,$btuLocation)"/>
+        <xxf:variable name="databaseURLBase"
+            select="if ($databaseURL = '') then 'force-error' else $databaseURL"/>
+        <xxf:variable name="indexLocationBase"
+            select="concat($databaseURL,$physicalDatabaseLocation,$indexLocation,$btuLocation)"/>
 
         <!-- Write index for xmlstore (kernel, patient) -->
-        <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL" value="concat($indexLocationBase,'/xmlstore/collection.xconf')"/>
-        <xf:insert nodeset="xxf:instance('dalResource-instance')" origin="xxf:instance('xmlstoreIndex-instance')"/>
+        <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+            value="concat($indexLocationBase,'/xmlstore/collection.xconf')"/>
+        <xf:insert nodeset="xxf:instance('dalResource-instance')"
+            origin="xxf:instance('xmlstoreIndex-instance')"/>
         <xf:send submission="dalWrite-submission"/>
 
         <!-- Write index for auditlog -->
         <xf:action if="xxf:instance('databaseControl-instance')/status = ''">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL" value="concat($indexLocationBase,'/auditlog/collection.xconf')"/>
-            <xf:insert nodeset="xxf:instance('dalResource-instance')" origin="xxf:instance('auditlogIndex-instance')"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+                value="concat($indexLocationBase,'/auditlog/collection.xconf')"/>
+            <xf:insert nodeset="xxf:instance('dalResource-instance')"
+                origin="xxf:instance('auditlogIndex-instance')"/>
             <xf:send submission="dalWrite-submission"/>
         </xf:action>
 
         <!-- Write index for empi -->
         <xf:action if="xxf:instance('databaseControl-instance')/status = ''">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL" value="concat($indexLocationBase,'/empi/collection.xconf')"/>
-            <xf:insert nodeset="xxf:instance('dalResource-instance')" origin="xxf:instance('empiIndex-instance')"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+                value="concat($indexLocationBase,'/empi/collection.xconf')"/>
+            <xf:insert nodeset="xxf:instance('dalResource-instance')"
+                origin="xxf:instance('empiIndex-instance')"/>
             <xf:send submission="dalWrite-submission"/>
         </xf:action>
 
         <!-- Set the indexStatus returned by write-database-index
              But tolerate failure of the dalWrite-submissions for further processing -->
-        <xf:setvalue ref="xxf:instance('databaseControl-instance')/indexStatus" value="xxf:instance('databaseControl-instance')/status"/>
+        <xf:setvalue ref="xxf:instance('databaseControl-instance')/indexStatus"
+            value="xxf:instance('databaseControl-instance')/status"/>
         <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
 
     </xf:action>
@@ -1081,7 +1251,8 @@
         <!-- The deployedClusterNode must exist -->
         <xf:action if="exists($deployedClusterNode)">
             <!-- The physicalDatabaseLocation and indexLocation are set for the deployed physicalCluster, which is the parent of the deployedClusterNode -->
-            <xxf:variable name="physicalDatabaseLocation" select="$deployedClusterNode/../@physicalDatabaseLocation"/>
+            <xxf:variable name="physicalDatabaseLocation"
+                select="$deployedClusterNode/../@physicalDatabaseLocation"/>
             <xxf:variable name="indexLocation" select="$deployedClusterNode/../@indexLocation"/>
 
             <!-- Write the database index files to the database.
@@ -1097,15 +1268,18 @@
             <!-- Run query to reindex the collectionLocation.
                  But only if the indexes were written properly -->
             <xf:action if="xxf:instance('databaseControl-instance')/indexStatus = ''">
-                <xf:setvalue ref="xxf:instance('databaseReindexXQuery-instance')/path" value="$collectionLocation"/>
+                <xf:setvalue ref="xxf:instance('databaseReindexXQuery-instance')/path"
+                    value="$collectionLocation"/>
 
                 <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
                     <xxf:context name="system" select="$system"/>
                     <xxf:context name="storageLocation" select="$collectionLocation"/>
                     <xxf:context name="physicalClusterNode" select="$physicalClusterNode"/>
-                    <xxf:context name="query" select="xxf:instance('databaseReindexXQuery-instance')"/>
+                    <xxf:context name="query"
+                        select="xxf:instance('databaseReindexXQuery-instance')"/>
                     <xxf:context name="response" select="xxf:instance('resourceExists-instance')"/>
-                    <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('databaseControl-instance')/status"/>
                 </xf:dispatch>
             </xf:action>
 
@@ -1128,8 +1302,9 @@
 
     <!-- Submission to check whether node is online.
          Debugging - set to fixed IP -->
-    <xf:submission id="checkNodeStatus-submission" resource="http://192.168.45.45:8080/exist/rest/db/orbeon/xmlstore/configuration/node" method="get"
-        replace="instance" instance="nodeStatus-instance" serialization="none">
+    <xf:submission id="checkNodeStatus-submission"
+        resource="http://192.168.45.45:8080/exist/rest/db/orbeon/xmlstore/configuration/node"
+        method="get" replace="instance" instance="nodeStatus-instance" serialization="none">
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('nodeStatus-instance')" value="'online'"/>
         </xf:action>
@@ -1154,7 +1329,8 @@
          ==================================================== -->
 
     <!-- Load the query from file -->
-    <xf:instance id="resourceExistsXQuery-instance" src="oxf:/apps/ehr/xquery/resourceExistsXQuery.xml"/>
+    <xf:instance id="resourceExistsXQuery-instance"
+        src="oxf:/apps/ehr/xquery/resourceExistsXQuery.xml"/>
 
     <!-- Response instance -->
     <xf:instance id="resourceExists-instance">
@@ -1173,10 +1349,12 @@
         <!-- Get the resource name from the storageLocation and set in query text.
              This must include the leading '/' -->
         <xxf:variable name="resourceName" select="tokenize($storageLocation,'/')[last()]"/>
-        <xf:setvalue ref="xxf:instance('resourceExistsXQuery-instance')/resourceName" value="$resourceName"/>
+        <xf:setvalue ref="xxf:instance('resourceExistsXQuery-instance')/resourceName"
+            value="$resourceName"/>
 
         <!-- Get the location to run the query -->
-        <xxf:variable name="pathLength" select="string-length($storageLocation) - string-length($resourceName)"/>
+        <xxf:variable name="pathLength"
+            select="string-length($storageLocation) - string-length($resourceName)"/>
         <xxf:variable name="queryLocation" select="substring($storageLocation,1,$pathLength)"/>
 
         <!-- Run query to check that the resource exists -->
@@ -1190,7 +1368,8 @@
         </xf:dispatch>
 
         <xf:setvalue ref="$result"
-            value="if (xxf:instance('databaseControl-instance')/status !='') then false() else xxf:instance('resourceExists-instance')/*"/>
+            value="if (xxf:instance('databaseControl-instance')/status !='') then false() else xxf:instance('resourceExists-instance')/*"
+        />
     </xf:action>
 
 
@@ -1200,7 +1379,8 @@
          ================================================================== -->
 
     <!-- Load the query from file -->
-    <xf:instance id="resourceCountXQuery-instance" src="oxf:/apps/ehr/xquery/resourceCountXQuery.xml"/>
+    <xf:instance id="resourceCountXQuery-instance"
+        src="oxf:/apps/ehr/xquery/resourceCountXQuery.xml"/>
 
     <!-- Response instance -->
     <xf:instance id="resourceCount-instance">
@@ -1217,7 +1397,8 @@
         <xxf:variable name="count" select="event('count')"/>
 
         <!-- Set the resourceFilter in the query (can be blank to return count of all resources) -->
-        <xf:setvalue ref="xxf:instance('resourceCountXQuery-instance')/resourceFilter" value="$resourceFilter"/>
+        <xf:setvalue ref="xxf:instance('resourceCountXQuery-instance')/resourceFilter"
+            value="$resourceFilter"/>
 
         <!-- Run query to get resource count-->
         <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
@@ -1228,7 +1409,8 @@
             <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
         </xf:dispatch>
 
-        <xf:setvalue ref="$count" value="if (xxf:instance('databaseControl-instance')/status !='') then 0 else xxf:instance('resourceCount-instance')"
+        <xf:setvalue ref="$count"
+            value="if (xxf:instance('databaseControl-instance')/status !='') then 0 else xxf:instance('resourceCount-instance')"
         />
     </xf:action>
 
@@ -1238,7 +1420,8 @@
          ==================================================== -->
 
     <!-- Load the query from file -->
-    <xf:instance id="collectionExistsXQuery-instance" src="oxf:/apps/ehr/xquery/collectionExistsXQuery.xml"/>
+    <xf:instance id="collectionExistsXQuery-instance"
+        src="oxf:/apps/ehr/xquery/collectionExistsXQuery.xml"/>
 
     <!-- Response instance -->
     <xf:instance id="collectionExists-instance">
@@ -1278,7 +1461,8 @@
          ================================================================== -->
 
     <!-- Load the query from file -->
-    <xf:instance id="collectionCountXQuery-instance" src="oxf:/apps/ehr/xquery/collectionCountXQuery.xml"/>
+    <xf:instance id="collectionCountXQuery-instance"
+        src="oxf:/apps/ehr/xquery/collectionCountXQuery.xml"/>
 
     <!-- Response instance -->
     <xf:instance id="collectionCount-instance">
@@ -1318,7 +1502,8 @@
          ================================================================== -->
 
     <!-- Load the query from file -->
-    <xf:instance id="collectionListXQuery-instance" src="oxf:/apps/ehr/xquery/collectionListXQuery.xml"/>
+    <xf:instance id="collectionListXQuery-instance"
+        src="oxf:/apps/ehr/xquery/collectionListXQuery.xml"/>
 
     <!-- Response instance -->
     <xf:instance id="collectionContents-instance">
@@ -1429,13 +1614,15 @@
             select="xxf:instance('system-parameters-instance')/coreParameters/databaseConfiguration/systemDatabases/database[@system=$system]"/>
         <xxf:variable name="logicalDatabase"
             select="xxf:instance('system-parameters-instance')/coreParameters/databaseConfiguration/logicalDatabases/database[@id=$systemDatabase/@logicalDatabase]"/>
-        <xxf:variable name="logicalDatabaseLocation" select="$logicalDatabase/@logicalDatabaseLocation"/>
+        <xxf:variable name="logicalDatabaseLocation"
+            select="$logicalDatabase/@logicalDatabaseLocation"/>
 
         <!-- Get databaseLocation from storageLocation which can be a databaseURL, databaseHandle or databaseLocation.
              The databaseLocation is set relative to the logicalDatabaseLocation, found in the storageLocation.
              Unless the storageLocation is blank, or is the logicalDatabaseLocation, then the databaseLocation is set to blank
              Otherwise, if the logicalDatabaseLocation is not found in the storageLocation then assume it is already a databaseLocation -->
-        <xxf:variable name="relativeLocation" select="substring-after($storageLocation,$logicalDatabaseLocation)"/>
+        <xxf:variable name="relativeLocation"
+            select="substring-after($storageLocation,$logicalDatabaseLocation)"/>
         <xxf:variable name="databaseLocation"
             select="if (ends-with($storageLocation,$logicalDatabaseLocation) or $storageLocation='') then '' else if ($relativeLocation='') then $storageLocation else $relativeLocation"/>
 
@@ -1454,13 +1641,16 @@
         <xf:action if="exists($primaryPhysicalCluster)">
 
             <!-- Simple deployment - single cluster/single node - can set a single databaseURL -->
-            <xf:action if="count($physicalClusterSet) =1 and count($primaryPhysicalCluster/node) = 1">
+            <xf:action
+                if="count($physicalClusterSet) =1 and count($primaryPhysicalCluster/node) = 1">
                 <xxf:variable name="deployedClusterNode" select="$primaryPhysicalCluster/node[1]"/>
                 <!-- Set the databaseURL -->
                 <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
                     value="concat($deployedClusterNode/@databaseURL,$deployedClusterNode/@btuLocation,$databaseLocation)"/>
                 <!-- Set the database version (needed for set-fullTextPredicate) -->
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL/@databaseVersion" value="$deployedClusterNode/@databaseVersion"/>
+                <xf:setvalue
+                    ref="xxf:instance('databaseControl-instance')/databaseURL/@databaseVersion"
+                    value="$deployedClusterNode/@databaseVersion"/>
                 <!-- Create the databaseURLSet -->
                 <xf:insert context="xxf:instance('databaseControl-instance')/databaseURLSet"
                     origin="xxf:instance('databaseControl-instance')/databaseURL"/>
@@ -1546,9 +1736,11 @@
                The " is matched using . (dot) so that we don't have a problem with " in the attribute value -->
         <xf:action if="$databaseVersion=tokenize($matchesPredicateVersions,' ')">
             <!-- First replace ft:query with matches -->
-            <xxf:variable name="queryWithMatches" select="replace($query,'ft:query\(([^,]+,.)([^\)]+)\)','matches($1^$2,''i'')')"/>
+            <xxf:variable name="queryWithMatches"
+                select="replace($query,'ft:query\(([^,]+,.)([^\)]+)\)','matches($1^$2,''i'')')"/>
             <!-- Then remove * within matches -->
-            <xxf:variable name="queryText" select="replace($queryWithMatches,'matches\(([^,]+),([^\*]+)\*([^\)]+)\)','matches($1,$2$3)')"/>
+            <xxf:variable name="queryText"
+                select="replace($queryWithMatches,'matches\(([^,]+),([^\*]+)\*([^\)]+)\)','matches($1,$2$3)')"/>
 
             <xf:setvalue ref="xxf:instance('dalQuery-instance')/exist:text" value="$queryText"/>
 
@@ -1574,8 +1766,9 @@
          ====================================== -->
 
     <!-- Submission to run query against the database -->
-    <xf:submission id="dalQuery-submission" ref="xxf:instance('dalQuery-instance')" action="{xxf:instance('databaseControl-instance')/databaseURL}"
-        method="post" replace="instance" instance="dalResponse-instance">
+    <xf:submission id="dalQuery-submission" ref="xxf:instance('dalQuery-instance')"
+        action="{xxf:instance('databaseControl-instance')/databaseURL}" method="post"
+        replace="instance" instance="dalResponse-instance">
         <!-- Success -->
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
@@ -1594,41 +1787,48 @@
     </xf:submission>
 
     <!-- Submission to write xml to the database -->
-    <xf:submission id="dalWrite-submission" ref="xxf:instance('dalResource-instance')" action="{xxf:instance('databaseControl-instance')/databaseURL}"
-        method="put" replace="none" f:url-type="resource" includenamespacesprefixes="">
+    <xf:submission id="dalWrite-submission" ref="xxf:instance('dalResource-instance')"
+        action="{xxf:instance('databaseControl-instance')/databaseURL}" method="put" replace="none"
+        f:url-type="resource" includenamespacesprefixes="">
         <!-- Success -->
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
         </xf:action>
         <!-- Failed -->
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'dalWrite-failed'"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                value="'dalWrite-failed'"/>
         </xf:action>
     </xf:submission>
 
     <!-- Submission to read xml from the database -->
-    <xf:submission id="dalRead-submission" action="{xxf:instance('databaseControl-instance')/databaseURL}" method="get" validate="false"
-        replace="instance" instance="dalResource-instance" serialization="none" f:url-type="resource">
+    <xf:submission id="dalRead-submission"
+        action="{xxf:instance('databaseControl-instance')/databaseURL}" method="get"
+        validate="false" replace="instance" instance="dalResource-instance" serialization="none"
+        f:url-type="resource">
         <!-- Success -->
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
         </xf:action>
         <!-- Failed -->
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'dalRead-failed'"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                value="'dalRead-failed'"/>
         </xf:action>
     </xf:submission>
 
     <!-- Submission to delete xml from the database -->
     <xf:submission id="dalDelete-submission" ref="xxf:instance('dalResource-instance')"
-        action="{xxf:instance('databaseControl-instance')/databaseURL}" method="delete" validate="false" replace="none" serialization="none">
+        action="{xxf:instance('databaseControl-instance')/databaseURL}" method="delete"
+        validate="false" replace="none" serialization="none">
         <!-- Success -->
         <xf:action ev:event="xforms-submit-done">
             <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
         </xf:action>
         <!-- Failed -->
         <xf:action ev:event="xforms-submit-error">
-            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'dalDelete-failed'"/>
+            <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                value="'dalDelete-failed'"/>
         </xf:action>
     </xf:submission>
 
@@ -1667,7 +1867,8 @@
 
         <!-- Set maximum results from DAL query.
              Default is -1, which returns all results that were found. -->
-        <xf:setvalue ref="xxf:instance('dalQuery-instance')/@max" value="if ($maxResults castable as xs:integer) then $maxResults else -1"/>
+        <xf:setvalue ref="xxf:instance('dalQuery-instance')/@max"
+            value="if ($maxResults castable as xs:integer) then $maxResults else -1"/>
 
         <!-- Set DAL query -->
         <xf:setvalue ref="xxf:instance('dalQuery-instance')/exist:text" value="$query"/>
@@ -1677,7 +1878,8 @@
              The storageLocation is assumed to be a databaseHandle, so is used directly -->
         <xf:action if="exists($physicalClusterNode) and $physicalClusterNode !=''">
             <!-- Clear out the dalResponse-instance, in case the query submission fails -->
-            <xf:insert nodeset="xxf:instance('dalResponse-instance')" origin="xxf:instance('dalEmpty-instance')"/>
+            <xf:insert nodeset="xxf:instance('dalResponse-instance')"
+                origin="xxf:instance('dalEmpty-instance')"/>
 
             <!-- Get the deployed database node -->
             <xxf:variable name="deployedClusterNode"
@@ -1691,7 +1893,8 @@
                 <!-- Set the query text -->
                 <xf:dispatch name="set-dalQueryText" target="databaseAccessLayer-model">
                     <xxf:context name="query" select="$query"/>
-                    <xxf:context name="databaseVersion" select="$deployedClusterNode/@databaseVersion"/>
+                    <xxf:context name="databaseVersion"
+                        select="$deployedClusterNode/@databaseVersion"/>
                 </xf:dispatch>
                 <!-- Run the query -->
                 <xf:send submission="dalQuery-submission"/>
@@ -1710,7 +1913,8 @@
             <xf:dispatch name="set-databaseURLSet" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="$system"/>
                 <xxf:context name="storageLocation" select="$storageLocation"/>
-                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
+                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"
+                />
             </xf:dispatch>
 
             <!-- Clear out the dalAggregateResponse-instance -->
@@ -1722,7 +1926,8 @@
                 xxf:iterate="xxf:instance('databaseControl-instance')/databaseURLSet/databaseURL">
                 <!-- Set the databaseURL -->
                 <xxf:variable name="databaseURL" select="."/>
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL" value="$databaseURL"/>
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+                    value="$databaseURL"/>
 
                 <!-- Set the query text -->
                 <xf:dispatch name="set-dalQueryText" target="databaseAccessLayer-model">
@@ -1731,7 +1936,8 @@
                 </xf:dispatch>
 
                 <!-- Clear out the dalResponse-instance, in case the query submission fails -->
-                <xf:insert nodeset="xxf:instance('dalResponse-instance')" origin="xxf:instance('dalEmpty-instance')"/>
+                <xf:insert nodeset="xxf:instance('dalResponse-instance')"
+                    origin="xxf:instance('dalEmpty-instance')"/>
 
                 <!-- Run the query -->
                 <xf:send submission="dalQuery-submission"/>
@@ -1751,9 +1957,11 @@
 
                 <!-- Aggregate the results.
                      NOTE: when results sets are aggregated any order by in the query will be lost -->
-                <xf:action if="xxf:instance('databaseControl-instance')/status = ''" xxf:iterate="xxf:instance('dalResponse-instance')/*">
+                <xf:action if="xxf:instance('databaseControl-instance')/status = ''"
+                    xxf:iterate="xxf:instance('dalResponse-instance')/*">
                     <xxf:variable name="result" select="."/>
-                    <xf:insert context="xxf:instance('dalAggregateResponse-instance')" origin="$result"/>
+                    <xf:insert context="xxf:instance('dalAggregateResponse-instance')"
+                        origin="$result"/>
                 </xf:action>
             </xf:action>
 
@@ -1786,7 +1994,8 @@
         <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
 
         <!-- Clear out the dalResource-instance, in case the read submission fails -->
-        <xf:insert nodeset="xxf:instance('dalResource-instance')" origin="xxf:instance('dalEmpty-instance')"/>
+        <xf:insert nodeset="xxf:instance('dalResource-instance')"
+            origin="xxf:instance('dalEmpty-instance')"/>
 
         <!-- Read from a specific physicalClusterNode.
              The node must be passed as a parameter.
@@ -1808,7 +2017,8 @@
 
             <!-- Return error if deployedClusterNode does not exist -->
             <xf:action if="not(exists($deployedClusterNode))">
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'dal-read-bad-databaseClusterNode''"/>
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                    value="'dal-read-bad-databaseClusterNode''"/>
             </xf:action>
         </xf:action>
 
@@ -1822,7 +2032,8 @@
             <xf:dispatch name="set-databaseURLSet" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="$system"/>
                 <xxf:context name="storageLocation" select="$storageLocation"/>
-                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
+                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"
+                />
             </xf:dispatch>
 
             <!-- Read the resource -->
@@ -1863,7 +2074,8 @@
         <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
 
         <!-- Clear out the dalResource-instance, in case setting DAL resource fails -->
-        <xf:insert nodeset="xxf:instance('dalResource-instance')" origin="xxf:instance('dalEmpty-instance')"/>
+        <xf:insert nodeset="xxf:instance('dalResource-instance')"
+            origin="xxf:instance('dalEmpty-instance')"/>
 
         <!-- Set DAL resource -->
         <xf:insert nodeset="xxf:instance('dalResource-instance')" origin="$resource"/>
@@ -1889,7 +2101,8 @@
 
             <!-- Return error if deployedClusterNode does not exist -->
             <xf:action if="not(exists($deployedClusterNode))">
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'bad-databaseClusterNode-in-DAL-write'"/>
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                    value="'bad-databaseClusterNode-in-DAL-write'"/>
             </xf:action>
         </xf:action>
 
@@ -1903,7 +2116,8 @@
             <xf:dispatch name="set-databaseURLSet" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="$system"/>
                 <xxf:context name="storageLocation" select="$storageLocation"/>
-                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
+                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"
+                />
             </xf:dispatch>
 
             <!-- Save the Resource to all nodes in databaseURLSet. -->
@@ -1911,7 +2125,8 @@
                 xxf:iterate="xxf:instance('databaseControl-instance')/databaseURLSet/databaseURL">
                 <!-- Set the databaseURL -->
                 <xxf:variable name="databaseURL" select="."/>
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL" value="$databaseURL"/>
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+                    value="$databaseURL"/>
 
                 <!-- Write the resource -->
                 <xf:send submission="dalWrite-submission"/>
@@ -1920,7 +2135,8 @@
 
         <!-- Set the return resourceURL and status -->
         <xf:action if="exists($resourceURL)">
-            <xf:setvalue ref="$resourceURL" value="xxf:instance('databaseControl-instance')/databaseURL"/>
+            <xf:setvalue ref="$resourceURL"
+                value="xxf:instance('databaseControl-instance')/databaseURL"/>
         </xf:action>
         <xf:setvalue ref="$status" value="xxf:instance('databaseControl-instance')/status"/>
 
@@ -1948,58 +2164,67 @@
         <!-- Reset the status -->
         <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
 
-        <!-- Clear out the dalResource-instance - this is sent to the delete submission, but not used -->
-        <xf:insert nodeset="xxf:instance('dalResource-instance')" origin="xxf:instance('dalEmpty-instance')"/>
+        <!-- Only delete if the storageLocation is set correctly -->
+        <xf:action if="starts-with($storageLocation,'/')">
 
-        <!-- Delete from a specific physicalClusterNode.
+            <!-- Clear out the dalResource-instance - this is sent to the delete submission, but not used -->
+            <xf:insert nodeset="xxf:instance('dalResource-instance')"
+                origin="xxf:instance('dalEmpty-instance')"/>
+
+            <!-- Delete from a specific physicalClusterNode.
              The node must be passed as a parameter.
              The storageLocation is assumed to be a databaseHandle, so is used directly -->
-        <xf:action if="exists($physicalClusterNode) and $physicalClusterNode !=''">
+            <xf:action if="exists($physicalClusterNode) and $physicalClusterNode !=''">
 
-            <!-- Get the deployed database node -->
-            <xxf:variable name="deployedClusterNode"
-                select="xxf:instance('database-parameters-instance')/deployedDatabases/physicalCluster/node[@id=$physicalClusterNode][1]"/>
+                <!-- Get the deployed database node -->
+                <xxf:variable name="deployedClusterNode"
+                    select="xxf:instance('database-parameters-instance')/deployedDatabases/physicalCluster/node[@id=$physicalClusterNode][1]"/>
 
-            <!-- The deployedClusterNode must exist -->
-            <xf:action if="exists($deployedClusterNode)">
-                <!-- Set the databaseURL -->
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
-                    value="concat($deployedClusterNode/@databaseURL,$storageLocation)"/>
-                <!-- Delete the resource -->
-                <xf:send submission="dalDelete-submission"/>
+                <!-- The deployedClusterNode must exist -->
+                <xf:action if="exists($deployedClusterNode)">
+                    <!-- Set the databaseURL -->
+                    <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+                        value="concat($deployedClusterNode/@databaseURL,$storageLocation)"/>
+                    <!-- Delete the resource -->
+                    <xf:send submission="dalDelete-submission"/>
+                </xf:action>
+
+                <!-- Return error if deployedClusterNode does not exist -->
+                <xf:action if="not(exists($deployedClusterNode))">
+                    <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                        value="'bad-databaseClusterNode-in-DAL-delete'"/>
+                </xf:action>
             </xf:action>
 
-            <!-- Return error if deployedClusterNode does not exist -->
-            <xf:action if="not(exists($deployedClusterNode))">
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="'bad-databaseClusterNode-in-DAL-delete'"/>
-            </xf:action>
-        </xf:action>
 
-
-        <!-- Delete from a generic storageLocation.
+            <!-- Delete from a generic storageLocation.
              No physicalClusterNode has been passed as a parameter
              Uses the logicalDatabase for the system, however it is deployed -->
-        <xf:action if="not(exists($physicalClusterNode)) or $physicalClusterNode = ''">
+            <xf:action if="not(exists($physicalClusterNode)) or $physicalClusterNode = ''">
 
-            <!-- Set the database URL(s) -->
-            <xf:dispatch name="set-databaseURLSet" target="databaseAccessLayer-model">
-                <xxf:context name="system" select="$system"/>
-                <xxf:context name="storageLocation" select="$storageLocation"/>
-                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
-            </xf:dispatch>
+                <!-- Set the database URL(s) -->
+                <xf:dispatch name="set-databaseURLSet" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="$system"/>
+                    <xxf:context name="storageLocation" select="$storageLocation"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('databaseControl-instance')/status"/>
+                </xf:dispatch>
 
-            <!-- Delete the resource from all nodes in databaseURLSet. -->
-            <xf:action if="xxf:instance('databaseControl-instance')/status = ''"
-                xxf:iterate="xxf:instance('databaseControl-instance')/databaseURLSet/databaseURL">
-                <!-- Set the databaseURL -->
-                <xxf:variable name="databaseURL" select="."/>
-                <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL" value="$databaseURL"/>
+                <!-- Delete the resource from all nodes in databaseURLSet. -->
+                <xf:action if="xxf:instance('databaseControl-instance')/status = ''"
+                    xxf:iterate="xxf:instance('databaseControl-instance')/databaseURLSet/databaseURL">
+                    <!-- Set the databaseURL -->
+                    <xxf:variable name="databaseURL" select="."/>
+                    <xf:setvalue ref="xxf:instance('databaseControl-instance')/databaseURL"
+                        value="$databaseURL"/>
 
-                <!-- Delete the resource -->
-                <xf:send submission="dalDelete-submission"/>
+                    <!-- Delete the resource -->
+                    <xf:send submission="dalDelete-submission"/>
+                </xf:action>
             </xf:action>
-        </xf:action>
 
+        </xf:action>
+        
         <!-- Set the return status -->
         <xf:setvalue ref="$status" value="xxf:instance('databaseControl-instance')/status"/>
 
@@ -2077,20 +2302,22 @@
             <xf:dispatch name="set-databaseURLSet" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="$system"/>
                 <xxf:context name="storageLocation" select="$storageLocation"/>
-                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
+                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"
+                />
             </xf:dispatch>
         </xf:action>
 
 
         <!-- Load from databaseURL to browser -->
-        <xf:load resource="{xxf:instance('databaseControl-instance')/databaseURL}" show="new" xxf:show-progress="false"/>
+        <xf:load resource="{xxf:instance('databaseControl-instance')/databaseURL}" show="new"
+            xxf:show-progress="false"/>
 
         <!-- Set the return status -->
         <xf:setvalue ref="$status" value="xxf:instance('databaseControl-instance')/status"/>
 
     </xf:action>
-    
-    
+
+
     <!-- ========= Database Manifest ==================== 
          Used to back up and transfer databases
          The manifest is a gierarchy of <node> elements of the form:
@@ -2100,8 +2327,8 @@
             <node name="session-parameters" path="/db/ehr/xmlstore/users/admin/session-parameters" type="resource" size="4096" lastModified="2023-08-27T13:12:12.077+01:00"/>
             <node name="credentials" path="/db/ehr/xmlstore/users/admin/credentials" type="resource" size="4096" lastModified="2023-08-04T23:37:39.059+01:00"/>
          </node>
-         ================================================ -->    
-    
+         ================================================ -->
+
     <!-- Database manifest -->
     <xf:instance id="manifest-instance">
         <manifest collections="" resources="" size=""/>
@@ -2110,8 +2337,8 @@
     <xf:instance id="manifestList-instance">
         <exist:result/>
     </xf:instance>
-    
-    
+
+
     <!-- Application defined action to generate the manifest for the current database node.
                  The current node (in browsePhysicalDatabases) must be a collection.
             
@@ -2119,21 +2346,21 @@
     <xf:action ev:event="generate-databaseManifest">
         <xxf:variable name="system" select="event('system')"/>
         <xxf:variable name="node" select="event('node')"/>
-        
+
         <!-- Clear manifest-instance -->
         <xf:delete nodeset="xxf:instance('manifest-instance')/*"/>
-        
+
         <!-- Only generate manifest if node is a collection -->
         <xf:action if="$node/@type='collection'">
             <!-- Insert node -->
             <xf:insert context="xxf:instance('manifest-instance')" origin="$node"/>
-            
+
             <!-- Expand the node -->
             <xf:dispatch name="expand-manifestNode" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="$system"/>
                 <xxf:context name="node" select="xxf:instance('manifest-instance')/node[1]"/>
             </xf:dispatch>
-            
+
             <!-- Set manifest parameters -->
             <xf:setvalue ref="xxf:instance('manifest-instance')/@collections"
                 value="count(xxf:instance('manifest-instance')//node[@type='collection'])"/>
@@ -2141,11 +2368,11 @@
                 value="count(xxf:instance('manifest-instance')//node[@type='resource'])"/>
             <xf:setvalue ref="xxf:instance('manifest-instance')/@size"
                 value="sum(xxf:instance('manifest-instance')//node[@type='resource'][@size castable as xs:integer]/@size)"/>
-            
+
         </xf:action>
     </xf:action>
-    
-    
+
+
     <!-- Application defined action to expand a node in the database manifest.
                  The node passed as a parameter is an (empty) element node in the manifest-instance.
                  Gets the child nodes, inserts them as children of the node and then recursively invokes expand-manifest-node on each child collection node.
@@ -2153,25 +2380,30 @@
     <xf:action ev:event="expand-manifestNode">
         <xxf:variable name="system" select="event('system')"/>
         <xxf:variable name="node" select="event('node')"/>
-        
+
         <!-- Only generate manifest if node is a collection -->
         <xf:action if="$node/@type='collection'">
             <!-- Get child nodes -->
-            <xf:setvalue ref="xxf:instance('control-instance')/browsePhysicalDatabases/manifestLocation" value="$node/@path"/>
+            <xf:setvalue
+                ref="xxf:instance('control-instance')/browsePhysicalDatabases/manifestLocation"
+                value="$node/@path"/>
             <xf:send submission="manifestList-submission"/>
             <xf:dispatch name="get-collectionContents" target="databaseAccessLayer-model">
                 <xxf:context name="system" select="$system"/>
                 <xxf:context name="storageLocation" select="$node/@path"/>
-                <xxf:context name="collectionContents" select="xxf:instance('manifestList-instance')"/>
-                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"/>
+                <xxf:context name="collectionContents"
+                    select="xxf:instance('manifestList-instance')"/>
+                <xxf:context name="status" select="xxf:instance('databaseControl-instance')/status"
+                />
             </xf:dispatch>
-            
+
             <!-- Insert nodes -->
             <xf:action xxf:iterate="xxf:instance('manifestList-instance')/node">
                 <xxf:variable name="childNode" select="."/>
-                <xf:insert context="$node" nodeset="*" origin="$childNode" at="last()" position="after"/>
+                <xf:insert context="$node" nodeset="*" origin="$childNode" at="last()"
+                    position="after"/>
             </xf:action>
-            
+
             <!-- Expand the child collection nodes -->
             <xf:action xxf:iterate="$node/node[@type='collection']">
                 <xxf:variable name="childNode" select="."/>
@@ -2180,12 +2412,12 @@
                     <xxf:context name="node" select="$childNode"/>
                 </xf:dispatch>
             </xf:action>
-            
+
         </xf:action>
-        
+
     </xf:action>
-    
-    
+
+
 
     <!-- ========= Action when model loads ========= 
          Not doing anything here

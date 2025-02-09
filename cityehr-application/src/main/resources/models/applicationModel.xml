@@ -3248,7 +3248,8 @@
             ref="xxf:instance('applicationControl-instance')/importModelParameters/@rebuildDirectories"
             value="$rebuildDirectories"/>
 
-        <!-- Run the process to import the model, if checkExpressions is false -->
+        <!-- Run the process to import the model, if checkExpressions is false
+             import-informationModelComplete is defined in the main-model of cityEHRAdmin -->
         <xf:action if="$checkExpressions != true()">
             <xf:dispatch name="run-process" target="process-model">
                 <xxf:context name="processName" select="'import-informationModel'"/>

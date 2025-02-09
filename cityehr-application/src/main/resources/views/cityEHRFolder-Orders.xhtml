@@ -47,349 +47,82 @@
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
         <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
-
+        
         <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
             ================================================================================== -->
         <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
-
+        
         <!-- ========= Session model contains stuff for handling of user sessions ============ 
             ================================================================================== -->
         <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
-
+        
         <!-- ========= Audit log model contains stuff for audit of user actions ============== 
             ================================================================================== -->
         <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
-
+        
         <!-- ========= Page navigation model contains stuff for navigation between pages =====
         ====================================================================================== -->
         <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
-
+        
         <!-- ========= Configuration model contains standard configuration of the page ======= 
             ================================================================================== -->
         <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
-
-
+        
+        
         <!-- ========= Dictionary model contains the specialty dictionary ========= 
             ======================================================================= -->
         <xi:include href="../models/dictionaryModel.xml" xxi:omit-xml-base="true"/>
-
+        
         <!-- ========= Release Notes ========= 
             ============================================================================ -->
         <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
-
+        
         <!-- ========= Information pane ========= 
             ============================================================================ -->
         <xi:include href="../models/informationModel.xml" xxi:omit-xml-base="true"/>
-
+        
+        
+        <!-- ========= Notifications model contains stuff for handling notifications == 
+            =================================================================================== -->
+        <xi:include href="../models/notificationModel.xml" xxi:omit-xml-base="true"/>
+        
         <!-- ========= Patient Demographics model contains demographics data for the patient == 
             =================================================================================== -->
         <xi:include href="../models/patientDemographicsModel.xml" xxi:omit-xml-base="true"/>
-
-        <!-- ========= Annotation model contains stuff for handling annotations for the patient == 
-            =================================================================================== -->
-        <xi:include href="../models/annotationModel.xml" xxi:omit-xml-base="true"/>
-
-        <!-- ========= Notification model contains stuff for handling notifications for the patient == 
-            =================================================================================== -->
-        <xi:include href="../models/notificationModel.xml" xxi:omit-xml-base="true"/>
-
-        <!-- ========= Care teams model is needed for notifications when adding new annotations == 
-            =================================================================================== -->
+        
+        <!-- ========= Reference data - directories of entries and elements ==== 
+             =================================================================== -->
+        <xi:include href="../models/directoryModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- === Web Services ===
+            ==================== -->
+        <xi:include href="../models/webServiceModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- === 
+            Care Teams
+            === -->
         <xi:include href="../models/careTeamModel.xml" xxi:omit-xml-base="true"/>
-
-        <!-- ========= exportDataModel model contains stuff for exporting patient records ==== 
+        
+        <!-- ========= Class dictionary model ====================================
+             contains stuff for loading and accessing class dictionaries
+             ===================================================================== -->
+        <xi:include href="../models/classDictionaryModel.xml" xxi:omit-xml-base="true"/>
+        
+        <!-- ========= cdaModel model contains stuff for loading CDA documents ==== 
             =================================================================================== -->
-        <xi:include href="../models/exportDataModel.xml" xxi:omit-xml-base="true"/>
-
-
+        <xi:include href="../models/cdaModel.xml" xxi:omit-xml-base="true"/>
+        
         <!-- ========= Main model contains stuff specific to this page ========= 
+            The main model for view that edit compositions is shared between forms, letters,
+            The compositionType (forms, letters) is set from the page passed in view-parameters
             =================================================================== -->
-        <xf:model id="main-model">
-
-            <!-- Control of the view -->
-            <xf:instance id="control-instance">
-                <control xmlns="">
-                    <!-- viewNavigationType is events | contents -->
-                    <viewNavigationType/>
-                    <status/>
-                    <error/>
-                    <statusMessage/>
-                    <showAnnotations>false</showAnnotations>
-                    <!-- The current event (composition) type -->
-                    <composition compositionIRI="#CityEHR:Form:FractureHistory" displayName="Fracture History" cityEHR:rank="1"/>
-                    <!-- The set of composition types (is populated with composition elements during page set up-->
-                    <compositionSet/>
-                    <!-- This just contains a placeholder category for all compositions for this patient -->
-                    <allCompositions>
-                        <composition compositionIRI="#cityEHR:AllCompositionsCode" displayName="Fracture History" cityEHR:rank="1"/>
-                    </allCompositions>
-                    <!-- Information about currently loaded event.
-                         storageId and title are derived when the event is selected
-                         (storageId should be the same as compositionHandle, but this is not assumed) 
-                         other elements come from the database query
-                         -->
-                    <current-event>
-                        <handle/>
-                        <compositionHandle/>
-                        <compositionTypeIRI/>
-                        <compositionIRI/>
-                        <effectiveTime/>
-                        <displayName/>
-                        <storageId/>
-                        <title/>
-                    </current-event>
-                    <!-- Formatted views - including some used for debugging -->
-                    <formatted-event/>
-                    <formatted-result/>
-                    <formatted-query/>
-                </control>
-            </xf:instance>
-
-
-            <!-- ========= Get list of patient events ========= 
-                Uses specifc query instance because there are no parameters to be set
-                
-                Query returns a set of:
-                <event> 
-                <handle>{$eventHandle}</handle>
-                    <compositionHandle>{$compositionHandle}</compositionHandle>
-                    <compositionTypeIRI>{$compositionTypeIRI}</compositionTypeIRI>
-                    <compositionIRI>{$compositionIRI}</compositionIRI>
-                    <effectiveTime>{$effectiveTime}</effectiveTime>
-                    <displayName>{$eventDisplayName}</displayName>
-                    <author>{$author}</author>
-                    <authorTime>{$authorTime}</authorTime>
-                </event>
-                ============================================== -->
-
-            <xf:instance id="patientEventsXQuery-instance" src="oxf:/apps/ehr/xquery/patientEventsXQuery.xml"/>
-
-            <xf:instance id="patientEventsList-instance">
-                <patientEvents/>
-            </xf:instance>
-
-            <xf:submission id="patientEvents-submission" ref="xxf:instance('patientEventsXQuery-instance')"
-                action="{xxf:instance('view-parameters-instance')/applicationDatabaseLocation}/records/{xxf:instance('view-parameters-instance')/patientId}"
-                method="post" replace="instance" instance="patientEventsList-instance">
-                <!-- Remove annotations from the event list (query returns all compositions) -->
-                <xf:action ev:event="xforms-submit-done">
-                    <!-- Not from 2022-02-17
-                    <xf:delete nodeset="xxf:instance('patientEventsList-instance')/event[compositionTypeIRI='#CityEHR:Annotation']"/>
-                    -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('control-instance')/error"/>
-                </xf:action>
-                <xf:action ev:event="xforms-submit-error">
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                        value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedpatientEventsSubmission']"/>
-                </xf:action>
-            </xf:submission>
-
-            <!-- Application defined action to select the current event type -->
-            <xf:action ev:event="select-event-type">
-                <!-- TBD -->
-            </xf:action>
-
-            <!-- Application defined action to select the current event -->
-            <xf:action ev:event="select-event">
-                <!-- TBD -->
-            </xf:action>
-
-
-
-            <!-- ========= Load event for the patient ========= 
-                 ============================================== -->
-            <xf:instance id="event-instance">
-                <event/>
-            </xf:instance>
-
-            <!-- Submission to load the event -->
-            <!-- This one will load the document from eXist into event-instance -->
-            <xf:submission id="load-event-submission" serialization="none"
-                action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('control-instance')/current-event/handle}"
-                validate="false" method="get" replace="instance" instance="event-instance" f:url-type="resource">
-                <xf:action ev:event="xforms-submit-done">
-                    <!-- Insert the new contents of the html instance -->
-                    <xf:action if="exists(xxf:instance('event-instance')/*)">
-                        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
-                            <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
-                            <xxf:context name="input-instance" select="xxf:instance('event-instance')"/>
-                            <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
-                        </xf:dispatch>
-                    </xf:action>
-
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('control-instance')/error"/>
-                </xf:action>
-                <xf:action ev:event="xforms-submit-error">
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                        value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedpatientEventLoad']"/>
-                </xf:action>
-            </xf:submission>
-
-
-            <!-- Application defined action to download XML - called from the viewXML dialogue -->
-            <xf:action ev:event="download-xml">
-                <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
-                    <xxf:context name="export-instance" select="xxf:instance('event-instance')"/>
-                    <xxf:context name="exportType" select="'PatientEvent'"/>
-                </xf:dispatch>
-            </xf:action>
-
-
-            <!-- ========= Set and Load Event and Annotations ================ 
-                 Called when this Folder view is first loaded 
-                 and when the user selects a new event to look at.
-                ============================================================== -->
-
-            <!--  Application defined action to set the current event details -->
-            <xf:action ev:event="set-current-event">
-                <xxf:variable name="currentEvent" select="event('currentEvent')"/>
-
-                <xf:action if="exists($currentEvent)">
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-event/handle" value="$currentEvent/handle"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-event/compositionHandle" value="$currentEvent/compositionHandle"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-event/compositionTypeIRI" value="$currentEvent/compositionTypeIRI"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-event/compositionIRI" value="$currentEvent/compositionIRI"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-event/effectiveTime" value="$currentEvent/effectiveTime"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-event/displayName" value="$currentEvent/displayName"/>
-                </xf:action>
-            </xf:action>
-
-            <!--  Application defined action to load the current event and its associated annotations. -->
-            <xf:action ev:event="load-cityEHR-event">
-                <xf:send submission="load-event-submission"/>
-                <xf:setvalue ref="xxf:instance('control-instance')/current-event/title"
-                    value="if (xxf:instance('control-instance')/current-event/effectiveTime castable as xs:dateTime) then concat(format-dateTime(xs:dateTime(xxf:instance('control-instance')/current-event/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()),' - ',xxf:instance('control-instance')/current-event/displayName) else xxf:instance('control-instance')/current-event/displayName"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/pageDisplayName"
-                    value="xxf:instance('control-instance')/current-event/title"/>
-                <xf:setvalue ref="xxf:instance('control-instance')/current-event/storageId"
-                    value="tokenize(xxf:instance('control-instance')/current-event/handle,'/')[last()]"/>
-
-                <!-- Clear any new annotations entered for previous event -->
-                <xf:delete nodeset="xxf:instance('annotations-instance')/*"/>
-
-                <!-- Set up and run query to get the stored annotations.
-                    The annotation for this event (storageId) has the following in its CDA Header:
-                    <cda:documentationOf>
-                    <cda:serviceEvent classCode="">
-                    <cda:id extension="storageId"/>
-                    </cda:serviceEvent>
-                    </cda:documentationOf>    
-                -->
-                <xf:dispatch name="get-storedAnnotations" target="annotation-model">
-                    <xxf:context name="compositionId" select="xxf:instance('control-instance')/currentEvent/storageId"/>
-                </xf:dispatch>
-
-                <!-- If this event has annotations set, then make sure they are displayed -->
-                <xf:setvalue ref="xxf:instance('control-instance')/showAnnotations"
-                    value="if (count(xxf:instance('stored-annotations-instance')/annotation) gt 0) then 'true' else ."/>
-
-                <!-- Update controls -->
-                <xf:recalculate model="viewControlsActions-model"/>
-            </xf:action>
-
-
-            <!-- ========= Set up Folder when it is first loaded =================== 
-                =================================================================== -->
-            <xf:action ev:event="xforms-model-construct-done">
-                <!-- Set up the patient for this patient-specific view -->
-                <xf:dispatch name="set-patient-for-view" target="patientDemographics-model"/>
-
-                <!-- Load dictionary for current specialty
-                     This is language dependent -->
-                <xf:dispatch name="load-dictionary" target="dictionary-model">
-                    <xxf:context name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
-                    <xxf:context name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
-                    <xxf:context name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
-                </xf:dispatch>
-
-                <!-- Set the Care Setting.
-                     careSettingIRI is passed in view-parameters, but use the default if it is not set -->
-                <xxf:variable name="careSetting"
-                    select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
-
-
-                <!-- Set the care teams and care team users -->
-                <xf:dispatch name="initialiseCareTeamsForUser" target="careTeam-model"/>
-                <xf:dispatch name="getCareTeamUsers" target="careTeam-model"/>
-                <xf:dispatch name="getUserSelectionList" target="careTeam-model">
-                    <xxf:context name="userListInput" select="()"/>
-                </xf:dispatch>
-
-                <!-- Set the initial view navigation type -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'events'"/>
-
-                <!-- Expand composition selection view if specified -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
-                    value="xxf:instance('view-parameters-instance')/pageInformation/page[@page=xxf:instance('view-parameters-instance')/page]/@showViewNavigationItemList"/>
-
-                <!-- Query to get all events for current patient (exclusing annotations) -->
-                <xf:send submission="patientEvents-submission"/>
-
-                <!-- Set up the compositionSet - list of different event types recorded for this patient -->
-                <xxf:variable name="compositionIRIList" select="distinct-values(xxf:instance('patientEventsList-instance')/event/compositionIRI)"/>
-                <xf:action xxf:iterate="$compositionIRIList">
-                    <xxf:variable name="compositionIRI" select="."/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/composition/@compositionIRI" value="$compositionIRI"/>
-                    <!-- Get displayName and rank from the dictionary, but important to still display the event even if its type is no longer in the dictionary -->
-                    <xxf:variable name="dictionaryComposition"
-                        select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder/iso-13606:composition[@code=$compositionIRI][1]"/>
-                    <xxf:variable name="dictionaryDisplayName"
-                        select="if (exists($dictionaryComposition)) then $dictionaryComposition/@displayName else ''"/>
-                    <xxf:variable name="compositionRank"
-                        select="if (exists($dictionaryComposition)) then $dictionaryComposition/@cityEHR:rank else '1'"/>
-                    <!-- Set rank and displayName, then add to the composition set -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/composition/@displayName"
-                        value="if ($dictionaryDisplayName!='') then $dictionaryDisplayName else xxf:instance('patientEventsList-instance')/event[compositionIRI=$compositionIRI][1]/displayName"/>
-                    <xf:setvalue ref="xxf:instance('control-instance')/composition/@cityEHR:rank" value="$compositionRank"/>
-                    <xf:insert context="xxf:instance('control-instance')/compositionSet" origin="xxf:instance('control-instance')/composition"/>
-                </xf:action>
-
-                <!-- Set up the 'All Events' category.
-                     Displyaname is set (configurable) in view-parameters
-                     Set the current selected composition (composition type) to the all events category
-                     And make sure the expanded cateogy is shown whne the page is loaded - 
-                     showViewNavigationItemList determines whether a category is expanded or not. -->
-                <xf:setvalue ref="xxf:instance('control-instance')/allCompositions/composition/@displayName"
-                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/allEvents"/>
-                <xf:setvalue ref="xxf:instance('control-instance')/composition/@compositionIRI"
-                    value="xxf:instance('control-instance')/allCompositions/composition/@compositionIRI"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList" value="'true'"/>
-
-                <!-- Load the current event and its annotations.
-                     If the compositionHandle was passed as a parameter then load that composition, if it exists.
-                     Otherwise, load the first composition -->
-                <xxf:variable name="parameterEvent"
-                    select="xxf:instance('patientEventsList-instance')/event[compositionHandle=xxf:instance('view-parameters-instance')/compositionHandle]"/>
-
-                <xxf:variable name="selectedEvent"
-                    select="if (exists($parameterEvent)) then $parameterEvent else xxf:instance('patientEventsList-instance')/event[1]"/>
-
-                <!-- Set the current event -->
-                <xf:dispatch name="set-current-event" target="main-model">
-                    <xxf:context name="currentEvent" select="$selectedEvent"/>
-                </xf:dispatch>
-                <!-- Load the event -->
-                <xf:dispatch name="load-cityEHR-event" target="main-model"/>
-
-                <!-- Update controls -->
-                <xf:recalculate model="viewControlsActions-model"/>
-            </xf:action>
-
-
-            <xf:action ev:event="xforms-ready">
-                <!-- Update controls -->
-                <xf:recalculate model="viewControlsActions-model"/>
-            </xf:action>
-
-
-        </xf:model>
-
-
+        <xi:include href="../models/compositionMainModel.xml" xxi:omit-xml-base="true"/>
+        
+        
+        <!-- ===  Manage image maps   === -->
+        <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
+        
+  
         <!-- ========= View Controls actions model contains actions for view control ========= 
             These actions are specific to this page, so the model is implemented directly.           
             There must be one event handler for each action defined in the <viewControlsActions> for this page in application-parameters
@@ -559,111 +292,19 @@
                 </xhtml:div>
 
                 <xhtml:div id="navigationDisplay" class="navigation">
-
-                    <!-- Select from the list of events stored for this patient.
-                         Events are displayed by composition type, including the default of 'All Events'
-                         The only viewNavigationType is 'events' so the containing span is not really necessary
-                         But the framework allows for other types to be added in the future -->
-                    <xhtml:span class="{if (xxf:instance('view-parameters-instance')/viewNavigationType='events') then '' else 'hidden'}">
-                        <!-- Composition type list only has compositions that have an instance in this patient's record -->
-                        <xxf:variable name="compositionSet"
-                            select="(xxf:instance('control-instance')/allCompositions/composition,xxf:sort(xxf:instance('control-instance')/compositionSet/composition,concat(@cityEHR:rank,@displayName),'text','ascending'))"/>
-                        <xxf:variable name="currentCompositionIRI" select="xxf:instance('control-instance')/composition/@compositionIRI"/>
-                        <!-- Get the code for the all compositions type -->
-                        <xxf:variable name="allCompositionsCode" select="xxf:instance('control-instance')/allCompositions/composition/@compositionIRI"/>
-                        <!-- Show list of compositions (events) in this record for each composition type.
-                             Note that in cityEHRFolder-Events, composition refers to the type of composition in the model,
-                             not the record instances (events) -->
-                        <xf:repeat id="composition-repeat" nodeset="$compositionSet">
-                            <xxf:variable name="composition" select="."/>
-                            <xxf:variable name="compositionIRI" select="$composition/@compositionIRI"/>
-                            <xxf:variable name="compositionDisplayName" select="$composition/@displayName"/>
-                            <!-- Set the event list.
-                                 Event list will will only be shown for the selected category
-                                 But need to make it for all categories so that the eventCount can be shown for each one -->
-                            <xxf:variable name="eventList"
-                                select="if ($compositionIRI=$allCompositionsCode) then xxf:instance('patientEventsList-instance')/event else xxf:instance('patientEventsList-instance')/event[compositionIRI=$compositionIRI]"/>
-                            <xxf:variable name="eventCount" select="count($eventList)"/>
-                            <!-- selectionActionClass shows right or down arrow, depending on whether the category is selected -->
-                            <xxf:variable name="selectionActionClass"
-                                select="if ($compositionIRI=$currentCompositionIRI and xxf:instance('view-parameters-instance')/showViewNavigationItemList='true') then 'collapse' else 'expand'"/>
-                            <xf:trigger class="viewNavigationCategory" appearance="minimal">
-                                <xf:label
-                                    ref="concat(xxf:instance('view-parameters-instance')/staticParameters/viewNavigationItem/prefix[@action=$selectionActionClass],$compositionDisplayName,' (',$eventCount,')')"/>
-                                <!-- Action when composition type is selected -->
-                                <xf:action ev:event="DOMActivate">
-                                    <!-- Toggle display of viewNavigationItemList on currently selected viewNavigationItem -->
-                                    <xxf:variable name="selectedEventType" select="$compositionSet[index('composition-repeat')]"/>
-                                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/showViewNavigationItemList"
-                                        value="if ($selectedEventType/@compositionIRI=$currentCompositionIRI and .='true') then 'false'  else 'true'"/>
-                                    <!-- Set the current composition type code and displayName -->
-                                    <xf:setvalue ref="xxf:instance('control-instance')/composition/@compositionIRI"
-                                        value="$selectedEventType/@compositionIRI"/>
-                                    <xf:setvalue ref="xxf:instance('control-instance')/composition/@displayName"
-                                        value="$selectedEventType/@displayName"/>
-                                    <!-- Set first event in list as the current event and load it -->
-                                    <xf:action>
-                                        <xxf:variable name="selectedEvent" select="$eventList[1]"/>
-                                        <!-- Set the current event -->
-                                        <xf:dispatch name="set-current-event" target="main-model">
-                                            <xxf:context name="currentEvent" select="$selectedEvent"/>
-                                        </xf:dispatch>
-                                        <!-- Load the event -->
-                                        <xf:dispatch name="load-cityEHR-event" target="main-model"/>
-                                    </xf:action>
-                                </xf:action>
-                            </xf:trigger>
-                            <!-- Show the events for the currently selected event type.
-                                 Only iterate through the evntList if this is the current category.
-                                 And the user has selected to open the category (showViewNavigationItemList is true)
-                                 Note that eventList always contains the list of events for the category, but selectableEventList is empty if the above conditions do not hold -->
-                            <xxf:variable name="selectableEventList"
-                                select="$eventList[$currentCompositionIRI=$compositionIRI][xxf:instance('view-parameters-instance')/showViewNavigationItemList='true']"/>
-                            <xf:repeat id="event-repeat" nodeset="$selectableEventList">
-                                <xxf:variable name="event" select="."/>
-                                <!-- Event details for display -->
-                                <xxf:variable name="eventTimeDisplay"
-                                    select="if ($event/effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($event/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $event/effectiveTime"/>
-                                <!-- Provenance details for mouse over -->
-                                <xxf:variable name="eventAuthorTimeRecorded"
-                                    select="if ($event/authorTime castable as xs:dateTime) then format-dateTime(xs:dateTime($event/authorTime), xxf:instance('view-parameters-instance')/dateTimeDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $event/authorTime"/>
-                                <xxf:variable name="eventAuthorTime"
-                                    select="if ($eventAuthorTimeRecorded != '') then $eventAuthorTimeRecorded else $eventTimeDisplay"/>
-                                <xxf:variable name="eventProvenanceDisplay"
-                                    select="normalize-space(concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/provenanceDisplay/@prefix,$event/author,xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/provenanceDisplay/@suffix,$eventAuthorTime))"/>
-                                <xxf:variable name="viewNavigationItemClass"
-                                    select="if (xxf:instance('control-instance')/current-event/handle=$event/handle) then 'viewNavigationSelectedItem' else 'viewNavigationSubItem'"/>
-                                <!-- Navigation item for each event -->
-                                <xf:trigger class="{$viewNavigationItemClass}" appearance="minimal">
-                                    <xf:label ref="concat($eventTimeDisplay,' ',$event/displayName)"/>
-                                    <xf:hint ref="$eventProvenanceDisplay"/>
-                                    <!-- Action when event is selected -->
-                                    <xf:action ev:event="DOMActivate">
-                                        <!-- Set the current event -->
-                                        <xxf:variable name="selectedEvent" select="$selectableEventList[index('event-repeat')]"/>
-                                        <xf:dispatch name="set-current-event" target="main-model">
-                                            <xxf:context name="currentEvent" select="$selectedEvent"/>
-                                        </xf:dispatch>
-                                        <!-- Load the event and its annotations -->
-                                        <xf:dispatch name="load-cityEHR-event" target="main-model"/>
-                                    </xf:action>
-                                </xf:trigger>
-                                <!-- Show contents list for current event.
-                                         But only if it has more than one section. -->
-                                <xxf:variable name="contentsList"
-                                    select="if($viewNavigationItemClass='viewNavigationSelectedItem') then xxf:instance('event-instance')/cda:component/cda:structuredBody/cda:component/cda:section[cda:title!=''] else ()"/>
-                                <xf:repeat nodeset="$contentsList">
-                                    <xxf:variable name="sectionCount" select="position()"/>
-                                    <xxf:variable name="sectionTitle" select="./cda:title"/>
-                                    <xxf:variable name="crossRef" select="concat('''Composition-1-Section-',string($sectionCount),'''')"/>
-                                    <xhtml:span class="contentIndex" onclick="javascript:scrollToElement({$crossRef})">
-                                        <xf:output ref="$sectionTitle"/>
-                                    </xhtml:span>
-                                </xf:repeat>
-                            </xf:repeat>
-                        </xf:repeat>
-                    </xhtml:span>
-
+                    
+                    <!-- List of orders saved and in-progress for this patient -->
+                    <xf:group
+                        ref="xxf:instance('view-parameters-instance')[viewNavigationType='inProgress']">
+                        <xi:include href="cityEHRSavedCompositionSelection.xhtml"/>
+                    </xf:group>
+                    
+                    <!-- List of new orders that could be made for this patient -->
+                    <xf:group
+                        ref="xxf:instance('view-parameters-instance')[viewNavigationType='new']">
+                        <xi:include href="cityEHRCompositionSelection.xhtml"/>
+                    </xf:group>
+                    
                 </xhtml:div>
 
             </xhtml:div>

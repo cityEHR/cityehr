@@ -346,21 +346,44 @@
             <xxf:variable name="pipelinePath"
                 select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/',$pipeline)"/>
 
-            <!-- If the input-instance exists
-                 Invoke the pipeline with the inatance and view-parameters as inputs-->
+            <!-- Input to pipeline
+                 If the input-instance exists then invoke the pipeline with the inatance and view-parameters as inputs
+                 Otherwise just invoke the pipeline with just view-parameters as inout -->
+            <xxf:variable name="pipelineInput"
+                select="if (exists($input-instance)) then ('instance','view-parameters') else 'instance'"/>
+
+            <!-- Output to pipeline
+                 If the return-instance exists then the pipeline must return a data output
+                 Otherwise invoke the pipeline with no output -->
+            <xxf:variable name="pipelineOutput"
+                select="if (exists($return-instance)) then 'data' else ()"/>
+
+            <!-- If the input-instance exists, invoke the pipeline with the inatance and view-parameters as inputs
+                 Otherwise invoke the pipeline with just view-parameters as inout -->
+            <xxf:variable name="pipelineReturn"
+                select="if (exists($input-instance)) then xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , $pipelineOutput) 
+                else xxf:call-xpl($pipelinePath, 'instance',  xxf:instance('view-parameters-instance') , $pipelineOutput)"/>
+
+            <!-- Set the return instance, if it exists -->
+            <xf:action if="exists($return-instance)">
+                <xf:insert nodeset="$return-instance" origin="$pipelineReturn"/>
+            </xf:action>
+
+<!-- The old way 2024-11-008 -->
+            <!--
             <xf:action if="exists($input-instance)">
                 <xf:insert nodeset="$return-instance"
-                    origin="xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , 'data')"
+                    origin="xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , $pipelineOutput)"
                 />
             </xf:action>
 
-            <!-- If the input-instance does not exist
-                 Invoke the pipeline with just view-parameters as inout -->
+  
             <xf:action if="not(exists($input-instance))">
                 <xf:insert nodeset="$return-instance"
-                    origin="xxf:call-xpl($pipelinePath, 'instance',  xxf:instance('view-parameters-instance') , 'data')"
+                    origin="xxf:call-xpl($pipelinePath, 'instance',  xxf:instance('view-parameters-instance') , $pipelineOutput)"
                 />
             </xf:action>
+            -->
 
         </xf:action>
 
@@ -656,6 +679,8 @@
     </xf:action>
 
 
+
+
     <!-- =====================================================================================
          HTML Instance - cache, print, export
          ====================================================================================== -->
@@ -665,7 +690,7 @@
     </xf:instance>
 
     <!-- Application defined action to store the html-instance in the HTML cache (user specific) 
-         Return the URL for the resource in the database (in view-parameters-instance)  -->
+         Return the URL for the resource in the database (in view-parameters-instance/resourceHandle)  -->
     <xf:action ev:event="store-htmlCache">
         <!-- Write html-instance to the html cache -->
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
@@ -702,6 +727,7 @@
          The html-instance has already been set up with the required data
          externalId must also be set already in view-parameters -->
     <xf:action ev:event="print-html">
+        <!-- Store the html-instance, which sets its location in view-parameters-instance/resourceHandle -->
         <xf:dispatch name="store-htmlCache" target="pageNavigation-model"/>
 
         <!-- Set the externalId for the resource (in session-parameters) -->
@@ -710,7 +736,10 @@
             <xxf:context name="externalId"
                 select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
-
+    
+        <!-- Set the xmlcacheHandle for debugging in the cityEHRPrintCachedHTML pipeline -->       
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/xmlCacheHandle" value="replace(xxf:instance('view-parameters-instance')/resourceHandle,'htmlCache','xmlCache')"/>
+            
         <!-- Pipeline to return resource to the browser -->
         <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
             <xxf:context name="page" select="'cityEHRPrintCachedHTML'"/>

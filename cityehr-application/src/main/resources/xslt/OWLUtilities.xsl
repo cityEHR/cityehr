@@ -83,7 +83,7 @@
         Returns a valid IRI from the input prefix and string.
         Returns an empty string if the $string parameter is empty
         The prefix is the class IRI with or without a trailing ':'
-        The the trailing ':' is not present then this is added when constructing the IRI that is returned.
+        If the trailing ':' is not present then this is added when constructing the IRI that is returned.
         
         The following characters are not valid in an IRI:
         
@@ -207,7 +207,7 @@
         <Annotation>
             <AnnotationProperty abbreviatedIRI="rdfs:copyright"/>
             <Literal xml:lang="{$baseLanguageCode}" datatypeIRI="&amp;rdf;PlainLiteral"><xsl:value-of
-                select="('Copyright (c)',year-from-date(current-date()),$applicationOwner)" separator=" "/>
+                select="('Copyright (c)',year-from-date(current-date()),$modelOwner)" separator=" "/>
             </Literal>
         </Annotation>
         <!-- The pathSeparator is used in expressions - usually / but was historically : -->

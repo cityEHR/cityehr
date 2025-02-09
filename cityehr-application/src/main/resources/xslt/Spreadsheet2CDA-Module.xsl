@@ -140,7 +140,7 @@
             <Annotation>
                 <AnnotationProperty abbreviatedIRI="rdfs:copyright"/>
                 <Literal xml:lang="en" datatypeIRI="rdf:PlainLiteral">Copyright (c) <xsl:value-of select="year-from-date(current-date())"/>
-                    <xsl:value-of select="$applicationOwner"/>
+                    <xsl:value-of select="$modelOwner"/>
                 </Literal>
             </Annotation>
             <!-- The pathSeparator is used in expressions - usually / but was hisyorically : -->

@@ -89,8 +89,8 @@
     <!-- Set the Application for this Information Model -->
     <xsl:variable name="applicationId"
         select="$configurationSheet/table:table-row[table:table-cell[1]/text:p='ApplicationId']/table:table-cell[2]/text:p"/>
-    <xsl:variable name="applicationOwner"
-        select="$configurationSheet/table:table-row[table:table-cell[1]/text:p='ApplicationOwner']/table:table-cell[2]/text:p"/>
+    <xsl:variable name="modelOwner"
+        select="$configurationSheet/table:table-row[table:table-cell[1]/text:p='ModelOwner']/table:table-cell[2]/text:p"/>
 
 
     <!-- Set the Specialty for this Information Model -->

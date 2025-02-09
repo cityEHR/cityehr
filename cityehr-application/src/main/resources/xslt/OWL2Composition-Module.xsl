@@ -84,7 +84,7 @@
                 else
                     ''"/>
 
-        <xsl:variable name="applicationOwner" as="xs:string"
+        <xsl:variable name="modelOwner" as="xs:string"
             select="
                 if (exists($rootNode/owl:DataPropertyAssertion[owl:NamedIndividual/@IRI = $applicationIRI][owl:DataProperty/@IRI = '#hasOwner']/owl:Literal)) then
                     $rootNode/owl:DataPropertyAssertion[owl:NamedIndividual/@IRI = $applicationIRI][owl:DataProperty/@IRI = '#hasOwner']/owl:Literal
@@ -157,7 +157,7 @@
                             <providerOrganization>
                                 <id extension="" root="{$applicationIRI}"/>
                                 <name>
-                                    <xsl:value-of select="$applicationOwner"/>
+                                    <xsl:value-of select="$modelOwner"/>
                                 </name>
                             </providerOrganization>
                         </patientRole>
@@ -181,7 +181,7 @@
                                 <id root="{$applicationIRI}"/>
                                 <!-- Use the application owner name here -->
                                 <name>
-                                    <xsl:value-of select="$applicationOwner"/>
+                                    <xsl:value-of select="$modelOwner"/>
                                 </name>
                             </representedOrganization>
                         </assignedAuthor>

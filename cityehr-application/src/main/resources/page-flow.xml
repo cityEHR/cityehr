@@ -134,13 +134,22 @@
     <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
   </page>
 
-  <page path-info="/ehr/cityEHRFolder-Orders/" view="views/cityEHRFolder-Orders.xhtml" default-submission="view-parameters.xml">
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRFolder-Orders/" model="pipelines/cityEHRFolder-Compositions.xpl" default-submission="view-parameters.xml">
     <setvalue ref="/parameters/page" value="'cityEHRFolder-Orders'"/>
     <setvalue ref="/parameters/userId" parameter="userId"/>
     <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
   </page>
   
-  <page path-info="/ehr/cityEHRFolder-Bookings/" view="views/cityEHRFolder-Bookings.xhtml" default-submission="view-parameters.xml">
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRFolder-Prescriptions/" model="pipelines/cityEHRFolder-Compositions.xpl" default-submission="view-parameters.xml">
+    <setvalue ref="/parameters/page" value="'cityEHRFolder-Prescriptions'"/>
+    <setvalue ref="/parameters/userId" parameter="userId"/>
+    <setvalue ref="/parameters/sessionId" parameter="sessionId"/>
+  </page>
+  
+  <!-- This one is a model, calling a pipleline where the output is serialized to the browser using the epilogue.xpl -->
+  <page path-info="/ehr/cityEHRFolder-Bookings/" model="pipelines/cityEHRFolder-Compositions.xpl" default-submission="view-parameters.xml">
     <setvalue ref="/parameters/page" value="'cityEHRFolder-Bookings'"/>
     <setvalue ref="/parameters/userId" parameter="userId"/>
     <setvalue ref="/parameters/sessionId" parameter="sessionId"/>

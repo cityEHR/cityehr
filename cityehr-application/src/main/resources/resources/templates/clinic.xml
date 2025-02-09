@@ -27,9 +27,31 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html   
     **********************************************************************************************************
 -->
-<clinic id="" specialty="" displayName="" startTime="" endTime="" mode="">
-<session id="" role="" displayName="">
-    <slot id="" startTime="" duration=""/>
-    <interval startTime="" duration=""/>
-</session>
+<!-- This one hardwired for testing -->
+<clinic id="" specialty="" displayName="" startTime="T09:00" endTime="" mode="">
+    <session id="" role="" user="" displayName="">
+        <slot id="" startTime="T09:00" duration="D15M" capacity="1"/>
+        <interval startTime="T09:15" duration="D5M"/>
+        <slot id="" startTime="T09:20" duration="D15M" capacity="1"/>
+        <interval startTime="T09:35" duration="D5M"/>
+        <slot id="" startTime="T09:40" duration="D15M" capacity="1"/>
+        <interval startTime="T09:55" duration="D5M"/>
+        <break startTime="T10:00" duration="D60M"/>
+
+        <slot id="" startTime="T11:00" duration="D15M" capacity="1"/>
+        <interval startTime="T11:15" duration="D5M"/>
+        <slot id="" startTime="T11:20" duration="D15M" capacity="1"/>
+        <interval startTime="T11:35" duration="D5M"/>
+        <slot id="" startTime="T11:40" duration="D15M" capacity="1"/>
+        <interval startTime="T11:55" duration="D5M"/>
+        <break startTime="T12:00" duration="D60M"/>
+
+        <slot id="" startTime="T13:00" duration="D15M" capacity="1"/>
+        <interval startTime="T13:15" duration="D5M"/>
+        <slot id="" startTime="T13:20" duration="D15M" capacity="1"/>
+        <interval startTime="T13:35" duration="D5M"/>
+        <slot id="" startTime="T13:40" duration="D15M" capacity="1"/>
+        <interval startTime="T13:55" duration="D5M"/>
+        <break startTime="T13:00" duration="D30M"/>
+    </session>
 </clinic>

@@ -77,7 +77,7 @@
         select="if ($applicationToken) then cityEHRFunction:CreateID(substring-after($applicationToken,':')) else ''"/>
     <xsl:variable name="applicationDisplayName"
         select="if ($applicationToken) then normalize-space(substring-before($applicationToken,':')) else ''"/>
-    <xsl:variable name="applicationOwner" select="'cityEHR'"/>
+    <xsl:variable name="modelOwner" select="'cityEHR'"/>
 
     <!-- Set the Specialty for this Information Model -->
     <xsl:variable name="specialtyId" select="if ($specialtyToken) then cityEHRFunction:CreateID(substring-after($specialtyToken,':')) else ''"/>
@@ -179,7 +179,7 @@
                 <DataProperty IRI="#hasOwner"/>
                 <NamedIndividual IRI="{$applicationIRI}"/>
                 <Literal xml:lang="{$baseLanguageCode}" datatypeIRI="rdf:PlainLiteral">
-                    <xsl:value-of select="$applicationOwner"/>
+                    <xsl:value-of select="$modelOwner"/>
                 </Literal>
             </DataPropertyAssertion>
 

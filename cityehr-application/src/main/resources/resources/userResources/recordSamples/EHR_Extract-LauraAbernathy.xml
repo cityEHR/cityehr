@@ -31,6 +31,9 @@
             <id root="cityEHR" extension="2017-02-23T12-43-29.108Z-CityEHR-Form-AllergiesWarnings-admin"/>
             <code code="" codeSystem="cityEHR" displayName="Allergies and Warnings"/>
             <effectiveTime value="2017-02-23T12:43:39.407Z"/>
+            
+            
+            
             <recordTarget>
                 <patientRole>
                     <id extension="K1964432"/>
@@ -40,7 +43,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -49,6 +52,8 @@
                     </providerOrganization>
                 </patientRole>
             </recordTarget>
+            
+            
             <author>
                 <time value="2017-02-23T12:55:25.126Z"/>
                 <assignedAuthor>
@@ -164,7 +169,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -359,7 +364,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -825,7 +830,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -1007,7 +1012,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -1205,7 +1210,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -1516,7 +1521,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -1723,7 +1728,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -1969,7 +1974,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="" codeSystem="" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -2148,7 +2153,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -2170,7 +2175,7 @@
                                             <id extension="#ISO-13606:Entry:BMDData" root="cityEHR"/>
                                             <code code="" codeSystem="cityEHR" displayName="Bone Mineral Density"/>
                                             <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Scan Date"
-                                                cityEHR:elementType="#CityEHR:ElementProperty:simpleType" extension="#ISO-13606:Element:ScanData"
+                                                cityEHR:elementType="#CityEHR:ElementProperty:simpleType" extension="#ISO-13606:Element:ScanDate"
                                                 root="cityEHR" xsi:type="xs:date" units="" value=""
                                                 cityEHR:RequiredValue="Optional"/>
                                             <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Lumbar Spine"
@@ -2233,51 +2238,51 @@
                                                     <code code="" codeSystem="cityEHR" displayName="Bone Mineral Density"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Scan Date"
                                                         cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                        extension="#ISO-13606:Element:ScanData" root="cityEHR" xsi:type="xs:date" units=""
+                                                        extension="#ISO-13606:Element:ScanDate" root="cityEHR" xsi:type="xs:date" units=""
                                                         value="2007-01-10" cityEHR:RequiredValue="Optional"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Lumbar Spine"
                                                         extension="#ISO-13606:Cluster:LumberSpine" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.677" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-4.7" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-4.7" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Femoral Neck"
                                                         extension="#ISO-13606:Cluster:FemoralNeck" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.548" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-4" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-4.2" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Total Hip"
                                                         extension="#ISO-13606:Cluster:TotalHip" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.551" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-4.1" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-4.2" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Comments"
@@ -2293,51 +2298,51 @@
                                                     <code code="" codeSystem="cityEHR" displayName="Bone Mineral Density"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Scan Date"
                                                         cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                        extension="#ISO-13606:Element:ScanData" root="cityEHR" xsi:type="xs:date" units=""
+                                                        extension="#ISO-13606:Element:ScanDate" root="cityEHR" xsi:type="xs:date" units=""
                                                         value="2008-08-13" cityEHR:RequiredValue="Optional"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Lumbar Spine"
                                                         extension="#ISO-13606:Cluster:LumberSpine" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.634" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-5" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-5" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Femoral Neck"
                                                         extension="#ISO-13606:Cluster:FemoralNeck" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.674" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.1" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Total Hip"
                                                         extension="#ISO-13606:Cluster:TotalHip" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.594" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.8" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.8" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Comments"
@@ -2353,51 +2358,51 @@
                                                     <code code="" codeSystem="cityEHR" displayName="Bone Mineral Density"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Scan Date"
                                                         cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                        extension="#ISO-13606:Element:ScanData" root="cityEHR" xsi:type="xs:date" units=""
+                                                        extension="#ISO-13606:Element:ScanDate" root="cityEHR" xsi:type="xs:date" units=""
                                                         value="2009-01-20" cityEHR:RequiredValue="Optional"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Lumbar Spine"
                                                         extension="#ISO-13606:Cluster:LumberSpine" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.709" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-2.8" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-2.8" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Femoral Neck"
                                                         extension="#ISO-13606:Cluster:FemoralNeck" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.595" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.7" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.7" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Total Hip"
                                                         extension="#ISO-13606:Cluster:TotalHip" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.615" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.7" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.7" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Comments"
@@ -2413,51 +2418,51 @@
                                                     <code code="" codeSystem="cityEHR" displayName="Bone Mineral Density"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Scan Date"
                                                         cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                        extension="#ISO-13606:Element:ScanData" root="cityEHR" xsi:type="xs:date" units=""
+                                                        extension="#ISO-13606:Element:ScanDate" root="cityEHR" xsi:type="xs:date" units=""
                                                         value="2011-10-03" cityEHR:RequiredValue="Optional"/>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Lumbar Spine"
                                                         extension="#ISO-13606:Cluster:LumberSpine" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.873" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.1" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreLumbar" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.1" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Femoral Neck"
                                                         extension="#ISO-13606:Cluster:FemoralNeck" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.63" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.4" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreFemoral" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.3" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Total Hip"
                                                         extension="#ISO-13606:Cluster:TotalHip" root="cityEHR">
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="BMD"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:BMD" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:BMDHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="0.682" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="t score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:TScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:TScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.1" cityEHR:RequiredValue="Optional"/>
                                                         <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="z score"
                                                             cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
-                                                            extension="#ISO-13606:Element:ZScore" root="cityEHR" xsi:type="xs:integer" units=""
+                                                            extension="#ISO-13606:Element:ZScoreHip" root="cityEHR" xsi:type="xs:integer" units=""
                                                             value="-3.1" cityEHR:RequiredValue="Optional"/>
                                                     </value>
                                                     <value code="" codeSystem="" displayName="" cityEHR:elementDisplayName="Comments"
@@ -2706,7 +2711,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -2771,7 +2776,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -2978,7 +2983,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -3193,7 +3198,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -3370,7 +3375,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -3566,7 +3571,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -3724,7 +3729,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -3882,7 +3887,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -4001,7 +4006,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -4120,7 +4125,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -4277,7 +4282,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -4434,7 +4439,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -4610,7 +4615,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -4767,7 +4772,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -4962,7 +4967,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -5176,7 +5181,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -5314,7 +5319,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -5547,7 +5552,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -5704,7 +5709,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -5918,7 +5923,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -6075,7 +6080,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -6194,7 +6199,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>
@@ -6389,7 +6394,7 @@
                             <given>Laura</given>
                             <family>Abernathy</family>
                         </name>
-                        <administrativeGenderCode code="M" codeSystem="cityEHR" displayName="Female"/>
+                        <administrativeGenderCode code="Female" codeSystem="cityEHR" displayName="Female"/>
                         <birthTime value="1939-03-28"/>
                     </patient>
                     <providerOrganization>

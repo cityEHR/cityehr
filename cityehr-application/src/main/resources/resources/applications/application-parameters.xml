@@ -167,8 +167,8 @@
                 <option value="cityEHRFolder-Letters"/>
                 <option value="cityEHRFolder-Pathways"/>
                 <option value="cityEHRFolder-Orders"/>
-                <option value="cityEHRFolder-Bookings"/>
                 <option value="cityEHRFolder-Prescriptions"/>
+                <option value="cityEHRFolder-Bookings"/>
             </patientFolderURL>
         </cityEHR:selection>
         <homePage value="cityEHRDashboard"/>
@@ -182,8 +182,8 @@
                     <option value="cityEHRFolder-Letters"/>
                     <option value="cityEHRFolder-Pathways"/>
                     <option value="cityEHRFolder-Orders"/>
-                    <option value="cityEHRFolder-Bookings"/>
                     <option value="cityEHRFolder-Prescriptions"/>
+                    <option value="cityEHRFolder-Bookings"/>
                 </pageTransition>
             </cityEHR:selection>
             <cityEHR:template>
@@ -1025,13 +1025,18 @@
          <control> can contain roles for access control e.g. <role displayName="Administrator" id="#CityEHR:Role:Administrator"/>
          <role> defines access to specified role id - can have multiple <role> elements (or none = all roles have access) -->
     <recordNavigationControls cityEHR:displayName="Record Navigation">
-        <control displayName="Events" value="cityEHRFolder-Events"/>
+        <control displayName="Events" value="cityEHRFolder-Events">
+            <!--
+            <role id=""/>
+        -->
+        </control>
         <control displayName="Summaries" value="cityEHRFolder-Views"/>
         <control displayName="Forms" value="cityEHRFolder-Forms"/>
         <control displayName="Letters" value="cityEHRFolder-Letters"/>
         <control displayName="Pathways" value="cityEHRFolder-Pathways"/>
-        <control displayName="Booking" value="cityEHRFolder-Bookings"/>
         <control displayName="Ordering" value="cityEHRFolder-Orders"/>
+        <control displayName="Prescribing" value="cityEHRFolder-Prescriptions"/>
+        <control displayName="Booking" value="cityEHRFolder-Bookings"/>
     </recordNavigationControls>
 
     <!-- Controls for cohort search navigation. -->
@@ -1072,6 +1077,11 @@
             <viewNavigationType value="annotations" displayName="Annotations" display="show"/>
             <viewNavigationType value="lifeLine" displayName="LifeLine" display="show"/>
         </view>
+        <view viewType="cityEHRFolder-Views">
+            <viewNavigationType value="summaries" displayName="Summaries" display="show"/>
+            <viewNavigationType value="reports" displayName="Reports" display="show"/>
+            <viewNavigationType value="notifications" displayName="Notifications" display="hidden"/>
+        </view>
         <view viewType="cityEHRFolder-Forms">
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
@@ -1080,7 +1090,7 @@
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Bookings">
+        <view viewType="cityEHRFolder-Pathways">
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
@@ -1088,14 +1098,13 @@
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Pathways">
+        <view viewType="cityEHRFolder-Prescriptions">
             <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
             <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Views">
-            <viewNavigationType value="summaries" displayName="Summaries" display="show"/>
-            <viewNavigationType value="reports" displayName="Reports" display="show"/>
-            <viewNavigationType value="notifications" displayName="Notifications" display="hidden"/>
+        <view viewType="cityEHRFolder-Bookings">
+            <viewNavigationType value="inProgress" displayName="In Progress" display="show"/>
+            <viewNavigationType value="new" displayName="New" display="show"/>
         </view>
     </viewNavigationTypeSelection>
 
@@ -1202,6 +1211,16 @@
             <action id="export" displayName="Export Event" display="show"/>
             <action id="exportAll" displayName="Export Record" display="show"/>
         </view>
+        <view viewType="cityEHRFolder-Views" displayName="Patient Summaries" display="show">
+            <select id="view" value="current" displayName="View " display="show">
+                <item displayName="Current Data" value="current"/>
+                <item displayName="Historic Data" value="historic"/>
+            </select>
+            <action id="xml" displayName="Show XML" display="show"/>
+            <action id="reset" displayName="Reset Charted Variables" display="show"/>
+            <action id="svgChart" displayName="Chart" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
         <view viewType="cityEHRFolder-Forms" displayName="Patient Forms" display="show">
             <action id="xml" displayName="Show XML" display="show"/>
             <input id="showISO13606" displayName="Show ISO-13606" type="xs:boolean" display="show"/>
@@ -1234,20 +1253,6 @@
             <action id="save" displayName="Save" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Bookings" displayName="Patient Appointments" display="show">
-            <action id="delete" displayName="Delete" display="show"/>
-            <action id="reset" displayName="Reset" display="show"/>
-            <action id="order" displayName="Book" display="show"/>
-            <action id="save" displayName="Cancel" display="show"/>
-            <action id="print" displayName="Print" display="show"/>
-        </view>
-        <view viewType="cityEHRFolder-Orders" displayName="Patient Orders" display="show">
-            <action id="delete" displayName="Delete" display="show"/>
-            <action id="reset" displayName="Reset" display="show"/>
-            <action id="order" displayName="Order" display="show"/>
-            <action id="save" displayName="Save" display="show"/>
-            <action id="print" displayName="Print" display="show"/>
-        </view>
         <view viewType="cityEHRFolder-Pathways" displayName="Care Pathways" display="show">
             <label id="currentAction" displayName="Action" display="show"/>
             <action id="open" displayName="Open" display="show"/>
@@ -1263,16 +1268,28 @@
             <action id="progress" displayName="Progress" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Views" displayName="Patient Summaries" display="show">
-            <select id="view" value="current" displayName="View " display="show">
-                <item displayName="Current Data" value="current"/>
-                <item displayName="Historic Data" value="historic"/>
-            </select>
-            <action id="xml" displayName="Show XML" display="show"/>
-            <action id="reset" displayName="Reset Charted Variables" display="show"/>
-            <action id="svgChart" displayName="Chart" display="show"/>
+        <view viewType="cityEHRFolder-Orders" displayName="Patient Orders" display="show">
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="order" displayName="Order" display="show"/>
+            <action id="save" displayName="Save" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
+        <view viewType="cityEHRFolder-Prescriptions" displayName="Patient Presciptions" display="show">
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="order" displayName="Prescribe" display="show"/>
+            <action id="save" displayName="Save" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        <view viewType="cityEHRFolder-Bookings" displayName="Patient Appointments" display="show">
+            <action id="delete" displayName="Delete" display="show"/>
+            <action id="reset" displayName="Reset" display="show"/>
+            <action id="order" displayName="Book" display="show"/>
+            <action id="save" displayName="Cancel" display="show"/>
+            <action id="print" displayName="Print" display="show"/>
+        </view>
+        
     </viewControlsActions>
 
     <!-- Highlight entries -->
