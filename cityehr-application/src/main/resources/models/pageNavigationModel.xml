@@ -194,7 +194,7 @@
                  But show="new" causes a new tab to load temporarily, which isn't what we want. -->
                     <xf:action if="$showPage='new'">
                         <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}"
-                            xxf:show-progress="false"/>
+                           xxf:show-progress="false"/>
                     </xf:action>
                     <xf:action if="$showPage!='new'">
                         <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}"
