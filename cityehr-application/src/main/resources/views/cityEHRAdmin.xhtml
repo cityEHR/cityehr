@@ -3171,11 +3171,14 @@
                     />
                 </xf:dispatch>
 
-                <!-- The list of image maps defined in the specialty dictionary -->
+                <!-- The list of image maps defined in the specialty dictionary.
+                     The image map is associated with the root, not the extension.
+                     This means that the same entry (extension) can be rendered in different ways (imageMap, Form, etc) 
+                     or associated with multiple image maps through different root ids -->
                 <xxf:variable name="dictionaryImageMapList"
                     select="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry[contains(@cityEHR:rendition,'ImageMap')]"/>
                 <xxf:variable name="entryIRIList"
-                    select="$dictionaryImageMapList/cda:component/cda:observation/cda:id/@extension"/>
+                    select="$dictionaryImageMapList/cda:component/cda:observation/cda:id/@root"/>
 
                 <!-- Get the list of image maps for the specialty.
                      This creates a complete list, even if the image maps have not been stored (yet) in the xmlstore.
@@ -3222,6 +3225,7 @@
                 <xf:dispatch name="reset-manageImageMaps" target="main-model"/>
 
             </xf:action>
+
 
             <!-- === Manage Letter Templates in Information Models === 
                   manageLetterTemplates
@@ -13962,7 +13966,8 @@
                                 <xhtml:span
                                     class="{if ($adminTask='manageImageMaps') then '' else 'hidden'}">
                                     <xhtml:span class="controlItem">
-                                        <!-- Select the entry to manage (or all entries) -->
+                                        <!-- Select the entry to manage (or all entries).
+                                             Note that the imageMap rendition is assicated with the entry root (not the extension) -->
                                         <xxf:variable name="dictionaryImageMapList"
                                             select="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry[contains(@cityEHR:rendition,'ImageMap')]"/>
                                         <xxf:variable name="imageMapEntryList"
@@ -13974,8 +13979,8 @@
                                             <xf:itemset
                                                 nodeset="$imageMapEntryList/cda:component/cda:observation">
                                                 <xf:label
-                                                  ref="if (cda:id/@extension='') then cda:code/@displayName else if (cda:code/@displayName='') then cda:id/@extension else concat(cda:code/@displayName,' (',cda:id/@extension,')')"/>
-                                                <xf:value ref="cda:id/@extension"/>
+                                                  ref="if (cda:id/@extension='') then cda:code/@displayName else if (cda:code/@displayName='') then cda:id/@extension else concat(cda:code/@displayName,' (',cda:id/@root,')')"/>
+                                                <xf:value ref="cda:id/@root"/>
                                             </xf:itemset>
                                             <!-- New entry selected -->
                                             <xf:action ev:event="xforms-value-changed">
@@ -16880,6 +16885,7 @@
                         </xhtml:li>
 
                         <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+
                     </xhtml:ul>
 
 

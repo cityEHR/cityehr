@@ -722,6 +722,12 @@
             />
         </xf:action>
 
+        <!-- Insert SVG image maps into the storage instance-->
+        <xf:action>
+            
+        </xf:action>
+
+
         <!-- Set the publishHandle from patientId and handleId (both already set)  -->
         <xf:setvalue ref="xxf:instance('control-instance')/current-form/publishHandle"
             value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/records/',xxf:instance('view-parameters-instance')/patientId,'/',xxf:instance('control-instance')/current-form/handleId)"/>

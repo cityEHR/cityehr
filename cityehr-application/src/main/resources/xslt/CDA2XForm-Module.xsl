@@ -38,29 +38,34 @@
     <xsl:template name="renderCDADocument">
         <xsl:param name="composition"/>
         <xsl:param name="compositionTypeIRI"/>
-
-        <xhtml:div
-            class="ISO13606-Composition {{if (xxf:instance('viewControls-input-instance')/input[@id = 'showISO13606'] = 'true') then
+                
+        <!-- Show ISO-13606 Ids in dubugging mode -->
+        <xxf:variable name="xformsShowIdClass"
+            select="
+            if (xxf:instance('viewControls-input-instance')/input[@id = 'showIds'] = 'true') then
+            'ISO13606-Id'
+            else
+            'hidden'"/>
+        
+        <!-- Show ISO-13606 structure in debugging mode -->
+        <xxf:variable name="xformsShowStructureClass"
+            select="
+            if (xxf:instance('viewControls-input-instance')/input[@id = 'showISO13606'] = 'true') then
             'ISO13606-Structure'
             else
-            ''}}"
+            ''"/>
+
+       <!-- This div contains the whole CDA document -->
+        <xhtml:div
+            class="ISO13606-Composition {{$xformsShowStructureClass}}"
             cache="{$view-parameters/formCache}">
-            <!-- Show ISO-13606 Ids in dubugging mode -->
-            <xxf:variable name="xformsShowIdClass"
-                select="
-                    if (xxf:instance('viewControls-input-instance')/input[@id = 'showIds'] = 'true') then
-                        'ISO13606-Id'
-                    else
-                        'hidden'"/>
-
-            <!-- Show ISO-13606 structure in debugging mode -->
-            <xxf:variable name="xformsShowStructureClass"
-                select="
-                    if (xxf:instance('viewControls-input-instance')/input[@id = 'showISO13606'] = 'true') then
-                        'ISO13606-Structure'
-                    else
-                        ''"/>
-
+            
+            <!-- Show compositionID is selected for debugging -->
+            <xsl:variable name="compositionId" select="$composition/cda:id/@extension"/>
+            <xhtml:span class="{{$xformsShowIdClass}}">
+                <xsl:value-of select="$compositionId"/>
+            </xhtml:span>
+            
             <!-- Render header sections (should be maximum of one, but you never know) ***jc deprecated 2023-12 -->
             <xsl:for-each
                 select="$composition/cda:component/cda:structuredBody/cda:component/cda:section[not(@cityEHR:visibility = 'alwaysHidden')][@cityEHR:Rendition = 'Header']">
@@ -3062,7 +3067,10 @@
 
     <xsl:template name="renderImageMap">
         <xsl:param name="entryId"/>
-
+        <!-- Degugging
+        <xhtml:p class="error"><xsl:value-of select="$entryId"/></xhtml:p>
+-->
+        
         <!-- The imageMap should always exist (but don't assume so) and may be empty if no SVG has been loaded -->
         <xsl:variable name="imageMap" select="$svgImageMaps//svg:svg[@id = $entryId]"/>
         <xsl:variable name="imageMapContents"
@@ -3081,11 +3089,13 @@
             </xsl:if>
 
             <!-- HTML image map -->
+            <!--
             <xsl:if test="not(exists($imageMapContents))">
                 <xsl:call-template name="renderHTMLImageMap">
                     <xsl:with-param name="entryId" select="$entryId"/>
                 </xsl:call-template>
             </xsl:if>
+            -->
         </xhtml:li>
 
     </xsl:template>

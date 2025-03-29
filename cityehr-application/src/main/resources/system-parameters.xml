@@ -383,6 +383,13 @@
                 <action label="Start New Session" model="main-model" event="start-new-session"/>
                 <action label="Quit" model="pageNavigation-model" event="quit-session"/>
             </dialogue>
+            
+            <dialogue id="quitSession">
+                <title displayName="Quit User Session"/>
+                <message displayName="Are you sure you want to quit the session?"/>
+                <action label="Quit" model="pageNavigation-model" event="quit-session"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
 
             <dialogue id="closeSystemParameters">
                 <title displayName="Close system parameters editor"/>

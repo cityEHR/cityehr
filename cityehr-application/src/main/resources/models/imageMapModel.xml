@@ -6,7 +6,11 @@
     
     Handling images maps (SVG)
     Note that image maps are managed by specialty but stored for the application
+    Associated with antries of Rendition imageMap
     So image map entries with the same name in different specialties share the same image.
+    
+    <svg id="entryId"> 
+    The entryId is for the root, not extension, but the references to entry/element in the image maps are to extension.
     
     Used only in compositionMainModel for handling image maps in a composition
      
@@ -139,11 +143,12 @@
         <xxf:variable name="applicationId" select="event('applicationId')"/>
         <xxf:variable name="compositionIRI" select="event('compositionIRI')"/>
 
-        <!-- The list of image maps defined in the specialty dictionary -->
+        <!-- The list of image maps defined in the specialty dictionary.
+             Note that the imageMap rendition is associated with the root, not extension -->
         <xxf:variable name="dictionaryImageMapList"
             select="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry[contains(@cityEHR:rendition,'ImageMap')]"/>
         <xxf:variable name="dictionaryImageMapEntryIRIList"
-            select="$dictionaryImageMapList/cda:component/cda:observation/cda:id/@extension"/>
+            select="$dictionaryImageMapList/cda:component/cda:observation/cda:id/@root"/>
 
         <!-- The list of image maps defined for the composition -->
         <xxf:variable name="specialtyIRI" select="xxf:instance('dictionary-instance')/@code"/>
@@ -302,6 +307,7 @@
 
     <!-- Application defined action to set an element value after user clicks on an image map.
          This is only invoked for single (occurrence) entries
+         The entry is from the CDA form-instance
          If a value is specified then just set it.
          Otherwise toggle the element value for:
             enumeratedValue
@@ -314,11 +320,21 @@
 
         <xxf:variable name="element" select="$entry//cda:value[@extension = $mappedElementIRI][1]"/>
         <xxf:variable name="dataType" select="$element/@xsi:type"/>
+        <xxf:variable name="elementType" select="$element/@cityEHR:elementType"/>
 
-        <!-- Value set in imageMap - could do something better with displayName here (?) -->
+        <!-- Get the enumeratedValues for the element (if there are any) -->
+        <xxf:variable name="enumeration"
+            select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension = $mappedElementIRI]/iso-13606:data"/>
+
+        <!-- Value set in imageMap - could do something better with displayName here (?)
+             2025-03-24 Set displayName as well as value -->
         <xf:action if="not($imageMapSelection = '')">
             <xf:setvalue ref="$element/@value" value="$imageMapSelection"/>
-            <xf:setvalue ref="$element/@displayName" value="''"/>
+            
+            <!-- Set the displayName -->
+            <xxf:variable name="data" select="$enumeration[@value=$imageMapSelection]"/>
+            
+            <xf:setvalue ref="$element/@displayName" value="if (exists($data)) then $data/@displayName else $imageMapSelection"/>
         </xf:action>
 
         <!-- No value set in imageMap - toggle it -->
@@ -330,10 +346,6 @@
                 select="xxf:instance('imageMapControl-instance')/currentValue"/>
             <xf:setvalue ref="$currentValue" value="$element/@value"/>
 
-            <!-- Get the enumeratedValues (if there are any) -->
-            <xxf:variable name="enumeration"
-                select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension = $mappedElementIRI]/iso-13606:data/@value"/>
-
             <xxf:variable name="lastEnumeratedValue" select="$enumeration[position()=last()]"/>
             <xxf:variable name="reverseEnumeration" select="reverse($enumeration)"/>
 
@@ -342,29 +354,33 @@
                 <!-- If the current value isn't in the enumeration, or is equal to the last value
                      then set to the first value -->
                 <xf:action
-                    if="not($currentValue = $enumeration) or $currentValue=$lastEnumeratedValue">
-                    <xf:setvalue ref="$element/@value" value="$enumeration[1]"/>
+                    if="not($currentValue = $enumeration/@value) or $currentValue=$lastEnumeratedValue/@value">
+                    <xf:setvalue ref="$element/@value" value="$enumeration[1]/@value"/>
+                    <xf:setvalue ref="$element/@displayName" value="if (not($currentValue = $enumeration/@value)) then $element/@value else $enumeration[1]/@displayName"/>
                 </xf:action>
 
                 <!-- If the current value is one of the enumerated values (but not the last)
                      Then toggle to the next value. -->
                 <xf:action
-                    if="$currentValue = $enumeration and not($currentValue=$lastEnumeratedValue)">
+                    if="$currentValue = $enumeration/@value and not($currentValue=$lastEnumeratedValue/@value)">
 
                     <!-- Iterate in reverse order.
                          and set to the previous value when the match is found
                          The iteration needs to be done in the reverse order to the toggle of the value,
                          otherwise the toggled value will get matched again on the next iteration -->
                     <xf:action xxf:iterate="$reverseEnumeration">
-                        <xxf:variable name="value" select="."/>
+                        <xxf:variable name="data" select="."/>
                         <xxf:variable name="position" select="position()"/>
 
                         <!-- Set to the next in the list -->
-                        <xf:action if="$value = $currentValue">
-                            <xf:setvalue ref="$element/@value"
-                                value="$reverseEnumeration[position() = ($position - 1)]"/>
+                        <xf:action if="$data/@value = $currentValue">
+                            <xxf:variable name="nextData"
+                                select="$reverseEnumeration[position() = ($position - 1)]"/>
+                            <xf:setvalue ref="$element/@value" value="$nextData/@value"/>
+                            <xf:setvalue ref="$element/@displayName" value="$nextData/@displayName"/>
+
                             <!-- Debugging
-                            <xf:message ref="concat('Set value: ',$currentValue,' to value: ',$element/@value)"/>
+                            <xf:message ref="concat('Set value: ',$currentValue,' to value: ',$element/@value, ' displayName: ', $element/@displayName)"/>
                             -->
                         </xf:action>
 
@@ -399,9 +415,9 @@
         <xxf:variable name="entryId" select="substring-after($entryIRI, 'Entry:')"/>
         <xxf:variable name="mappedElementId" select="substring-after($mappedElementIRI, 'Element:')"/>
 
-        <!-- enumeration of all values for the element -->
+        <!-- enumeration of all v,data alues for the element -->
         <xxf:variable name="enumeration"
-            select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension = $mappedElementIRI]/iso-13606:data/@value"/>
+            select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension = $mappedElementIRI]/iso-13606:data"/>
 
         <!-- All values set for the entry -->
         <xxf:variable name="observationSetContainer"
@@ -414,7 +430,7 @@
             value="''"/>
 
         <!-- Build parameters using mapped element values -->
-        <xf:action xxf:iterate="$enumeration">
+        <xf:action xxf:iterate="$enumeration/@value">
             <xxf:variable name="value" select="."/>
 
             <xxf:variable name="imageMapCommand"
@@ -443,7 +459,9 @@
          First retrieve that cache by invoking load-xmlCache
          There may be more than one image map displayed on the page, with interaction for more than one entry/element set.
          
-         The SVG <g> elements have id entry_element_value (where _ is the $commandSeparator)
+         The SVG <g> elements have id entryId_elementId_value (where _ is the $commandSeparator)
+         The entryId and elementId in the id use th @extension (since they are the recorded values)
+         The entryIRI for the imageMap entry uses the @root (since the same entry may have different behaviour, including imageMap renditions)
          
          If the command includes a value, then its class is set if the element in the composition is set to that value.
          If the command doesn't include a value, then its class is set to the value in the composition.
@@ -460,7 +478,6 @@
         <xf:setvalue ref="xxf:instance('session-parameters-instance')/imageMapCommand" value="''"/>
         <xf:setvalue ref="xxf:instance('session-parameters-instance')/javascriptParameters"
             value="''"/>
-
 
         <!-- Load the imageMapList from xmlCache. -->
         <xf:dispatch name="load-xmlCache" target="pageNavigation-model">
@@ -498,7 +515,8 @@
                     <xxf:variable name="imageMapCommand" select="."/>
 
                     <!-- imageMapCommand is of the form entryId_elementId_value
-                         where _ is the $commandSeparator -->
+                         where _ is the $commandSeparator
+                         The value may be omitted when the click is just used to toggle the value -->
                     <xxf:variable name="imageMapCommandTokens"
                         select="tokenize($imageMapCommand,$commandSeparator)"/>
                     <xxf:variable name="elementId"

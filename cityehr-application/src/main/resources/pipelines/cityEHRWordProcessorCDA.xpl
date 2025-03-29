@@ -90,6 +90,19 @@
     </p:processor>
     -->
     
+    <!-- Debugging - Write the HTML to the htmlCache. -->
+    <p:processor name="oxf:xforms-submission">
+        <p:input name="submission" transform="oxf:xslt" href="#parameters">
+            <xf:submission xsl:version="2.0" action="{//parameters[@type='session']/htmlCacheHandle}" validate="false" method="put" replace="none" includenamespacesprefixes=""/>
+        </p:input>
+        <p:input name="request" href="#html"/>
+        <p:output name="response" id="SaveResponse"/>
+    </p:processor>
+    
+    <p:processor name="oxf:null-serializer">
+        <p:input name="data" href="#SaveResponse"/>
+    </p:processor>
+    
 
     <!-- Get the template word processor document.
          The location of the template is set in the binaryCacheHandle parameter -->

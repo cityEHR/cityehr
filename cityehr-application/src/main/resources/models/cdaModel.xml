@@ -786,11 +786,21 @@
                 Note that this will set default values in the template for multiple entries (which is what we want)
                 Simple entries will be of the form cda:entry/cda:observation/cda:value (assume that other types of entry cannot be rendered as image maps)
                 Whereas multipleEntry is of the form cda:entry/cda:organizer/cda:component/cda:observation/cda:value
+                
+                From 2025-03-08 default values are set on entries rendered as imageMap, as required by SVG image maps
             -->
+            <!--
             <xxf:variable name="entryForDefault"
                 select="$entry[not(@cityEHR:rendition=('#CityEHR:EntryProperty:ImageMap','#CityEHR:Property:Rendition:ImageMap'))]/cda:observation |
                 $entry[not(@cityEHR:rendition=('#CityEHR:EntryProperty:ImageMap','#CityEHR:Property:Rendition:ImageMap'))]/cda:act |
                         $entry/cda:organizer/cda:component[1]"/>
+            -->
+            
+            <xxf:variable name="entryForDefault"
+                select="$entry/cda:observation |
+                $entry/cda:act |
+                $entry/cda:organizer/cda:component[1]"/>
+            
             <xf:action if="exists($entryForDefault)">
                 <xf:dispatch name="set-entry-default-values" target="cda-model">
                     <xxf:context name="entry" select="$entryForDefault"/>
@@ -801,10 +811,13 @@
                 Note that multiple entries displayed as image maps must not get set to 0.
                 Simple entries will be of the form cda:entry/cda:observation/cda:value (assume that other types of entry cannot be rendered as image maps)
                 Whereas multipleEntry is of the form cda:entry/cda:organizer/cda:component/cda:observation/cda:value -->
+            <!-- 2025-03-08 - not needed for SVG image maps -->
+            <!--
             <xf:action
                 xxf:iterate="$entry[@cityEHR:rendition=('#CityEHR:EntryProperty:ImageMap','#CityEHR:Property:Rendition:ImageMap')]/cda:observation/descendant::cda:value[@value='']">
                 <xf:setvalue ref="./@value" value="'0'"/>
             </xf:action>
+            -->
 
             <!-- Multiple entry that does not have any prefilled values.
                 There is no entry in the second organizer yet, so need to add one from the template (which will have had default values set above)

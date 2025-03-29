@@ -7,6 +7,13 @@
     
     Root of the CDA document is cda:ClinicalDocument
     Generates an XForm to be displayed in CityEHR
+    The form is incuded in the relevant template for cityEHRFolder-Forms.xhtml, cityEHRFolder-Letters.xhtml, etc
+    
+    <xhtml:div id="viewDisplay" class="content">
+       ...
+       <xi:include href="input:formContent" xxi:omit-xml-base="true"/>
+       ...
+    </xhtml:div>
     
     Variables in this stylesheet are for XSLT or for XForms. All Xforms variables start with 'xforms'
        

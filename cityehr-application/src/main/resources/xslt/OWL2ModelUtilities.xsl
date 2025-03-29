@@ -2615,12 +2615,12 @@
                     </xsl:if>
 
                     <!-- lookup = get value from directoryElements-instance.
-                         Also replace any variables found in the path (argument 2).
+                         Also replace any variables found in the path (argument 2) - this needs to use contextRoot of 'external' since the expression is evaluated in the contect of directoryElements-instance.
                          The comparison of the directory element value is on ($expandedPath) so that the expanded path can be a list of more than one term, separated by commas.
                          Only one value can be returned from the directory lookup, even if there are multiple matches ( so use (match)[1]/@displayName )-->
                     <xsl:if test="$function = 'lookup'">
                         <xsl:variable name="expandedArgument"
-                            select="string-join(cityEHRFunction:replaceExpressionVariables($contextEntryIRI, $contextContentIRI, 'attribute', $predicateEntryIRI, $formRecordedEntries, $evaluationContext, $argument2), '')"/>
+                            select="string-join(cityEHRFunction:replaceExpressionVariables($contextEntryIRI, $contextContentIRI, 'external', $predicateEntryIRI, $formRecordedEntries, $evaluationContext, $argument2), '')"/>
                         <xsl:sequence
                             select="concat('(if (exists(xxf:instance(''directoryElements-instance'')/iso-13606:elementCollection/iso-13606:element[@root=''#ISO-13606:Element:', $argument1, ''']/iso-13606:data[@value=', $expandedArgument, '])) then (xxf:instance(''directoryElements-instance'')/iso-13606:elementCollection/iso-13606:element[@root=''#ISO-13606:Element:', $argument1, ''']/iso-13606:data[@value=', $expandedArgument, '])[1]/@displayName else '''')')"/>
                         <!--  This one has extra  ( ) around the value comparison                       
@@ -2786,7 +2786,9 @@
         
         If the contextEntryIRI is the same as the entryIRI (of the expression) then local paths may apply to elements in the expression.
         If the predicateEntryIRI is the same as the entryIRI (of the expression) then path to the predicated entry may apply to elements in the expression.
-        Otherwise the context is the current CDA document (form-instance).
+        Otherwise the context is the current cda:ClinicalDocument
+        
+        If the contextRoot is 'external' then the cda:ClinicalDocument must be found from the $entry (baecause the contect is not in the cda:ClinicalDocument
         
         Note that the context IRIs passed are the recorded IRIs i.e. if the context IRI is the root of another then that alias has been passed to this function.
         
@@ -2833,9 +2835,17 @@
 
             <xsl:value-of select="$compositionValuePath"/>
         </xsl:if>
+        
+        <!-- contextRoot is 'external' for expressions in the evaluationContext of an external instance -->
+        <xsl:if test="$contextRoot = 'external'">
+            <xsl:variable name="externalValuePath" as="xs:string"
+                select="concat('$entry/ancestor::cda:ClinicalDocument/descendant::cda:entry/descendant::*[cda:id[@extension=''', $entryIRI, '''][@cityEHR:origin!=''#CityEHR:Template'']]', $evaluationContextSelector, '/descendant::cda:value[@extension=''', $elementIRI, ''']')"/>
+            
+            <xsl:value-of select="$externalValuePath"/>
+        </xsl:if>
 
         <!-- contextRoot is 'element' or 'attribute' -->
-        <xsl:if test="$contextRoot != 'composition'">
+        <xsl:if test="$contextRoot = ('element','attribute')">
             <!-- The global context of the value. -->
             <xsl:if test="$contextEntryIRI != $entryIRI and $predicateEntryIRI != $entryIRI">
                 <xsl:variable name="globalValuePath" as="xs:string"

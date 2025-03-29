@@ -108,7 +108,13 @@
     </xf:trigger>
 
     <!-- Hidden input to pass data in and out of javascript -->
-    <xf:input id="javascriptParameters" ref="xxf:instance('session-parameters-instance')/javascriptParameters" class="hidden"/>
+    <xf:input id="javascriptParameters" ref="xxf:instance('session-parameters-instance')/javascriptParameters" class="hidden">
+        <!--
+        <xf:action ev:event="xforms-value-changed">
+            <xf:message ref="xxf:instance('session-parameters-instance')/javascriptParameters"/>
+        </xf:action>
+        -->
+    </xf:input>
     
     <!-- Hidden input to record click in an image map.
          The value is set in javascript as hotpotId///hotspotClass-->

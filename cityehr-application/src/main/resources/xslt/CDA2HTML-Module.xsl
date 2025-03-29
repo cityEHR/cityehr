@@ -18,9 +18,11 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     ==================================================================== -->
 
-<xsl:stylesheet exclude-result-prefixes="xs" version="2.0" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xhtml="http://www.w3.org/1999/xhtml"
-    xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+<xsl:stylesheet exclude-result-prefixes="xs" version="2.0" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
 
     <!-- === Global Variables ===============================================================================
@@ -65,7 +67,8 @@
     <xsl:variable name="specialtyIRI" select="//cda:ClinicalDocument/cda:templateId/@extension"/>
 
     <!-- Set locations to mirror the exist database collections -->
-    <xsl:variable name="applicationLocation" select="replace(substring($applicationIRI, 2), ':', '-')"/>
+    <xsl:variable name="applicationLocation"
+        select="replace(substring($applicationIRI, 2), ':', '-')"/>
     <xsl:variable name="specialtyLocation" select="replace(substring($specialtyIRI, 2), ':', '-')"/>
 
     <!-- Get the composition for this CDA document.
@@ -74,17 +77,24 @@
         Which is a child of the ClinicalDocument element
     -->
     <xsl:variable name="compositionIRI" select="//cda:ClinicalDocument[1]/cda:typeId/@extension"/>
-    <xsl:variable name="compositionDisplayName" select="//cda:ClinicalDocument[1]/cda:code[@codeSystem = 'cityEHR']/@displayName"/>
-    <xsl:variable name="compositionEffectiveTime" select="//cda:ClinicalDocument[1]/cda:effectiveTime/@value"/>
+    <xsl:variable name="compositionDisplayName"
+        select="//cda:ClinicalDocument[1]/cda:code[@codeSystem = 'cityEHR']/@displayName"/>
+    <xsl:variable name="compositionEffectiveTime"
+        select="//cda:ClinicalDocument[1]/cda:effectiveTime/@value"/>
 
     <!-- Get patient demographics -->
-    <xsl:variable name="patientId" select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:id/@extension"/>
-    <xsl:variable name="patientGiven" select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:given"/>
-    <xsl:variable name="patientFamily" select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:family"/>
-    <xsl:variable name="patientPrefix" select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:prefix"/>
+    <xsl:variable name="patientId"
+        select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:id/@extension"/>
+    <xsl:variable name="patientGiven"
+        select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:given"/>
+    <xsl:variable name="patientFamily"
+        select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:family"/>
+    <xsl:variable name="patientPrefix"
+        select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:name/cda:prefix"/>
     <xsl:variable name="patientAdministrativeGenderCode"
         select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:administrativeGenderCode/@displayName"/>
-    <xsl:variable name="patientBirthTime" select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:birthTime/@value"/>
+    <xsl:variable name="patientBirthTime"
+        select="//cda:ClinicalDocument[1]/cda:recordTarget/cda:patientRole/cda:patient/cda:birthTime/@value"/>
 
 
     <!-- === Render the HTML <head> element ==================================================
@@ -104,10 +114,12 @@
             <meta name="patientGiven" content="{$patientGiven}"/>
             <meta name="patientFamily" content="{$patientFamily}"/>
             <meta name="patientPrefix" content="{$patientPrefix}"/>
-            <meta name="patientAdministrativeGenderCode" content="{$patientAdministrativeGenderCode}"/>
+            <meta name="patientAdministrativeGenderCode"
+                content="{$patientAdministrativeGenderCode}"/>
             <meta name="patientBirthTime" content="{$patientBirthTime}"/>
 
-            <meta name="headerText" content="{concat($compositionEffectiveTime,' - ', $compositionDisplayName)}"/>
+            <meta name="headerText"
+                content="{concat($compositionEffectiveTime,' - ', $compositionDisplayName)}"/>
             <meta name="footerText" content="{concat($patientId,' / ', $patientFamily)}"/>
         </head>
     </xsl:template>
@@ -118,7 +130,8 @@
         There may be multiple cda:ClinicalDocument for Folder views.
         ===================================================================================================== -->
     <xsl:template match="cda:ClinicalDocument">
-        <xsl:variable name="compositionCount" as="xs:integer" select="count(preceding::cda:ClinicalDocument) + 1"/>
+        <xsl:variable name="compositionCount" as="xs:integer"
+            select="count(preceding::cda:ClinicalDocument) + 1"/>
         <!-- Debugging -->
         <!--
         <p class="message"> Output type: <xsl:value-of select="$outputType"/><br/> View history:
@@ -128,7 +141,8 @@
 
         <!-- Only output multiple compositions for Folder views, showing historic data.
              This means that for Folder views showing 'current' data only the first match on this template is used. -->
-        <xsl:if test="$compositionCount = 1 or ($outputType = 'Folder' and $viewHistory = 'historic')">
+        <xsl:if
+            test="$compositionCount = 1 or ($outputType = 'Folder' and $viewHistory = 'historic')">
 
             <div class="ISO-13606:Composition">
                 <!-- Iterate through sections of the form.
@@ -138,13 +152,16 @@
                 <!-- Output composition title if this is a folder view (i.e. can have multiple compositions) -->
                 <xsl:if test="$outputType = 'Folder'">
                     <xsl:variable name="effectiveTime" select="cda:effectiveTime/@value"/>
-                    <xsl:variable name="crossRefId" select="concat('Composition-', $compositionCount)"/>
+                    <xsl:variable name="crossRefId"
+                        select="concat('Composition-', $compositionCount)"/>
 
                     <ul class="ISO13606-Section" id="{$crossRefId}">
                         <li class="ISO13606-Section-DisplayName">
                             <!-- Output the effective time -->
                             <xsl:value-of select="cityEHRFunction:outputDateValue($effectiveTime)"/>
-                            <xsl:value-of select="concat(' - ', cda:code[@codeSystem = 'cityEHR']/@displayName)"/>
+                            <xsl:value-of
+                                select="concat(' - ', cda:code[@codeSystem = 'cityEHR']/@displayName)"
+                            />
                         </li>
                     </ul>
                 </xsl:if>
@@ -166,7 +183,9 @@
                 <!-- If there are no visible sections -->
                 <xsl:if test="empty($renderedSectionList)">
                     <p class="ISO13606-Entry-DisplayName">
-                        <xsl:value-of select="$view-parameters/staticParameters/cityEHRFolder-Views/emptyComposition"/>
+                        <xsl:value-of
+                            select="$view-parameters/staticParameters/cityEHRFolder-Views/emptyComposition"
+                        />
                     </p>
                 </xsl:if>
 
@@ -175,7 +194,8 @@
                     <xsl:variable name="section" select="."/>
                     <xsl:variable name="position" select="position()"/>
 
-                    <xsl:variable name="sectionHasData" select="cityEHRFunction:entryRecorded($section)"/>
+                    <xsl:variable name="sectionHasData"
+                        select="cityEHRFunction:entryRecorded($section)"/>
 
                     <xsl:variable name="sectionLayout"
                         select="
@@ -183,7 +203,8 @@
                                 'Unranked'
                             else
                                 'Ranked'"/>
-                    <xsl:variable name="crossRefId" select="concat('Composition-', $compositionCount, '-Section-', xs:string($position))"/>
+                    <xsl:variable name="crossRefId"
+                        select="concat('Composition-', $compositionCount, '-Section-', xs:string($position))"/>
 
                     <!-- Only processing sections that are visible -->
                     <xsl:call-template name="renderCDASection">
@@ -216,7 +237,8 @@
                 <xsl:for-each
                     select="$dataSetTemplate/cda:entry/descendant::cda:value[not(@cityEHR:Scope = '#CityEHR:ElementProperty:Hidden' or @cityEHR:elementRendition = '#CityEHR:ElementProperty:Hidden')]">
                     <xsl:variable name="entry" select="ancestor::cda:entry"/>
-                    <xsl:variable name="entryDisplayName" select="$entry/descendant::cda:code[@codeSystem = 'cityEHR'][1]/@displayName"/>
+                    <xsl:variable name="entryDisplayName"
+                        select="$entry/descendant::cda:code[@codeSystem = 'cityEHR'][1]/@displayName"/>
                     <xsl:variable name="entryIRI" select="$entry/descendant::cda:id[1]/@extension"/>
 
                     <xsl:variable name="elementIRI" select="@extension"/>
@@ -229,7 +251,9 @@
 
                     <tr class="{$elementCount}">
                         <td>
-                            <xsl:value-of select="concat($entryDisplayName, ' ', @cityEHR:elementDisplayName)"/>
+                            <xsl:value-of
+                                select="concat($entryDisplayName, ' ', @cityEHR:elementDisplayName)"
+                            />
                         </td>
                         <xsl:for-each
                             select="$patientDataSet/cda:entry[descendant::cda:id[1]/@extension = $entryIRI]/descendant::cda:value[@extension = $elementIRI]">
@@ -403,7 +427,8 @@
                                         'Ranked'"/>
                             <xsl:call-template name="renderCDASection">
                                 <xsl:with-param name="section" select="$headerSupplement"/>
-                                <xsl:with-param name="sectionLayout" select="$headerSupplementLayout"/>
+                                <xsl:with-param name="sectionLayout"
+                                    select="$headerSupplementLayout"/>
                                 <xsl:with-param name="crossRefId" select="''"/>
                             </xsl:call-template>
                         </xsl:if>
@@ -475,7 +500,8 @@
                     <xsl:variable name="component" select="."/>
 
                     <!-- Entry - call template to render the entry but only if it has some content -->
-                    <xsl:if test="$component/name() = 'entry' and cityEHRFunction:entryRecorded($component) = 'true'">
+                    <xsl:if
+                        test="$component/name() = 'entry' and cityEHRFunction:entryRecorded($component) = 'true'">
                         <!-- Debugging -->
                         <!--
                     <p class="message"> Calling renderCDAEntry
@@ -533,7 +559,9 @@
                     <li class="Ranked">
                         <ul class="ISO13606-Entry">
                             <li class="ISO13606-Entry-DisplayName">
-                                <xsl:value-of select="$view-parameters/staticParameters/cityEHRFolder-Views/emptySection"/>
+                                <xsl:value-of
+                                    select="$view-parameters/staticParameters/cityEHRFolder-Views/emptySection"
+                                />
                             </li>
                         </ul>
                     </li>
@@ -641,7 +669,8 @@
         <!-- === (1) Simple entry ======
              This one must match any entry that does not have cityEHR properties set -->
 
-        <xsl:if test="$entry[not(cda:organizer)][not(@cityEHR:rendition = ('#CityEHR:EntryProperty:ImageMap', '#CityEHR:EntryProperty:Image'))]">
+        <xsl:if
+            test="$entry[not(cda:organizer)][not(@cityEHR:rendition = ('#CityEHR:EntryProperty:ImageMap', '#CityEHR:EntryProperty:Image'))]">
             <!-- Simple observation or encounter. The selected nodeset is the union of the two matches,
                  although only one will contribute results in any one instance -->
 
@@ -657,45 +686,58 @@
 
         <!-- === (2) Simple entry - imageMap rendition ======
              Get id from <id xmlns="" root="cityEHR" extension="#ISO-13606:Entry:DAS68"/>
-             Include the image map
+             cityEHR:rendition="#CityEHR:EntryProperty:ImageMap"
+             Include the image map if it exists in cda:text/svg:svg
              Iterate through the elements for the entry, displayed next to the image map -->
 
-        <xsl:if test="$entry[not(cda:organizer)][@cityEHR:rendition = '#CityEHR:EntryProperty:ImageMap']/cda:observation">
-            <li class="{$entryLayout}">
-                <div class="tableContainer">
-                    <table>
-                        <tbody>
-                            <tr>
-                                <!-- Output the image map with selections shown? -->
-                                <td>
-                                    <!-- Image map here -->
-                                    <!-- But not displaying the map - could make this an option whether to display, or not -->
-                                </td>
+        <xsl:if
+            test="$entry[not(cda:organizer)][@cityEHR:rendition = '#CityEHR:EntryProperty:ImageMap']/cda:observation">
 
-                                <!-- Iterate through the list of elements, outputting the boolean 'true' values.
+            <xsl:call-template name="renderSimpleEntry">
+                <xsl:with-param name="entry" select="$entry"/>
+                <xsl:with-param name="entryLayout" select="$entryLayout"/>
+                <xsl:with-param name="labelWidth" select="$labelWidth"/>
+            </xsl:call-template>
+
+            <!-- Original way - deprecated 2025-03-15 -->
+            <xsl:if test="false()">
+                <li class="{$entryLayout}">
+                    <div class="tableContainer">
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <!-- Output the image map with selections shown? -->
+                                    <td>
+                                        <!-- Image map here -->
+                                        <!-- But not displaying the map - could make this an option whether to display, or not -->
+                                    </td>
+
+                                    <!-- Iterate through the list of elements, outputting the boolean 'true' values.
                              The element can be set as 'true' or '1' to be boolean true; 'false' or '0' to be boolean false.
                              Only displaying the values for the 'true' elements (i.e. elements that are highlighted on the map)
                              Need to add another parameter to renderCDAElement so that it has options for how to treat boolean values -->
-                                <td>
-                                    <ul>
-                                        <li class="{$entryLayout}">
-                                            <xsl:for-each select="$entry/cda:observation/cda:value[@value != '0']">
-                                                <xsl:variable name="element" select="."/>
-                                                <ul class="ISO13606-Element">
-                                                    <li class="ISO13606-Element-DisplayName">
-                                                        <xsl:value-of select="$element/@cityEHR:elementDisplayName"/>
-                                                    </li>
-                                                </ul>
-                                            </xsl:for-each>
-                                        </li>
-                                    </ul>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </li>
-
+                                    <td>
+                                        <ul>
+                                            <li class="{$entryLayout}">
+                                                <xsl:for-each
+                                                  select="$entry/cda:observation/cda:value[@value != '0']">
+                                                  <xsl:variable name="element" select="."/>
+                                                  <ul class="ISO13606-Element">
+                                                  <li class="ISO13606-Element-DisplayName">
+                                                  <xsl:value-of
+                                                  select="$element/@cityEHR:elementDisplayName"/>
+                                                  </li>
+                                                  </ul>
+                                                </xsl:for-each>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </li>
+            </xsl:if>
         </xsl:if>
         <!-- End of Simple entry - imageMap rendition -->
 
@@ -703,17 +745,21 @@
         <!-- === (2a) Simple entry - image rendition ======
              Display media images, which are held in the displayName attrbutes of the cda:values -->
 
-        <xsl:if test="$entry[not(cda:organizer)][@cityEHR:rendition = '#CityEHR:EntryProperty:Image']/cda:observation">
+        <xsl:if
+            test="$entry[not(cda:organizer)][@cityEHR:rendition = '#CityEHR:EntryProperty:Image']/cda:observation">
             <xsl:variable name="entryIRI" select="$entry/*[1]/cda:id/@extension"/>
             <ul>
                 <li class="{$entryLayout}">
-                    <xsl:for-each select="$entry/cda:observation/cda:value[@displayName != '' and @displayName castable as xs:base64Binary]">
+                    <xsl:for-each
+                        select="$entry/cda:observation/cda:value[@displayName != '' and @displayName castable as xs:base64Binary]">
                         <xsl:variable name="element" select="."/>
                         <xsl:variable name="elementIRI" select="$element/@extension"/>
-                       
+
                         <ul class="ISO13606-Element {$entryIRI}/{$elementIRI}">
                             <li class="ISO13606-Element-DisplayName">
-                                <img src="data:image/*;base64,{xs:base64Binary($element/@displayName)}" height="{$element/@cityEHR:height}"
+                                <img
+                                    src="data:image/*;base64,{xs:base64Binary($element/@displayName)}"
+                                    height="{$element/@cityEHR:height}"
                                     width="{$element/@cityEHR:width}"/>
                             </li>
                         </ul>
@@ -729,7 +775,8 @@
              Second component is organizer with the supplementary entries
         -->
 
-        <xsl:if test="$entry[not(@cityEHR:rendition = '#CityEHR:EntryProperty:ImageMap')]/cda:organizer[@classCode = 'EnumeratedClassEntry']">
+        <xsl:if
+            test="$entry[not(@cityEHR:rendition = '#CityEHR:EntryProperty:ImageMap')]/cda:organizer[@classCode = 'EnumeratedClassEntry']">
 
             <!-- Displaying Event or Folder view, or just showing the current value in a Composition view.
                  There is only one organizer for the entry. 
@@ -748,14 +795,17 @@
             <xsl:for-each select="$entrySet">
                 <xsl:variable name="entryInstance" select="."/>
                 <!-- Set up the main entry that has enumeratedClass element -->
-                <xsl:variable name="mainEntry" select="$entryInstance/cda:component[1]/cda:observation"/>
+                <xsl:variable name="mainEntry"
+                    select="$entryInstance/cda:component[1]/cda:observation"/>
                 <!-- Set up the supplementary entry for processing on selection of element -->
-                <xsl:variable name="supplementary-entry-set" select="$entryInstance/cda:component[2]/cda:organizer"/>
+                <xsl:variable name="supplementary-entry-set"
+                    select="$entryInstance/cda:component[2]/cda:organizer"/>
 
                 <xsl:call-template name="renderEntryWithSDS">
                     <xsl:with-param name="mainEntry" select="$mainEntry"/>
                     <xsl:with-param name="entryLayout" select="$entryLayout"/>
-                    <xsl:with-param name="supplementary-entry-organizer" select="$supplementary-entry-set"/>
+                    <xsl:with-param name="supplementary-entry-organizer"
+                        select="$supplementary-entry-set"/>
                     <xsl:with-param name="labelWidth" select="$labelWidth"/>
                 </xsl:call-template>
             </xsl:for-each>
@@ -822,7 +872,7 @@
                         <xsl:with-param name="organizer" select="$organizer"/>
                         <xsl:with-param name="entryIRI"
                             select="
-                                if ($entryIRI !='') then
+                                if ($entryIRI != '') then
                                     $entryIRI
                                 else
                                     $rootIRI"/>
@@ -946,7 +996,8 @@
 
         <!-- Displaying Event or Folder view, or just showing the current value in a Composition view.
              There is only one observation/encounter for the entry -->
-        <xsl:if test="$outputType = 'Event' or $outputType = 'Folder' or ($outputType = 'Composition' and $viewHistory = 'current')">
+        <xsl:if
+            test="$outputType = 'Event' or $outputType = 'Folder' or ($outputType = 'Composition' and $viewHistory = 'current')">
 
             <!-- Iterate through each element, provided it is visible -->
             <xsl:for-each
@@ -974,10 +1025,12 @@
                  If there is a date element in the entry then this should be used. otherwise use effectiveTime
                  Note that the sortDescending sorts and returns distinct values only -->
 
-            <xsl:variable name="effectiveTimeDateSet" select="cityEHRFunction:sortDescending($entry/cda:observation/@effectiveTime)"/>
+            <xsl:variable name="effectiveTimeDateSet"
+                select="cityEHRFunction:sortDescending($entry/cda:observation/@effectiveTime)"/>
             <xsl:variable name="recordedDateElement"
                 select="($entry/cda:observation//cda:value[@xsi:type = ('xs:date', 'xs:dateTime', 'xs:time')])[1]/@extension"/>
-            <xsl:variable name="recordedDateSet" select="cityEHRFunction:sortDescending($entry//cda:value[@extension = $recordedDateElement]/@value)"/>
+            <xsl:variable name="recordedDateSet"
+                select="cityEHRFunction:sortDescending($entry//cda:value[@extension = $recordedDateElement]/@value)"/>
 
             <xsl:variable name="dateSet"
                 select="
@@ -999,7 +1052,8 @@
                                         <xsl:variable name="date" select="."/>
                                         <td>
                                             <span class="ISO13606-Element-DisplayName">
-                                                <xsl:value-of select="cityEHRFunction:outputDateValue($date)"/>
+                                                <xsl:value-of
+                                                  select="cityEHRFunction:outputDateValue($date)"/>
                                             </span>
                                         </td>
                                     </xsl:for-each>
@@ -1009,19 +1063,24 @@
                                 <!-- One row for each element in the entry (need to cope with clusters).
                                      use the first observation to get the displayNames
                                      The $recordedDateElement has already been output in the header, so don't need it again -->
-                                <xsl:for-each select="$entry/cda:observation[1]/cda:value[@extension != $recordedDateElement]">
+                                <xsl:for-each
+                                    select="$entry/cda:observation[1]/cda:value[@extension != $recordedDateElement]">
                                     <xsl:variable name="element" select="."/>
                                     <xsl:variable name="elementIRI" select="$element/@extension"/>
                                     <tr>
                                         <!-- First cell selects element for graphing -->
                                         <xsl:variable name="plotType" select="'timeseries'"/>
-                                        <xsl:variable name="dateElementExtension" select="$recordedDateElement"/>
-                                        <xsl:variable name="variableElementExtension" select="$elementIRI"/>
-                                        <xsl:variable name="variableElementValue" select="$element/@cityEHR:elementDisplayName"/>
+                                        <xsl:variable name="dateElementExtension"
+                                            select="$recordedDateElement"/>
+                                        <xsl:variable name="variableElementExtension"
+                                            select="$elementIRI"/>
+                                        <xsl:variable name="variableElementValue"
+                                            select="$element/@cityEHR:elementDisplayName"/>
 
                                         <xsl:variable name="variableEntryDisplayName"
                                             select="$entry/cda:observation[1]/cda:code[@codeSystem = 'cityEHR']/@displayName"/>
-                                        <xsl:variable name="variableElementDisplayName" select="$element/@cityEHR:elementDisplayName"/>
+                                        <xsl:variable name="variableElementDisplayName"
+                                            select="$element/@cityEHR:elementDisplayName"/>
                                         <xsl:variable name="displayNameConnector"
                                             select="
                                                 if ('' = ($variableEntryDisplayName, $variableElementDisplayName)) then
@@ -1031,27 +1090,33 @@
                                         <xsl:variable name="variableDisplayName"
                                             select="concat($variableEntryDisplayName, $displayNameConnector, $variableElementDisplayName)"/>
 
-                                        <xsl:variable name="valueElementExtension" select="$elementIRI"/>
-                                        <xsl:variable name="checkboxId" select="concat($entryIRI, $valueElementExtension)"/>
+                                        <xsl:variable name="valueElementExtension"
+                                            select="$elementIRI"/>
+                                        <xsl:variable name="checkboxId"
+                                            select="concat($entryIRI, $valueElementExtension)"/>
 
                                         <td>
                                             <!-- Include checkbox for selecting the element for graphing, but only for numeric data types -->
-                                            <xsl:if test="$element/@xsi:type = ('xs:double', 'xs:integer')">
+                                            <xsl:if
+                                                test="$element/@xsi:type = ('xs:double', 'xs:integer')">
                                                 <span name="{$checkboxId}" class="unchecked"
-                                                    onclick="var newState=setCheckboxes('{$checkboxId}',this.className); this.className=newState; setXformsControl('setVariable-entryId','{$entryIRI}'); setXformsControl('setVariable-plotType','{$plotType}'); setXformsControl('setVariable-dateElementExtension','{$dateElementExtension}'); setXformsControl('setVariable-variableElementExtension','{$variableElementExtension}'); setXformsControl('setVariable-variableElementValue','{$variableElementValue}'); setXformsControl('setVariable-variableElementDisplayName','{$variableDisplayName}'); setXformsControl('setVariable-valueElementExtension','{$valueElementExtension}');  setXformsControl('setVariable-action',newState); callXformsAction('main-model','set-chart-variable'); ">
-                                                    <span class="unchecked">
-                                                        <input type="checkbox" onclick="return false" onkeydown="return false"/>
-                                                    </span>
-                                                    <span class="checked">
-                                                        <input type="checkbox" onclick="return false" onkeydown="return false" checked="yes"/>
-                                                    </span>
+                                                  onclick="var newState=setCheckboxes('{$checkboxId}',this.className); this.className=newState; setXformsControl('setVariable-entryId','{$entryIRI}'); setXformsControl('setVariable-plotType','{$plotType}'); setXformsControl('setVariable-dateElementExtension','{$dateElementExtension}'); setXformsControl('setVariable-variableElementExtension','{$variableElementExtension}'); setXformsControl('setVariable-variableElementValue','{$variableElementValue}'); setXformsControl('setVariable-variableElementDisplayName','{$variableDisplayName}'); setXformsControl('setVariable-valueElementExtension','{$valueElementExtension}');  setXformsControl('setVariable-action',newState); callXformsAction('main-model','set-chart-variable'); ">
+                                                  <span class="unchecked">
+                                                  <input type="checkbox" onclick="return false"
+                                                  onkeydown="return false"/>
+                                                  </span>
+                                                  <span class="checked">
+                                                  <input type="checkbox" onclick="return false"
+                                                  onkeydown="return false" checked="yes"/>
+                                                  </span>
                                                 </span>
                                             </xsl:if>
                                         </td>
                                         <!-- Second cell shows element name -->
                                         <td>
                                             <span class="ISO13606-Element-DisplayName">
-                                                <xsl:value-of select="$element/@cityEHR:elementDisplayName"/>
+                                                <xsl:value-of
+                                                  select="$element/@cityEHR:elementDisplayName"/>
                                             </span>
                                         </td>
                                         <!-- One cell for each value that matches the date in that column.
@@ -1065,22 +1130,25 @@
                                                         $entry/cda:observation[@effectiveTime = $date][1]
                                                     else
                                                         $entry/cda:observation[descendant::cda:value[@extension = $recordedDateElement]/@value = $date][1]"/>
-                                            <xsl:variable name="element" select="$observation/cda:value[@extension = $elementIRI]"/>
+                                            <xsl:variable name="element"
+                                                select="$observation/cda:value[@extension = $elementIRI]"/>
                                             <td>
                                                 <xsl:variable name="value"
-                                                    select="
+                                                  select="
                                                         if ($element/@displayName != '') then
                                                             $element/@displayName
                                                         else
                                                             $element/@value"/>
                                                 <xsl:variable name="type"
-                                                    select="
+                                                  select="
                                                         if ($element/@xsi:type != '') then
                                                             $element/@xsi:type
                                                         else
                                                             'xs:string'"/>
                                                 <span class="ISO13606-Data">
-                                                    <xsl:value-of select="cityEHRFunction:outputValue($value, $type)"/>
+                                                  <xsl:value-of
+                                                  select="cityEHRFunction:outputValue($value, $type)"
+                                                  />
                                                 </span>
                                             </td>
 
@@ -1113,7 +1181,8 @@
         <p class="message">outputMultipleEntryOrganizer</p>
         -->
         <!-- Use descendant axis to get the observation template (so that entries with enumeratedClass elements are handled) -->
-        <xsl:variable name="observationTemplate" select="$organizer/cda:component[1]/descendant::cda:observation[1]"/>
+        <xsl:variable name="observationTemplate"
+            select="$organizer/cda:component[1]/descendant::cda:observation[1]"/>
 
         <!-- Date variable is first xs:date or xs:dateTime type element -->
         <xsl:variable name="dateElementExtension"
@@ -1174,7 +1243,8 @@
             <xsl:call-template name="outputBasicMultipleEntry">
                 <xsl:with-param name="entryIRI" select="$entryIRI"/>
                 <xsl:with-param name="observationTemplate" select="$observationTemplate"/>
-                <xsl:with-param name="organizer" select="$organizer/cda:component[2]/cda:organizer"/>
+                <xsl:with-param name="organizer" select="$organizer/cda:component[2]/cda:organizer"
+                />
             </xsl:call-template>
         </xsl:if>
 
@@ -1200,13 +1270,17 @@
                         <!-- Tester
                     <tr><td>unchecked <input type="checkbox"/></td> <td>checked <input type="checkbox" checked="yes"/></td></tr>
                     -->
-                        <xsl:for-each select="$organizer/cda:component[2]/cda:organizer/cda:component">
+                        <xsl:for-each
+                            select="$organizer/cda:component[2]/cda:organizer/cda:component">
                             <!-- The entry is either simple or in an enuneratedClass organizer -->
-                            <xsl:variable name="entry" select="cda:observation | cda:organizer/cda:component[1]/cda:observation"/>
+                            <xsl:variable name="entry"
+                                select="cda:observation | cda:organizer/cda:component[1]/cda:observation"/>
                             <tr>
                                 <!-- Value of plotted variable (first non-xs:date type element) -->
-                                <xsl:variable name="variableElement" select="$entry/cda:value[@xsi:type != 'xs:date'][1]"/>
-                                <xsl:variable name="variableElementValue" select="$variableElement/@value"/>
+                                <xsl:variable name="variableElement"
+                                    select="$entry/cda:value[@xsi:type != 'xs:date'][1]"/>
+                                <xsl:variable name="variableElementValue"
+                                    select="$variableElement/@value"/>
                                 <xsl:variable name="variableDisplayName"
                                     select="
                                         if ($variableElement/@displayName != '') then
@@ -1216,9 +1290,11 @@
 
                                 <!-- CheckboxId is unique - used to link identical variables and also to trigger setting the variable as a parameter in the model -->
                                 <!-- **jc error here** -->
-                                <xsl:variable name="checkboxId" select="concat($entryIRI, $variableElementExtension, $variableElementValue)"/>
+                                <xsl:variable name="checkboxId"
+                                    select="concat($entryIRI, $variableElementExtension, $variableElementValue)"/>
                                 <!-- Would use checkboxIdURI, but seems to get unescaped in name for some reason, so might as well use checkboxId -->
-                                <xsl:variable name="checkboxIdURI" select="encode-for-uri($checkboxId)"/>
+                                <xsl:variable name="checkboxIdURI"
+                                    select="encode-for-uri($checkboxId)"/>
 
                                 <!-- This one works with characters
                                 <td>
@@ -1239,10 +1315,12 @@
                                     <span name="{$checkboxId}" class="unchecked"
                                         onclick="var newState=setCheckboxes('{$checkboxId}',this.className); this.className=newState; setXformsControl('setVariable-entryId','{$entryIRI}'); setXformsControl('setVariable-plotType','{$plotType}'); setXformsControl('setVariable-dateElementExtension','{$dateElementExtension}'); setXformsControl('setVariable-variableElementExtension','{$variableElementExtension}'); setXformsControl('setVariable-variableElementValue','{$variableElementValue}'); setXformsControl('setVariable-variableElementDisplayName','{$variableDisplayName}'); setXformsControl('setVariable-valueElementExtension','{$valueElementExtension}');  setXformsControl('setVariable-action',newState); callXformsAction('main-model','set-chart-variable'); ">
                                         <span class="unchecked">
-                                            <input type="checkbox" onclick="return false" onkeydown="return false"/>
+                                            <input type="checkbox" onclick="return false"
+                                                onkeydown="return false"/>
                                         </span>
                                         <span class="checked">
-                                            <input type="checkbox" onclick="return false" onkeydown="return false" checked="yes"/>
+                                            <input type="checkbox" onclick="return false"
+                                                onkeydown="return false" checked="yes"/>
                                         </span>
                                     </span>
                                 </td>
@@ -1262,7 +1340,9 @@
                                                 else
                                                     'xs:string'"/>
                                         <span class="ISO13606-Data">
-                                            <xsl:value-of select="cityEHRFunction:outputValue($value, $type)"/>
+                                            <xsl:value-of
+                                                select="cityEHRFunction:outputValue($value, $type)"
+                                            />
                                         </span>
                                     </td>
                                 </xsl:for-each>
@@ -1282,9 +1362,11 @@
             <!-- Observation list is the set of first descendant observations (caters for enumeratedClass entries)
                  Date variable is first xs:date type element.
                  Assuming here that the date is not in a cluster -->
-            <xsl:variable name="observationList" select="$organizer/cda:component[2]//cda:observation[1]"/>
+            <xsl:variable name="observationList"
+                select="$organizer/cda:component[2]//cda:observation[1]"/>
 
-            <xsl:variable name="fullDateList" select="cityEHRFunction:sortDescending($observationList/cda:value[@xsi:type = 'xs:date'][1]/@value)"/>
+            <xsl:variable name="fullDateList"
+                select="cityEHRFunction:sortDescending($observationList/cda:value[@xsi:type = 'xs:date'][1]/@value)"/>
             <xsl:variable name="dateList"
                 select="
                     if ($viewHistory = 'historic') then
@@ -1354,9 +1436,11 @@
                                     <!-- Value of plotted variable (first non-xs:date type element) -->
                                     <xsl:variable name="variableElementValue" select="$variable"/>
                                     <!-- CheckboxId is unique - used to link identical variables and also to trigger setting the variable as a parameter in the model -->
-                                    <xsl:variable name="checkboxId" select="concat($entryIRI, $variableElementExtension, $variableElementValue)"/>
+                                    <xsl:variable name="checkboxId"
+                                        select="concat($entryIRI, $variableElementExtension, $variableElementValue)"/>
                                     <!-- Would use checkboxIdURI, but seems to get unescaped in name for some reason, so might as well use checkboxId -->
-                                    <xsl:variable name="checkboxIdURI" select="encode-for-uri($checkboxId)"/>
+                                    <xsl:variable name="checkboxIdURI"
+                                        select="encode-for-uri($checkboxId)"/>
 
                                     <!-- This one works with characters
                             <td>
@@ -1375,10 +1459,12 @@
                                         <span name="{$checkboxId}" class="unchecked"
                                             onclick="var newState=setCheckboxes('{$checkboxId}',this.className); this.className=newState; setXformsControl('setVariable-entryId','{$entryIRI}');  setXformsControl('setVariable-plotType','{$plotType}'); setXformsControl('setVariable-dateElementExtension','{$dateElementExtension}'); setXformsControl('setVariable-variableElementExtension','{$variableElementExtension}'); setXformsControl('setVariable-variableElementValue','{$variableElementValue}'); setXformsControl('setVariable-variableElementDisplayName','{$variableDisplayName}'); setXformsControl('setVariable-valueElementExtension','{$valueElementExtension}');  setXformsControl('setVariable-action',newState); callXformsAction('main-model','set-chart-variable'); ">
                                             <span class="unchecked">
-                                                <input type="checkbox" onclick="return false" onkeydown="return false"/>
+                                                <input type="checkbox" onclick="return false"
+                                                  onkeydown="return false"/>
                                             </span>
                                             <span class="checked">
-                                                <input type="checkbox" onclick="return false" onkeydown="return false" checked="yes"/>
+                                                <input type="checkbox" onclick="return false"
+                                                  onkeydown="return false" checked="yes"/>
                                             </span>
                                         </span>
                                     </td>
@@ -1406,24 +1492,26 @@
                                                 <!-- Get the first instance of the value -->
                                                 <xsl:variable name="distinctValue" select="."/>
                                                 <xsl:variable name="element"
-                                                    select="($entry/cda:value[@extension = $valueElementExtension][@value = $distinctValue])[1]"/>
+                                                  select="($entry/cda:value[@extension = $valueElementExtension][@value = $distinctValue])[1]"/>
                                                 <xsl:variable name="value"
-                                                    select="
+                                                  select="
                                                         if ($element/@displayName != '') then
                                                             $element/@displayName
                                                         else
                                                             $element/@value"/>
                                                 <xsl:variable name="type"
-                                                    select="
+                                                  select="
                                                         if ($element/@xsi:type != '') then
                                                             $element/@xsi:type
                                                         else
                                                             'xs:string'"/>
                                                 <xsl:if test="position() gt 1">
-                                                    <br/>
+                                                  <br/>
                                                 </xsl:if>
                                                 <span class="ISO13606-Data">
-                                                    <xsl:value-of select="cityEHRFunction:outputValue($value, $type)"/>
+                                                  <xsl:value-of
+                                                  select="cityEHRFunction:outputValue($value, $type)"
+                                                  />
                                                 </span>
                                             </xsl:for-each>
                                         </td>
@@ -1467,9 +1555,11 @@
                                     <!-- Value of plotted variable (first non-xs:date type element) -->
                                     <xsl:variable name="variableElementValue" select="$variable"/>
                                     <!-- CheckboxId is unique - used to link identical variables and also to trigger setting the variable as a parameter in the model -->
-                                    <xsl:variable name="checkboxId" select="concat($entryIRI, $variableElementExtension, $variableElementValue)"/>
+                                    <xsl:variable name="checkboxId"
+                                        select="concat($entryIRI, $variableElementExtension, $variableElementValue)"/>
                                     <!-- Would use checkboxIdURI, but seems to get unescaped in name for some reason, so might as well use checkboxId -->
-                                    <xsl:variable name="checkboxIdURI" select="encode-for-uri($checkboxId)"/>
+                                    <xsl:variable name="checkboxIdURI"
+                                        select="encode-for-uri($checkboxId)"/>
 
                                     <!-- This one works with characters
                                     <td>
@@ -1488,10 +1578,12 @@
                                         <span name="{$checkboxId}" class="unchecked"
                                             onclick="var newState=setCheckboxes('{$checkboxId}',this.className); this.className=newState; setXformsControl('setVariable-entryId','{$entryIRI}');  setXformsControl('setVariable-plotType','{$plotType}'); setXformsControl('setVariable-dateElementExtension','{$dateElementExtension}'); setXformsControl('setVariable-variableElementExtension','{$variableElementExtension}'); setXformsControl('setVariable-variableElementValue','{$variableElementValue}'); setXformsControl('setVariable-variableElementDisplayName','{$variableDisplayName}'); setXformsControl('setVariable-valueElementExtension','{$valueElementExtension}');  setXformsControl('setVariable-action',newState); callXformsAction('main-model','set-chart-variable'); ">
                                             <span class="unchecked">
-                                                <input type="checkbox" onclick="return false" onkeydown="return false"/>
+                                                <input type="checkbox" onclick="return false"
+                                                  onkeydown="return false"/>
                                             </span>
                                             <span class="checked">
-                                                <input type="checkbox" onclick="return false" onkeydown="return false" checked="yes"/>
+                                                <input type="checkbox" onclick="return false"
+                                                  onkeydown="return false" checked="yes"/>
                                             </span>
                                         </span>
                                     </td>
@@ -1506,7 +1598,9 @@
                                         select="distinct-values($organizer/cda:component[2]/cda:organizer//cda:observation[cda:value[@extension = $variableElementExtension][@value = $variableElementValue]]/concat(cda:value[@extension = $dateElementExtension]/@value, '/', cda:value[@extension = $valueElementExtension]/@value))">
                                         <xsl:variable name="recordedRange" select="."/>
                                         <td>
-                                            <xsl:value-of select="cityEHRFunction:outputRecordedRange($recordedRange)"/>
+                                            <xsl:value-of
+                                                select="cityEHRFunction:outputRecordedRange($recordedRange)"
+                                            />
                                         </td>
                                     </xsl:for-each>
 
@@ -1522,7 +1616,8 @@
                  One row for each element in the entry.
                  First column shows the element displayName, other columns show value at each date -->
             <xsl:if test="$plotType = 'plotted'">
-                <xsl:variable name="elementList" select="$observationTemplate//cda:value[@extension != $dateElementExtension][exists(@value)]"/>
+                <xsl:variable name="elementList"
+                    select="$observationTemplate//cda:value[@extension != $dateElementExtension][exists(@value)]"/>
                 <div class="tableContainer">
                     <table class="CDAEntryList">
                         <thead>
@@ -1540,7 +1635,8 @@
                             <xsl:for-each select="$elementList">
                                 <xsl:variable name="element" select="."/>
                                 <!-- If variable does not have a display name, then use the value instead -->
-                                <xsl:variable name="displayName" select="$element/@cityEHR:elementDisplayName"/>
+                                <xsl:variable name="displayName"
+                                    select="$element/@cityEHR:elementDisplayName"/>
                                 <xsl:variable name="elementIRI" select="$element/@extension"/>
 
                                 <tr>
@@ -1564,27 +1660,30 @@
                                             select="$organizer/cda:component[2]/cda:organizer/cda:component//cda:observation[1][cda:value[@extension = $dateElementExtension][@value = $date]]"/>
 
                                         <!-- It is possible to have more than one value at the specified date/time -->
-                                        <xsl:variable name="values" select="$entry/cda:value[@extension = $elementIRI]"/>
+                                        <xsl:variable name="values"
+                                            select="$entry/cda:value[@extension = $elementIRI]"/>
                                         <td>
                                             <xsl:for-each select="$values">
                                                 <xsl:variable name="element" select="."/>
                                                 <xsl:variable name="value"
-                                                    select="
+                                                  select="
                                                         if ($element/@displayName != '') then
                                                             $element/@displayName
                                                         else
                                                             $element/@value"/>
                                                 <xsl:variable name="type"
-                                                    select="
+                                                  select="
                                                         if ($element/@xsi:type != '') then
                                                             $element/@xsi:type
                                                         else
                                                             'xs:string'"/>
                                                 <xsl:if test="position() gt 1">
-                                                    <br/>
+                                                  <br/>
                                                 </xsl:if>
                                                 <span class="ISO13606-Data">
-                                                    <xsl:value-of select="cityEHRFunction:outputValue($value, $type)"/>
+                                                  <xsl:value-of
+                                                  select="cityEHRFunction:outputValue($value, $type)"
+                                                  />
                                                 </span>
                                             </xsl:for-each>
                                         </td>
@@ -1600,8 +1699,10 @@
             <!-- Non-plotted data pattern -->
             <xsl:if test="$plotType = 'non-plotted'">
                 <!-- Date variable is the effectiveTime in the organizer -->
-                <xsl:variable name="organizerList" select="$organizer/cda:component[2]/cda:organizer"/>
-                <xsl:variable name="fullDateList" select="cityEHRFunction:sortAscending($organizerList/@effectiveTime)"/>
+                <xsl:variable name="organizerList"
+                    select="$organizer/cda:component[2]/cda:organizer"/>
+                <xsl:variable name="fullDateList"
+                    select="cityEHRFunction:sortAscending($organizerList/@effectiveTime)"/>
                 <xsl:variable name="dateList"
                     select="
                         if ($viewHistory = 'historic') then
@@ -1611,7 +1712,8 @@
 
                 <xsl:for-each select="$dateList">
                     <xsl:variable name="date" select="."/>
-                    <xsl:variable name="datedOrganizer" select="$organizerList[@effectiveTime = $date]"/>
+                    <xsl:variable name="datedOrganizer"
+                        select="$organizerList[@effectiveTime = $date]"/>
                     <span class="ISO13606-Element-DisplayName">
                         <xsl:value-of
                             select="
@@ -1653,19 +1755,24 @@
 
         <!-- Get the count of elements in the template entry 
              - layout as list for single element, table for more than one -->
-        <xsl:variable name="elementCount" as="xs:integer" select="count($observationTemplate/cda:value)"/>
+        <xsl:variable name="elementCount" as="xs:integer"
+            select="count($observationTemplate/cda:value)"/>
 
         <!-- Only need to display entries that have some data recorded -->
-        <xsl:variable name="entryList" select="$organizer/cda:component[descendant::cda:value[@value != '']]"/>
+        <xsl:variable name="entryList"
+            select="$organizer/cda:component[descendant::cda:value[@value != '']]"/>
 
         <!-- Only one element - layout is a list -->
         <xsl:if test="$elementCount = 1">
             <ul class="CDAEntryList">
                 <!-- Only include the header if the (one) element has a displayName  -->
-                <xsl:if test="exists($observationTemplate/cda:value[@cityEHR:elementDisplayName != ''])">
+                <xsl:if
+                    test="exists($observationTemplate/cda:value[@cityEHR:elementDisplayName != ''])">
                     <li>
                         <span class="ISO13606-Element-DisplayName">
-                            <xsl:value-of select="$observationTemplate/cda:value/@cityEHR:elementDisplayName"/>
+                            <xsl:value-of
+                                select="$observationTemplate/cda:value/@cityEHR:elementDisplayName"
+                            />
                         </span>
                     </li>
                 </xsl:if>
@@ -1679,7 +1786,8 @@
 
                     <!-- Set up the supplementary entry for processing on selection of element (but only if this is an enumerated class entry/element.
                          Since there is only one element, the supplementary entry should always match the origin of that element -->
-                    <xsl:variable name="supplementary-entry-organizer" select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
+                    <xsl:variable name="supplementary-entry-organizer"
+                        select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
                     <xsl:variable name="supplementaryEntry"
                         select="
                             if (exists(supplementary-entry-organizer)) then
@@ -1707,7 +1815,8 @@
             <div class="tableContainer">
                 <table class="CDAEntryList">
                     <!-- Only include the header if there is at least one displayName as a column title -->
-                    <xsl:if test="exists($observationTemplate/cda:value[@cityEHR:elementDisplayName != ''])">
+                    <xsl:if
+                        test="exists($observationTemplate/cda:value[@cityEHR:elementDisplayName != ''])">
                         <thead>
                             <!-- Header rows with display names of elements
                     First header row contains the element/cluster cityEHR:elementDisplayNames, if there are any. 
@@ -1736,7 +1845,8 @@
                                         <xsl:call-template name="renderCDAElement">
                                             <xsl:with-param name="element" select="$element"/>
                                             <xsl:with-param name="entryIRI" select="$entryIRI"/>
-                                            <xsl:with-param name="entryType" select="'MultipleEntry'"/>
+                                            <xsl:with-param name="entryType"
+                                                select="'MultipleEntry'"/>
                                             <xsl:with-param name="entryLayout" select="'Ranked'"/>
                                             <xsl:with-param name="labelWidth" select="''"/>
                                             <xsl:with-param name="supplementaryEntry" select="()"/>
@@ -1747,13 +1857,16 @@
                                 <!-- Multiple entry organizer contains entries with enumerated class values.
                             The entry is represented as an organizer.
                             First component in the organizer is the entry, second component is the set of supplementary data sets -->
-                                <xsl:if test="$entry/cda:organizer[@classCode = 'EnumeratedClassEntry']">
+                                <xsl:if
+                                    test="$entry/cda:organizer[@classCode = 'EnumeratedClassEntry']">
 
                                     <!-- Set up the main entry that has enumeratedClass element -->
-                                    <xsl:variable name="mainEntry" select="$entry/cda:organizer/cda:component[1]/cda:observation"/>
+                                    <xsl:variable name="mainEntry"
+                                        select="$entry/cda:organizer/cda:component[1]/cda:observation"/>
 
                                     <!-- Set up the supplementary entry for processing on selection of element -->
-                                    <xsl:variable name="supplementary-entry-organizer" select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
+                                    <xsl:variable name="supplementary-entry-organizer"
+                                        select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
 
                                     <xsl:for-each select="$mainEntry/cda:value">
                                         <xsl:variable name="element" select="."/>
@@ -1765,10 +1878,12 @@
                                             <xsl:call-template name="renderCDAElement">
                                                 <xsl:with-param name="element" select="$element"/>
                                                 <xsl:with-param name="entryIRI" select="$entryIRI"/>
-                                                <xsl:with-param name="entryType" select="'MultipleEntry'"/>
+                                                <xsl:with-param name="entryType"
+                                                  select="'MultipleEntry'"/>
                                                 <xsl:with-param name="entryLayout" select="'Ranked'"/>
                                                 <xsl:with-param name="labelWidth" select="''"/>
-                                                <xsl:with-param name="supplementaryEntry" select="$supplementaryEntry"/>
+                                                <xsl:with-param name="supplementaryEntry"
+                                                  select="$supplementaryEntry"/>
                                             </xsl:call-template>
 
                                         </td>
@@ -1866,7 +1981,8 @@
                                     'Unranked'
                                 else
                                     'Ranked'"/>
-                        <xsl:variable name="clusterLabelWidth" select="$clusterElement/@cityEHR:labelWidth"/>
+                        <xsl:variable name="clusterLabelWidth"
+                            select="$clusterElement/@cityEHR:labelWidth"/>
                         <li class="{$entryLayout}">
                             <xsl:call-template name="renderCDAElement">
                                 <xsl:with-param name="element" select="$clusterElement"/>
@@ -1894,7 +2010,8 @@
                                 else
                                     'hidden'"/>
                         <li class="ISO13606-Data  {$entryIRI}/{$elementIRI}">
-                            <img src="data:image/*;base64, {xs:base64Binary($element/@value)}" class="{$displayImageClass}"/>
+                            <img src="data:image/*;base64, {xs:base64Binary($element/@value)}"
+                                class="{$displayImageClass}"/>
 
                             <!-- Old way, before 2021-10-15 -->
                             <!--
@@ -1947,7 +2064,8 @@
                             <!-- Display supplementary data (SDS) if available -->
                             <xsl:if test="exists($supplementaryEntry)">
                                 <xsl:call-template name="renderSupplementaryEntry">
-                                    <xsl:with-param name="supplementaryEntry" select="$supplementaryEntry"/>
+                                    <xsl:with-param name="supplementaryEntry"
+                                        select="$supplementaryEntry"/>
                                 </xsl:call-template>
                             </xsl:if>
                         </li>
@@ -2001,11 +2119,14 @@
 
         <!-- Get all visible entries
              Split them into simple entry, multiple entry and enumerated class entry -->
-        <xsl:variable name="visibleEntries" select="$component/descendant-or-self::cda:entry[not(ancestor-or-self::*/@cityEHR:visibility = 'false')]"/>
+        <xsl:variable name="visibleEntries"
+            select="$component/descendant-or-self::cda:entry[not(ancestor-or-self::*/@cityEHR:visibility = 'false')]"/>
         <xsl:variable name="visibleSimpleEntries"
             select="$visibleEntries[not(descendant::cda:organizer/@classCode = ('MultipleEntry', 'EnumeratedClassEntry'))]"/>
-        <xsl:variable name="visibleMultipleEntries" select="$visibleEntries[descendant::cda:organizer/@classCode = 'MultipleEntry']"/>
-        <xsl:variable name="visibleEnumeratedClassEntries" select="$visibleEntries[descendant::cda:organizer/@classCode = 'EnumeratedClassEntry']"/>
+        <xsl:variable name="visibleMultipleEntries"
+            select="$visibleEntries[descendant::cda:organizer/@classCode = 'MultipleEntry']"/>
+        <xsl:variable name="visibleEnumeratedClassEntries"
+            select="$visibleEntries[descendant::cda:organizer/@classCode = 'EnumeratedClassEntry']"/>
 
         <!-- Test for data in any entry.
              Must have a value in an element that is visible -->

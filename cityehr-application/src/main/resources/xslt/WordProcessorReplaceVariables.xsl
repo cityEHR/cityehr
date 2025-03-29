@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- ====================================================================
     WordProcessorReplaceVariables.xsl
-    Input is the content from ODF (content.xml, styles.xml) or MS Word document (word/document.xml)
+    Main input is the content from ODF (content.xml) or MS Word document (word/document.xml)
     Finds variables in the text content of the form #ISO-13606:Entry:letterheadLeft or #ISO-13606:Entry:Demographics/#ISO-13606:Element:Surname 
-    Replaces variables with content generated from the input HTML document
+    
+    The other inputs are:
+    
+        html - has the patient data held as HTML converted from CDA
+        parameters - the combined parameters (view, system, session)
+        
+    Replaces variables inthe wordprocessor XML with content generated from the input HTML document
        
     Copyright (C) 2013-2021 John Chelsom.
     
@@ -90,16 +96,18 @@
     <!-- ======================================================================================== 
          Transforming fragments of the HTML, located from variables in the wordprocessor content.
          The mode for this transformation is either odf or mwword
-         ======================================================================================== -->
-
-
-    <!-- === ODF document 
+         
          Tramsform HTML fragments.
          These may be representation of:
             composition     <div class="ISO-13606:Composition">
             section         <ul class="ISO13606-Section #ISO-13606:Section:SectionId">
             entry           <ul class="ISO13606-Entry #ISO-13606:Entry:EntryId">
             element         <ul class="ISO13606-Element #ISO-13606:Entry:EntryId/ #ISO-13606:Element:ElementId">
+         ======================================================================================== -->
+
+
+    <!-- === ODF document 
+         Tramsform HTML fragments
          ========================== -->
 
     <!-- Composition -->
@@ -257,7 +265,16 @@
     </xsl:template>
 
 
-    <!-- === Text Nodes - Look for Variables ========================== -->
+    <!-- === Text Nodes - Look for Variables ========================== 
+         
+         Variables are in the wordprocessor text in the form:
+         
+         #ISO-13606:Section:UpdateDemographics
+         #ISO-13606:Entry:Demographics
+         #ISO-13606:Entry:Demographics/#ISO-13606:Element:NHSNumber
+
+         ==============================================================
+    -->
     <xsl:template match="text()">
         <xsl:variable name="regex" select="'(#ISO-13606:[^\s]*)'"/>
 
@@ -266,7 +283,7 @@
                 <xsl:variable name="variable" as="xs:string" select="regex-group(1)"/>
 
                 <!-- Find only the first matching element in the HTML
-                     Entries and elements will both have a class containging the mayched variable (element class starts with the entry class)
+                     Entries and elements will both have a class containing the matched variable (element class starts with the entry class)
                      But elements are contained in entries, so taking the first one gets what we want-->
                 <xsl:variable name="variableReplacement" select="($html//*[contains(@class, $variable)])[1]"/>
 
