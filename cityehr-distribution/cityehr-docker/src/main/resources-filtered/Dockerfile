@@ -1,16 +1,4 @@
-# Install latest JRE 8 in Debian Stretch (which is the base of gcr.io/distroless/java:8)
-FROM debian:stretch-slim as updated-jre
-RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
-RUN echo "deb http://archive.debian.org/debian stretch-backports main" >> /etc/apt/sources.list
-RUN apt-get update && apt-get -y dist-upgrade
-RUN apt-get install -y openjdk-8-jre-headless
-
-FROM gcr.io/distroless/java:8
-
-# Copy over updated JRE from Debian Stretch
-COPY --from=updated-jre /etc/java-8-openjdk /etc/java-8-openjdk
-COPY --from=updated-jre /usr/lib/jvm/java-8-openjdk-amd64 /usr/lib/jvm/java-8-openjdk-amd64
-COPY --from=updated-jre /usr/share/gdb/auto-load/usr/lib/jvm/java-8-openjdk-amd64 /usr/share/gdb/auto-load/usr/lib/jvm/java-8-openjdk-amd6
+FROM gcr.io/distroless/java:11
 
 # Copy cityEHR into the image
 COPY LICENSE /cityehr/
@@ -34,10 +22,12 @@ LABEL org.label-schema.build-date=${maven.build.timestamp} \
 EXPOSE 8080
 
 ENTRYPOINT [ "java", \
+        "-Dfile.encoding=UTF8", \
+        "-Djava.awt.headless=true", \
+        "-XX:+UseNUMA", \
         "-XX:+UseG1GC", \
         "-XX:+UseStringDeduplication", \
         "-XX:+UseContainerSupport", \
         "-XX:MaxRAMPercentage=75.0", \
         "-XX:+ExitOnOutOfMemoryError", \
-        "-Djava.awt.headless=true", \
         "-jar", "/cityehr/lib/cityehr-standalone-jetty-${project.version}.jar", "--server-working-directory", "/cityehr"]
