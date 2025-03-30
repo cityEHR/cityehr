@@ -69,7 +69,7 @@
                                     <version>${orbeon.version}</version>
                                     <classifier>${orbeon.classifier}</classifier>
                                     <type>war</type>
-                                    <excludes>WEB-INF/jboss-web.xml,WEB-INF/jonas-web.xml,WEB-INF/liferay-*,WEB-INF/portlet.xml,WEB-INF/sun-web.xml,WEB-INF/weblogic.xml,WEB-INF/classes/jboss-*,WEB-INF/resources/apps/**,WEB-INF/resources/forms/**,WEB-INF/resources/page-flow-portlet.xml,WEB-INF/resources/page-flow-portlet-edit.xml,WEB-INF/resources/config/prologue-portlet.xpl,WEB-INF/resources/config/processors-local.xml.template,WEB-INF/resources/config/properties-local.xml.template,WEB-INF/resources/config/README.txt,xforms-jsp/**</excludes>
+                                    <excludes>WEB-INF/jboss-web.xml,WEB-INF/jonas-web.xml,WEB-INF/liferay-*,WEB-INF/portlet.xml,WEB-INF/sun-web.xml,WEB-INF/weblogic.xml,WEB-INF/classes/jboss-*,WEB-INF/exist-data/*.dbx,WEB-INF/exist-data/fs/**,WEB-INF/exist-data/fs.journal/**,WEB-INF/exist-data/lucene/**,WEB-INF/resources/apps/**,WEB-INF/resources/forms/**,WEB-INF/resources/page-flow-portlet.xml,WEB-INF/resources/page-flow-portlet-edit.xml,WEB-INF/resources/config/prologue-portlet.xpl,WEB-INF/resources/config/processors-local.xml.template,WEB-INF/resources/config/properties-local.xml.template,WEB-INF/resources/config/README.txt,xforms-jsp/**</excludes>
                                     <outputDirectory>${unpacked.war-dir}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
