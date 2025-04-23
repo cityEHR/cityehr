@@ -11,6 +11,8 @@
         May include multiple values for the same entry, either because multiple values have been recorded at differnt effectiveTome
         Or because the search is made using the @extension and there may be several entries aliased to that extension.
         
+        The cityEHR:orderBy attribute must be set so that results can be sorted by the DAL.
+        
         Copyright (C) 2013-2021 John Chelsom.
         
         This program is free software; you can redistribute it and/or modify it under the terms of the
@@ -28,10 +30,26 @@
 <query start="1" max="-1" xml:space="preserve">
         xquery version "1.0"; 
         declare namespace cda="urn:hl7-org:v3"; 
+        declare namespace cityEHR="http://openhealthinformatics.org/ehr"; 
+        for $entry in //cda:id[@extension=('<entryIRISet/>')]/ancestor::cda:entry[descendant::cda:value]<evaluationContext/>
+        let $orderBy := $entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value
+        return 
+        &lt;cda:entry cityEHR:orderBy="{$orderBy}">
+          {$entry/(@*, *)}
+        &lt;/cda:entry>
+</query>
+
+
+<!-- to 2025-04-15 -->
+<!--
+<query start="1" max="-1" xml:space="preserve">
+        xquery version "1.0"; 
+        declare namespace cda="urn:hl7-org:v3"; 
         for $entry in //cda:id[@extension=('<entryIRISet/>')]/ancestor::cda:entry[descendant::cda:value]
         order by $entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value descending
         return $entry
 </query>
+-->
 
 <!--
 <query start="1" max="-1">

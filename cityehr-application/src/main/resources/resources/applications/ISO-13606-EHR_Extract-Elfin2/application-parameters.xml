@@ -546,10 +546,18 @@
             <action id="register" displayName="Register" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Events" displayName="Patient Record" display="show">
+            <action id="html" displayName="Show HTML" display="show"/>
             <action id="xml" displayName="Show XML" display="show"/>
             <action id="annotations" displayName="Annotations" display="show"/>
             <action id="save" displayName="Save" display="show"/>
             <action id="print" displayName="Print" display="show"/>
+            <select id="exportFormat" value="cda" displayName="Export Format " display="show">
+                <item displayName="HL7 CDA" value="cda"/>
+                <item displayName="ISO 13606" value="ISO-13606"/>
+                <item displayName="HL7 v2 XML (pseudo)" value="HL7-V2-XML"/>
+                <item displayName="HL7 v2 (Z Segment)" value="HL7-V2"/>
+                <item displayName="HL7 FHIR" value="HL7-FHIR"/>
+            </select>
             <action id="export" displayName="Export Event" display="show"/>
             <action id="exportAll" displayName="Export Record" display="show"/>
         </view>

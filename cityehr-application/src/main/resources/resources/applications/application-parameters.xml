@@ -1197,6 +1197,7 @@
             <action id="register" displayName="Register" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Events" displayName="Patient Record" display="show">
+            <action id="html" displayName="Show HTML" display="show"/>
             <action id="xml" displayName="Show XML" display="show"/>
             <action id="annotations" displayName="Annotations" display="show"/>
             <action id="save" displayName="Save" display="show"/>

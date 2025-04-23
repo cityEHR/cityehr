@@ -616,8 +616,24 @@
                          The generated form content is included here when the pipeline is run.
                     -->
                     <xi:include href="input:formContent" xxi:omit-xml-base="true"/>
+
                     <!-- Include filler so that sections at foot of form can scroll to the top -->
                     <xi:include href="cityEHRFormFootPadding.xhtml"/>
+
+                    <!--
+                    <xhtml:p class="message">
+                        getLatestEntrySetXQuery-instance: <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('getLatestEntrySetXQuery-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+                    <!--
+                    <xhtml:p class="message">
+                        latestEntrySet-instance: <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('latestEntrySet-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+-->
                     <!-- For debugging - query to get the form XML -->
                     <!--
                         <xf:group ref="xxf:instance('application-parameters-instance')[debug='false']">
@@ -625,6 +641,7 @@
                         </p>
                         </xf:group>
                     -->
+
                     <!--
                     <xhtml:p class="message">
                         Session parameters: 
@@ -651,7 +668,6 @@
                     </xhtml:p>
 -->
                     <!-- Debugging -->
-
                     <!--
                     <xhtml:p class="message">
                         <xf:output
@@ -668,33 +684,40 @@
                         </xhtml:p>
                         </xf:group>
                     -->
+
                     <!-- For debugging - list of in progress forms -->
                     <!--
                         <xhtml:p>
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patientCompositionsList-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                         </xhtml:p>
                     -->
+
                     <!--
                     <xhtml:p class="message">
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('query-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                     </xhtml:p>
                     -->
+
                     <!--
                     <xhtml:p class="message">
                         <xf:output
                             ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('dictionary-instance'), 'data')/*, 'html')"
                             mediatype="text/html"/>
                     </xhtml:p>
-                    -->- <!--
+                    -->
+
+                    <!--
                     <xhtml:p class="message">
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('dictionaryEntry-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                     </xhtml:p>
                     -->
+
                     <!--
                     <xhtml:p class="message">
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('query-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                     </xhtml:p>
                     -->
+
                     <!--
                     <xhtml:p class="message">
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',  xxf:instance('user-instance'), 'data')/*, 'html')" mediatype="text/html"/>
@@ -762,8 +785,6 @@
             <xi:include href="cityEHRInformation.xhtml"/>
 
         </xhtml:div>
-        
-        
         <!-- Fixed footer -->
         <xi:include href="cityEHRFooter.xhtml"/>
         <!-- Javascript functions specific to this page -->

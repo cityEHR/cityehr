@@ -81,7 +81,7 @@
 
 
     <!-- Application defined action to get the set of enumeratedClass elements, matching specified criteria
-         Runs query to set the enumeratedClassHierarchy-instance from the class dictionary.
+         Runs query to set the enumeratedClass-instance from the class dictionary.
          
          The class dictionary is found either in the current specialty or in the base specialty.
          

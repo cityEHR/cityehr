@@ -502,11 +502,7 @@
                     <!-- Entry - call template to render the entry but only if it has some content -->
                     <xsl:if
                         test="$component/name() = 'entry' and cityEHRFunction:entryRecorded($component) = 'true'">
-                        <!-- Debugging -->
-                        <!--
-                    <p class="message"> Calling renderCDAEntry
-                    </p>
-                    -->
+
                         <li class="{$sectionLayout}">
                             <xsl:call-template name="renderCDAEntry">
                                 <xsl:with-param name="entry" select="$component"/>
@@ -583,7 +579,8 @@
         <xsl:param name="sectionLayout"/>
         <xsl:param name="labelWidth"/>
 
-        <xsl:variable name="entryIRI" select="$entry/*/cda:id[1]/@extension"/>
+        <!-- This needs to work for single and multiple entries, hence the //cda:id[1] -->
+        <xsl:variable name="entryIRI" select="$entry//cda:id[1]/@extension"/>
 
         <xsl:variable name="entryLayout" select="$entry/@cityEHR:Sequence"/>
         <xsl:variable name="entryLabelWidth" select="$entry/@cityEHR:labelWidth"/>
@@ -600,8 +597,7 @@
 
         <!-- Debugging -->
         <!--
-        <p class="message"> Rendering Entry
-        </p>
+        <p class="message"> Rendering Entry </p>
         -->
         <ul class="ISO13606-Entry {$entryIRI}">
             <!-- Render the displayName
@@ -642,12 +638,9 @@
         There are eight types of entry to consider:
         (1) simple entry, form rendition uses cda:observation or cda:encounter (may handle other type of CDA events in the future)
         (2) simple entry, image map rendition displays the image map
-        (2a) Simple entry - image rendition
-        (3) simple entry with supplementary data using cda:entryRelationship
-        (4) simple entry, image map rendition and supplementary data using cda:entryRelationship
-        
-        (5) multiple occurrences of the same entry use cda:organizer with classCode attribute of MultipleEntry
-        (6) multiple occurrences of the same entry, image map rendition
+        (3) Simple entry - image rendition 
+        (4) multiple occurrences of the same entry use cda:organizer with classCode attribute of MultipleEntry
+        (5) multiple occurrences of the same entry, image map rendition
          
         A multiple entry contains a cda:organizer with two components, the first with the template
         and the second with another organizer with one component for each multiple entry
@@ -742,7 +735,7 @@
         <!-- End of Simple entry - imageMap rendition -->
 
 
-        <!-- === (2a) Simple entry - image rendition ======
+        <!-- === (3) Simple entry - image rendition ======
              Display media images, which are held in the displayName attrbutes of the cda:values -->
 
         <xsl:if
@@ -767,64 +760,11 @@
                 </li>
             </ul>
         </xsl:if>
-
-        <!-- === (3) Simple Entry with supplementary data for supplementary data sets on elements with emumerated class values ===
-             Entry contains an entryRelationship for each EnumeratedClassEntry with a supplementary data set
-            
-             First component is an entry that calls in supplementary entries.
-             Second component is organizer with the supplementary entries
-        -->
-
-        <xsl:if
-            test="$entry[not(@cityEHR:rendition = '#CityEHR:EntryProperty:ImageMap')]/cda:organizer[@classCode = 'EnumeratedClassEntry']">
-
-            <!-- Displaying Event or Folder view, or just showing the current value in a Composition view.
-                 There is only one organizer for the entry. 
-                 Otherwise (composition view, historic data) we need the full set of entries. -->
-
-            <xsl:variable name="entrySet"
-                select="
-                    if ($outputType = 'Event' or $outputType = 'Folder') then
-                        $entry/cda:organizer[1]
-                    else
-                        if ($outputType = 'Composition' and $viewHistory = 'current') then
-                            $entry/cda:organizer[1]
-                        else
-                            $entry/cda:organizer"/>
-
-            <xsl:for-each select="$entrySet">
-                <xsl:variable name="entryInstance" select="."/>
-                <!-- Set up the main entry that has enumeratedClass element -->
-                <xsl:variable name="mainEntry"
-                    select="$entryInstance/cda:component[1]/cda:observation"/>
-                <!-- Set up the supplementary entry for processing on selection of element -->
-                <xsl:variable name="supplementary-entry-set"
-                    select="$entryInstance/cda:component[2]/cda:organizer"/>
-
-                <xsl:call-template name="renderEntryWithSDS">
-                    <xsl:with-param name="mainEntry" select="$mainEntry"/>
-                    <xsl:with-param name="entryLayout" select="$entryLayout"/>
-                    <xsl:with-param name="supplementary-entry-organizer"
-                        select="$supplementary-entry-set"/>
-                    <xsl:with-param name="labelWidth" select="$labelWidth"/>
-                </xsl:call-template>
-            </xsl:for-each>
-
-        </xsl:if>
-
-        <!-- end of Simple entry, supplementary data -->
-
-
-        <!-- === (4) Simple Entry with supplementary data, image map rendition === -->
-
-        <!-- Nothing special needed, since the image isn't being displayed in the static rendition
-             So use (3) for this ine as well -->
-
-        <!-- end of Simple entry, supplementary data, image map rendition -->
+        <!-- end of Simple entry - image rendition -->
 
 
 
-        <!-- === (5) Multiple occurrences of the same entry ==
+        <!-- === (4) Multiple occurrences of the same entry ==
             Entry contains an organizer for MultipleEntry.
             
             The first component in the MultipleEntry organizer is the template for the entries added to the second component
@@ -862,7 +802,7 @@
             </p>
             -->
 
-            <!-- Multiple entry is always Ranked.
+            <!-- Multiple entry can be Ranked or Unranked.
                  If the multiple entry is empty, then don't generate any output.
                  To check this, see if there are any elements in the organizer within the second component of the multiple entry organizer -->
             <xsl:if test="exists($organizer/cda:component[2]/cda:organizer/*)">
@@ -885,76 +825,25 @@
         <!-- End of Multiple occurrences of the same entry -->
 
 
-        <!-- === (6) Multiple occurrences of the same entry, image map rendition ==
-            
+        <!-- === (5) Multiple occurrences of the same entry, image map rendition ==
+             TBD
         -->
 
-
-
-
     </xsl:template>
-
-
-    <!-- === Render entry with supplementary data set  ============================
-         The main entry is rendered as a simple entry with any supplementary SDS rendered alongside.
-         TBD: allow for there to be more than one SDS in the supplementary data -->
-    <xsl:template name="renderEntryWithSDS">
-        <xsl:param name="mainEntry"/>
-        <xsl:param name="entryLayout"/>
-        <xsl:param name="supplementary-entry-organizer"/>
-        <xsl:param name="labelWidth"/>
-
-        <xsl:variable name="mainEntryIRI" select="$mainEntry/cda:id/@extension"/>
-
-        <!-- Done for the entry already
-        <li class="ISO13606-Entry-DisplayName">
-        <xsl:value-of select="$mainEntry/cda:code[@codeSystem='cityEHR']/@displayName"/>
-        </li>
-        
-         -->
-        <!-- render the elements for this entry -->
-        <xsl:for-each select="$mainEntry/cda:value">
-            <xsl:variable name="element" select="."/>
-            <xsl:variable name="elementIRI" select="$element/@extension"/>
-            <li class="{$entryLayout}">
-                <xsl:call-template name="renderCDAElement">
-                    <xsl:with-param name="element" select="$element"/>
-                    <xsl:with-param name="entryIRI" select="$mainEntryIRI"/>
-                    <xsl:with-param name="entryType" select="'Simple'"/>
-                    <xsl:with-param name="entryLayout" select="$entryLayout"/>
-                    <xsl:with-param name="labelWidth" select="$labelWidth"/>
-                    <xsl:with-param name="supplementaryEntry" select="()"/>
-                </xsl:call-template>
-            </li>
-            <xsl:variable name="hasSupplementaryEntry"
-                select="
-                    if (exists($supplementary-entry-organizer)) then
-                        $supplementary-entry-organizer/cda:component/cda:observation/cda:id/@cityEHR:origin = $elementIRI
-                    else
-                        false()"/>
-            <xsl:if test="$hasSupplementaryEntry">
-                <xsl:variable name="supplementaryEntry"
-                    select="$supplementary-entry-organizer/cda:component[cda:observation/cda:id/@cityEHR:origin = $elementIRI]"/>
-                <li class="Unranked">
-                    <xsl:call-template name="renderSupplementaryEntry">
-                        <xsl:with-param name="supplementaryEntry" select="$supplementaryEntry"/>
-                    </xsl:call-template>
-                </li>
-            </xsl:if>
-        </xsl:for-each>
-
-    </xsl:template>
-
 
 
     <!-- === Output a Supplementary Entry (supplementary data set) 
-            
+             The supplementaryEntry is an entryRelationship
          === -->
 
     <xsl:template name="renderSupplementaryEntry">
         <xsl:param name="supplementaryEntry"/>
 
         <xsl:variable name="supplementaryEntryIRI" select="$supplementaryEntry/cda:id/@extension"/>
+
+        <p class="error">
+            <xsl:value-of select="$supplementaryEntryIRI"/>
+        </p>
 
         <!-- Only display SDS if some values were set -->
         <xsl:if test="exists($supplementaryEntry/cda:observation//cda:value[@value != ''])">
@@ -991,26 +880,36 @@
         <xsl:param name="entryLayout"/>
         <xsl:param name="labelWidth"/>
 
-        <!-- Get entryIRI and rendition - works for observation or encounter -->
+        <!-- Get entryIRI and rendition - works for observation, act, encounter, etc -->
         <xsl:variable name="entryIRI" select="$entry/*[1]/cda:id/@extension"/>
 
         <!-- Displaying Event or Folder view, or just showing the current value in a Composition view.
-             There is only one observation/encounter for the entry -->
+             There is only one observation, act, encounter, etc for the entry -->
         <xsl:if
             test="$outputType = 'Event' or $outputType = 'Folder' or ($outputType = 'Composition' and $viewHistory = 'current')">
 
-            <!-- Iterate through each element, provided it is visible -->
+            <!-- Iterate through each element, provided it is visible.
+                 TBD add elements from cda:act, cda:supply, cda:substanceAdministration -->
             <xsl:for-each
-                select="$entry/cda:observation[1]/cda:value[not(@cityEHR:visibility = 'false')] | $entry/cda:encounter[1]/cda:participant/cda:participantRole/cda:playingEntity[not(@cityEHR:visibility = 'false')]">
+                select="
+                    $entry/cda:observation[1]/cda:value[not(@cityEHR:visibility = 'false')] |
+                    $entry/cda:encounter[1]/cda:participant/cda:participantRole/cda:playingEntity[not(@cityEHR:visibility = 'false')]">
+
+                <xsl:variable name="element" select="."/>
+
+                <!-- Set up the supplementary entry for processing on selection of element
+                         Since there is only one element, the supplementary entry should always match the origin of that element -->
+                <xsl:variable name="supplementaryEntry"
+                    select="$entry/cda:observation/cda:entryRelationship[@cityEHR:origin = $element/@extension]"/>
+
                 <li class="{$entryLayout}">
-                    <xsl:variable name="element" select="."/>
                     <xsl:call-template name="renderCDAElement">
                         <xsl:with-param name="element" select="$element"/>
                         <xsl:with-param name="entryIRI" select="$entryIRI"/>
                         <xsl:with-param name="entryType" select="'Simple'"/>
                         <xsl:with-param name="entryLayout" select="$entryLayout"/>
                         <xsl:with-param name="labelWidth" select="$labelWidth"/>
-                        <xsl:with-param name="supplementaryEntry" select="()"/>
+                        <xsl:with-param name="supplementaryEntry" select="$supplementaryEntry"/>
                     </xsl:call-template>
                 </li>
             </xsl:for-each>
@@ -1169,7 +1068,8 @@
              First component of the organizer contains the template entry (used for labels, headings, etc)
              Second component contains the set of recorded entries.
              The second organizer contains a set of organizers, each with the effectiveTime that they were recorded.
-             Each of these organizers contains either a set of components for simple entries (observation) or a set of organizers for enumerated class entries (organizer) === -->
+             Each of these organizers contains a set of components for(observation, act, encounter, supply, substanceAdministration) 
+             Supplementary Data Sets (SDS) are in the entryRelationship element  === -->
 
     <xsl:template name="outputMultipleEntryOrganizer">
         <xsl:param name="organizer"/>
@@ -1762,8 +1662,9 @@
         <xsl:variable name="entryList"
             select="$organizer/cda:component[descendant::cda:value[@value != '']]"/>
 
-        <!-- Only one element - layout is a list -->
-        <xsl:if test="$elementCount = 1">
+        <!-- Only one element - layout is a list
+             2025-03-20 - Deprecated - simpler to process HTML if all cases are handled in the same way-->
+        <xsl:if test="false() and $elementCount = 1">
             <ul class="CDAEntryList">
                 <!-- Only include the header if the (one) element has a displayName  -->
                 <xsl:if
@@ -1778,22 +1679,16 @@
                 </xsl:if>
 
                 <!-- One list item for each entry.
-                     Entry can be a simple entry or entry with element that is an enumerated class -->
+                     Entry in the list is actually a cda:component that contains cda:observation, etc
+                     There should only be one element, but don't assume that (in case the observation template doesn't match the observation -->
                 <xsl:for-each select="$entryList">
                     <xsl:variable name="entry" select="."/>
-                    <xsl:variable name="element"
-                        select="$entry/cda:observation/cda:value | $entry/cda:organizer/cda:component[1]/cda:observation/cda:value"/>
+                    <xsl:variable name="element" select="$entry/cda:observation/cda:value[1]"/>
 
-                    <!-- Set up the supplementary entry for processing on selection of element (but only if this is an enumerated class entry/element.
+                    <!-- Set up the supplementary entry for processing on selection of element
                          Since there is only one element, the supplementary entry should always match the origin of that element -->
-                    <xsl:variable name="supplementary-entry-organizer"
-                        select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
                     <xsl:variable name="supplementaryEntry"
-                        select="
-                            if (exists(supplementary-entry-organizer)) then
-                                $supplementary-entry-organizer/cda:component[cda:observation/cda:id/@cityEHR:origin = $element/@extension]
-                            else
-                                ()"/>
+                        select="$entry/cda:observation/cda:entryRelationship[@cityEHR:origin = $element/@extension]"/>
 
                     <li>
                         <xsl:call-template name="renderCDAElement">
@@ -1812,35 +1707,74 @@
 
         <!-- More than one element - layout is a table -->
         <xsl:if test="$elementCount != 1">
-            <div class="tableContainer">
-                <table class="CDAEntryList">
-                    <!-- Only include the header if there is at least one displayName as a column title -->
-                    <xsl:if
-                        test="exists($observationTemplate/cda:value[@cityEHR:elementDisplayName != ''])">
-                        <thead>
-                            <!-- Header rows with display names of elements
+            <!-- 2025-03-20 - Deprecated - just output the tableContainer div -->
+        </xsl:if>
+        
+        <div class="tableContainer">
+            <table class="CDAEntryList">
+                <!-- Only include the header if there is at least one displayName as a column title -->
+                <xsl:if
+                    test="exists($observationTemplate/cda:value[@cityEHR:elementDisplayName != ''])">
+                    <thead>
+                        <!-- Header rows with display names of elements
                     First header row contains the element/cluster cityEHR:elementDisplayNames, if there are any. 
                 -->
-                            <tr>
-                                <xsl:for-each select="$observationTemplate/cda:value">
-                                    <th>
-                                        <span class="ISO13606-Element-DisplayName">
-                                            <xsl:value-of select="./@cityEHR:elementDisplayName"/>
-                                        </span>
-                                    </th>
-                                </xsl:for-each>
-                            </tr>
-                        </thead>
-                    </xsl:if>
+                        <tr>
+                            <xsl:for-each select="$observationTemplate/cda:value">
+                                <th>
+                                    <span class="ISO13606-Element-DisplayName">
+                                        <xsl:value-of select="./@cityEHR:elementDisplayName"/>
+                                    </span>
+                                </th>
+                            </xsl:for-each>
+                        </tr>
+                    </thead>
+                </xsl:if>
 
-                    <tbody>
-                        <xsl:for-each select="$entryList">
-                            <xsl:variable name="entry" select="."/>
-                            <tr>
-                                <!-- Multiple entry organizer contains simple entries (just allowing cda:observation here)
-                                     or -->
-                                <xsl:for-each select="$entry/cda:observation/cda:value">
+                <tbody>
+                    <xsl:for-each select="$entryList">
+                        <xsl:variable name="entry" select="."/>
+                        <tr>
+                            <!-- Multiple entry organizer contains simple entries (just allowing cda:observation here)
+                                     ^^^ should also have act, encounter, supply, substanceAdministration -->
+                            <xsl:for-each select="$entry/cda:observation/cda:value">
+                                <xsl:variable name="element" select="."/>
+                                <xsl:variable name="supplementaryEntry"
+                                    select="$entry/cda:observation/cda:entryRelationship[@cityEHR:origin = $element/@extension]"/>
+                                <td>
+                                    <xsl:call-template name="renderCDAElement">
+                                        <xsl:with-param name="element" select="$element"/>
+                                        <xsl:with-param name="entryIRI" select="$entryIRI"/>
+                                        <xsl:with-param name="entryType" select="'MultipleEntry'"/>
+                                        <xsl:with-param name="entryLayout" select="'Ranked'"/>
+                                        <xsl:with-param name="labelWidth" select="''"/>
+                                        <xsl:with-param name="supplementaryEntry"
+                                            select="$supplementaryEntry"/>
+                                    </xsl:call-template>
+                                </td>
+                            </xsl:for-each>
+
+                            <!--  2025-04-15 Deprecated - now using entryRelationship
+                                      Multiple entry organizer contains entries with enumerated class values.
+                                     The entry is represented as an organizer.
+                                      First component in the organizer is the entry, second component is the set of supplementary data sets -->
+                            <xsl:if
+                                test="false() and $entry/cda:organizer[@classCode = 'EnumeratedClassEntry']">
+
+                                <!-- Set up the main entry that has enumeratedClass element -->
+                                <xsl:variable name="mainEntry"
+                                    select="$entry/cda:organizer/cda:component[1]/cda:observation"/>
+
+                                <!-- Set up the supplementary entry for processing on selection of element -->
+                                <xsl:variable name="supplementary-entry-organizer"
+                                    select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
+
+                                <xsl:for-each select="$mainEntry/cda:value">
                                     <xsl:variable name="element" select="."/>
+                                    <xsl:variable name="elementIRI" select="$element/@extension"/>
+                                    <xsl:variable name="supplementaryEntry"
+                                        select="$supplementary-entry-organizer/cda:component[cda:observation/cda:id/@cityEHR:origin = $elementIRI]"/>
+
                                     <td>
                                         <xsl:call-template name="renderCDAElement">
                                             <xsl:with-param name="element" select="$element"/>
@@ -1849,53 +1783,20 @@
                                                 select="'MultipleEntry'"/>
                                             <xsl:with-param name="entryLayout" select="'Ranked'"/>
                                             <xsl:with-param name="labelWidth" select="''"/>
-                                            <xsl:with-param name="supplementaryEntry" select="()"/>
+                                            <xsl:with-param name="supplementaryEntry"
+                                                select="$supplementaryEntry"/>
                                         </xsl:call-template>
+
                                     </td>
                                 </xsl:for-each>
+                            </xsl:if>
 
-                                <!-- Multiple entry organizer contains entries with enumerated class values.
-                            The entry is represented as an organizer.
-                            First component in the organizer is the entry, second component is the set of supplementary data sets -->
-                                <xsl:if
-                                    test="$entry/cda:organizer[@classCode = 'EnumeratedClassEntry']">
+                        </tr>
+                    </xsl:for-each>
+                </tbody>
+            </table>
+        </div>
 
-                                    <!-- Set up the main entry that has enumeratedClass element -->
-                                    <xsl:variable name="mainEntry"
-                                        select="$entry/cda:organizer/cda:component[1]/cda:observation"/>
-
-                                    <!-- Set up the supplementary entry for processing on selection of element -->
-                                    <xsl:variable name="supplementary-entry-organizer"
-                                        select="$entry/cda:organizer/cda:component[2]/cda:organizer"/>
-
-                                    <xsl:for-each select="$mainEntry/cda:value">
-                                        <xsl:variable name="element" select="."/>
-                                        <xsl:variable name="elementIRI" select="$element/@extension"/>
-                                        <xsl:variable name="supplementaryEntry"
-                                            select="$supplementary-entry-organizer/cda:component[cda:observation/cda:id/@cityEHR:origin = $elementIRI]"/>
-
-                                        <td>
-                                            <xsl:call-template name="renderCDAElement">
-                                                <xsl:with-param name="element" select="$element"/>
-                                                <xsl:with-param name="entryIRI" select="$entryIRI"/>
-                                                <xsl:with-param name="entryType"
-                                                  select="'MultipleEntry'"/>
-                                                <xsl:with-param name="entryLayout" select="'Ranked'"/>
-                                                <xsl:with-param name="labelWidth" select="''"/>
-                                                <xsl:with-param name="supplementaryEntry"
-                                                  select="$supplementaryEntry"/>
-                                            </xsl:call-template>
-
-                                        </td>
-                                    </xsl:for-each>
-                                </xsl:if>
-
-                            </tr>
-                        </xsl:for-each>
-                    </tbody>
-                </table>
-            </div>
-        </xsl:if>
     </xsl:template>
 
     <!-- === Render element (i.e. cda:value, cda:playingEntity, etc) ============================
@@ -1905,6 +1806,7 @@
         Recursive call to handle clusters.
         
         Can be called without the supplementaryEntry if necessary.
+        If set, supplementaryEntry is a cda:entryRelationship
         
         ======================================================================================= -->
 

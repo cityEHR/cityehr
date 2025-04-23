@@ -1549,17 +1549,17 @@
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/dictionaryHandle"
                         value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/dictionary/',xxf:instance('view-parameters-instance')/specialtyId)"/>
 
-                    <!-- User html cache hamdle -->
+                    <!-- User html cache handle -->
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/htmlCacheHandle"
-                        value="concat(xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/htmlCache')"/>
+                        value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/htmlCache')"/>
 
-                    <!-- User xml cache hamdle -->
+                    <!-- User xml cache handle -->
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/xmlCacheHandle"
-                        value="concat(xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/xmlCache')"/>
+                        value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/xmlCache')"/>
 
-                    <!-- User binary cache hamdle -->
+                    <!-- User binary cache handle -->
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/binaryCacheHandle"
-                        value="concat(xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
+                        value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
 
                     <!-- Common information model -->
                     <xxf:variable name="commonModelIRI"

@@ -715,8 +715,11 @@
                 <!-- Save is for annotations only -->
                 <xf:bind nodeset="action[@id='save']/@display"
                     calculate="if (exists(xxf:instance('annotations-instance')/annotation)) then 'show' else 'hidden'"/>
-                <!-- Show XML only when debugging -->
+                <!-- Show HTML, XML only when debugging -->
                 <xf:bind nodeset="action[@id='xml']/@display"
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
+                />
+                <xf:bind nodeset="action[@id='html']/@display"
                     calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
                 />
             </xf:bind>
@@ -753,6 +756,15 @@
                 <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
                     <xxf:context name="title" select="''"/>
                     <xxf:context name="displayXML" select="xxf:instance('event-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+            
+            <!-- Application defined action to show HTML -->
+            <xf:action ev:event="html">
+                <!-- Display the html instance -->
+                <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                    <xxf:context name="title" select="''"/>
+                    <xxf:context name="displayXML" select="xxf:instance('html-instance')"/>
                 </xf:dispatch>
             </xf:action>
 

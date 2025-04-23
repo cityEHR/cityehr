@@ -2316,7 +2316,7 @@
                     <data code="#CityEHR:Class:Diagnosis:BacterialInfection" codeSystem="CityEHR" value="#CityEHR:Class:Diagnosis:BacterialInfection"/>
                 </element>
                 
-                Then get the list of values for the class from the data dictionary:
+                Then get the list of values for the class from the (class) data dictionary:
                 <element root="cityEHR" extension="#CityEHR:Class:Diagnosis" cityEHR:elementDisplayName="">
                     <data code="#CityEHR:Class:Diagnosis:BacterialInfection" codeSystem="cityEHR" value="Bacterial Infection">
                         <data code="#CityEHR:Class:Diagnosis:Osteomyelitis" codeSystem="cityEHR" value="Osteomyelitis"/>
@@ -2344,7 +2344,7 @@
                     <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
 
                         <!-- Get the class and entry node from the data dictionary.
-                                 These can be done in XSLT since they don't change -->
+                             These can be done in XSLT since they don't change -->
                         <xsl:variable name="classElement"
                             select="$dictionary/iso-13606:EHR_Extract/iso-13606:elementCollection/iso-13606:element[@root = $root]/iso-13606:data[1]"/>
                         <xsl:variable name="classCode" select="$classElement/@code"/>
@@ -2632,7 +2632,7 @@
                             </xf:trigger>
 
                             <!-- Display the details of values in the SDS that have been set.
-                                     This includes elements that are within clusters (i.e. cda:value/cda:value-->
+                                 This includes elements that are within clusters (i.e. cda:value/cda:value-->
 
                             <xxf:variable name="xformsHasSetValues"
                                 select="exists($xformsSupplementaryEntry/cda:observation/descendant::cda:value[@value != ''])"/>
@@ -2689,8 +2689,8 @@
                                 
                                  On change insert the new supplementary data set, if the selected node has one.
 
-                                The supplementary data set is identified in the organizer by:
-                                <id root="cityEHR" extension="#ISO-13606:Entry:Infection" cityEHR:origin="#ISO-13606:Element:Diagnosis"/>
+                                The supplementary data set is identified in the entryRelationship by the cityEHR:origin attribute:
+                                    <cda:entryRelationship cityEHR:origin="#ISO-13606:Element:Diagnosis"/>
                                 
                                 The selected SDS is identified by $extension and $xformsSelectedSDS
                                 

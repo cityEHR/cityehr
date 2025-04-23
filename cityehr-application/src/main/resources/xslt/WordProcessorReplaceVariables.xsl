@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- ====================================================================
     WordProcessorReplaceVariables.xsl
+    
+    Invoked from cityEHRWordProcessorCDA.xpl
+    
     Main input is the content from ODF (content.xml) or MS Word document (word/document.xml)
-    Finds variables in the text content of the form #ISO-13606:Entry:letterheadLeft or #ISO-13606:Entry:Demographics/#ISO-13606:Element:Surname 
+    Finds variables in the text content of the form 
+    
+        #ISO-13606:Entry:Demographics 
+     or #ISO-13606:Entry:Demographics/#ISO-13606:Element:Surname 
     
     The other inputs are:
     
         html - has the patient data held as HTML converted from CDA
         parameters - the combined parameters (view, system, session)
         
-    Replaces variables inthe wordprocessor XML with content generated from the input HTML document
+    Replaces variables in the wordprocessor XML with content generated from the input HTML document
        
     Copyright (C) 2013-2021 John Chelsom.
     

@@ -1851,6 +1851,19 @@
          maxResults parameter is optional - default is to return all results.
          The resource passed may be as instance or a node in an instance.
          
+         If sortOrder is definde (ascending | descending) then the aggregated results are sorted using @cityEHR:orderBy
+         Any query that is to have results sorted must return results of the form:
+         
+         <response>
+            <resultEntry @cityEHR:orderBy="xxx">
+              ...
+            <resultEntry/>  
+            <resultEntry @cityEHR:orderBy="yyy">
+              ...
+            <resultEntry/>  
+            ...
+         </response>
+         
          status is unset ('') on success, otherwise 'dalQuery-failed'
        . -->
     <xf:action ev:event="dal-query">
@@ -1859,6 +1872,7 @@
         <xxf:variable name="physicalClusterNode" select="event('physicalClusterNode')"/>
         <xxf:variable name="maxResults" select="event('maxResults')"/>
         <xxf:variable name="query" select="event('query')"/>
+        <xxf:variable name="sortOrder" select="event('sortOrder')"/>
         <xxf:variable name="response" select="event('response')"/>
         <xxf:variable name="status" select="event('status')"/>
 
@@ -1963,10 +1977,38 @@
                     <xf:insert context="xxf:instance('dalAggregateResponse-instance')"
                         origin="$result"/>
                 </xf:action>
+
+
             </xf:action>
 
-            <!-- Set the return response -->
-            <xf:insert nodeset="$response" origin="xxf:instance('dalAggregateResponse-instance')"/>
+            <!-- Set the return response.
+                 Sorted by sortOrder, if specified. -->
+            <xf:action if="exists($sortOrder) and $sortOrder=('ascending','descending')">
+
+                <!-- The sorted result set applies the sort order to the full set.
+                     But xxf:sort throws an exception if the sort criteria (second argument) dosn't exist on any of the elements to be sorted.
+                     So make sure only sortable elements are included in first argument -->
+                <xxf:variable name="sortableResults"
+                    select="xxf:instance('dalAggregateResponse-instance')/*[@cityEHR:orderBy]"/>
+                <xxf:variable name="sortedResults"
+                    select="xxf:sort($sortableResults,@cityEHR:orderBy,'text', $sortOrder)"/>
+
+                <!-- Transfer sorted results to the response instance -->
+                <xf:action if="exists($sortedResults)" xxf:iterate="$sortedResults">
+                    <xxf:variable name="result" select="."/>
+                    <xf:insert context="$response" nodeset="*" origin="$result"/>
+                </xf:action>
+
+
+            </xf:action>
+
+            <!-- No sortOrder specified -->
+            <xf:action if="not(exists($sortOrder) and $sortOrder=('ascending','descending'))">
+                <xf:insert nodeset="$response"
+                    origin="xxf:instance('dalAggregateResponse-instance')"/>
+            </xf:action>
+
+            <!-- Set the return status -->
             <xf:setvalue ref="$status" value="xxf:instance('databaseControl-instance')/status"/>
         </xf:action>
 
@@ -2224,7 +2266,7 @@
             </xf:action>
 
         </xf:action>
-        
+
         <!-- Set the return status -->
         <xf:setvalue ref="$status" value="xxf:instance('databaseControl-instance')/status"/>
 

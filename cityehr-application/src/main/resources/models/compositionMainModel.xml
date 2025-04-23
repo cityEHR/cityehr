@@ -723,9 +723,7 @@
         </xf:action>
 
         <!-- Insert SVG image maps into the storage instance-->
-        <xf:action>
-            
-        </xf:action>
+        <xf:action> </xf:action>
 
 
         <!-- Set the publishHandle from patientId and handleId (both already set)  -->
@@ -764,7 +762,7 @@
             if="not(exists($sourceAction)) or $sourceAction/cda:id/@root='#CityEHR:Notification'">
             <xf:dispatch name="check-triggers" target="main-model"/>
         </xf:action>
-        
+
         <!-- Export the composition if configured -->
         <xf:action
             if="xxf:instance('application-parameters-instance')/importExport/exportPipeline/exportOnCommit/@value='true'">
@@ -2010,6 +2008,7 @@
         <xxf:variable name="binaryCacheLocation"
             select="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
 
+        <!-- Save binary letter to the binary cache -->
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$binaryCacheLocation"/>

@@ -2244,6 +2244,19 @@
                  And the language must be the baseLanguage for the applcation
             -->
             <xf:action ev:event="load-informationModel">
+                <xxf:variable name="informationModel" select="event('informationModel')"/>
+
+                <!-- Set the informationModelType, specialtyIRI and modelIRI.
+                     Need to set specialty, because this may have been a selection from the fullModelSet -->
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"
+                    value="$informationModel/specialtyIRI"/>
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/manageInformationModel/informationModelType"
+                    value="$informationModel/informationModelType"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/manageInformationModel/modelIRI"
+                    value="$informationModel/modelIRI"/>
+
 
                 <!-- Load the information model into the resource-instance -->
                 <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
@@ -2256,126 +2269,162 @@
                         select="xxf:instance('control-instance')/manageInformationModel/status"/>
                 </xf:dispatch>
 
-                <!-- Set the language.
+                <!-- Check the specialtyIRI  (first one only, just in case) 
+                     The specialty in the model loaded must match the specialty in the selection -->
+                <xxf:variable name="loadedSpecialtyIRI"
+                    select="if (exists(xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#ISO-13606:Folder']/owl:Class[1]/@IRI)) then xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#ISO-13606:Folder']/owl:Class[1]/@IRI[1] else ''"/>
+
+                <!-- Specialty is not correct -->
+                <xf:action
+                    if="not(xxf:instance('control-instance')/manageInformationModel/specialtyIRI=$loadedSpecialtyIRI)">
+                    <!-- Reset informationModelResource -->
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/informationModelResource"
+                        value="''"/>
+
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                        value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='loadedModelSpecialtyMismatch']"
+                    />
+                </xf:action>
+
+                <!-- Only continue if the specialty is correct -->
+                <xf:action
+                    if="xxf:instance('control-instance')/manageInformationModel/specialtyIRI=$loadedSpecialtyIRI">
+
+                    <!-- Set the language.
                      baseLanguage is the base language for the application (that was used to develop the ontology)
                      modelBaseLanguageCode is the language (if any) for the ontology - must be the baseLanguage
                      language is selected by the user as the language for language packs, so is set initially to the baseLanguage -->
-                <xxf:variable name="baseLanguageCode"
-                    select="xxf:instance('control-instance')/managedApplication/baseLanguage/@code"/>
-                <xxf:variable name="modelBaseLanguageCode"
-                    select="if (exists(xxf:instance('resource-instance')/owl:DataPropertyAssertion[owl:DataProperty/@IRI='#hasBaseLanguage'][1]/owl:Literal)) then xxf:instance('resource-instance')/owl:DataPropertyAssertion[owl:DataProperty/@IRI='#hasBaseLanguage'][1]/owl:Literal else $baseLanguageCode"/>
+                    <xxf:variable name="baseLanguageCode"
+                        select="xxf:instance('control-instance')/managedApplication/baseLanguage/@code"/>
+                    <xxf:variable name="modelBaseLanguageCode"
+                        select="if (exists(xxf:instance('resource-instance')/owl:DataPropertyAssertion[owl:DataProperty/@IRI='#hasBaseLanguage'][1]/owl:Literal)) then xxf:instance('resource-instance')/owl:DataPropertyAssertion[owl:DataProperty/@IRI='#hasBaseLanguage'][1]/owl:Literal else $baseLanguageCode"/>
 
-                <!-- Set baseLanguage and language (they are the same when model is first loaded)  -->
-                <xxf:variable name="supportedLanguageList"
-                    select="xxf:instance('application-parameters-instance')/languagePacks/language/lower-case(@code)"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/baseLanguage/@code"
-                    value="lower-case($baseLanguageCode)"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/baseLanguage/@displayName"
-                    value="if ($baseLanguageCode = $supportedLanguageList) then xxf:instance('application-parameters-instance')/languagePacks/language[lower-case(@code)=$baseLanguageCode]/@displayName else $baseLanguageCode"/>
+                    <!-- Set baseLanguage and language (they are the same when model is first loaded)  -->
+                    <xxf:variable name="supportedLanguageList"
+                        select="xxf:instance('application-parameters-instance')/languagePacks/language/lower-case(@code)"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/baseLanguage/@code"
+                        value="lower-case($baseLanguageCode)"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/baseLanguage/@displayName"
+                        value="if ($baseLanguageCode = $supportedLanguageList) then xxf:instance('application-parameters-instance')/languagePacks/language[lower-case(@code)=$baseLanguageCode]/@displayName else $baseLanguageCode"/>
 
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/language/@code"
-                    value="lower-case($baseLanguageCode)"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/language/@displayName"
-                    value="if ($baseLanguageCode = $supportedLanguageList) then xxf:instance('application-parameters-instance')/languagePacks/language[lower-case(@code)=$baseLanguageCode]/@displayName else $baseLanguageCode"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/language/@code"
+                        value="lower-case($baseLanguageCode)"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/language/@displayName"
+                        value="if ($baseLanguageCode = $supportedLanguageList) then xxf:instance('application-parameters-instance')/languagePacks/language[lower-case(@code)=$baseLanguageCode]/@displayName else $baseLanguageCode"/>
 
-                <!-- Generate the termFilterCharacterSet
+                    <!-- Generate the termFilterCharacterSet
                      This is the set of first letters for terms in the information model ontology -->
-                <xxf:variable name="termIRIList"
-                    select="xxf:instance('resource-instance')/owl:ClassAssertion[owl:Class/@IRI='#CityEHR:Term']/owl:NamedIndividual/@IRI"/>
-                <xxf:variable name="termCharacters"
-                    select="$termIRIList/upper-case(substring(substring-after(.,'#CityEHR:Term:'),1,1))"/>
-                <xxf:variable name="initialCharacters" select="distinct-values($termCharacters)"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/termFilterCharacterSet"
-                    value="string-join($initialCharacters,xxf:instance('view-parameters-instance')/resultSeparator)"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/termFilterText"
-                    value="$initialCharacters[1]"/>
+                    <xxf:variable name="termIRIList"
+                        select="xxf:instance('resource-instance')/owl:ClassAssertion[owl:Class/@IRI='#CityEHR:Term']/owl:NamedIndividual/@IRI"/>
+                    <xxf:variable name="termCharacters"
+                        select="$termIRIList/upper-case(substring(substring-after(.,'#CityEHR:Term:'),1,1))"/>
+                    <xxf:variable name="initialCharacters" select="distinct-values($termCharacters)"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/termFilterCharacterSet"
+                        value="string-join($initialCharacters,xxf:instance('view-parameters-instance')/resultSeparator)"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/termFilterText"
+                        value="$initialCharacters[1]"/>
 
-                <!-- Set the information model classIRI (first one only, just in case) -->
-                <xf:setvalue ref="xxf:instance('control-instance')/manageInformationModel/classIRI"
-                    value="if (exists(xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#CityEHR:Class']/owl:Class[1]/@IRI)) then xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#CityEHR:Class']/owl:Class[1]/@IRI[1] else ''"/>
+                    <!-- Set the information model classIRI (first one only, just in case) -->
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/classIRI"
+                        value="if (exists(xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#CityEHR:Class']/owl:Class[1]/@IRI)) then xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#CityEHR:Class']/owl:Class[1]/@IRI[1] else ''"/>
 
-                <!-- Set the specialtyIRI  (first one only, just in case) -->
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"
-                    value="if (exists(xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#ISO-13606:Folder']/owl:Class[1]/@IRI)) then xxf:instance('resource-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#ISO-13606:Folder']/owl:Class[1]/@IRI[1] else ''"/>
+                    <!-- Set the modelIRI.
+                         Its either the classIRI or the specialtyIRI -->
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/modelIRI"
+                        value="if (xxf:instance('control-instance')/manageInformationModel/informationModelType = 'Class') then xxf:instance('control-instance')/manageInformationModel/classIRI else xxf:instance('control-instance')/manageInformationModel/specialtyIRI"/>
 
-                <!-- Set the modelIRI.
-                     Its either the classIRI or the specialtyIRI -->
-                <xf:setvalue ref="xxf:instance('control-instance')/manageInformationModel/modelIRI"
-                    value="if (xxf:instance('control-instance')/manageInformationModel/informationModelType = 'Class') then xxf:instance('control-instance')/manageInformationModel/classIRI else xxf:instance('control-instance')/manageInformationModel/specialtyIRI"/>
+                    <!-- Load the dictionary for the model (specialty or class).
+                         Dictionary is loaded to dictionary-instance -->
+                    <xf:dispatch name="load-dictionary" target="dictionary-model">
+                        <xxf:context name="specialtyIRI"
+                            select="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"/>
+                        <xxf:context name="dictionaryIRI"
+                            select="xxf:instance('control-instance')/manageInformationModel/modelIRI"
+                        />
+                    </xf:dispatch>
 
-                <!-- Load the dictionary for the model (specialty or class).
-                     Dictionary is loaded to dictionary-instance -->
-                <xf:dispatch name="load-dictionary" target="dictionary-model">
-                    <xxf:context name="specialtyIRI"
-                        select="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"/>
-                    <xxf:context name="dictionaryIRI"
-                        select="xxf:instance('control-instance')/manageInformationModel/modelIRI"/>
-                </xf:dispatch>
+                    <!-- If a class model, also load the specialty dictionary.
+                         Dictionary is loaded to specialtyDictionary-instance -->
+                    <xf:action
+                        if="xxf:instance('control-instance')/manageInformationModel/informationModelType = 'Class'">
+                        <xf:dispatch name="load-dictionaryInstance" target="dictionary-model">
+                            <xxf:context name="specialtyIRI"
+                                select="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"/>
+                            <xxf:context name="dictionaryInstance"
+                                select="xxf:instance('specialtyDictionary-instance')"/>
+                        </xf:dispatch>
+                    </xf:action>
 
-                <!-- Set the termFilterComposition for language packs -->
-                <xxf:variable name="firstComposition"
-                    select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition[1]"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/termFilterComposition"
-                    value="$firstComposition/@code"/>
-                <xf:dispatch name="get-compositionTerms" target="main-model">
-                    <xxf:context name="compositionIRI"
-                        select="xxf:instance('control-instance')/manageInformationModel/termFilterComposition"
-                    />
-                </xf:dispatch>
+                    <!-- Set the termFilterComposition for language packs -->
+                    <xxf:variable name="firstComposition"
+                        select="xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1]/iso-13606:composition[1]"/>
+                    <xf:setvalue
+                        ref="xxf:instance('control-instance')/manageInformationModel/termFilterComposition"
+                        value="$firstComposition/@code"/>
+                    <xf:dispatch name="get-compositionTerms" target="main-model">
+                        <xxf:context name="compositionIRI"
+                            select="xxf:instance('control-instance')/manageInformationModel/termFilterComposition"
+                        />
+                    </xf:dispatch>
 
-                <!-- Create ISO-13606 model if this is a Specialty model -->
-                <xf:action
-                    if="xxf:instance('control-instance')/manageInformationModel/informationModelType='Specialty'">
-                    <!-- Run transform to create ISO-13606 model from the information model (ontology) -->
-                    <xf:delete nodeset="xxf:instance('ISO-13606-instance')/*"/>
-                    <xxf:variable name="xsltPipeline"
-                        select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/convertOWL2ISO13606Model.xpl')"/>
-                    <xf:insert context="xxf:instance('ISO-13606-instance')"
-                        origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('resource-instance'), 'data')"
-                    />
-                </xf:action>
+                    <!-- Create ISO-13606 model if this is a Specialty model -->
+                    <xf:action
+                        if="xxf:instance('control-instance')/manageInformationModel/informationModelType='Specialty'">
+                        <!-- Run transform to create ISO-13606 model from the information model (ontology) -->
+                        <xf:delete nodeset="xxf:instance('ISO-13606-instance')/*"/>
+                        <xxf:variable name="xsltPipeline"
+                            select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/convertOWL2ISO13606Model.xpl')"/>
+                        <xf:insert context="xxf:instance('ISO-13606-instance')"
+                            origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('resource-instance'), 'data')"
+                        />
+                    </xf:action>
 
-                <!-- Set the ontology view selection.
+                    <!-- Set the ontology view selection.
                      Get the first option from the list for this information model type.
                      This option is an element with a value (the selection) and attributes, including the type of the view -->
-                <xxf:variable name="selectedOption"
-                    select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/ontologyView/options[@type=xxf:instance('control-instance')/manageInformationModel/informationModelType]/option[1]"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/ontologyView"
-                    value="$selectedOption"/>
-                <xf:setvalue
-                    ref="xxf:instance('control-instance')/manageInformationModel/informationModelDisplayType"
-                    value="$selectedOption/@type"/>
-
-                <xxf:variable name="informationModelDisplayType" select="$selectedOption/@type"/>
-
-                <!-- Run transformation to formatted model (ontology) -->
-                <xf:action if="$informationModelDisplayType='nodeList'">
+                    <xxf:variable name="selectedOption"
+                        select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/ontologyView/options[@type=xxf:instance('control-instance')/manageInformationModel/informationModelType]/option[1]"/>
                     <xf:setvalue
-                        ref="xxf:instance('control-instance')/enumeratedClassSelection/selectedNode"
-                        value=""/>
-                    <xf:delete
-                        nodeset="xxf:instance('control-instance')/enumeratedClassSelection/suppDataSet/*"/>
-                    <!-- Run transformation to create node list from the information model (ontology) -->
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/informationModelType"
-                        value="$selectedOption/informationModelType"/>
+                        ref="xxf:instance('control-instance')/manageInformationModel/ontologyView"
+                        value="$selectedOption"/>
                     <xf:setvalue
-                        ref="xxf:instance('view-parameters-instance')/informationModelDisplay"
-                        value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/ontologyView/options[@type=$selectedOption/informationModelType]/option[@type='nodeList'][1]"/>
-                    <xxf:variable name="xsltPipeline"
-                        select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/convertOWL2NodeDisplay.xpl')"/>
-                    <xf:insert nodeset="xxf:instance('html-instance')"
-                        origin="xxf:call-xpl($xsltPipeline, ('instance','parameters'),  (xxf:instance('resource-instance'),xxf:instance('view-parameters-instance')) , 'data')"
-                    />
+                        ref="xxf:instance('control-instance')/manageInformationModel/informationModelDisplayType"
+                        value="$selectedOption/@type"/>
+
+                    <xxf:variable name="informationModelDisplayType" select="$selectedOption/@type"/>
+
+                    <!-- Run transformation to formatted model (ontology) -->
+                    <xf:action if="$informationModelDisplayType='nodeList'">
+                        <xf:setvalue
+                            ref="xxf:instance('control-instance')/enumeratedClassSelection/selectedNode"
+                            value=""/>
+                        <xf:delete
+                            nodeset="xxf:instance('control-instance')/enumeratedClassSelection/suppDataSet/*"/>
+                        <!-- Run transformation to create node list from the information model (ontology) -->
+                        <xf:setvalue
+                            ref="xxf:instance('view-parameters-instance')/informationModelType"
+                            value="$selectedOption/informationModelType"/>
+                        <xf:setvalue
+                            ref="xxf:instance('view-parameters-instance')/informationModelDisplay"
+                            value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/ontologyView/options[@type=$selectedOption/informationModelType]/option[@type='nodeList'][1]"/>
+                        <xxf:variable name="xsltPipeline"
+                            select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/convertOWL2NodeDisplay.xpl')"/>
+                        <xf:insert nodeset="xxf:instance('html-instance')"
+                            origin="xxf:call-xpl($xsltPipeline, ('instance','parameters'),  (xxf:instance('resource-instance'),xxf:instance('view-parameters-instance')) , 'data')"
+                        />
+                    </xf:action>
+
                 </xf:action>
+
             </xf:action>
 
 
@@ -6527,8 +6576,8 @@
             </xf:submission>
 
             <!-- Get the latest cda:entry (used to get entry with the patientId) -->
-            <xf:instance id="getLatestEntryXQuery-instance"
-                src="oxf:/apps/ehr/xquery/getLatestEntryXQuery.xml"/>
+            <xf:instance id="getLatestEntrySetXQuery-instance"
+                src="oxf:/apps/ehr/xquery/getLatestEntrySetXQuery.xml"/>
             <xf:instance id="latestEntry-instance">
                 <eventValues/>
             </xf:instance>
@@ -6558,12 +6607,13 @@
                 <xxf:variable name="entryIRI" select="event('entryIRI')"/>
 
                 <!-- Set up query parameters -->
-                <xf:setvalue ref="xxf:instance('getLatestEntryXQuery-instance')/entryIRI"
+                <xf:setvalue ref="xxf:instance('getLatestEntrySetXQuery-instance')/entryIRI"
                     value="$entryIRI"/>
-                <xf:setvalue ref="xxf:instance('getLatestEntryXQuery-instance')/evaluationContext"
+                <xf:setvalue
+                    ref="xxf:instance('getLatestEntrySetXQuery-instance')/evaluationContext"
                     value="''"/>
                 <xf:setvalue ref="xxf:instance('cda-query-instance')/exist:text"
-                    value="xxf:instance('getLatestEntryXQuery-instance')"/>
+                    value="xxf:instance('getLatestEntrySetXQuery-instance')"/>
                 <!-- Set up storageObject - uses source/patientId -->
                 <xf:setvalue ref="xxf:instance('control-instance')/storageObject"
                     value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/',$informationType,'/',$patientId)"/>
@@ -9456,12 +9506,23 @@
                         select="xxf:instance('control-instance')/managedApplication"/>
 
                     <!-- Set up common model dictionary in commonModelDictionary-instance -->
+                    <!--
                     <xf:dispatch name="load-commonModelDictionary" target="dictionary-model">
                         <xxf:context name="applicationIRI"
                             select="$managedApplication/applicationIRI"/>
                         <xxf:context name="commonModelIRI"
                             select="$managedApplication/commonModelIRI"/>
                     </xf:dispatch>
+-->
+                    <xf:dispatch name="load-dictionaryInstance" target="dictionary-model">
+                        <xxf:context name="applicationIRI"
+                            select="$managedApplication/applicationIRI"/>
+                        <xxf:context name="specialtyIRI" select="$managedApplication/commonModelIRI"/>
+                        <xxf:context name="dictionaryInstance"
+                            select="xxf:instance('commonModelDictionary-instance')"/>
+                    </xf:dispatch>
+
+                    <!-- Set the directory list for the common model -->
                     <xf:dispatch name="set-directoryList" target="application-model">
                         <xxf:context name="dictionary-instance"
                             select="xxf:instance('commonModelDictionary-instance')"/>
@@ -9498,12 +9559,23 @@
                         select="xxf:instance('control-instance')/managedApplication"/>
 
                     <!-- Set up common model dictionary in commonModelDictionary-instance -->
+                    <!--
                     <xf:dispatch name="load-commonModelDictionary" target="dictionary-model">
                         <xxf:context name="applicationIRI"
                             select="$managedApplication/applicationIRI"/>
                         <xxf:context name="commonModelIRI"
                             select="$managedApplication/commonModelIRI"/>
                     </xf:dispatch>
+                    -->
+                    <!-- Set the directory list for the common model -->
+                    <xf:dispatch name="load-dictionaryInstance" target="dictionary-model">
+                        <xxf:context name="applicationIRI"
+                            select="$managedApplication/applicationIRI"/>
+                        <xxf:context name="specialtyIRI" select="$managedApplication/commonModelIRI"/>
+                        <xxf:context name="dictionaryInstance"
+                            select="xxf:instance('commonModelDictionary-instance')"/>
+                    </xf:dispatch>
+
                     <xf:dispatch name="set-directoryList" target="application-model">
                         <xxf:context name="dictionary-instance"
                             select="xxf:instance('commonModelDictionary-instance')"/>
@@ -13396,6 +13468,7 @@
                                                   </xf:input>
                                                   </xhtml:td>
                                                 </xhtml:tr>
+
                                                 <!-- Password can be changed if editAccount is true -->
                                                 <xxf:variable name="changePasswordClass"
                                                   select="if ($editAccount='true') then '' else 'hidden'"/>
@@ -13413,6 +13486,7 @@
                                                   </xf:group>
                                                   </xhtml:td>
                                                 </xhtml:tr>
+
                                                 <!-- Display/edit general account details as specified in view-parameters -->
                                                 <xf:repeat nodeset="$userAccountDetails/item">
                                                   <xxf:variable name="item" select="."/>
@@ -13722,10 +13796,12 @@
                                                 <xf:value ref="./handle"/>
                                             </xf:itemset>
                                             <xf:action ev:event="xforms-value-changed">
-                                                <!-- Clear systenError log -->
+                                                <!-- Clear systenError log - not from 2025-04=12 -->
+                                                <!--
                                                 <xf:setvalue
                                                   ref="xxf:instance('view-parameters-instance')/systemError"
                                                   value="''"/>
+                                                  -->
                                                 <!-- Load the information model, if one was selected 
                                                      (Summary of all models sets informationModelResource to '') -->
                                                 <xf:action
@@ -13737,20 +13813,12 @@
                                                   <!-- Get the selected model -->
                                                   <xxf:variable name="selectedModel"
                                                   select="$modelSet[handle=xxf:instance('control-instance')/manageInformationModel/informationModelResource]"/>
-                                                  <!-- Set the informationModelType, specialtyIRI and modelIRI.
-                                                          Need to set specialty, because this may have been a selection from the fullModelSet -->
-                                                  <xf:setvalue
-                                                  ref="xxf:instance('control-instance')/manageInformationModel/specialtyIRI"
-                                                  value="$selectedModel/specialtyIRI"/>
-                                                  <xf:setvalue
-                                                  ref="xxf:instance('control-instance')/manageInformationModel/informationModelType"
-                                                  value="$selectedModel/informationModelType"/>
-                                                  <xf:setvalue
-                                                  ref="xxf:instance('control-instance')/manageInformationModel/modelIRI"
-                                                  value="$selectedModel/modelIRI"/>
                                                   <!-- Load the model -->
                                                   <xf:dispatch name="load-informationModel"
-                                                  target="main-model"/>
+                                                  target="main-model">
+                                                  <xxf:context name="informationModel"
+                                                  select="$selectedModel"/>
+                                                  </xf:dispatch>
                                                 </xf:action>
                                                 <!-- May have further actions here -->
                                             </xf:action>
@@ -13865,7 +13933,7 @@
                                         <xxf:variable name="baseLanguageCode"
                                             select="xxf:instance('control-instance')/managedApplication/baseLanguage/@code"/>
                                         <!-- Select the type of view for the ontology. 
-                                     (Select view) -->
+                                            (Select view) -->
                                         <xhtml:span class="viewControl">
                                             <!-- Display options for this model type (specialty or class) -->
                                             <xxf:variable name="informationModelType"
@@ -18181,10 +18249,13 @@
                                         else xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@extension=xxf:instance('control-instance')/manageInformationModel/classIRI][@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedClass']/descendant::iso-13606:data[iso-13606:code/@codeSystem=$codeSystem]"/>
 
                                     <xhtml:tr>
+                                        <xxf:variable name="enumeratedClassSelection"
+                                            select="xxf:instance('control-instance')/enumeratedClassSelection"/>
+
                                         <xhtml:td>
                                             <!-- Tree selector for enumeratedClass -->
                                             <xf:select1 appearance="xxf:tree"
-                                                ref="xxf:instance('control-instance')/enumeratedClassSelection/selectedNode">
+                                                ref="$enumeratedClassSelection/selectedNode">
                                                 <xf:itemset nodeset="$enumerationClass">
                                                   <xf:label
                                                   ref="if ($codeSystem='CityEHR') then @displayName else concat(@displayName,' (',string-join(iso-13606:code[@codeSystem=$codeSystem]/@code,'/'),')')"/>
@@ -18193,26 +18264,25 @@
                                                 <xf:action ev:event="xforms-value-changed">
                                                   <!-- First get the node that was selected (note that there may be more than one match) -->
                                                   <xxf:variable name="value"
-                                                  select="$enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]"/>
+                                                  select="$enumerationClass[@code=$enumeratedClassSelection/selectedNode][1]"/>
                                                   <!-- Now use it to get displayName and suppDataSet -->
                                                   <xf:setvalue
-                                                  ref="xxf:instance('control-instance')/enumeratedClassSelection/selectedNode/@displayName"
+                                                  ref="$enumeratedClassSelection/selectedNode/@displayName"
                                                   value="$value/@displayName"/>
                                                   <xf:setvalue
-                                                  ref="xxf:instance('control-instance')/enumeratedClassSelection/suppDataSetId"
+                                                  ref="$enumeratedClassSelection/suppDataSetId"
                                                   value="$value/@cityEHR:suppDataSet"/>
-                                                  <!-- Check to see whether the element value has a supplementary data set -->
-                                                  <xxf:variable name="hasSuppDataSet"
-                                                  select="if (count(xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry/cda:component[cda:observation/cda:id/@extension=$value/@cityEHR:suppDataSet]) != 0) then 'true' else 'false'"/>
                                                   <!-- Remove the current supplementary data set for this entry/element -->
                                                   <xf:delete
-                                                  nodeset="xxf:instance('control-instance')/enumeratedClassSelection/suppDataSet/*"/>
-                                                  <!-- Now insert the new supplementary data set -->
-                                                  <xf:action if="$hasSuppDataSet='true'">
+                                                  nodeset="$enumeratedClassSelection/suppDataSet/*"/>
+                                                  <!-- Now insert the new supplementary data set.
+                                                       The data set is found in the specialty dictionary, not the class dictionary -->
+                                                  <xf:action
+                                                  if="$enumeratedClassSelection/suppDataSetId!=''">
                                                   <xxf:variable name="suppDataSet"
-                                                  select="xxf:instance('dictionary-instance')/iso-13606:entryCollection/iso-13606:entry/cda:component[cda:observation/cda:id/@extension=$value/@cityEHR:suppDataSet][1]"/>
+                                                  select="xxf:instance('specialtyDictionary-instance')/iso-13606:entryCollection/iso-13606:entry/cda:component[cda:observation/cda:id/@extension=$enumeratedClassSelection/suppDataSetId][1]"/>
                                                   <xf:insert
-                                                  context="xxf:instance('control-instance')/enumeratedClassSelection/suppDataSet"
+                                                  context="$enumeratedClassSelection/suppDataSet"
                                                   origin="$suppDataSet/*"/>
                                                   </xf:action>
                                                 </xf:action>
@@ -18225,27 +18295,35 @@
                                             <xhtml:ol>
                                                 <xhtml:li class="header">
                                                   <xf:output
-                                                  ref="xxf:instance('control-instance')/enumeratedClassSelection/selectedNode/@displayName"
+                                                  ref="$enumeratedClassSelection/selectedNode/@displayName"
                                                   />
                                                 </xhtml:li>
+                                                <xhtml:li class="header">
+                                                  <xf:output
+                                                  ref="$enumeratedClassSelection/suppDataSetId"/>
+                                                </xhtml:li>
+
                                                 <xhtml:li
-                                                  class="{if ($enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='SNOMED']) then '' else 'hidden'}"
-                                                  > SNOMED: <xf:output
-                                                  ref="string-join($enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='SNOMED']/@code,' / ')"
+                                                  class="{if ($enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='SNOMED']) then '' else 'hidden'}">
+                                                  <xf:output
+                                                  ref="concat('SNOMED: ',string-join($enumerationClass[@code=$enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='SNOMED']/@code,' / '))"
                                                   />
                                                 </xhtml:li>
+
                                                 <xhtml:li
                                                   class="{if ($enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='ICD-10']) then '' else 'hidden'}"
-                                                  > ICD-10: <xf:output
-                                                  ref="string-join($enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='ICD-10']/@code,' / ')"
+                                                  ><xf:output
+                                                  ref="concat('ICD-10: ',string-join($enumerationClass[@code=$enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='ICD-10']/@code,' / '))"
                                                   />
                                                 </xhtml:li>
+
                                                 <xhtml:li
                                                   class="{if ($enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='OPCS-4']) then '' else 'hidden'}"
-                                                  > OPCS-4: <xf:output
-                                                  ref="string-join($enumerationClass[@code=xxf:instance('control-instance')/enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='OPCS-4']/@code,' / ')"
+                                                  ><xf:output
+                                                  ref="concat('OPCS-4: ',string-join($enumerationClass[@code=$enumeratedClassSelection/selectedNode][1]/iso-13606:code[@codeSystem='OPCS-4']/@code,' / '))"
                                                   />
                                                 </xhtml:li>
+
                                                 <xhtml:li>
                                                   <xf:output
                                                   ref="xxf:instance('control-instance')/enumeratedClassSelection/suppDataSet/cda:observation/cda:code/@displayName"
@@ -18274,6 +18352,7 @@
                                                   </xf:repeat>
                                                   </xhtml:table>
                                                 </xhtml:li>
+
                                             </xhtml:ol>
                                         </xhtml:td>
                                     </xhtml:tr>
@@ -20608,6 +20687,15 @@
 -->
 
                     <!--
+                    <xhtml:p class="message">enumeratedClassSelection:<xhtml:br />
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/enumeratedClassSelection, 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+
+
+                    <!--
                     
                     <xhtml:p class="message">dalQuery-instance:<xhtml:br />
                         <xf:output
@@ -20731,6 +20819,13 @@
                             mediatype="text/html"/>
                     </xhtml:p>
 -->
+                    <!--
+                    <xhtml:p class="message">Specialty dictionary:<xhtml:br />
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('specialtyDictionary-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
                     <!--
                     <xhtml:p class="message">Manage dictionary:<xhtml:br/>
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/manageDirectory, 'data')/*, 'html')" mediatype="text/html"/>
