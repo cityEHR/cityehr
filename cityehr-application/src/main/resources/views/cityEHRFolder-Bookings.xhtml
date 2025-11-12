@@ -33,23 +33,11 @@
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
 
-    <!-- ========= HTML Head - Includes the Xforms Model ========= 
-        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+    
+    <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
-            media="screen" />
-
 
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
@@ -183,47 +171,38 @@
             <!-- Application defined action to print the current composition -->
             <xf:action ev:event="print">
 
-                <!-- Set externalId for the patient -->
-                <xf:dispatch name="set-externalId" target="pageNavigation-model">
-                    <xxf:context name="type" select="'patient'"/>
-                    <xxf:context name="externalId"
-                        select="xxf:instance('view-parameters-instance')/externalId"/>
+                <!-- Convert form to HTML.
+                     Also saves the session-parameters -->
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
+                    <xxf:context name="input-instance" select="xxf:instance('form-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
                 </xf:dispatch>
-
-                <xf:dispatch name="print-html" target="pageNavigation-model"/>
+                
+                <!-- Invoke action to generate PDF for HTML -->
+                <xf:dispatch name="print-html" target="pageNavigation-model">
+                    <xxf:context name="externalIdType" select="'patient'"/>                   
+                </xf:dispatch>
 
             </xf:action>
 
-            <!-- Application defined action to export the current view to Word Processor
-                First save the view to the xml cache 
-                Set the template, based on the composition (as set in application-parameters)
-                Then call the pipeline to generate the Word Processor document -->
+            <!-- Application defined action to export the current letter to Word Processor
+                 Set the template as selected by the user
+                 Then call the pipeline to generate the Word Processor document -->
             <xf:action ev:event="wordprocessor">
-
-                <!-- Full database handle of current event -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
-                    value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('control-instance')/current-event/handle)"/>
-
-                <!-- Set the Word template to use as the base for conversion.
-                     The template location is relative to staticFileRoot -->
-                <xxf:variable name="compositionIRI"
-                    select="xxf:instance('control-instance')/current-event/compositionIRI"/>
-                <xxf:variable name="templatePath"
-                    select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
-                <xxf:variable name="templateList"
-                    select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
-                <xxf:variable name="template"
-                    select="if ($templateList/template[@compositionIRI=$compositionIRI]) then $templateList/template[@compositionIRI=$compositionIRI]/@template else $templateList/@template"/>
-
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/wordTemplateURL"
-                    value="concat(xxf:instance('view-parameters-instance')/appPath,$templatePath,$template)"/>
-
-                <!-- Call pipeline through page-flow -->
-                <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-                    <xxf:context name="page" select="'cityEHRWordProcessorCDA'"/>
+                <!-- Set the word processor template to use as the base for conversion -->
+                <xxf:variable name="letterTemplateId" select="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']/@value"/>
+                <xxf:variable name="letterTemplate"
+                    select="xxf:instance('storedLetterTemplateList-instance')/letterTemplate[@value=$letterTemplateId]"/>               
+                
+                <!-- Return the Word processor document to browser -->
+                <xf:dispatch name="return-wordProcessorCDA" target="main-model">
+                    <xxf:context name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                    <xxf:context name="letterTemplate" select="$letterTemplate"/>
+                    <xxf:context name="cdaInstance" select="xxf:instance('form-instance')"/>
                 </xf:dispatch>
             </xf:action>
-
+            
 
             <!-- Application defined action to export the current record.
                  Uses action from the exportData-model-->
@@ -244,7 +223,7 @@
                         select="xxf:instance('control-instance')/current-event/handle"/>
                     <xxf:context name="exportName"
                         select="xxf:instance('control-instance')/current-event/storageId"/>
-                    <xxf:context name="exportType" select="'xml'"/>
+                    <xxf:context name="exportFormat" select="'xml'"/>
                 </xf:dispatch>
 
             </xf:action>
@@ -271,7 +250,7 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo" mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 

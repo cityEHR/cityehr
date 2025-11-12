@@ -5,7 +5,7 @@
     
     Pipleline to read a resource from the cityEHR xmlstore
     Input to pipeline is the combined parameters as returned by getPipelineParameters.xpl
-    The database location of the resource is passed in resourceHandle
+    The database location of the resource is passed in xmlCacheHandle
     The resource is transformed using transformationXSL (passed without a .xsl extension) if specified
     
     The resource is returned on the serializedResource output
@@ -38,15 +38,15 @@
 
 
     <p:choose href="#parameters">
-        <!-- Check that the resourceHandle is set -->
-        <p:when test="//parameters[@type='session']/resourceHandle != ''">
+        <!-- Check that the xmlCacheHandle is set -->
+        <p:when test="//parameters[@type='session']/xmlCacheHandle != ''">
 
             <!-- Get the XML document for the resource
-                 This is usually located in the database at xmlstore/users/<userId>/xmlCache (but doesn't need to be)
-                 The full resourceHandle is found in the session parameters -->
+                 Located in the database at xmlstore/users/<userId>/xmlCache
+                 The full xmlCacheHandle is found in the session parameters -->
             <p:processor name="oxf:xforms-submission">
                 <p:input name="submission">
-                    <xf:submission serialization="none" method="get" action="{//parameters[@type='session']/resourceHandle}"/>
+                    <xf:submission serialization="none" method="get" action="{//parameters[@type='session']/xmlCacheHandle}"/>
                 </p:input>
                 <p:input name="request" href="#parameters"/>
                 <p:output name="response" id="ehrResourceReturned"/>
@@ -60,7 +60,7 @@
             </p:processor>
         </p:when>
 
-        <!-- No resourceHandle supplied - output an error -->
+        <!-- No xmlCacheHandle supplied - output an error -->
         <p:otherwise>
             <p:processor name="oxf:identity">
                 <p:input name="data">

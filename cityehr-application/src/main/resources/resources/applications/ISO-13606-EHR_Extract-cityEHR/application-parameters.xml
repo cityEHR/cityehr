@@ -41,7 +41,10 @@
         <!-- The application id (fixed) and default models -->
         <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR" displayName="cityEHR" baseLanguageCode="en-GB"
             commonModel="#ISO-13606:Folder:cityEHRBase" defaultSpecialty="#ISO-13606:Folder:FeatureDemo"/>
-
+        
+        <!-- The application stylesheet -->
+        <applicationStylesheet cityEHR:displayName="Application Stylesheet" value="cityEHRSkin.css"/>
+        
         <!-- The other parameters are all images which can be loaded from the location specified in the @value.
              These are stored as separate resources in systemConfiguration/images for the application in the xmlstore. -->
         <images>
@@ -535,6 +538,8 @@
             <action id="register" displayName="Register" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Events" displayName="Patient Record" display="show">
+            <input id="useFederatedRecord" displayName="Use Federated Record" type="xs:boolean" display="show"/>
+            <action id="patientEventsList" displayName="Show Patient Event List" display="show"/>
             <action id="html" displayName="Show HTML" display="show"/>
             <action id="xml" displayName="Show XML" display="show"/>
             <action id="annotations" displayName="Annotations" display="show"/>
@@ -546,6 +551,7 @@
                 <item displayName="HL7 v2 XML (pseudo)" value="HL7-V2-XML"/>
                 <item displayName="HL7 v2 (Z Segment)" value="HL7-V2"/>
                 <item displayName="HL7 FHIR" value="HL7-FHIR"/>
+                <item displayName="Valkyrie Token" value="ValkyrieToken"/>
             </select>
             <action id="export" displayName="Export Event" display="show"/>
             <action id="exportAll" displayName="Export Record" display="show"/>

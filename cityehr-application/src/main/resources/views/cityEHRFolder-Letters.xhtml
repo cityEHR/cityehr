@@ -20,30 +20,26 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
-    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
 
-    <!-- ========= HTML Head - Includes the Xforms Model ========= 
-        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+
+    <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
@@ -118,7 +114,7 @@
             The compositionType (forms, letters) is set from the page passed in view-parameters
             =================================================================== -->
         <xi:include href="../models/compositionMainModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ===  Manage image maps   === -->
         <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
 
@@ -159,7 +155,8 @@
                     calculate="if (xxf:instance('control-instance')/current-form/status='saved') then 'show' else 'hidden'"/>
                 <!-- Print, Word Processor only if a form is loaded -->
                 <xf:bind nodeset="action[@id=('print','wordprocessor')]/@display"
-                    calculate="if (xxf:instance('control-instance')/current-form/status!='none') then 'show' else 'hidden'"/>
+                    calculate="if (xxf:instance('control-instance')/current-form/status!='none') then 'show' else 'hidden'"
+                />
             </xf:bind>
 
             <!-- Application defined actions to delete the current letter.
@@ -169,22 +166,24 @@
                     <xxf:context name="action" select="'deleteLetter'"/>
                 </xf:dispatch>
             </xf:action>
-          
+
             <!-- Application defined action called after the user confirms delete letter.
                  This invokes delete-composition in main-model (compositionMainModel) -->
             <xf:action ev:event="delete-letter">
                 <!-- Remove the saved form. -->
                 <xf:dispatch name="delete-composition" target="main-model"/>
-                <!-- Actions on successful delete --> 
+                <!-- Actions on successful delete -->
                 <xf:action if="xxf:instance('control-instance')/status=''">
                     <!-- Reload the page, with compositionStatus of 'none' -->
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'none'"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus"
+                        value="'none'"/>
                     <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-                        <xxf:context name="page" select="xxf:instance('session-parameters-instance')/@page"/>
+                        <xxf:context name="page"
+                            select="xxf:instance('session-parameters-instance')/@page"/>
                     </xf:dispatch>
                 </xf:action>
             </xf:action>
-            
+
 
             <!-- Application defined action to reset the current form -->
             <xf:action ev:event="reset">
@@ -207,10 +206,12 @@
             <xf:action ev:event="publish">
                 <!-- If required values are unset, then display the information about them.
                     Otherwise can do the actions to register -->
-                <xf:setvalue ref="xxf:instance('control-instance')/current-form/showRequiredElements"
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/current-form/showRequiredElements"
                     value="if (xs:integer(xxf:instance('control-instance')/current-form/requiredElementStatus) gt 0) then 'true' else 'false'"/>
 
-                <xf:action if="xs:integer(xxf:instance('control-instance')/current-form/requiredElementStatus) eq 0">
+                <xf:action
+                    if="xs:integer(xxf:instance('control-instance')/current-form/requiredElementStatus) eq 0">
                     <xf:dispatch name="confirm-action" target="pageNavigation-model">
                         <xxf:context name="action" select="'publishLetter'"/>
                     </xf:dispatch>
@@ -224,18 +225,18 @@
                  (if the user has selected a composition)-->
             <xf:action ev:event="publish-letter">
                 <xxf:variable name="newCompositionIRI" select="event('context')"/>
-                
+
                 <!-- Publish the composition -->
                 <xf:dispatch name="publish-cda-composition" target="main-model"/>
-                
+
                 <!-- Action on successful publish -->
-                <xf:action if="xxf:instance('control-instance')/status=''">                                      
+                <xf:action if="xxf:instance('control-instance')/status=''">
                     <xf:dispatch name="close-composition-view" target="main-model">
                         <xxf:context name="newCompositionIRI" select="$newCompositionIRI"/>
                     </xf:dispatch>
                 </xf:action>
             </xf:action>
-            
+
 
 
 
@@ -249,9 +250,11 @@
                     <!-- Get forms in progress for current patient -->
                     <xf:dispatch name="get-patientCompositions" target="main-model"/>
                     <!-- Display inProgress forms -->
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'inProgress'"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType"
+                        value="'inProgress'"/>
                     <!-- Reset the dirty flag -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+                        value="'unedited'"/>
                 </xf:action>
             </xf:action>
 
@@ -259,12 +262,6 @@
             <!-- Application defined action to print the current letter.
                  First need to generat HTML,then invoke the print pipeline -->
             <xf:action ev:event="print">
-                <!-- Set externalId for the patient -->
-                <xf:dispatch name="set-externalId" target="pageNavigation-model">
-                    <xxf:context name="type" select="'patient'"/>
-                    <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
-                </xf:dispatch>
-
                 <!-- Convert form to HTML.
                      Also saves the session-parameters -->
                 <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
@@ -274,7 +271,9 @@
                 </xf:dispatch>
 
                 <!-- Invoke action to generate PDF for HTML -->
-                <xf:dispatch name="print-html" target="pageNavigation-model"/>
+                <xf:dispatch name="print-html" target="pageNavigation-model">
+                    <xxf:context name="externalIdType" select="'patient'"/>
+                </xf:dispatch>
             </xf:action>
 
 
@@ -283,19 +282,15 @@
                  Then call the pipeline to generate the Word Processor document -->
             <xf:action ev:event="wordprocessor">
                 <!-- Set the word processor template to use as the base for conversion -->
-                <xxf:variable name="letterTemplateId" select="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']/@value"/>
+                <xxf:variable name="letterTemplateId"
+                    select="xxf:instance('viewControls-input-instance')/select[@id='wordprocessorTemplate']/@value"/>
                 <xxf:variable name="letterTemplate"
-                    select="xxf:instance('storedLetterTemplateList-instance')/letterTemplate[@value=$letterTemplateId]"/>               
-                
-                <!-- Set externalId for the patient -->
-                <xf:dispatch name="set-externalId" target="pageNavigation-model">
-                    <xxf:context name="type" select="'patient'"/>
-                    <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
-                </xf:dispatch>
-                
+                    select="xxf:instance('storedLetterTemplateList-instance')/letterTemplate[@value=$letterTemplateId]"/>
+
                 <!-- Return the Word processor document to browser -->
                 <xf:dispatch name="return-wordProcessorCDA" target="main-model">
-                    <xxf:context name="applicationIRI" select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                    <xxf:context name="applicationIRI"
+                        select="xxf:instance('view-parameters-instance')/applicationIRI"/>
                     <xxf:context name="letterTemplate" select="$letterTemplate"/>
                     <xxf:context name="cdaInstance" select="xxf:instance('form-instance')"/>
                 </xf:dispatch>
@@ -313,9 +308,12 @@
                     <xf:send submission="delete-form-submission"/>
 
                     <!-- Reset the compositionStatus and compositionHandle -->
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'none'"/>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle" value="'blank'"/>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/formCacheHandle" value="'blank'"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus"
+                        value="'none'"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
+                        value="'blank'"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/formCacheHandle"
+                        value="'blank'"/>
 
                     <!-- Clear the form-instance -->
                     <xf:dispatch name="clear-form" target="main-model"/>
@@ -323,9 +321,12 @@
                     <!-- The letter is now in the xmlstore, so can use its publishHandle to launch Word Processor -->
                     <!-- Set the Word template to use as the base for conversion.
                         The template location is relative to staticFileRoot -->
-                    <xxf:variable name="compositionIRI" select="xxf:instance('control-instance')/current-form/compositionIRI"/>
-                    <xxf:variable name="templatePath" select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
-                    <xxf:variable name="templateList" select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
+                    <xxf:variable name="compositionIRI"
+                        select="xxf:instance('control-instance')/current-form/compositionIRI"/>
+                    <xxf:variable name="templatePath"
+                        select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
+                    <xxf:variable name="templateList"
+                        select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
                     <xxf:variable name="template"
                         select="if ($templateList/template[@compositionIRI=$compositionIRI]) then $templateList/template[@compositionIRI=$compositionIRI]/@template else $templateList/@template"/>
 
@@ -349,8 +350,10 @@
             <xf:action ev:event="attach">
                 <!-- Set template to use as the base for the attachment.
                      The template location is relative to configuration for this application -->
-                <xxf:variable name="templatePath" select="xxf:instance('application-parameters-instance')/attachmentTemplateURL/@path"/>
-                <xxf:variable name="template" select="xxf:instance('viewControls-input-instance')/select[@id='attachments']/@value"/>
+                <xxf:variable name="templatePath"
+                    select="xxf:instance('application-parameters-instance')/attachmentTemplateURL/@path"/>
+                <xxf:variable name="template"
+                    select="xxf:instance('viewControls-input-instance')/select[@id='attachments']/@value"/>
 
                 <xf:setvalue ref="xxf:instance('view-parameters-instance')/attachmentTemplateURL"
                     value="concat( xxf:instance('view-parameters-instance')/appPath,'/resources/configuration/',xxf:instance('view-parameters-instance')/applicationId,$templatePath,$template)"/>
@@ -370,22 +373,26 @@
             <xf:action ev:event="xforms-model-construct-done">
                 <!-- Set the highlight entry selection.
                      Only show if there are selections configured -->
-                <xf:setvalue ref="xxf:instance('viewControls-input-instance')/select[@id='highlight']/@display"
+                <xf:setvalue
+                    ref="xxf:instance('viewControls-input-instance')/select[@id='highlight']/@display"
                     value="if (exists(xxf:instance('application-parameters-instance')/highlight/*)) then 'show' else 'hide'"/>
                 <xf:action xxf:iterate="xxf:instance('application-parameters-instance')/highlight/*">
                     <xxf:variable name="scheme" select="."/>
-                    <xf:insert context="xxf:instance('viewControls-input-instance')/select[@id='highlight']" nodeset="*" origin="$scheme" at="last()"
-                        position="after"/>
+                    <xf:insert
+                        context="xxf:instance('viewControls-input-instance')/select[@id='highlight']"
+                        nodeset="*" origin="$scheme" at="last()" position="after"/>
                 </xf:action>
 
                 <!-- Set highlighting scheme passed as parameter (so that highlighting persists across the session -->
-                <xf:setvalue ref="xxf:instance('viewControls-input-instance')/select[@id='highlight']/@value"
+                <xf:setvalue
+                    ref="xxf:instance('viewControls-input-instance')/select[@id='highlight']/@value"
                     value="xxf:instance('view-parameters-instance')/highlightScheme"/>
                 <xf:dispatch name="highlight" target="viewControlsActions-model"/>
 
                 <!-- Set the effective time input.
                      The curent-form/effectiveTime was set when the form was loaded -->
-                <xf:setvalue ref="xxf:instance('viewControls-input-instance')/input[@id='effectiveTime']"
+                <xf:setvalue
+                    ref="xxf:instance('viewControls-input-instance')/input[@id='effectiveTime']"
                     value="xxf:instance('control-instance')/current-form/effectiveTime"/>
 
                 <!-- Need recalculate so that viewControlsActions binds are refreshed -->
@@ -431,7 +438,8 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -461,7 +469,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'landscape'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'landscape'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -471,12 +481,14 @@
                 <xhtml:div id="navigationDisplay" class="navigation">
 
                     <!-- List of forms saved and in-progress for this patient -->
-                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='inProgress']">
+                    <xf:group
+                        ref="xxf:instance('view-parameters-instance')[viewNavigationType='inProgress']">
                         <xi:include href="cityEHRSavedCompositionSelection.xhtml"/>
                     </xf:group>
 
                     <!-- List of new forms that could be started for this patient -->
-                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='new']">
+                    <xf:group
+                        ref="xxf:instance('view-parameters-instance')[viewNavigationType='new']">
                         <xi:include href="cityEHRCompositionSelection.xhtml"/>
                     </xf:group>
 
@@ -504,7 +516,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'portrait'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'portrait'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -523,7 +537,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandInfo']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/ehrInfoLayout" value="''"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/ehrInfoLayout"
+                                    value="''"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>

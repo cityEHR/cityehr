@@ -30,6 +30,12 @@
     
     <debug/>
     <auditLogRecording/>
+    
+    <systemStylesheet/>
+    <applicationStylesheet/>
+    
+    <applicationFavicon/>
+    <applicationLogo/>
 
     <applicationIRI/>
     <applicationId/>
@@ -60,9 +66,16 @@
     <dictionaryHandle/>
     <highlightScheme/>
     <demographicsCheck/>
+    
+    <htmlCacheLocation/>
     <htmlCacheHandle/>
+    
+    <xmlCacheLocation/>
     <xmlCacheHandle/>
+    
+    <binaryCacheLocation/>
     <binaryCacheHandle/>
+    
     <externalId/>
     <wordTemplateURL/>
     <attachmentTemplateURL/>

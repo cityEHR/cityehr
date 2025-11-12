@@ -4,10 +4,10 @@
     cityEHRExportResource
     
     Pipleline to export a resource from the cityEHR xmlstore and return as a zipped file to the browser
-    The database location of the resource is passed in resourceHandle and the transformation in transformationXSL
+    The database location of the resource is passed in xmlCacheHandle and the transformation in transformationXSL
     
     Invokes the readResource.xpl pipeline to
-        Read the resource from the specified resourceHandle
+        Read the resource from the specified xmlCacheHandle
         The resource is transformed using transformationXSL (passed without a .xsl extension) if specified
         
     The externalId and resourceFileExtension are used to create the file name exported
@@ -46,8 +46,8 @@
     <!-- Run the readResource pipeline.
          Returns the resource from the database, transformed if necessary
          Input to pipeline is the combined parameters as returned by getPipelineParameters.xpl
-         The database location of the resource is passed in resourceHandle
-         The resource is transformed using transformationXSL (passed without a .xsl extension) if specified-->
+         The database location of the resource is passed in xmlCacheHandle
+         The resource is transformed using transformationXSL (passed without a .xsl extension) if specified -->
     <p:processor name="oxf:pipeline">
         <p:input name="config" href="readResource.xpl"/>
         <p:input name="parameters" href="#parameters"/>

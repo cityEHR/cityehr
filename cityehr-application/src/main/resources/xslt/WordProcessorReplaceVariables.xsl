@@ -108,7 +108,7 @@
             composition     <div class="ISO-13606:Composition">
             section         <ul class="ISO13606-Section #ISO-13606:Section:SectionId">
             entry           <ul class="ISO13606-Entry #ISO-13606:Entry:EntryId">
-            element         <ul class="ISO13606-Element #ISO-13606:Entry:EntryId/ #ISO-13606:Element:ElementId">
+            element         <ul class="ISO13606-Element #ISO-13606:Entry:EntryId/#ISO-13606:Element:ElementId">
          ======================================================================================== -->
 
 
@@ -164,7 +164,7 @@
             </xsl:if>
 
             <!-- Process contents of Ranked amd Unranked section.
-             This is handled differently for Ranked amd Unranked sections -->
+                 This is handled differently for Ranked amd Unranked sections -->
             <!-- Ranked -->
             <xsl:apply-templates mode="odf" select="li[@class = 'Ranked']"/>
 
@@ -237,6 +237,7 @@
         <xsl:apply-templates mode="odf"/>
     </xsl:template>
 
+    <!-- Output text in the fragment - caters for displayNames and element data values -->
     <xsl:template mode="odf" match="text()">
         <xsl:value-of select="."/>
     </xsl:template>
@@ -252,6 +253,7 @@
         <xsl:value-of select="."/>
     </xsl:template>
 
+    <!-- Output text in the fragment - caters for displayNames and element data values -->
     <xsl:template mode="msword" match="text()">
         <xsl:value-of select="."/>
     </xsl:template>

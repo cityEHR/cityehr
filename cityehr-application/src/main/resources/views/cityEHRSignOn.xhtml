@@ -20,10 +20,13 @@
    
     The page has a sequence of three main actions:
         1) set-default-application-splash (initiated on xforms-ready)
-        2) authenticate-cityEHR-user
+        2) authenticate-cityEHR-user (after which user may select a differet application, invoking set-application)
         3) launch-application
    
     Start up:
+    Every other page in cityEHR is set up using the xforms-model-construct-done action in configurationModel.wml 
+    This page does not load that model and instead invokes set-default-application-splash from its xforms-ready action
+       
     When the page first loads there is no user logged on and the 'splash page' for the default application is displayed.
     Or static spash images if in disabled or recovery mode (when there is no default application).
     This is achieved through the set-default-application-splash action, invoked on xforms-ready event.
@@ -72,6 +75,9 @@
     
     Invoke update-system-parameters (in systemParameters-model) to check system-parameters version vs versionNumber in view-parameters and update, if necessary.
     (Any update will also regenerate and store the database-parameters).
+    
+    Once the system parameters are built, updated or just loaded, the systemStyleSheet-instance can be loaded (load-system-stylesheets). 
+    The selected system stylesheet is set in session-parameters-instance/systemstylesheet and is used for this page (through cityEHRPageHead.xhtml)
     
     load-database-parameters loads the database-parameters from built-in database, using load-database-parameters (defined in databaseAccessLayer-model)  
     The logical database for the ehr system is set in the system-parameters, together with the physical database cluster(s) for that logical database.
@@ -150,33 +156,13 @@
 
     <!-- ========= HTML Head - Includes the Xforms Model ========= 
         ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+
+
+    <!-- This second head contains page-specific content, including the XForms models.
+         Although not allowed in the HTML standard, browsers will merge the contents of multiple head elements -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- Stylesheet, force cache refresh with version number -->
-        <xhtml:link rel="stylesheet" type="text/css"
-            href="resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
-            media="screen" />
-
-        <!-- Favicon - small icon in browser tab/menus.
-        Held as binary image in images/favicon element of the configurationControl 
-        This example forces a blank favicon:
-                <xhtml:link  rel="icon" type="image/x-icon" 
-                             href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="/>
-
-        This example has no image data:
-                <xhtml:link rel="shortcut icon" type="image/x-icon" href="data:image/*;base64,"/>        
-        -->
-
-        <xhtml:link rel="shortcut icon" type="image/x-icon"
-            href="data:image/*;base64,{xxf:instance('control-instance')/images/favicon}" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
 
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
@@ -187,7 +173,8 @@
         <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
 
         <!-- ========= Session model contains stuff for handling of user sessions ============ 
-            ================================================================================== -->
+             Also loads the view-parameters
+             ================================================================================== -->
         <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
 
         <!-- ========= Audit log model contains stuff for audit of user actions ============== 
@@ -201,6 +188,7 @@
         <!-- ========= Release Notes ========================================================= 
              ================================================================================= -->
         <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
+
 
         <!-- ========= Applications ==========================================================
              ================================================================================= -->
@@ -221,6 +209,15 @@
             Set up and run multi-action processes
             ================================================================================== -->
         <xi:include href="../models/processModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Ontologies =====================================================
+            Handling ontologies
+            ================================================================================== -->
+        <xi:include href="../models/ontologyModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- === Generate test data     === -->
+        <xi:include href="../models/testDataModel.xml" xxi:omit-xml-base="true"/>
+
 
         <!-- ========= Main model for cityEHRSignOn view =====================================
              ================================================================================= -->
@@ -278,6 +275,8 @@
 
                     <testFile name=""/>
 
+                    <testNumber/>
+
                 </control>
             </xf:instance>
 
@@ -308,6 +307,17 @@
             <!-- test-action can be coded for any necessary testing -->
             <xf:action ev:event="test-action">
 
+                <xf:action xxf:iterate="1 to 5">
+                    <xf:dispatch name="generate-RandomNumber" target="testData-model">
+                        <xxf:context name="maxNumber" select="4"/>
+                        <xxf:context name="randomNumber"
+                            select="xxf:instance('control-instance')/testNumber"/>
+                    </xf:dispatch>
+
+                    <xf:message ref="xxf:instance('control-instance')/testNumber"/>
+                </xf:action>
+
+                <!--
                 <xf:dispatch name="dal-getResourceList" target="databaseAccessLayer-model">
                     <xxf:context name="resourceLocation" select="'/blob'"/>
                     <xxf:context name="resourceList-instance" select="xxf:instance('test-instance')"/>
@@ -315,7 +325,7 @@
                 </xf:dispatch>
                 
                 <xf:message ref="xxf:instance('control-instance')/status"/>
-
+-->
                 <!--
                 <xf:dispatch name="check-builtinDatabase" target="databaseAccessLayer-model"/>
 -->
@@ -518,6 +528,8 @@
                  Then set application displayName -->
             <xf:action ev:event="set-application">
                 <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+                <xxf:variable name="applicationId"
+                    select="replace(substring($applicationIRI,2),':','-')"/>
 
                 <!-- applicationIRI is not set - just set the status -->
                 <xf:action if="$applicationIRI = ''">
@@ -535,7 +547,7 @@
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/applicationIRI"
                         value="$applicationIRI"/>
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/applicationId"
-                        value="replace(substring(xxf:instance('view-parameters-instance')/applicationIRI,2),':','-')"/>
+                        value="$applicationId"/>
 
                     <!-- Load the application parameters for the chosen application, so that the splash page is set correctly.
                          This will build or rebuild the application parameters as required, but does not save them. 
@@ -566,23 +578,19 @@
                         ref="xxf:instance('view-parameters-instance')/applicationDisplayName"
                         value="xxf:instance('working-application-parameters-instance')/application/iso-13606:EHR_Extract/@displayName"/>
 
-                    <!-- Set images in control-instance, for display on splash screen 
-                         The images were loaded from the database by load-working-application-parameters-->
-                    <xf:delete nodeset="xxf:instance('control-instance')/images"/>
-                    <xf:insert context="xxf:instance('control-instance')"
-                        origin="xxf:instance('working-application-parameters-instance')/application/images"/>
-
-                    <!-- Set the logo-instance (used in confirmation dialogs) -->
-                    <xf:setvalue ref="xxf:instance('logo-instance')"
-                        value="xs:base64Binary(xxf:instance('control-instance')/images/logo)"/>
-
-                    <!-- Load application logo (from database) -->
-                    <!--
-                    <xf:dispatch name="load-logo" target="pageNavigation-model">
-                        <xxf:context name="applicationId" select="xxf:instance('view-parameters-instance')/applicationId"/>
-                        <xxf:context name="logoElement" select="xxf:instance('working-application-parameters-instance')/application/images/logo"/>
+                    <!-- Load the stylesheets to applicationStylesheetList-instance
+                         and set the application stylesheet in session-parameters -->
+                    <xf:dispatch name="load-application-stylesheets" target="manageParameters-model">
+                        <xxf:context name="applicationIRI" select="$applicationIRI"/>
                     </xf:dispatch>
-                    -->
+                    <xxf:variable name="applicationStylesheet"
+                        select="xxf:instance('applicationStylesheetList-instance')/stylesheetFile[@selected='true'][1]"/>
+                    <xf:setvalue
+                        ref="xxf:instance('session-parameters-instance')/applicationStylesheet"
+                        value="if (exists($applicationStylesheet) and $applicationStylesheet castable as xs:base64Binary) then xs:base64Binary($applicationStylesheet) else ''"/>
+
+                    <!-- Set the applcation images (favicon. logo, etc) -->
+                    <xf:dispatch name="set-applicationImages" target="main-model"/>
 
                     <!-- Get list of specialties for the application.
                          This is done here, so that the list can be checked before setting the specialty in authenticated-user-action.
@@ -599,6 +607,31 @@
 
                 </xf:action>
 
+            </xf:action>
+
+
+            <!-- Application defined action to set static images for the current application.
+                 The images are listed in the images element of application-parameters -->
+            <xf:action ev:event="set-applicationImages">
+                <!-- Check that all images are castable as base64Binary -->
+                <xf:action
+                    xxf:iterate="xxf:instance('working-application-parameters-instance')/application/images/*">
+                    <xxf:variable name="applicationImage" select="."/>
+                    <xf:setvalue ref="$applicationImage"
+                        value="if (. castable as xs:base64Binary) then xs:base64Binary(.) else ''"/>
+                </xf:action>
+
+                <!-- Set up images in the control-instance -->
+                <xf:delete nodeset="xxf:instance('control-instance')/images"/>
+                <xf:insert context="xxf:instance('control-instance')"
+                    origin="xxf:instance('working-application-parameters-instance')/application/images"/>
+
+                <!-- Favicon and logo are set in session-parameters (since they are used on every page)
+                     All other images are just used on this cityEHRSignOn page -->
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/applicationFavicon"
+                    value="xs:base64Binary(xxf:instance('control-instance')/images/favicon)"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    value="xs:base64Binary(xxf:instance('control-instance')/images/logo)"/>
             </xf:action>
 
 
@@ -777,7 +810,7 @@
 
 
                 <!-- Run process to import shipped resources for the application.
-                     Scope is not passed as a paramert - defaults to 'full' -->
+                     Scope is not passed as a parameter - defaults to 'full' -->
                 <xf:dispatch name="import-shippedResources" target="application-model">
                     <xxf:context name="applicationIRI" select="$applicationIRI"/>
                     <xxf:context name="completionActionModel" select="'main-model'"/>
@@ -1454,6 +1487,30 @@
                      This will replace any session-parameters already loaded for a previous session -->
                 <xf:dispatch name="load-default-session-parameters" target="session-model"/>
 
+                <!-- Reset the systemStylesheet for the session
+                     (systemStylesheetList is already loaded) -->
+                <xxf:variable name="systemStylesheet"
+                    select="xxf:instance('systemStylesheetList-instance')/stylesheetFile[@selected='true'][1]"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/systemStylesheet"
+                    value="if (exists($systemStylesheet) and $systemStylesheet castable as xs:base64Binary) then xs:base64Binary($systemStylesheet) else ''"/>
+
+                <!-- Reset the applicationStylesheet for the session
+                     (applicationStylesheetList is already loaded, except for the first run of vanilla installetion) -->
+                <xxf:variable name="applicationStylesheet"
+                    select="xxf:instance('applicationStylesheetList-instance')/stylesheetFile[@selected='true'][1]"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/applicationStylesheet"
+                    value="if (exists($applicationStylesheet) and $applicationStylesheet castable as xs:base64Binary) then xs:base64Binary($applicationStylesheet) else ''"/>
+
+                <!-- Reset the favicon and logo (icon) -->
+                <xxf:variable name="favicon"
+                    select="xxf:instance('control-instance')/images/favicon"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/applicationFavicon"
+                    value="if (exists($favicon) and $favicon castable as xs:base64Binary) then xs:base64Binary($favicon) else ''"/>
+
+                <xxf:variable name="logo" select="xxf:instance('control-instance')/images/logo"/>
+                <xf:setvalue ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    value="if (exists($logo) and $logo castable as xs:base64Binary) then xs:base64Binary($logo) else ''"/>
+
                 <!-- Set the sessionId - this is passed between pages as an argument through view-parameters.
                      It must also be set directly in the session-parameters when the new session is initiated.
                      The sessionId is generated using the xforms digest() function using the current dateTime as the input string -->
@@ -1549,17 +1606,17 @@
                     <xf:setvalue ref="xxf:instance('view-parameters-instance')/dictionaryHandle"
                         value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/systemConfiguration/',xxf:instance('view-parameters-instance')/specialtyId,'/dictionary/',xxf:instance('view-parameters-instance')/specialtyId)"/>
 
-                    <!-- User html cache handle -->
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/htmlCacheHandle"
-                        value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/htmlCache')"/>
+                    <!-- User html cache location -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/htmlCacheLocation"
+                        value="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/htmlCache')"/>
 
-                    <!-- User xml cache handle -->
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/xmlCacheHandle"
-                        value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/xmlCache')"/>
+                    <!-- User xml cache location -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/xmlCacheLocation"
+                        value="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/xmlCache')"/>
 
-                    <!-- User binary cache handle -->
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/binaryCacheHandle"
-                        value="concat(xxf:instance('view-parameters-instance')/databaseLocation,xxf:instance('view-parameters-instance')/storageLocation,'/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
+                    <!-- User binary cache location -->
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/binaryCacheLocation"
+                        value="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
 
                     <!-- Common information model -->
                     <xxf:variable name="commonModelIRI"
@@ -1746,7 +1803,7 @@
                 <!-- Check the builtin database.
                      On the first run this will create the database folder in view-parameters/builtinDatabaseLocation 
                      This is normally /WEB-INF/exist-data relative to the application installation folder -->
-                
+
                 <!-- This causes problems with file permissions.
                      Instead need to ship cityEHR with an empty exist-data folder -->
                 <!--
@@ -1769,7 +1826,8 @@
 
                     <!-- System parameters failed to load.
                      Either the first time the installation has run, or there is a terminal problem with the built-in database.
-                     Build the system parameters - will save the default system parameters or set the staus to an error if there is a problem with the built-in database. -->
+                     Build the system parameters - will save the default system parameters or set the status to an error if there is a problem with the built-in database.
+                     build-system-parameters also invokes initialize-system-stylesheets, to read the shipped system stylesheets and store the systemStylesheetList-instance (-->
                     <xf:action if="xxf:instance('control-instance')/status != ''">
                         <xf:dispatch name="build-system-parameters" target="systemParameters-model">
                             <xxf:context name="status"
@@ -1815,6 +1873,14 @@
                             <xxf:context name="context" select="'update-system-parameters'"/>
                         </xf:dispatch>
                     </xf:action>
+
+                    <!-- Load the stylesheets to stylesheetList-instance
+                         and set the system stylesheet in session-parameters -->
+                    <xf:dispatch name="load-system-stylesheets" target="manageParameters-model"/>
+                    <xxf:variable name="systemStylesheet"
+                        select="xxf:instance('systemStylesheetList-instance')/stylesheetFile[@selected='true'][1]"/>
+                    <xf:setvalue ref="xxf:instance('session-parameters-instance')/systemStylesheet"
+                        value="$systemStylesheet"/>
 
                     <!-- Load the system icons (to iconList-instance) 
                      This is just done to check the icons exist - if not, then initialize them 
@@ -1899,7 +1965,7 @@
                     </xf:action>
 
                     <!-- Set the application for user log in - will trigger xforms-value-changed event that invokes set-application.
-                     If this is the first time the application has run, then set-application will create the configuration for the default application -->
+                         If this is the first time the application has run, then set-application will create the configuration for the default application -->
                     <xf:action if="xxf:instance('control-instance')/mode = ('normal','debug')">
                         <xf:setvalue ref="xxf:instance('user-credentials-instance')/applicationIRI"
                             value="$defaultApplicationIRI"/>
@@ -2032,7 +2098,10 @@
             close="true" draggable="true" visible="false" xmlns:xhtml="http://www.w3.org/1999/xhtml"
             xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
             xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
-            <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+            <xhtml:div id="logo">
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
+            </xhtml:div>
         </xxf:dialog>
         <!-- View XML dialogue box - can be used for debugging -->
         <xi:include href="cityEHRViewXMLDialog.xhtml"/>
@@ -2042,77 +2111,7 @@
         <xi:include href="cityEHRSetPasswordDialog.xhtml"/>
         <!-- Defect in displaying the log-instance when the cityEHRActionConfirmationDialog is pulled in with xi:include -->
         <!-- Action confirmation dialogue -->
-        <!--
         <xi:include href="cityEHRActionConfirmationDialog.xhtml"/>
-        -->
-        <xxf:dialog id="actionConfirmationDialog" style="z-index: 9999;" appearance="full"
-            level="modal" close="false" draggable="true" visible="false"
-            xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
-            xmlns:ev="http://www.w3.org/2001/xml-events"
-            xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
-            <xhtml:div class="dialogue">
-                <xxf:variable name="activeDialogue"
-                    select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
-                <xxf:variable name="logo" select="xxf:instance('logo-instance')"/>
-
-                <!-- The header -->
-                <xhtml:table>
-                    <xhtml:tbody>
-                        <xhtml:tr>
-                            <xhtml:td class="dialogueTitle">
-                                <xf:output
-                                    ref="xxf:instance('system-parameters-instance')/actionConfirmationDialogue/dialogueMessageLabel/@displayName"/>
-                                <xf:output ref="$activeDialogue/title/@displayName"/>
-                            </xhtml:td>
-                            <xhtml:td class="dialogueTitle" align="right">
-                                <xf:output ref="$logo" mediatype="image/*"/>
-                            </xhtml:td>
-                        </xhtml:tr>
-                    </xhtml:tbody>
-                </xhtml:table>
-
-                <!-- Messages are output in the order they are found -->
-                <xf:repeat nodeset="$activeDialogue/message[@displayName!='']">
-                    <xxf:variable name="message" select="."/>
-                    <xhtml:p>
-                        <xf:output ref="$message/@displayName"/>
-                    </xhtml:p>
-                </xf:repeat>
-
-                <!-- Selection - uses the selection element that must be present in the dialogue
-             If not, then this doesn't get shown -->
-                <xhtml:p>
-                    <xf:output
-                        ref="if (exists($activeDialogue/selection)) then $activeDialogue/selection/@displayName else ''"/>
-                    <xf:select1
-                        ref="if (exists($activeDialogue/selection)) then $activeDialogue/selection/@value else ()"
-                        appearance="full">
-                        <xf:itemset ref="$activeDialogue/selection/*">
-                            <xf:value ref="./@value"/>
-                            <xf:label ref="./@displayName"/>
-                        </xf:itemset>
-                    </xf:select1>
-                </xhtml:p>
-
-
-                <!-- Triggers for actions -->
-                <xf:repeat id="actionConfirmationDialog-repeat" nodeset="$activeDialogue/action">
-                    <xf:trigger class="button" appearance="minimal">
-                        <xf:label ref="./@label"/>
-                        <xf:action ev:event="DOMActivate">
-                            <!-- Invoke the action specified for the trigger 
-                         If a selection is configured for the dialogue, then pass as context to the action -->
-                            <xf:dispatch name="{./@event}" target="{./@model}">
-                                <xxf:context name="context"
-                                    select="$activeDialogue/selection/@value"/>
-                            </xf:dispatch>
-                            <xxf:hide dialog="actionConfirmationDialog"/>
-                        </xf:action>
-                    </xf:trigger>
-                </xf:repeat>
-
-            </xhtml:div>
-        </xxf:dialog>
         <!-- === Sign on
              The sign on display is centred in the sign-on window 
              Contains:

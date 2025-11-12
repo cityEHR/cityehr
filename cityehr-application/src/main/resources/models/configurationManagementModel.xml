@@ -6,7 +6,8 @@
     
     Xforms model for managing application parameters loaded for cityEHRSignOn and cityEHRAdmin.
     
-    application-parameters-instance is the working application-parameters used for live running application
+    application-parameters-instance is used for live running application
+    working-application-parameters-instance is used when building or rebuilding 
     stored-application-parameters-instance is the parameters for the application stored in the xmlstore
     default-application-parameters-instance is the default parameters stored on disk at ehr/resources/application-parameters.xml
     shipped-application-parameters-instance is the parameters for the application stored on disk at ehr/resources/<applicationId>application-parameters.xml
@@ -87,7 +88,7 @@
             xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
     </xf:instance>
 
-    <!-- The working application-parameters us used when building or rebuilding -->
+    <!-- The working-application-parameters is used when building or rebuilding -->
     <xf:instance id="working-application-parameters-instance">
         <parameters xmlns="" version="" date="" xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
             xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"/>
@@ -403,10 +404,27 @@
 
     </xf:action>
 
-
-    <!-- ========== Application Images ================================
+   
+    <!-- =====================================================================================
+         The application favicon, logo and other static images
          Managing the images in working-application-parameters-instance
-         ============================================================== -->
+         Images other than the logo and favicon are only needed on the cityEHRSignOn page
+         
+            <logo cityEHR:displayName="Application logo" hint="60 x 60 px"
+                value="/images/myEHRLogoTall-Small.png"/>
+            <favicon cityEHR:displayName="Application favicon" hint="16 x 16 px"
+                value="/images/myEHRLogoTall-Favicon.ico"/>
+            <welcomeLogo cityEHR:displayName="Splash page header logo"
+                hint="Recommended width is 720px" value=""/>
+            <welcomeSplash-1 cityEHR:displayName="Splash page image, left"
+                hint="Recommended width 360px or 180px" value="/images/myEHRLogoTall-Medium.png"/>
+            <welcomeSplash-2 cityEHR:displayName="Splash page image, right"
+                hint="Recommended width 360px or 180px" value=""/>        
+        
+         On cityEHRSignOn the favicon and logo are set in the session-parameters so that they can be used on evry page
+         ====================================================================================== -->
+    
+    
 
     <!-- Instance to hold image for storage/load -->
     <xf:instance id="application-image-instance">
@@ -457,7 +475,7 @@
 
             <!-- Get the resource name of image for loading.
                  Sets the name in configurationManagemnentControl-instance -->
-            <xf:dispatch name="get-imageResourceName" target="pageNavigation-model">
+            <xf:dispatch name="get-imageResourceName" target="configurationManagement-model">
                 <xxf:context name="imageElement" select="$imageElement"/>
                 <xxf:context name="imageResourceName" select="xxf:instance('configurationManagemnentControl-instance')/imageLocation"/>
             </xf:dispatch>
@@ -586,7 +604,7 @@
 
             <!-- Get the resource name of image for loading.
                  Sets the name in configurationManagemnentControl-instance -->
-            <xf:dispatch name="get-imageResourceName" target="pageNavigation-model">
+            <xf:dispatch name="get-imageResourceName" target="configurationManagement-model">
                 <xxf:context name="imageElement" select="$imageElement"/>
                 <xxf:context name="imageResourceName" select="xxf:instance('configurationManagemnentControl-instance')/imageLocation"/>
             </xf:dispatch>
@@ -631,5 +649,40 @@
         </xf:action>
 
     </xf:action>
+
+
+    <!-- Application defined action to get the image resource name.
+         The imageElement is passed from the application/images of the application-parameters
+         The resource name used for storage is set in the $imageResourceName parameter
+         The resource name for the image is constructed from the image element name and the handle used to load it from disk.
+         The attribute holding the handle is defined in the cityEHR:type element.
+         This is set in the parameter as the default location relative to ehr/resources and/or is set from the (temporary) file name when uploaded by the user.
+         The handle is sanitized to make it suitable for use as a database resource name.
+         Using the handle ensures that the image element is stored with a unique name, based on its original location on disk.
+         So the same disk location will always generate the same database location.
+    -->
+    <xf:action ev:event="get-imageResourceName">
+        <xxf:variable name="imageElement" select="event('imageElement')"/>
+        <xxf:variable name="imageResourceName" select="event('imageResourceName')"/>
+        <xxf:variable name="imageElementName" select="$imageElement/name()"/>
+        
+        <!-- Get the attribute that defines the image location -->
+        <xxf:variable name="imageAttributeName"
+            select="$imageElement/ancestor::*/cityEHR:type/*[name()=$imageElementName][@cityEHR:type='image']/@*[name()!='cityEHR:type']/name()"/>
+        <xxf:variable name="imageAttribute" select="$imageElement/@*[name()=$imageAttributeName]"/>
+        
+        <!-- The name is combination of image element name and the location from which it was loaded -->
+        <xxf:variable name="imageName"
+            select="concat($imageElementName,xxf:instance('view-parameters-instance')/idSeparator,$imageAttribute)"/>
+        
+        <!-- Sanitize the image location, so that it can be used as a resource name.-->
+        <xf:dispatch name="sanitize-databaseResourceName" target="databaseAccessLayer-model">
+            <xxf:context name="resourceName" select="$imageName"/>
+            <xxf:context name="sanitizedResourceName" select="$imageResourceName"/>
+        </xf:dispatch>
+        
+    </xf:action>
+    
+    
 
 </xf:model>

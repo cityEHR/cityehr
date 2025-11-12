@@ -69,6 +69,18 @@
             <welcomeSplash-2 cityEHR:displayName="Splash page image, right" hint="Recommended width 360px or 180px" value=""/>
         </images>
     </application>
+    
+    <!-- Supported Languages.
+         Use language codes from IETF RFC 5646 -->
+    <languagePacks cityEHR:displayName="Language Packs"
+        cityEHR:hint="Use language codes from IETF RFC 5646">
+        <cityEHR:template>
+            <language code="" displayName=""/>
+        </cityEHR:template>
+        <language code="en-GB" displayName="English" cityEHR:edit="pinned"/>
+        <language code="uk-UA" displayName="Ukrainian"/>
+        <language code="ro-MD" displayName="Romanian"/>
+    </languagePacks>
 
     <!-- Accreditation displayed in cityEHRSignOn -->
     <accreditation cityEHR:displayName="Home Page - Accreditation">
@@ -77,7 +89,7 @@
         </cityEHR:template>
         <line displayName="Cross Border EHR"/>
         <line displayName="&#169; 2023 John Chelsom"/>
-        <line displayName="Implementing the European Patient Summary"/>
+        <line displayName="Implementing the International Patient Summary"/>
         <!--
             <line displayName="&#10003; &#10007; &#x29cf; &#x29d0; &#9654; &#9664;
             &#9660; &#9650; &#x229e; &#x229f;"/>

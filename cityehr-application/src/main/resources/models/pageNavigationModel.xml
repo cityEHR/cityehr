@@ -57,6 +57,11 @@
             </actionConfirmationDialogue>
         </control>
     </xf:instance>
+    
+    <!-- General instance to hold return from action invocation -->
+    <xf:instance id="return-instance">
+        <return xmlns=""/>
+    </xf:instance>
 
     <!-- ========= Page Navigation ========= 
          =================================== -->
@@ -156,8 +161,8 @@
                     </xf:action>
 
                     <!-- Save the session info.
-                 This transfers parameters from view-parameters to session-parameters.
-                 Then saves the session for the user. -->
+                         This transfers parameters from view-parameters to session-parameters.
+                         Then saves the session for the user. -->
                     <xf:dispatch name="save-session-for-transition" target="session-model">
                         <xxf:context name="sessionId"
                             select="xxf:instance('view-parameters-instance')/sessionId"/>
@@ -194,7 +199,7 @@
                  But show="new" causes a new tab to load temporarily, which isn't what we want. -->
                     <xf:action if="$showPage='new'">
                         <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}"
-                           xxf:show-progress="false"/>
+                            xxf:show-progress="false"/>
                     </xf:action>
                     <xf:action if="$showPage!='new'">
                         <xf:load resource="{xxf:instance('pageNavigationControl-instance')/pageURL}"
@@ -320,10 +325,15 @@
 
     <!-- Application defined action to run a pipeline
          Invoke the specified pipeline and return results in the instance.
-         Saves the session parameters before invoking the pipeline, so that they can be used in the processing
+         Saves the session parameters before invoking the pipeline, so that they can be used in the processing.
+         If pipelineInputs is used then it must be a seqeunce of input names that matches the sequence in input-instance
+           e,g, ('master','merge') and ($master-instance,$merge-instance)
+         Otherwise, the inputs to the pipline are input-instance (as the instance input) if it exists
+         and the view-paraemters instance (as the view-parameters input) 
          -->
     <xf:action ev:event="invoke-pipeline">
         <xxf:variable name="pipeline" select="event('pipeline')"/>
+        <xxf:variable name="pipelineInputs" select="event('pipelineInputs')"/>
         <xxf:variable name="input-instance" select="event('input-instance')"/>
         <xxf:variable name="return-instance" select="event('return-instance')"/>
 
@@ -346,30 +356,53 @@
             <xxf:variable name="pipelinePath"
                 select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/',$pipeline)"/>
 
-            <!-- Input to pipeline
-                 If the input-instance exists then invoke the pipeline with the inatance and view-parameters as inputs
-                 Otherwise just invoke the pipeline with just view-parameters as inout -->
-            <xxf:variable name="pipelineInput"
-                select="if (exists($input-instance)) then ('instance','view-parameters') else 'instance'"/>
+            <!-- Check pipeline input parameters -->
+            <xxf:variable name="pipelineInputCount"
+                select="if (exists($pipelineInputs)) then count($pipelineInputs) else 0"/>
+            <xxf:variable name="pipelineInputInstanceCount"
+                select="if (exists($input-instance) and count($input-instance)=$pipelineInputCount) then $pipelineInputCount else 0"/>
 
-            <!-- Output to pipeline
+            <!-- Input to pipeline
+                 If the pipelineInputs is passed and matches the number of input instances, then use them directly to invoke the pipeline
+                 Else if the input-instance exists then invoke the pipeline with the instance and view-parameters as inputs
+                 Otherwise invoke the pipeline with just view-parameters as inout -->
+            <xxf:variable name="pipelineInput"
+                select="if ($pipelineInputInstanceCount gt 0) then $pipelineInputs else if (exists($input-instance)) then ('instance','view-parameters') else 'instance'"/>
+            <xxf:variable name="pipelineInputInstances"
+                select="if ($pipelineInputInstanceCount gt 0) then $input-instance else if (exists($input-instance)) then ($input-instance,xxf:instance('view-parameters-instance')) else xxf:instance('view-parameters-instance')"/>
+
+            <!-- Debugging -->
+            <!--
+            <xf:action if="$pipelineInputInstanceCount ge 2" xxf:iterate="$pipelineInputInstances">
+                <xf:message ref="count(.//*)"/>
+            </xf:action>
+            -->
+
+            <!-- Output tom pipeline
                  If the return-instance exists then the pipeline must return a data output
                  Otherwise invoke the pipeline with no output -->
             <xxf:variable name="pipelineOutput"
                 select="if (exists($return-instance)) then 'data' else ()"/>
 
-            <!-- If the input-instance exists, invoke the pipeline with the inatance and view-parameters as inputs
+            <!-- If the input-instance exists, invoke the pipeline with the instance and view-parameters as inputs
                  Otherwise invoke the pipeline with just view-parameters as inout -->
+            <xxf:variable name="pipelineReturn"
+                select="xxf:call-xpl($pipelinePath, $pipelineInput, $pipelineInputInstances, $pipelineOutput)"/>
+
+            <!--
             <xxf:variable name="pipelineReturn"
                 select="if (exists($input-instance)) then xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , $pipelineOutput) 
                 else xxf:call-xpl($pipelinePath, 'instance',  xxf:instance('view-parameters-instance') , $pipelineOutput)"/>
+            -->
 
             <!-- Set the return instance, if it exists -->
             <xf:action if="exists($return-instance)">
                 <xf:insert nodeset="$return-instance" origin="$pipelineReturn"/>
             </xf:action>
 
-<!-- The old way 2024-11-008 -->
+
+
+            <!-- The old way 2024-11-008 -->
             <!--
             <xf:action if="exists($input-instance)">
                 <xf:insert nodeset="$return-instance"
@@ -400,13 +433,10 @@
 
     </xf:action>
 
+
     <!-- Application defined action to start and stop the scheduler
          Sets the command and then invokes the pipeline.
          -->
-    <xf:instance id="return-instance">
-        <return xmlns=""/>
-    </xf:instance>
-
     <xf:action ev:event="invoke-pipelineScheduler">
         <xxf:variable name="command" select="event('command')"/>
         <xxf:variable name="pipeline" select="event('pipeline')"/>
@@ -423,77 +453,6 @@
         </xf:dispatch>
     </xf:action>
 
-
-    <!-- =====================================================================================
-         The application logo and images
-         Images other than the logo are only needed on the signOn page
-         ====================================================================================== -->
-
-    <xf:instance id="logo-instance">
-        <logo/>
-    </xf:instance>
-    <xf:bind nodeset="xxf:instance('logo-instance')" type="xs:base64Binary"/>
-
-    <!-- Load the application logo.
-         The image logo is defined in the application/images section of the application-parameters
-         This action is set up to work with either application-parameters-instance or working-application-parameters-instance
-         Which is why the logoElement is passed as a parameter.
-         -->
-    <xf:action ev:event="load-logo">
-        <xxf:variable name="applicationId" select="event('applicationId')"/>
-        <xxf:variable name="logoElement" select="event('logoElement')"/>
-
-        <!-- Get the resource name of logo for loading.
-             Sets the name in pageNavigationControl-instance -->
-        <xf:dispatch name="get-imageResourceName" target="pageNavigation-model">
-            <xxf:context name="imageElement" select="$logoElement"/>
-            <xxf:context name="imageResourceName"
-                select="xxf:instance('pageNavigationControl-instance')/storageLocation"/>
-        </xf:dispatch>
-
-        <!-- Load the logo -->
-        <xxf:variable name="storageLocation"
-            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/images/',xxf:instance('pageNavigationControl-instance')/storageLocation)"/>
-        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
-            <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="$storageLocation"/>
-            <xxf:context name="resource" select="xxf:instance('logo-instance')"/>
-            <xxf:context name="status"
-                select="xxf:instance('pageNavigationControl-instance')/status"/>
-        </xf:dispatch>
-    </xf:action>
-
-    <!-- Application defined action to get the image resource name.
-         The imageElement is passed from the application/images of the application-parameters
-         The resource name used for storage is set in the $imageResourceName parameter
-         The resource name for the image is constructed from the image element name and the handle used to load it from disk.
-         The attribute holding the handle is defined in the cityEHR:type element.
-         This is set in the parameter as the default location relative to ehr/resources and/or is set from the (temporary) file name when uploaded by the user.
-         The handle is sanitized to make it suitable for use as a database resource name.
-         Using the handle ensures that the image element is stored with a unique name, based on its original location on disk.
-         So the same disk location will always generate the same database location.
-    -->
-    <xf:action ev:event="get-imageResourceName">
-        <xxf:variable name="imageElement" select="event('imageElement')"/>
-        <xxf:variable name="imageResourceName" select="event('imageResourceName')"/>
-        <xxf:variable name="imageElementName" select="$imageElement/name()"/>
-
-        <!-- Get the attribute that defines the image location -->
-        <xxf:variable name="imageAttributeName"
-            select="$imageElement/ancestor::*/cityEHR:type/*[name()=$imageElementName][@cityEHR:type='image']/@*[name()!='cityEHR:type']/name()"/>
-        <xxf:variable name="imageAttribute" select="$imageElement/@*[name()=$imageAttributeName]"/>
-
-        <!-- The name is combination of image element name and the location from which it was loaded -->
-        <xxf:variable name="imageName"
-            select="concat($imageElementName,xxf:instance('view-parameters-instance')/idSeparator,$imageAttribute)"/>
-
-        <!-- Sanitize the image location, so that it can be used as a resource name.-->
-        <xf:dispatch name="sanitize-databaseResourceName" target="databaseAccessLayer-model">
-            <xxf:context name="resourceName" select="$imageName"/>
-            <xxf:context name="sanitizedResourceName" select="$imageResourceName"/>
-        </xf:dispatch>
-
-    </xf:action>
 
 
     <!-- =====================================================================================
@@ -532,10 +491,9 @@
          XML Cache - store, load, export.
          ====================================================================================== -->
 
-
     <!-- Application defined action to store an xml instance to the xml cache.
          The xml cache is located for the current user
-         Sets the resourceHandle for use in pipelines
+         Sets the xmlCacheHandle for use in pipelines
          -->
     <xf:action ev:event="store-xmlCache">
         <xxf:variable name="xml-instance" select="event('xml-instance')"/>
@@ -545,10 +503,10 @@
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation"
-                select="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
+                select="xxf:instance('view-parameters-instance')/xmlCacheLocation"/>
             <xxf:context name="resource" select="$xml-instance"/>
             <xxf:context name="resourceURL"
-                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+                select="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
             <xxf:context name="status"
                 select="xxf:instance('pageNavigationControl-instance')/status"/>
         </xf:dispatch>
@@ -566,7 +524,7 @@
         <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation"
-                select="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
+                select="xxf:instance('view-parameters-instance')/xmlCacheLocation"/>
             <xxf:context name="resource" select="$xml-instance"/>
             <xxf:context name="status"
                 select="xxf:instance('pageNavigationControl-instance')/status"/>
@@ -578,14 +536,20 @@
     <!-- Application defined action to export the xml cache as a zip file.
          exportType is a string used to set the externalId for the export
          The export-instance is cached for the user.
-         Then load cityEHRExportResource (pipeline) to transform (if specified), zip and return to the browser.
+         The location for export (browser or fileSystem) is passed in the exportDelivery parameter 
+         (default is to browser - only explicit setting to 'filesystem' does that)
+         Then either load cityEHRExportResource (pipeline) to transform (if specified), zip and return to the browser.
+         or invoke exportResourceToFolder pipeline
          Note that this action can be invoked on the signOn page before a session is started, so the sessionId may be 'noSession' -->
     <xf:action ev:event="export-xmlCache">
         <xxf:variable name="export-instance" select="event('export-instance')"/>
         <xxf:variable name="exportName" select="event('exportName')"/>
         <xxf:variable name="exportType" select="event('exportType')"/>
+        <xxf:variable name="exportFormat" select="event('exportFormat')"/>
         <xxf:variable name="transformationXSL"
             select="if ( exists(event('transformationXSL'))) then event('transformationXSL') else ''"/>
+        <xxf:variable name="exportDelivery" select="if ( exists(event('exportDelivery'))) then event('exportDelivery') else 'browser'"/>
+
 
         <!-- Need to write the export-instance - can't just pass the parameter variable -->
         <xf:insert nodeset="xxf:instance('export-instance')" origin="$export-instance"/>
@@ -595,22 +559,37 @@
             <xxf:context name="xml-instance" select="xxf:instance('export-instance')"/>
         </xf:dispatch>
 
-        <!-- Set the externalId for the resource (in session-parameters) -->
+        <!-- Set the externalId for the resource (in view-parameters) -->
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
             <xxf:context name="type" select="if ($exportName!='') then $exportName else $exportType"/>
             <xxf:context name="externalId"
                 select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
 
+        <!-- Set the file extension for the resource (in view-parameters) -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceFileExtension"
+            value="if ($exportFormat='') then 'xml' else $exportFormat"/>
+
         <!-- Set the transformationXSL -->
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
             value="$transformationXSL"/>
+        
+        <!-- Pipeline to export resource to file system -->
+        <xf:action if="$exportDelivery = 'fileSystem'">
+            <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                <xxf:context name="pipeline" select="'exportResourceToFolder.xpl'"/>
+                <xxf:context name="input-instance" select="xxf:instance('view-parameters-instance')"/>
+                <xxf:context name="return-instance" select="xxf:instance('return-instance')"/>
+            </xf:dispatch>
+        </xf:action>
 
         <!-- Pipeline to return resource to the browser -->
-        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-            <xxf:context name="page" select="'cityEHRExportResource'"/>
-            <xxf:context name="show" select="'new'"/>
-        </xf:dispatch>
+        <xf:action if="not($exportDelivery = 'fileSystem')">
+            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                <xxf:context name="page" select="'cityEHRExportResource'"/>
+                <xxf:context name="show" select="'new'"/>
+            </xf:dispatch>
+        </xf:action>
 
     </xf:action>
 
@@ -624,7 +603,7 @@
     </xf:instance>
 
     <!-- Application defined action to export the xml stored in the database 
-         as a zip file to the browser or as a file to the dilesystem.
+         as a zip file to the browser or as a file to the filesystem.
          
          The database resource is located at exportHandle.
          exportType is a string used to set the externalId for the export
@@ -635,18 +614,19 @@
     <xf:action ev:event="export-xmlHandle">
         <xxf:variable name="exportHandle" select="event('exportHandle')"/>
         <xxf:variable name="exportName" select="event('exportName')"/>
-        <xxf:variable name="exportType" select="event('exportType')"/>
+        <xxf:variable name="exportFormat" select="event('exportFormat')"/>
         <xxf:variable name="transformationXSL" select="event('transformationXSL')"/>
         <xxf:variable name="exportDelivery" select="event('exportDelivery')"/>
 
         <!-- Set file name and extension for the exported resource -->
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
-            <xxf:context name="type" select="if ($exportName!='') then $exportName else $exportType"/>
+            <xxf:context name="type"
+                select="if ($exportName!='') then $exportName else $exportFormat"/>
             <xxf:context name="externalId"
                 select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceFileExtension"
-            value="if ($exportType='') then 'xml' else $exportType"/>
+            value="if ($exportFormat='') then 'xml' else $exportFormat"/>
 
         <!-- Set transformation to perform on resource -->
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
@@ -659,6 +639,10 @@
             <xxf:context name="dalReadURL"
                 select="xxf:instance('view-parameters-instance')/resourceHandle"/>
         </xf:dispatch>
+
+        <xf:message ref="$exportHandle"/>
+        <xf:message ref="xxf:instance('view-parameters-instance')/resourceHandle"/>
+        <xf:message ref="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
 
         <!-- Pipeline to return resource to the file system -->
         <xf:action if="$exportDelivery = 'fileSystem'">
@@ -679,6 +663,56 @@
     </xf:action>
 
 
+    <xf:action ev:event="export-xmlInstance">
+        <xxf:variable name="xmlInstance" select="event('xmlInstance')"/>
+        <xxf:variable name="exportName" select="event('exportName')"/>
+        <xxf:variable name="exportFormat" select="event('exportFormat')"/>
+        <xxf:variable name="transformationXSL" select="event('transformationXSL')"/>
+        <xxf:variable name="exportDelivery" select="event('exportDelivery')"/>
+
+        <!-- Set file name and extension for the exported resource -->
+        <xf:dispatch name="set-externalId" target="pageNavigation-model">
+            <xxf:context name="type"
+                select="if ($exportName!='') then $exportName else $exportFormat"/>
+            <xxf:context name="externalId"
+                select="xxf:instance('view-parameters-instance')/externalId"/>
+        </xf:dispatch>
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/resourceFileExtension"
+            value="if ($exportFormat='') then 'xml' else $exportFormat"/>
+
+        <!-- Set transformation to perform on resource -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+            value="$transformationXSL"/>
+
+        <!-- Store the xmlInstance in the xmlCache -->
+        <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$exportHandle"/>
+            <xxf:context name="dalReadURL"
+                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+        </xf:dispatch>
+
+        <xf:message ref="$exportHandle"/>
+        <xf:message ref="xxf:instance('view-parameters-instance')/resourceHandle"/>
+        <xf:message ref="xxf:instance('view-parameters-instance')/xmlCacheHandle"/>
+
+        <!-- Pipeline to return resource to the file system -->
+        <xf:action if="$exportDelivery = 'fileSystem'">
+            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                <xxf:context name="page" select="'cityEHRExportResourceToFolder'"/>
+                <xxf:context name="show" select="'new'"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Pipeline to return resource to the browser - the default -->
+        <xf:action if="not($exportDelivery = 'fileSystem')">
+            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+                <xxf:context name="page" select="'cityEHRExportResource'"/>
+                <xxf:context name="show" select="'new'"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
 
 
     <!-- =====================================================================================
@@ -690,16 +724,16 @@
     </xf:instance>
 
     <!-- Application defined action to store the html-instance in the HTML cache (user specific) 
-         Return the URL for the resource in the database (in view-parameters-instance/resourceHandle)  -->
+         Return the URL for the resource in the database (in view-parameters-instance/htmlCacheHandle)  -->
     <xf:action ev:event="store-htmlCache">
         <!-- Write html-instance to the html cache -->
         <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation"
-                select="xxf:instance('view-parameters-instance')/htmlCacheHandle"/>
+                select="xxf:instance('view-parameters-instance')/htmlCacheLocation"/>
             <xxf:context name="resource" select="xxf:instance('html-instance')"/>
             <xxf:context name="resourceURL"
-                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
+                select="xxf:instance('view-parameters-instance')/htmlCacheHandle"/>
             <xxf:context name="status"
                 select="xxf:instance('pageNavigationControl-instance')/status"/>
         </xf:dispatch>
@@ -727,19 +761,24 @@
          The html-instance has already been set up with the required data
          externalId must also be set already in view-parameters -->
     <xf:action ev:event="print-html">
+        <xxf:variable name="externalIdType" select="event('externalIdType')"/>
+
         <!-- Store the html-instance, which sets its location in view-parameters-instance/resourceHandle -->
         <xf:dispatch name="store-htmlCache" target="pageNavigation-model"/>
 
         <!-- Set the externalId for the resource (in session-parameters) -->
+        <xxf:variable name="type"
+            select="if (exists($externalIdType)) then $externalIdType else 'print'"/>
         <xf:dispatch name="set-externalId" target="pageNavigation-model">
-            <xxf:context name="type" select="'print'"/>
+            <xxf:context name="type" select="$type"/>
             <xxf:context name="externalId"
                 select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
-    
-        <!-- Set the xmlcacheHandle for debugging in the cityEHRPrintCachedHTML pipeline -->       
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/xmlCacheHandle" value="replace(xxf:instance('view-parameters-instance')/resourceHandle,'htmlCache','xmlCache')"/>
-            
+
+        <!-- Set the xmlcacheHandle for debugging in the cityEHRPrintCachedHTML pipeline -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/xmlCacheHandle"
+            value="replace(xxf:instance('view-parameters-instance')/htmlCacheHandle,'htmlCache','xmlCache')"/>
+
         <!-- Pipeline to return resource to the browser -->
         <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
             <xxf:context name="page" select="'cityEHRPrintCachedHTML'"/>
@@ -752,6 +791,7 @@
         <xf:send submission="printHTML-submission"/>
         -->
     </xf:action>
+
 
     <!-- Submit the html-cohort-instance to the print pipeline 
          which runs the transform to XSL-FO and returns the PDF to the browser.
@@ -769,12 +809,71 @@
     </xf:submission>
 
 
+    <!-- =====================================================================================
+         Binary Cache - store, load
+         ====================================================================================== -->
+
+    <!-- Binary instance -->
+    <xf:instance id="binary-instance">
+        <binaryFileContent xsi:type="xs:base64Binary"/>
+    </xf:instance>
+    <xf:bind nodeset="xxf:instance('binary-instance')" type="xs:base64Binary"/>
+
+    <!-- Application defined action to store an xml instance to the binary cache.
+         The binary cache is located for the current user
+         Sets the resourceHandle for use in pipelines
+         -->
+    <xf:action ev:event="store-binaryCache">
+        <xxf:variable name="binaryFileContent" select="event('binaryFileContent')"/>
+
+        <xf:setvalue ref="xxf:instance('binary-instance')" value="$binaryFileContent"/>
+
+        <!-- Write the xml-instance to the xml cache.
+             Do not set the resourceURL because always stored in the fixed  -->
+        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation"
+                select="xxf:instance('view-parameters-instance')/binaryCacheLocation"/>
+            <xxf:context name="resource" select="xxf:instance('binary-instance')"/>
+            <xxf:context name="resourceURL"
+                select="xxf:instance('view-parameters-instance')/binaryCacheHandle"/>
+            <xxf:context name="status"
+                select="xxf:instance('pageNavigationControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the binary cache to an xml instance.
+         The binary cache is located for the current user
+         -->
+    <xf:action ev:event="load-binaryCache">
+        <xxf:variable name="binaryFileContent" select="event('binaryFileContent')"/>
+
+        <!-- Load the binary-instance from the xml cache. -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation"
+                select="xxf:instance('view-parameters-instance')/binaryCacheLocation"/>
+            <xxf:context name="resource" select="xxf:instance('binary-instance')"/>
+            <xxf:context name="status"
+                select="xxf:instance('pageNavigationControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Set the binaryFileContent -->
+        <xf:setvalue ref="$binaryFileContent" value="xxf:instance('binary-instance')"/>
+
+    </xf:action>
+
+
+
 
     <!-- =====================================================================================
          External Id for export, printing, etc
          ====================================================================================== -->
 
     <!-- Application defined action to set the externalId to be used in data export and print.
+         The id is based on the type and the label that are passed as parameters
          Sets the externalId passed as a parameter
         
          Uses the application-parameters file to find the criteria specific to the current page.
@@ -784,6 +883,7 @@
     -->
     <xf:action ev:event="set-externalId">
         <xxf:variable name="type" select="event('type')"/>
+        <xxf:variable name="label" select="event('label')"/>
         <xxf:variable name="externalId" select="event('externalId')"/>
 
         <xxf:variable name="externalIdTemplate"
@@ -803,7 +903,7 @@
         <xxf:variable name="date" select="substring($currentDateTime,1,10)"/>
         <xxf:variable name="dateTime" select="substring($currentDateTime,1,19)"/>
 
-        <!-- The id is et up in externalId of pageNavigationControl-instance -->
+        <!-- The id is set up in externalId of pageNavigationControl-instance -->
         <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/externalId" value="''"/>
 
         <!-- The externalId template consists of a set of components.
@@ -821,6 +921,7 @@
                 else if ($componentType='demographics' and exists($patientDemographics)) then concat(.,$separator,($patientDemographics//cda:entry/*[cda:id/@extension=$component/@entry]/descendant::cda:value[@extension=$component/@element])[1]/@value)
                 else if ($componentType='compositionId' and $compositionId) then concat(.,$separator,$compositionId)
                 else if ($componentType='dateTime') then concat(.,$separator,$dateTime)
+                else if ($componentType='label' and exists($label) and $label !='') then concat(.,$separator,$label)
                 else if ($componentType='string') then concat(.,$separator,$component/@displayName)
                 else ."
             />
@@ -830,8 +931,11 @@
         <xf:action if="not(exists($externalIdTemplate))">
             <xxf:variable name="separator"
                 select="xxf:instance('view-parameters-instance')/idSeparator"/>
+            <xxf:variable name="labelText"
+                select="if (exists($label) and $label!='') then concat($separator,$label) else ''"/>
+
             <xf:setvalue ref="xxf:instance('pageNavigationControl-instance')/externalId"
-                value="concat($type,$separator,$dateTime)"/>
+                value="concat($type,$labelText,$separator,$dateTime)"/>
         </xf:action>
 
         <!-- Finally, remove any blanks - externalId can't have blanks
@@ -842,6 +946,8 @@
         <!-- Set the return parameter -->
         <xf:setvalue ref="$externalId"
             value="xxf:instance('pageNavigationControl-instance')/externalId"/>
+
+
 
     </xf:action>
 

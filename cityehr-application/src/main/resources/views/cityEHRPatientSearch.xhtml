@@ -31,27 +31,27 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
     xmlns:cityEHR="http://openhealthinformatics.org/ehr">
 
+    <!-- ========= HTML Head - Includes the Xforms Model ========= 
+        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+
+
+    <!-- This second head contains page-specific content, including the XForms models.
+         Although not allowed in the HTML standard, browsers will merge the contents of multiple head elements -->
     <xhtml:head>
 
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
@@ -129,7 +129,7 @@
                     calculate="if (xxf:instance('careTeamControl-instance')/careTeam/id != '' and xxf:instance('cohortSetControl-instance')/records=1 and xxf:instance('page-cohort-instance')//patientInfo[1]/@patientId = xxf:instance('careTeam-instance')/patient/@id) then 'show' else 'hidden'"/>
                 <!-- Only display orderby selection if there are multiple patients in the search hits, a care team is selected and patient is not already assigned -->
                 <xf:bind nodeset="select[@id='orderBy']/@display"
-                    calculate="if (xxf:instance('cohortSetControl-instance')/records castable as xs:integer and xs:integer(xxf:instance('cohortSetControl-instance')/records) gt 1) then 'show' else 'hidden'"/>              
+                    calculate="if (xxf:instance('cohortSetControl-instance')/records castable as xs:integer and xs:integer(xxf:instance('cohortSetControl-instance')/records) gt 1) then 'show' else 'hidden'"/>
                 <!-- Only display search button if there are search criteria specified -->
                 <xf:bind nodeset="action[@id='search']/@display"
                     calculate="if (xxf:instance('patientListControl-instance')/searchCriteria='') then 'hidden' else 'show'"/>
@@ -141,7 +141,8 @@
                 <xf:bind nodeset="action[@id=('export','print')]/@display" calculate="'hidden'"/>
                 <!-- Show XML only when debugging -->
                 <xf:bind nodeset="action[@id='xml']/@display"
-                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
+                />
             </xf:bind>
 
             <!-- Application defined action to assign patient to a care team -->
@@ -156,7 +157,8 @@
                 <xf:dispatch name="get-careTeam-cohort" target="patientList-model"/>
 
                 <!-- Set viewNavigation to show the care team patients -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'careTeam'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType"
+                    value="'careTeam'"/>
 
                 <!-- Need recalculate so that viewControlsActions binds are refreshed -->
                 <xf:recalculate model="viewControlsActions-model"/>
@@ -178,7 +180,8 @@
                 <xf:dispatch name="get-careTeam-cohort" target="patientList-model"/>
 
                 <!-- Set viewNavigation to show the care team patients -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'careTeam'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType"
+                    value="'careTeam'"/>
 
                 <!-- Need recalculate so that viewControlsActions binds are refreshed -->
                 <xf:recalculate model="viewControlsActions-model"/>
@@ -187,7 +190,9 @@
             <!-- Application defined action to select a care team -->
             <xf:action ev:event="careTeam">
                 <xf:dispatch name="set-careTeam" target="careTeam-model">
-                    <xxf:context name="careTeamId" select="xxf:instance('viewControls-input-instance')/select[@id='careTeam']/@value"/>
+                    <xxf:context name="careTeamId"
+                        select="xxf:instance('viewControls-input-instance')/select[@id='careTeam']/@value"
+                    />
                 </xf:dispatch>
 
                 <!-- Rebuild the list for view-navigation -->
@@ -225,7 +230,8 @@
             <xf:action ev:event="xml">
                 <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
                     <xxf:context name="title" select="''"/>
-                    <xxf:context name="displayXML" select="xxf:instance('patientSearchXQuery-instance')"/>
+                    <xxf:context name="displayXML"
+                        select="xxf:instance('patientSearchXQuery-instance')"/>
                 </xf:dispatch>
             </xf:action>
 
@@ -233,7 +239,9 @@
                  This is set up through the general mechanism in cityEHRViewContolsActions -->
             <xf:action ev:event="orderBy">
                 <xf:dispatch name="set-orderBy-clause" target="patientList-model">
-                    <xxf:context name="orderBySelection" select="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/@value"/>
+                    <xxf:context name="orderBySelection"
+                        select="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/@value"
+                    />
                 </xf:dispatch>
                 <!-- Don't do this - causes database to hang -->
                 <xf:dispatch name="patient-search" target="patientList-model"/>
@@ -255,26 +263,32 @@
                 <!-- Load dictionary for current specialty 
                      This is language dependent -->
                 <xf:dispatch name="load-dictionary" target="dictionary-model">
-                    <xxf:context name="specialtyIRI" select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
-                    <xxf:context name="languageCode" select="xxf:instance('session-parameters-instance')/languageCode"/>
-                    <xxf:context name="baseLanguageCode" select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
+                    <xxf:context name="specialtyIRI"
+                        select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                    <xxf:context name="languageCode"
+                        select="xxf:instance('session-parameters-instance')/languageCode"/>
+                    <xxf:context name="baseLanguageCode"
+                        select="xxf:instance('session-parameters-instance')/baseLanguageCode"/>
                 </xf:dispatch>
 
                 <!-- Set the Care Setting.
                      careSettingIRI is passed in view-parameters, but use the default if it is not set -->
                 <xxf:variable name="careSetting"
                     select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI"
+                    value="$careSetting/@code"/>
 
                 <!-- Get list of orderBy items for the search. 
                     The entry should exist in the patient search control panel.
                     If not, display the entryId so that the model can be debugged -->
-                <xf:action xxf:iterate="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/item">
+                <xf:action
+                    xxf:iterate="xxf:instance('viewControls-input-instance')/select[@id='orderBy']/item">
                     <xxf:variable name="orderByItem" select="."/>
                     <xxf:variable name="patientRegistrationEntry"
                         select="xxf:instance('application-parameters-instance')/patientRegistration/*[name()=$orderByItem/@value]"/>
                     <xf:setvalue ref="$orderByItem/@displayName"
-                        value="if (exists($patientRegistrationEntry)) then $patientRegistrationEntry/@displayName else $orderByItem/@value"/>
+                        value="if (exists($patientRegistrationEntry)) then $patientRegistrationEntry/@displayName else $orderByItem/@value"
+                    />
                 </xf:action>
 
                 <!-- Set the care teams for the current user.
@@ -284,19 +298,22 @@
                 <xf:dispatch name="initialiseCareTeamsForUser" target="careTeam-model"/>
                 <xf:action xxf:iterate="xxf:instance('careTeamList-instance')/careTeam">
                     <xxf:variable name="careTeam" select="."/>
-                    <xf:insert context="xxf:instance('viewControls-input-instance')/select[@id='careTeam']" nodeset="*" origin="$careTeam"
-                        at="last()" position="after"/>
+                    <xf:insert
+                        context="xxf:instance('viewControls-input-instance')/select[@id='careTeam']"
+                        nodeset="*" origin="$careTeam" at="last()" position="after"/>
                 </xf:action>
 
                 <!-- Set the care team selection -->
-                <xf:setvalue ref="xxf:instance('viewControls-input-instance')/select[@id='careTeam']/@value"
+                <xf:setvalue
+                    ref="xxf:instance('viewControls-input-instance')/select[@id='careTeam']/@value"
                     value="xxf:instance('careTeamControl-instance')/careTeam/id"/>
 
                 <!-- Rebuild the list for view-navigation -->
                 <xf:dispatch name="get-careTeam-cohort" target="patientList-model"/>
 
                 <!-- If patient access for this user is limited to care team patients, then get the list of patients -->
-                <xf:action if="xxf:instance('user-instance')/rbac/restrictPatientAccess/@value='careTeam'">
+                <xf:action
+                    if="xxf:instance('user-instance')/rbac/restrictPatientAccess/@value='careTeam'">
                     <xf:dispatch name="getCareTeamPatients" target="careTeam-model"/>
                 </xf:action>
 
@@ -348,7 +365,8 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <xhtml:div id="ehrContent">
@@ -369,7 +387,8 @@
                 <xhtml:div id="navigationDisplay">
 
                     <!-- Show the patients for the selected type of list (should be recent, careTeam, inpatients) -->
-                    <xxf:variable name="listType" select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
+                    <xxf:variable name="listType"
+                        select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
 
                     <!-- Set the patient list.
                                  The cohort instances contain patientInfo elements -->
@@ -377,7 +396,8 @@
                         select="if ($listType='recent') then xxf:instance('recentPatient-cohort-instance')//patientInfo else if ($listType='careTeam') then xxf:instance('careTeamPatient-cohort-instance')//patientInfo else if ($listType='inpatients') then xxf:instance('inPatient-cohort-instance')//patientInfo else () "/>
 
                     <!-- Show the patients for the currently selected list -->
-                    <xxf:variable name="familyConfig" select="xxf:instance('application-parameters-instance')/patientRegistration/family"/>
+                    <xxf:variable name="familyConfig"
+                        select="xxf:instance('application-parameters-instance')/patientRegistration/family"/>
 
                     <xf:repeat nodeset="$patientListSet" id="patientListSet-repeat">
                         <xxf:variable name="patientInfo" select="."/>
@@ -396,10 +416,12 @@
                             <xf:action ev:event="DOMActivate">
                                 <!-- This version sets the patient as the only one in the cohort set -->
                                 <!-- Clear patient search -->
-                                <xf:dispatch name="initialise-patient-search" target="patientList-model"/>
+                                <xf:dispatch name="initialise-patient-search"
+                                    target="patientList-model"/>
 
                                 <!-- Set the selected patient as the single patient in the cohort -->
-                                <xf:setvalue ref="xxf:instance('patientListControl-instance')/recordList"
+                                <xf:setvalue
+                                    ref="xxf:instance('patientListControl-instance')/recordList"
                                     value="$patientListSet[index('patientListSet-repeat')]/@patientId"/>
                                 <xf:dispatch name="get-patient-cohort" target="patientList-model"/>
 
@@ -467,7 +489,8 @@
                             select="if (exists(xxf:instance('dictionary-instance')/iso-13606:elementCollection)) then 'controlPanel' else 'hidden'"/>
                         <xhtml:table class="{$controlPanelClass}">
                             <!-- Iterate through search parameter groups -->
-                            <xf:repeat nodeset="xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup">
+                            <xf:repeat
+                                nodeset="xxf:instance('patientListControl-instance')/controlPanel/controlPanelGroup">
                                 <xxf:variable name="controlPanelGroup" select="."/>
                                 <xhtml:tr class="controlPanelGroup">
                                     <!-- Iterate through search parameters -->
@@ -487,59 +510,71 @@
                                             <xf:group
                                                 ref="$dictionaryElement[@cityEHR:elementType=('#CityEHR:ElementProperty:simpleType','#CityEHR:Property:ElementType:simpleType')]">
                                                 <xxf:variable name="fieldLength"
-                                                    select="if (exists($dictionaryElement/@cityEHR:fieldLength)) then $dictionaryElement/@cityEHR:fieldLength else xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/fieldLength"/>
-                                                <xf:input ref="$controlItem" xxf:size="{$fieldLength}" incremental="true" xxf:modal="true"/>
+                                                  select="if (exists($dictionaryElement/@cityEHR:fieldLength)) then $dictionaryElement/@cityEHR:fieldLength else xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/fieldLength"/>
+                                                <xf:input ref="$controlItem"
+                                                  xxf:size="{$fieldLength}" incremental="true"
+                                                  xxf:modal="true"/>
                                                 <!-- User pressed enter -->
                                                 <xf:action ev:event="DOMActivate">
-                                                    <!-- This works, but doesn't make the trigger modal
+                                                  <!-- This works, but doesn't make the trigger modal
                                                 <xxf:script>
                                                   ORBEON.xforms.Document.dispatchEvent('launch-perform-search',
                                                   'DOMActivate'); </xxf:script>
                                                   -->
-                                                    <xf:dispatch name="patient-search" target="patientList-model"/>
+                                                  <xf:dispatch name="patient-search"
+                                                  target="patientList-model"/>
                                                 </xf:action>
                                                 <!-- User interacts with control -->
                                                 <xf:action ev:event="DOMFocusIn">
-                                                    <xf:setvalue ref="xxf:instance('patientListControl-instance')/patientListType"
-                                                        value="'search'"/>
+                                                  <xf:setvalue
+                                                  ref="xxf:instance('patientListControl-instance')/patientListType"
+                                                  value="'search'"/>
                                                 </xf:action>
                                                 <!-- User changed value -->
                                                 <xf:action ev:event="xforms-value-changed">
-                                                    <xf:action if="xxf:instance('patientListControl-instance')/patientListType = 'search'">
-                                                        <xf:dispatch name="clear-search-results" target="patientList-model"/>
-                                                        <xf:dispatch name="set-search-criteria" target="patientList-model"/>
-                                                    </xf:action>
+                                                  <xf:action
+                                                  if="xxf:instance('patientListControl-instance')/patientListType = 'search'">
+                                                  <xf:dispatch name="clear-search-results"
+                                                  target="patientList-model"/>
+                                                  <xf:dispatch name="set-search-criteria"
+                                                  target="patientList-model"/>
+                                                  </xf:action>
                                                 </xf:action>
                                             </xf:group>
                                             <!-- emumeratedValue -->
                                             <xf:group
                                                 ref="$dictionaryElement[@cityEHR:elementType=('#CityEHR:ElementProperty:enumeratedValue','#CityEHR:Property:ElementType:enumeratedValue')]">
-                                                <xxf:variable name="enumeration" select="$dictionaryElement/iso-13606:data"/>
+                                                <xxf:variable name="enumeration"
+                                                  select="$dictionaryElement/iso-13606:data"/>
                                                 <xf:select1 ref="$controlItem">
-                                                    <xf:itemset
-                                                        nodeset="xxf:instance('application-parameters-instance')/displayFormat/unspecifiedElementValue/value | $enumeration">
-                                                        <xf:label ref="./@displayName"/>
-                                                        <xf:value ref="./@value"/>
-                                                    </xf:itemset>
-                                                    <!-- User interacts with control -->
-                                                    <xf:action ev:event="DOMFocusIn">
-                                                        <xf:setvalue ref="xxf:instance('patientListControl-instance')/patientListType"
-                                                            value="'search'"/>
-                                                    </xf:action>
-                                                    <!-- User changed value -->
-                                                    <xf:action ev:event="xforms-value-changed">
-                                                        <xf:action if="xxf:instance('patientListControl-instance')/patientListType = 'search'">
-                                                            <!-- Reset search criteria -->
-                                                            <xf:dispatch name="clear-search-results" target="patientList-model"/>
-                                                            <xf:dispatch name="set-search-criteria" target="patientList-model"/>
-                                                            <!-- This reruns the search when selection changes
+                                                  <xf:itemset
+                                                  nodeset="xxf:instance('application-parameters-instance')/displayFormat/unspecifiedElementValue/value | $enumeration">
+                                                  <xf:label ref="./@displayName"/>
+                                                  <xf:value ref="./@value"/>
+                                                  </xf:itemset>
+                                                  <!-- User interacts with control -->
+                                                  <xf:action ev:event="DOMFocusIn">
+                                                  <xf:setvalue
+                                                  ref="xxf:instance('patientListControl-instance')/patientListType"
+                                                  value="'search'"/>
+                                                  </xf:action>
+                                                  <!-- User changed value -->
+                                                  <xf:action ev:event="xforms-value-changed">
+                                                  <xf:action
+                                                  if="xxf:instance('patientListControl-instance')/patientListType = 'search'">
+                                                  <!-- Reset search criteria -->
+                                                  <xf:dispatch name="clear-search-results"
+                                                  target="patientList-model"/>
+                                                  <xf:dispatch name="set-search-criteria"
+                                                  target="patientList-model"/>
+                                                  <!-- This reruns the search when selection changes
                                                         Don't want to to this any more, although it could be made configurable if we ever want it back
                                                     -->
-                                                            <!--
+                                                  <!--
                                                         <xf:dispatch name="patient-search" target="patientList-model"/>
                                                   -->
-                                                        </xf:action>
-                                                    </xf:action>
+                                                  </xf:action>
+                                                  </xf:action>
                                                 </xf:select1>
                                             </xf:group>
                                         </xhtml:td>
@@ -562,7 +597,8 @@
                      -->
                 <xhtml:div id="viewDisplay">
                     <!-- Message on search results -->
-                    <xf:output ref="normalize-space(xxf:instance('patientListControl-instance')/searchResultMessage)"/>
+                    <xf:output
+                        ref="normalize-space(xxf:instance('patientListControl-instance')/searchResultMessage)"/>
 
                     <xxf:variable name="patientSelectionClass"
                         select="if (exists(xxf:instance('dictionary-instance')/iso-13606:elementCollection)) then 'controlPanel' else 'hidden'"/>
@@ -648,7 +684,7 @@
                             mediatype="text/html"/>
                     </xhtml:p>                   
                     -->
-<!--
+                    <!--
                     <xhtml:p>
                         patientSearchXQuery-instance <xhtml:br/>
                         <xf:output class="message"
@@ -726,7 +762,7 @@
                             mediatype="text/html"/>
                     </xhtml:p>  
 -->
-                    
+
                 </xhtml:div>
 
             </xhtml:div>

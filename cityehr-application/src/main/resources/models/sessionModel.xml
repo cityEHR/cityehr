@@ -458,6 +458,8 @@
     <xf:instance id="session-parameters-instance">
         <parameters/>
     </xf:instance>
+    <xf:bind nodeset="xxf:instance('session-parameters-instance')/applicationFavicon" type="xs:base64Binary"/>
+    <xf:bind nodeset="xxf:instance('session-parameters-instance')/applicationLogo" type="xs:base64Binary"/>
 
     <!-- previousSession-parameters-instance is used only on cityEHRSignOn page -->
     <xf:instance id="previousSession-parameters-instance">
@@ -473,7 +475,8 @@
     </xf:action>
 
 
-    <!-- Load default session-parameters-instance as shipped with the system -->
+    <!-- Load default session-parameters-instance as shipped with the system.
+         Invoked from cityEHRSignOn before the user has logged on -->
     <xf:action ev:event="load-default-session-parameters">
         <xxf:variable name="status" select="event('status')"/>
 
@@ -493,7 +496,7 @@
     
 
     <!-- Application defined action to load the previous session.
-         Invoked from cityEHRSignOn page -->
+         Invoked from cityEHRSignOn page after the user has logged on -->
     <xf:action ev:event="load-previous-session-parameters">
         <!-- Set the database location for the session parameters -->
         <xf:dispatch name="set-sessionParametersLocation" target="session-model"/>

@@ -39,20 +39,13 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:iso-13606="http://www.iso.org/iso-13606"
     xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:svg="http://www.w3.org/2000/svg">
 
+
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+    
+    <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10"/>
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css" href="../resources/styles/cityEHRSkin.css" media="screen"/>
-
-
+       
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
         <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
@@ -102,7 +95,7 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo" mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
 

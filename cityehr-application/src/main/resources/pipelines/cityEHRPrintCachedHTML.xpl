@@ -6,8 +6,8 @@
     
     Pipeline to render HTML document as XSL-FO and then deliver to browser as a PDF.
     The HTML is cached for the user at the database location defined by htmlCacheHandle
-    The full database URL must be set in resourceHandle before this pipeline is invoked
-    HTML is then retrieved through resourceHandle
+    The full database URL must be set in htmlCacheHandle before this pipeline is invoked
+    HTML is then retrieved through htmlCacheHandle
     
     Copyright (C) 2013-2021 John Chelsom.
     
@@ -41,16 +41,16 @@
     </p:processor>
 
     <p:choose href="#parameters">
-        <!-- Check that the resourceHandle is set -->
-        <p:when test="//parameters[@type='session']/resourceHandle != ''">
+        <!-- Check that the htmlCacheHandle is set -->
+        <p:when test="//parameters[@type='session']/htmlCacheHandle != ''">
 
             <!-- Get the HTML document for the resource
                  This is located in the database at xmlstore/users/<userId>/htmlCache
-                 The full resourceHandle is found in the session parameters -->
+                 The full htmlCacheHandle is found in the session parameters -->
             <p:processor name="oxf:xforms-submission">
                 <p:input name="submission">
                     <xf:submission serialization="none" method="get"
-                        action="{//parameters[@type='session']/resourceHandle}"/>
+                        action="{//parameters[@type='session']/htmlCacheHandle}"/>
                 </p:input>
                 <p:input name="request" href="#parameters"/>
                 <p:output name="response" id="htmlReturned"/>
@@ -64,7 +64,7 @@
             </p:processor>
         </p:when>
 
-        <!-- No resourceHandle supplied - output an error -->
+        <!-- No htmlCacheHandle supplied - output an error -->
         <p:otherwise>
             <p:processor name="oxf:identity">
                 <p:input name="data">

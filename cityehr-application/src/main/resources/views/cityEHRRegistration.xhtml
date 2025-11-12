@@ -36,23 +36,14 @@
     xmlns:dc="http://purl.org/dc/elements/1.1/">
 
     <!-- ========= HTML Head - Includes the Xforms Model ========= 
-    ========================================================= -->
+        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
 
+
+    <!-- This second head contains page-specific content, including the XForms models.
+         Although not allowed in the HTML standard, browsers will merge the contents of multiple head elements -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
-            media="screen" />
-
 
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
@@ -401,7 +392,8 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -572,13 +564,12 @@
                     </xhtml:p>
 -->
                     <!--
-                    <xhtml:p>application-parameters-instance:<xhtml:br/>
+                    <xhtml:p>session-parameters-instance:<xhtml:br/>
                         <xf:output
                             ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('session-parameters-instance'), 'data')/*, 'html')"
                             mediatype="text/html"/>
                     </xhtml:p>
-                   -->
-
+-->
                     <!--
                     <xhtml:p>collectionExists-instance:<xhtml:br/>
                         <xf:output

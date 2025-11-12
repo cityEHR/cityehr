@@ -185,7 +185,8 @@
         <xf:action xxf:iterate="$patientCohort">
             <xxf:variable name="patientId" select="."/>
 
-            <!-- Load report composition (reloaded on each iteration so that entries are cleared) -->
+            <!-- Load report composition (reloaded on each iteration so that entries are cleared)
+                 Composition is in form-instance -->
             <xf:dispatch name="load-composition" target="cda-model">
                 <xxf:context name="patientId" select="$patientId"/>
                 <xxf:context name="compositionIRI" select="$reportIRI"/>
@@ -219,7 +220,7 @@
                  And are not hidden i.e. cityEHR:Scope=#CityEHR:EntryProperty:Hidden
                  Only supporting simple entries in reports and ignoring hidden entries. -->
             <xxf:variable name="exportEntrySet"
-                select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section[not(@cityEHR:visibility='alwaysHidden')][not(@cityEHR:rendition='#CityEHR:EntryProperty:Hidden')]/descendant::cda:entry[cda:observation][not(@cityEHR:Scope='#CityEHR:EntryProperty:Hidden')]"/>
+                select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section[not(@cityEHR:visibility='alwaysHidden')][not(@cityEHR:rendition='#CityEHR:EntryProperty:Hidden')]/descendant::cda:entry[cda:observation][not(@cityEHR:rendition='#CityEHR:EntryProperty:Hidden')]"/>
 
             <!-- If there is no multipleEntry (or no entries recorded for one) then just output a single line of data -->
             <xf:action if="empty($multipleEntrySet)">
@@ -309,21 +310,22 @@
         </xf:action>
 
         <!-- If the export format is CSV, then make the conversion here
-            If header row is required, then generate it directly - only needed once, as first element in patientSet-instance -->
+             If header row is required, then generate it directly - only needed once, as first element in patientSet-instance 
+            (but exclude hidden elements - scope in v1, rendition in v2, precision=0 in 2025)-->
         <xf:action if="$exportDataFormat='csv'">
             <!-- Header if required, first row only.
                 Must not contain commas (since these separate fields in the CSV) -->
             <xf:action
                 if="xxf:instance('patientSet-instance')/@outputHeaderRow='true' and empty(xxf:instance('patientSet-instance')/patientData)">
                 <xxf:variable name="csvHeaderData"
-                    select="string-join($exportEntrySet/descendant::cda:value[not(@cityEHR:Scope='#CityEHR:ElementProperty:Hidden'  or @cityEHR:elementRendition ='#CityEHR:ElementProperty:Hidden')]/translate(normalize-space(concat(ancestor::cda:observation/cda:code[@codeSystem='cityEHR']/@displayName,' ',@cityEHR:elementDisplayName)),',',''),',')"/>
+                    select="string-join($exportEntrySet/descendant::cda:value[not(@cityEHR:Scope='#CityEHR:ElementProperty:Hidden'  or @cityEHR:elementRendition ='#CityEHR:ElementProperty:Hidden' or @cityEHR:Precision ='0')]/translate(normalize-space(concat(ancestor::cda:observation/cda:code[@codeSystem='cityEHR']/@displayName,' ',@cityEHR:elementDisplayName)),',',''),',')"/>
                 <xf:setvalue ref="$patientDataTemplate" value="$csvHeaderData"/>
                 <xf:insert context="xxf:instance('patientSet-instance')" origin="$patientDataTemplate"/>
             </xf:action>
 
-            <!-- One field (comma delimited) for each element (but exclude hidden elements - scope in v1, rendition on v2) -->
+            <!-- One field (comma delimited) for each element (but exclude hidden elements - scope in v1, rendition in v2, precision=0 in 2025) -->
             <xxf:variable name="csvData"
-                select="string-join($exportEntrySet/descendant::cda:value[not(@cityEHR:Scope='#CityEHR:ElementProperty:Hidden' or @cityEHR:elementRendition ='#CityEHR:ElementProperty:Hidden')]/@value,',')"/>
+                select="string-join($exportEntrySet/descendant::cda:value[not(@cityEHR:Scope='#CityEHR:ElementProperty:Hidden' or @cityEHR:elementRendition ='#CityEHR:ElementProperty:Hidden'  or @cityEHR:Precision ='0')]/@value,',')"/>
             <xf:setvalue ref="$patientDataTemplate" value="$csvData"/>
         </xf:action>
 

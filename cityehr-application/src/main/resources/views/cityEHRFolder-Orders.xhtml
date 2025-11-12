@@ -18,111 +18,107 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
-    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
 
-    <!-- ========= HTML Head - Includes the Xforms Model ========= 
-        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+
+    <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}" media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
         <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Database Access Layer model contains parameters of the eXist database ==== 
             ================================================================================== -->
         <xi:include href="../models/databaseAccessLayer.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Session model contains stuff for handling of user sessions ============ 
             ================================================================================== -->
         <xi:include href="../models/sessionModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Audit log model contains stuff for audit of user actions ============== 
             ================================================================================== -->
         <xi:include href="../models/auditLogModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Page navigation model contains stuff for navigation between pages =====
         ====================================================================================== -->
         <xi:include href="../models/pageNavigationModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Configuration model contains standard configuration of the page ======= 
             ================================================================================== -->
         <xi:include href="../models/configurationModel.xml" xxi:omit-xml-base="true"/>
-        
-        
+
+
         <!-- ========= Dictionary model contains the specialty dictionary ========= 
             ======================================================================= -->
         <xi:include href="../models/dictionaryModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Release Notes ========= 
             ============================================================================ -->
         <xi:include href="../models/releaseNotesModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Information pane ========= 
             ============================================================================ -->
         <xi:include href="../models/informationModel.xml" xxi:omit-xml-base="true"/>
-        
-        
+
+
         <!-- ========= Notifications model contains stuff for handling notifications == 
             =================================================================================== -->
         <xi:include href="../models/notificationModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Patient Demographics model contains demographics data for the patient == 
             =================================================================================== -->
         <xi:include href="../models/patientDemographicsModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Reference data - directories of entries and elements ==== 
              =================================================================== -->
         <xi:include href="../models/directoryModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- === Web Services ===
             ==================== -->
         <xi:include href="../models/webServiceModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- === 
             Care Teams
             === -->
         <xi:include href="../models/careTeamModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Class dictionary model ====================================
              contains stuff for loading and accessing class dictionaries
              ===================================================================== -->
         <xi:include href="../models/classDictionaryModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= cdaModel model contains stuff for loading CDA documents ==== 
             =================================================================================== -->
         <xi:include href="../models/cdaModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- ========= Main model contains stuff specific to this page ========= 
             The main model for view that edit compositions is shared between forms, letters,
             The compositionType (forms, letters) is set from the page passed in view-parameters
             =================================================================== -->
         <xi:include href="../models/compositionMainModel.xml" xxi:omit-xml-base="true"/>
-        
-        
+
+
         <!-- ===  Manage image maps   === -->
         <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
-        
-  
+
+
         <!-- ========= View Controls actions model contains actions for view control ========= 
             These actions are specific to this page, so the model is implemented directly.           
             There must be one event handler for each action defined in the <viewControlsActions> for this page in application-parameters
@@ -135,7 +131,8 @@
             </xf:instance>
 
             <!-- Bindings for dynamic change of display of view controls  -->
-            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display" calculate="'show'"/>
+            <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view/@display"
+                calculate="'show'"/>
 
             <xf:bind nodeset="xxf:instance('viewControlsActions-instance')/view">
                 <!-- Word Processor export is for letters only (although may change to allow for all composition types -->
@@ -147,7 +144,8 @@
                     calculate="if (exists(xxf:instance('annotations-instance')/annotation)) then 'show' else 'hidden'"/>
                 <!-- Show XML only when debugging -->
                 <xf:bind nodeset="action[@id='xml']/@display"
-                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
+                />
             </xf:bind>
 
             <!-- Application defined action to show XML -->
@@ -161,7 +159,8 @@
 
             <!-- Application defined action to toggle the display of annotations on/off -->
             <xf:action ev:event="annotations">
-                <xf:setvalue ref="xxf:instance('control-instance')/showAnnotations" value="if (.='true') then 'false' else 'true'"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/showAnnotations"
+                    value="if (.='true') then 'false' else 'true'"/>
             </xf:action>
 
             <!-- Application defined action to save the order -->
@@ -172,14 +171,18 @@
             <!-- Application defined action to print the current composition -->
             <xf:action ev:event="print">
 
-                <!-- Set externalId for the patient -->
-                <xf:dispatch name="set-externalId" target="pageNavigation-model">
-                    <xxf:context name="type" select="'patient'"/>
-                    <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
+                <!-- Convert form to HTML.
+                     Also saves the session-parameters -->
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
+                    <xxf:context name="input-instance" select="xxf:instance('form-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
                 </xf:dispatch>
 
-                <xf:dispatch name="print-html" target="pageNavigation-model"/>
-
+                <!-- Invoke action to generate PDF for HTML -->
+                <xf:dispatch name="print-html" target="pageNavigation-model">
+                    <xxf:context name="externalIdType" select="'patient'"/>
+                </xf:dispatch>
             </xf:action>
 
             <!-- Application defined action to export the current view to Word Processor
@@ -194,9 +197,12 @@
 
                 <!-- Set the Word template to use as the base for conversion.
                      The template location is relative to staticFileRoot -->
-                <xxf:variable name="compositionIRI" select="xxf:instance('control-instance')/current-event/compositionIRI"/>
-                <xxf:variable name="templatePath" select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
-                <xxf:variable name="templateList" select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
+                <xxf:variable name="compositionIRI"
+                    select="xxf:instance('control-instance')/current-event/compositionIRI"/>
+                <xxf:variable name="templatePath"
+                    select="xxf:instance('application-parameters-instance')/wordTemplateURL/@path"/>
+                <xxf:variable name="templateList"
+                    select="xxf:instance('application-parameters-instance')/wordTemplateURL"/>
                 <xxf:variable name="template"
                     select="if ($templateList/template[@compositionIRI=$compositionIRI]) then $templateList/template[@compositionIRI=$compositionIRI]/@template else $templateList/@template"/>
 
@@ -214,7 +220,8 @@
                  Uses action from the exportData-model-->
             <xf:action ev:event="exportAll">
                 <xf:dispatch name="export-patientSet" target="exportData-model">
-                    <xxf:context name="patientSet" select="xxf:instance('view-parameters-instance')/patientId"/>
+                    <xxf:context name="patientSet"
+                        select="xxf:instance('view-parameters-instance')/patientId"/>
                     <xxf:context name="transformationXSL" select="''"/>
                 </xf:dispatch>
             </xf:action>
@@ -224,9 +231,11 @@
                  Uses action from the pageNavigation-model -->
             <xf:action ev:event="export">
                 <xf:dispatch name="export-xmlHandle" target="pageNavigation-model">
-                    <xxf:context name="exportHandle" select="xxf:instance('control-instance')/current-event/handle"/>
-                    <xxf:context name="exportName" select="xxf:instance('control-instance')/current-event/storageId"/>
-                    <xxf:context name="exportType" select="'xml'"/>
+                    <xxf:context name="exportHandle"
+                        select="xxf:instance('control-instance')/current-event/handle"/>
+                    <xxf:context name="exportName"
+                        select="xxf:instance('control-instance')/current-event/storageId"/>
+                    <xxf:context name="exportFormat" select="'xml'"/>
                 </xf:dispatch>
 
             </xf:action>
@@ -253,7 +262,8 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -284,7 +294,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'landscape'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'landscape'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -292,19 +304,19 @@
                 </xhtml:div>
 
                 <xhtml:div id="navigationDisplay" class="navigation">
-                    
+
                     <!-- List of orders saved and in-progress for this patient -->
                     <xf:group
                         ref="xxf:instance('view-parameters-instance')[viewNavigationType='inProgress']">
                         <xi:include href="cityEHRSavedCompositionSelection.xhtml"/>
                     </xf:group>
-                    
+
                     <!-- List of new orders that could be made for this patient -->
                     <xf:group
                         ref="xxf:instance('view-parameters-instance')[viewNavigationType='new']">
                         <xi:include href="cityEHRCompositionSelection.xhtml"/>
                     </xf:group>
-                    
+
                 </xhtml:div>
 
             </xhtml:div>
@@ -330,7 +342,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'portrait'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'portrait'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -348,7 +362,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandInfo']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/ehrInfoLayout" value="''"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/ehrInfoLayout"
+                                    value="''"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -363,7 +379,8 @@
                     <!-- Show additional information about the event, if it is an annotation -***jc -->
                     <xxf:variable name="linkedEventIRI"
                         select="xxf:instance('event-instance')//cda:documentationOf[1]/cda:serviceEvent/cda:id/@extension"/>
-                    <xxf:variable name="linkedEvent" select="xxf:instance('patientEventsList-instance')/event[compositionHandle = $linkedEventIRI]"/>
+                    <xxf:variable name="linkedEvent"
+                        select="xxf:instance('patientEventsList-instance')/event[compositionHandle = $linkedEventIRI]"/>
 
                     <xxf:variable name="linkedEventTimeDisplay"
                         select="if ($linkedEvent/effectiveTime castable as xs:dateTime) then format-dateTime(xs:dateTime($linkedEvent/effectiveTime), xxf:instance('view-parameters-instance')/dateDisplayFormat, xxf:instance('session-parameters-instance')/languageCode, (), ()) else $linkedEvent/effectiveTime"/>
@@ -402,15 +419,19 @@
                         -->
 
                     <!-- Set up variables for displaying and processing annotations -->
-                    <xxf:variable name="notificationActions" select="xxf:instance('view-parameters-instance')/notifications/notificationActions"/>
+                    <xxf:variable name="notificationActions"
+                        select="xxf:instance('view-parameters-instance')/notifications/notificationActions"/>
                     <xxf:variable name="annotationTemplate"
                         select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/annotation"/>
                     <!-- New annotations -->
-                    <xxf:variable name="annotationsSet" select="xxf:instance('annotations-instance')"/>
+                    <xxf:variable name="annotationsSet"
+                        select="xxf:instance('annotations-instance')"/>
                     <xxf:variable name="annotationsCount" select="count($annotationsSet/annotation)"/>
                     <!-- Stored annotations -->
-                    <xxf:variable name="storedAnnotationsSet" select="xxf:instance('stored-annotations-instance')"/>
-                    <xxf:variable name="storedAnnotationsCount" select="count($storedAnnotationsSet/annotation)"/>
+                    <xxf:variable name="storedAnnotationsSet"
+                        select="xxf:instance('stored-annotations-instance')"/>
+                    <xxf:variable name="storedAnnotationsCount"
+                        select="count($storedAnnotationsSet/annotation)"/>
 
                     <xxf:variable name="annotationsDisplayClass"
                         select="if (xxf:instance('control-instance')/showAnnotations='true' and $linkedEventIRI='') then 'annotationsContainer' else 'hidden'"/>
@@ -420,21 +441,32 @@
                         <!-- Button to add new annotation -->
                         <xf:trigger appearance="minimal">
                             <xf:label>
-                                <img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/add.png"/>
+                                <img
+                                    src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/add.png"
+                                />
                             </xf:label>
                             <xf:hint>
-                                <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/addAnnotationsHint"/>
+                                <xf:output
+                                    ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder-Events/addAnnotationsHint"
+                                />
                             </xf:hint>
                             <xf:action ev:event="DOMActivate">
-                                <xf:insert context="$annotationsSet" nodeset="annotation" origin="$annotationTemplate" at="1" position="before"/>
+                                <xf:insert context="$annotationsSet" nodeset="annotation"
+                                    origin="$annotationTemplate" at="1" position="before"/>
                                 <!-- Set default values -->
-                                <xxf:variable name="newAnnotation" select="$annotationsSet/annotation[1]"/>
-                                <xf:setvalue ref="$newAnnotation/authorTime/@value" value="current-dateTime()"/>
-                                <xf:setvalue ref="$newAnnotation/author/@displayName" value="xxf:instance('user-instance')/credentials/username"/>
-                                <xf:setvalue ref="$newAnnotation/effectiveTime/@value" value="current-date()"/>
-                                <xf:action xxf:iterate="$newAnnotation/parameterSet/parameter[option]">
+                                <xxf:variable name="newAnnotation"
+                                    select="$annotationsSet/annotation[1]"/>
+                                <xf:setvalue ref="$newAnnotation/authorTime/@value"
+                                    value="current-dateTime()"/>
+                                <xf:setvalue ref="$newAnnotation/author/@displayName"
+                                    value="xxf:instance('user-instance')/credentials/username"/>
+                                <xf:setvalue ref="$newAnnotation/effectiveTime/@value"
+                                    value="current-date()"/>
+                                <xf:action
+                                    xxf:iterate="$newAnnotation/parameterSet/parameter[option]">
                                     <xxf:variable name="parameter" select="."/>
-                                    <xf:setvalue ref="$parameter/@value" value="$parameter/option[1]/@value"/>
+                                    <xf:setvalue ref="$parameter/@value"
+                                        value="$parameter/option[1]/@value"/>
                                 </xf:action>
                                 <!-- Make sure save button is displayed -->
                                 <xf:recalculate model="viewControlsActions-model"/>
@@ -455,10 +487,12 @@
                         -->
 
                         <!-- Get the columns to display for parameters -->
-                        <xxf:variable name="annotationsParameters" select="$annotationTemplate/parameterSet/parameter/@id"/>
+                        <xxf:variable name="annotationsParameters"
+                            select="$annotationTemplate/parameterSet/parameter/@id"/>
                         <xxf:variable name="storedAnnotationsParameters"
                             select="distinct-values($storedAnnotationsSet/annotation/parameterSet/parameter/@id)"/>
-                        <xxf:variable name="allParameters" select="distinct-values(($annotationsParameters,$storedAnnotationsParameters))"/>
+                        <xxf:variable name="allParameters"
+                            select="distinct-values(($annotationsParameters,$storedAnnotationsParameters))"/>
 
 
                         <!-- New annotations -->
@@ -514,12 +548,15 @@
                                         <xhtml:td>
                                             <xf:trigger appearance="minimal">
                                                 <xf:label>
-                                                    <xhtml:img src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/remove.png" />
+                                                  <xhtml:img
+                                                  src="{xxf:instance('view-parameters-instance')/staticFileRoot}/icons/remove.png"
+                                                   />
                                                 </xf:label>
                                                 <xf:action ev:event="DOMActivate">
-                                                    <xf:delete nodeset="$annotation"/>
-                                                    <!-- Make sure save button is displayed -->
-                                                    <xf:recalculate model="viewControlsActions-model"/>
+                                                  <xf:delete nodeset="$annotation"/>
+                                                  <!-- Make sure save button is displayed -->
+                                                  <xf:recalculate model="viewControlsActions-model"
+                                                  />
                                                 </xf:action>
                                             </xf:trigger>
                                         </xhtml:td>
@@ -536,48 +573,52 @@
                                         <!-- Other cells are for edit of parameters of the annotation. -->
                                         <xf:repeat nodeset="$allParameters">
                                             <xxf:variable name="parameterId" select="."/>
-                                            <xxf:variable name="annotationElement" select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
+                                            <xxf:variable name="annotationElement"
+                                                select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
                                             <xxf:variable name="annotationElementType"
                                                 select="if (exists($annotationElement)) then $annotationElement/@type else ''"/>
                                             <xhtml:td>
                                                 <!-- If the parameter model has changed then there may be stored annotations with parameters 
                                                        which are not in the current model. so the cell may be blank -->
                                                 <xf:group ref="$annotationElement">
-                                                    <!-- Element has selection list defined -->
-                                                    <xxf:variable name="selectionDisplayClass"
-                                                        select="if (exists($annotationElement/option)) then '' else 'hidden'"/>
-                                                    <xhtml:span class="{$selectionDisplayClass}">
-                                                        <xf:group ref="$annotationElement/option">
-                                                            <xf:select1 ref="$annotationElement/@value">
-                                                                <xf:itemset nodeset="$annotationElement/option">
-                                                                    <xf:label ref="@displayName"/>
-                                                                    <xf:value ref="@value"/>
-                                                                </xf:itemset>
-                                                                <xf:action ev:event="xforms-value-changed">
-                                                                    <!-- First get the node that was selected -->
-                                                                    <xxf:variable name="optionValue" select="$annotationElement/@value"/>
-                                                                    <xxf:variable name="selectedOption"
-                                                                        select="$annotationElement/option[@value=$optionValue]"/>
-                                                                    <xf:setvalue ref="$annotationElement/@displayName"
-                                                                        value="$selectedOption/@displayName"/>
-                                                                </xf:action>
-                                                            </xf:select1>
-                                                        </xf:group>
-                                                    </xhtml:span>
-                                                    <!-- Element is memo type -->
-                                                    <xxf:variable name="memoDisplayClass"
-                                                        select="if ($selectionDisplayClass='hidden' and $annotationElement/@type='memo') then '' else 'hidden'"/>
-                                                    <xhtml:span class="{$memoDisplayClass}">
-                                                        <xf:group ref="$annotationElement[@type='memo']">
-                                                            <xf:textarea ref="$annotationElement/@value" appearance="xxf:autosize" style="width: 100%">
-                                                                <xf:label/>
-                                                            </xf:textarea>
-                                                        </xf:group>
-                                                    </xhtml:span>
-                                                    <!-- Element is recognised XML type -->
-                                                    <xxf:variable name="simpleTypeDisplayClass"
-                                                        select="if ($selectionDisplayClass='hidden' and $memoDisplayClass='hidden') then '' else 'hidden'"/>
-                                                    <xf:input class="{$simpleTypeDisplayClass}" ref="$annotationElement/@value"/>
+                                                  <!-- Element has selection list defined -->
+                                                  <xxf:variable name="selectionDisplayClass"
+                                                  select="if (exists($annotationElement/option)) then '' else 'hidden'"/>
+                                                  <xhtml:span class="{$selectionDisplayClass}">
+                                                  <xf:group ref="$annotationElement/option">
+                                                  <xf:select1 ref="$annotationElement/@value">
+                                                  <xf:itemset nodeset="$annotationElement/option">
+                                                  <xf:label ref="@displayName"/>
+                                                  <xf:value ref="@value"/>
+                                                  </xf:itemset>
+                                                  <xf:action ev:event="xforms-value-changed">
+                                                  <!-- First get the node that was selected -->
+                                                  <xxf:variable name="optionValue"
+                                                  select="$annotationElement/@value"/>
+                                                  <xxf:variable name="selectedOption"
+                                                  select="$annotationElement/option[@value=$optionValue]"/>
+                                                  <xf:setvalue ref="$annotationElement/@displayName"
+                                                  value="$selectedOption/@displayName"/>
+                                                  </xf:action>
+                                                  </xf:select1>
+                                                  </xf:group>
+                                                  </xhtml:span>
+                                                  <!-- Element is memo type -->
+                                                  <xxf:variable name="memoDisplayClass"
+                                                  select="if ($selectionDisplayClass='hidden' and $annotationElement/@type='memo') then '' else 'hidden'"/>
+                                                  <xhtml:span class="{$memoDisplayClass}">
+                                                  <xf:group ref="$annotationElement[@type='memo']">
+                                                  <xf:textarea ref="$annotationElement/@value"
+                                                  appearance="xxf:autosize" style="width: 100%">
+                                                  <xf:label/>
+                                                  </xf:textarea>
+                                                  </xf:group>
+                                                  </xhtml:span>
+                                                  <!-- Element is recognised XML type -->
+                                                  <xxf:variable name="simpleTypeDisplayClass"
+                                                  select="if ($selectionDisplayClass='hidden' and $memoDisplayClass='hidden') then '' else 'hidden'"/>
+                                                  <xf:input class="{$simpleTypeDisplayClass}"
+                                                  ref="$annotationElement/@value"/>
                                                 </xf:group>
                                             </xhtml:td>
                                         </xf:repeat>
@@ -587,19 +628,24 @@
                                         <xhtml:td>
                                             <xf:select1 ref="$annotation/notification/@value">
                                                 <xf:itemset nodeset="$notificationActions/option">
-                                                    <xf:label ref="@displayName"/>
-                                                    <xf:value ref="@value"/>
+                                                  <xf:label ref="@displayName"/>
+                                                  <xf:value ref="@value"/>
                                                 </xf:itemset>
                                                 <xf:action ev:event="xforms-value-changed">
-                                                    <!-- First get the node that was selected -->
-                                                    <xxf:variable name="notificationValue" select="$annotation/notification/@value"/>
-                                                    <xxf:variable name="notificationOption"
-                                                        select="$notificationActions/option[@value=$notificationValue]"/>
-                                                    <xf:setvalue ref="$annotation/notification/@displayName" value="$notificationOption/@displayName"/>
-                                                    <xxf:variable name="firstNotifyActor" select="$notifyActorSelectionList[1]"/>
-                                                    <!-- Set the value of the notifyActor (displayName will get set by the xforms-value-changed event below) -->
-                                                    <xf:setvalue ref="$annotation/notifyActor/@value"
-                                                        value="if (exists($firstNotifyActor)) then $firstNotifyActor/@value else ''"/>
+                                                  <!-- First get the node that was selected -->
+                                                  <xxf:variable name="notificationValue"
+                                                  select="$annotation/notification/@value"/>
+                                                  <xxf:variable name="notificationOption"
+                                                  select="$notificationActions/option[@value=$notificationValue]"/>
+                                                  <xf:setvalue
+                                                  ref="$annotation/notification/@displayName"
+                                                  value="$notificationOption/@displayName"/>
+                                                  <xxf:variable name="firstNotifyActor"
+                                                  select="$notifyActorSelectionList[1]"/>
+                                                  <!-- Set the value of the notifyActor (displayName will get set by the xforms-value-changed event below) -->
+                                                  <xf:setvalue ref="$annotation/notifyActor/@value"
+                                                  value="if (exists($firstNotifyActor)) then $firstNotifyActor/@value else ''"
+                                                  />
                                                 </xf:action>
                                             </xf:select1>
                                         </xhtml:td>
@@ -609,17 +655,21 @@
                                         <xhtml:td>
                                             <xxf:variable name="notifyActorDisplayClass"
                                                 select="if ($annotation/notification/@value!='' and not(empty($notifyActorSelectionList))) then '' else 'hidden'"/>
-                                            <xf:select1 class="{$notifyActorDisplayClass}" ref="$annotation/notifyActor/@value">
+                                            <xf:select1 class="{$notifyActorDisplayClass}"
+                                                ref="$annotation/notifyActor/@value">
                                                 <xf:itemset nodeset="$notifyActorSelectionList">
-                                                    <xf:label ref="@displayName"/>
-                                                    <xf:value ref="@value"/>
+                                                  <xf:label ref="@displayName"/>
+                                                  <xf:value ref="@value"/>
                                                 </xf:itemset>
                                                 <xf:action ev:event="xforms-value-changed">
-                                                    <!-- First get the node that was selected -->
-                                                    <xxf:variable name="notifyActorId" select="."/>
-                                                    <xxf:variable name="notifyActor" select="$notifyActorSelectionList[@value=$notifyActorId]"/>
-                                                    <xf:setvalue ref="$annotation/notifyActor/@displayName"
-                                                        value="if (exists($notifyActor)) then $notifyActor/@displayName else ''"/>
+                                                  <!-- First get the node that was selected -->
+                                                  <xxf:variable name="notifyActorId" select="."/>
+                                                  <xxf:variable name="notifyActor"
+                                                  select="$notifyActorSelectionList[@value=$notifyActorId]"/>
+                                                  <xf:setvalue
+                                                  ref="$annotation/notifyActor/@displayName"
+                                                  value="if (exists($notifyActor)) then $notifyActor/@displayName else ''"
+                                                  />
                                                 </xf:action>
                                             </xf:select1>
                                         </xhtml:td>
@@ -650,10 +700,11 @@
                                         <!-- One cell for each parameter -->
                                         <xf:repeat nodeset="$allParameters">
                                             <xxf:variable name="parameterId" select="."/>
-                                            <xxf:variable name="annotationElement" select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
+                                            <xxf:variable name="annotationElement"
+                                                select="$annotation/parameterSet/parameter[@id=$parameterId]"/>
                                             <xhtml:td>
                                                 <xf:output
-                                                    ref="if (exists($annotationElement)) then (if ($annotationElement/@displayName!='') then $annotationElement/@displayName else $annotationElement/@value) else ''"
+                                                  ref="if (exists($annotationElement)) then (if ($annotationElement/@displayName!='') then $annotationElement/@displayName else $annotationElement/@value) else ''"
                                                 />
                                             </xhtml:td>
                                         </xf:repeat>
@@ -783,7 +834,8 @@
                     -->
 
                     <!-- Display the formatted event -->
-                    <xf:output ref="xxf:serialize(xxf:instance('html-instance'), 'html')" mediatype="text/html"/>
+                    <xf:output ref="xxf:serialize(xxf:instance('html-instance'), 'html')"
+                        mediatype="text/html"/>
 
                     <!-- Include filler so that sections at foot of composition can scroll to the top -->
                     <xi:include href="cityEHRFormFootPadding.xhtml"/>

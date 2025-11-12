@@ -113,6 +113,9 @@
 
         <!-- The default system language -->
         <language code="en-GB" displayName="English" userSelection="false"/>
+        
+        <!-- The system stylesheet -->
+        <systemStylesheet cityEHR:displayName="System Stylesheet" value="cityEHRSkin.css"/>
 
     </dynamicParameters>
 
@@ -567,6 +570,14 @@
                 <action label="Reload" model="main-model" event="reload-shippedResources"/>
                 <action label="Cancel" model="dummy" event="do-nothing"/>
             </dialogue>
+            
+            <dialogue id="reload-shippedStylesheets">
+                <title displayName="Reload shipped stylesheets"/>
+                <message
+                    displayName="You are about to reload stylesheets shipped with this application - this action cannot be undone."/>
+                <action label="Reload" model="main-model" event="reload-shippedStylesheets"/>
+                <action label="Cancel" model="dummy" event="do-nothing"/>
+            </dialogue>
 
             <dialogue id="resetForm">
                 <title displayName="Resetting Form"/>
@@ -829,6 +840,7 @@
             <transform format="HL7-V2-XML" transformationXSL="CDA2HL7-V2-XML"/>
             <transform format="HL7-V2" transformationXSL="CDA2HL7-V2"/>
             <transform format="HL7-FHIR" transformationXSL="CDA2HL7-FHIR"/>
+            <transform format="ValkyrieToken" transformationXSL="CDA2ValkyrieToken"/>
         </cdaTransformation>
 
     </staticParameters>

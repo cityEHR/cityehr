@@ -1,0 +1,55 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRPageHead.xhtml
+    
+    Standard cityEHR page head with title, favicon and stylesheets
+    Included in every page.
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:head xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    
+    <!-- Try this to force compatibility mode -->
+    <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10"/>
+
+    <!-- HTML Title is the displayName of the current application -->
+    <xhtml:title>
+        <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
+    </xhtml:title>
+
+    <!-- Favicon must be set on every page -->
+    <xhtml:link rel="shortcut icon" type="image/x-icon"
+        href="data:image/*;base64,{xxf:instance('session-parameters-instance')/applicationFavicon}"/>
+
+    <!-- Stylesheet -->
+    <xhtml:link rel="stylesheet" type="text/css" href="../resources/styles/cityEHRSkin.css"
+        media="screen"/>
+
+    <!-- System stylesheet set in the xmlstore will take precedence, if it exists -->
+    <xhtml:link rel="stylesheet" type="text/css"
+        href="data:text/css;base64,{xxf:instance('session-parameters-instance')/systemStylesheet}"/>
+
+    <!-- Application stylesheet set in the xmlstore will take precedence, if it exists -->
+    <xhtml:link rel="stylesheet" type="text/css"
+        href="data:text/css;base64,{xxf:instance('session-parameters-instance')/applicationStylesheet}"/>
+
+</xhtml:head>

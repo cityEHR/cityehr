@@ -16,7 +16,6 @@
         load-user-details
         resume-auditLog
         load-application-parameters
-        load-logo
         set-view-controls
         
     
@@ -106,24 +105,6 @@
     </xf:action>
 
 
-    <!-- Application defined action to set default logo
-         Default location must be set in the application parameter (@value), relative to the staticFileURL
-         If the image has been loaded from a file then @value will be set to file:.. - the location of the (temporary) file from which it was loaded 
-         So in this case the cityEHRGetUploadedBinary will not find anything (relative to staticFileURL)-->
-    <xf:action ev:event="set-logo-default">
-        <!-- logo specified in parameters -->
-        <xxf:variable name="imageElement" select="xxf:instance('application-parameters-instance')/application/images/logo"/>
-
-        <!-- Get default logo image, if specified -->
-        <xf:action if="$imageElement/@value != ''">
-            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
-                value="concat(xxf:instance('view-parameters-instance')/staticFileURL,'/',$imageElement/@value)"/>
-            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType" value="'image/*'"/>
-            <xxf:variable name="pipeline" select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedBinary.xpl')"/>
-            <xxf:variable name="imageData" select="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
-            <xf:setvalue ref="xxf:instance('logo-instance')" value="xs:base64Binary($imageData)"/>
-        </xf:action>
-    </xf:action>
 
 
     <!-- ========= Error Handling =================================
@@ -270,11 +251,6 @@
              Will abort-session if parameters can't be loaded. -->
         <xf:dispatch name="load-application-parameters" target="configuration-model"/>
 
-        <!-- Load application logo (from database) -->
-        <xf:dispatch name="load-logo" target="pageNavigation-model">
-            <xxf:context name="applicationId" select="xxf:instance('session-parameters-instance')/applicationId"/>
-            <xxf:context name="logoElement" select="xxf:instance('application-parameters-instance')/application/images/logo"/>
-        </xf:dispatch>
 
         <!-- Set the view controls, if there are any -->
         <xf:dispatch name="set-view-controls" target="configuration-model"/>
@@ -293,6 +269,9 @@
     <!-- ========= Set parameters when form is ready ========= 
          ===================================================== -->
     <xf:action ev:event="xforms-ready">
+        <!--
+        <xf:dispatch name="validate-session" target="session-model"/>
+        -->
 
         <!-- Time the current page was ready -->
         <xxf:variable name="readyTime" select="current-dateTime()"/>

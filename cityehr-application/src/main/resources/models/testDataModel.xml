@@ -1,0 +1,1049 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    testDataModel.xml
+    
+    Xforms model containing stuff for generating test data
+    Just used in cityEHRAdmin
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="testData-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+    <!-- Control of the model -->
+    <xf:instance id="testDataControl-instance">
+        <control xmlns="">
+            <status/>
+            <importStatus/>
+
+            <randomNumber/>
+            <randomNumberSize><!-- This is the power of ten i.e. 3 = random number 1-999--></randomNumberSize>
+            <randomNumberBase>1000</randomNumberBase>
+            <randomSelection/>
+
+            <baseDate/>
+            <dayDuration>P1D</dayDuration>
+            <monthDuration>P1M</monthDuration>
+            <incrementDuration/>
+
+            <templateBirthTime/>
+
+            <dictionaryElementSet/>
+
+            <cdaHeaderSet/>
+
+            <cdaHeader setBirthTime="false" setEnumeratedValues="false">
+                <id elementIRI="" default=""/>
+                <prefix elementIRI="" default=""/>
+                <given elementIRI="" default="Given Name"/>
+                <family elementIRI="" default="Family Name"/>
+                <administrativeGenderCode elementIRI="" default="Unkown"/>
+                <birthTime elementIRI="" default="1983-03-15"/>
+                <providerOrganization elementIRI="" default="cityEHR"/>
+            </cdaHeader>
+
+            <identifierRandomSuffix/>
+
+        </control>
+    </xf:instance>
+
+    <!-- Instance for the test record -->
+    <xf:instance id="testRecord-instance">
+        <records/>
+    </xf:instance>
+
+    <!-- Instance for the test record template 
+         This is imported by the user in cityEHRAdmin -->
+    <xf:instance id="testRecordTemplate-instance">
+        <records/>
+    </xf:instance>
+
+    <!-- Directories for test data names -->
+    <xf:instance id="familyNames-instance" src="oxf:/apps/ehr/resources/testData/familyNames.xml"/>
+    <xf:instance id="maleGivenNames-instance"
+        src="oxf:/apps/ehr/resources/testData/maleGivenNames.xml"/>
+    <xf:instance id="femaleGivenNames-instance"
+        src="oxf:/apps/ehr/resources/testData/femaleGivenNames.xml"/>
+    <xf:instance id="neutralGivenNames-instance"
+        src="oxf:/apps/ehr/resources/testData/neutralGivenNames.xml"/>
+
+    <!-- Instance for dictionary used in look up -->
+    <xf:instance id="testDataDictionary-instance">
+        <directory/>
+    </xf:instance>
+
+
+    <!-- Application defined action to check the record template used to generate test data.
+         The templateInstance has been uploaded on the cityEHRAdmin page (for generateTestData)
+         Must contain one, and only one, EHR_Extract 
+         EHR_Extract must contain cda:ClinicalDocument for registration document (there may be more than one of these specified in the parameters-instance)
+         birthTime in the registration document must be castable to xs:dateTime or xs:date
+         Final check is that the gender distribution is correct
+         
+         Sets the importStatus to 'ready' or to an error state.
+         -->
+    <xf:action ev:event="check-recordTemplate">
+        <xxf:variable name="templateInstance" select="event('templateInstance')"/>
+        <xxf:variable name="specialtyIRIList" select="event('specialtyIRIList')"/>
+        <xxf:variable name="genderValueSet" select="event('genderValueSet')"/>
+        <xxf:variable name="importStatus" select="event('importStatus')"/>
+
+        <!-- importStaus is '' (blank) unless set to an error state during the checks -->
+        <xf:setvalue ref="xxf:instance('testDataControl-instance')/importStatus" value="''"/>
+
+        <!-- Template must contain one EHR_Extract -->
+        <xxf:variable name="extractCount"
+            select="count($templateInstance/descendant::iso-13606:EHR_Extract)"/>
+
+        <!-- One EHR_Extract, so OK to look for registration document -->
+        <xf:action if="$extractCount = 1">
+            <!-- EHR_Extract must contain at least one registration document -->
+            <xxf:variable name="registrationDocumentIRI"
+                select="xxf:instance('application-parameters-instance')/patientRegistration/registrationEvent/@composition"/>
+            <xxf:variable name="registrationDocument"
+                select="$templateInstance/descendant::cda:ClinicalDocument[cda:typeId/@extension=$registrationDocumentIRI][1]"/>
+
+            <!-- Registration document exists, so check birthTime (which must exist)
+                         birthTime castable as xs:date or xs:dataTime - all is OK with the template and importStatus is ready.
+                         Otherwise generate an error message -->
+            <xf:action if="exists($registrationDocument)">
+                <!-- Get birthTime from the template. -->
+                <xxf:variable name="birthTimeEntryIRI"
+                    select="xxf:instance('application-parameters-instance')/patientRegistration/birthTime/@entry"/>
+                <xxf:variable name="birthTimeElementIRI"
+                    select="xxf:instance('application-parameters-instance')/patientRegistration/birthTime/@element"/>
+                <xxf:variable name="templateBirthTime"
+                    select="$registrationDocument/descendant::cda:observation[cda:id/@extension=$birthTimeEntryIRI]/descendant::cda:value[@extension=$birthTimeElementIRI]/@value[1]"/>
+
+                <!-- birthTime is OK if dateTime or date.
+                     The recorded birthTime is always a date for test data, so is cast to xs:date -->
+                <xf:action
+                    if="$templateBirthTime castable as xs:dateTime or $templateBirthTime castable as xs:date">
+                    <xf:setvalue ref="xxf:instance('testDataControl-instance')/templateBirthTime"
+                        value="substring($templateBirthTime,1,10)"/>
+                </xf:action>
+                <!-- birthTime not OK -->
+                <xf:action
+                    if="not($templateBirthTime castable as xs:dateTime or $templateBirthTime castable as xs:date)">
+                    <xf:setvalue ref="xxf:instance('testDataControl-instance')/importStatus"
+                        value="'noBirthTimeInTemplate'"/>
+                </xf:action>
+            </xf:action>
+
+            <!-- No registration document, so can't generate test data -->
+            <xf:action if="not(exists($registrationDocument))">
+                <xf:setvalue ref="xxf:instance('testDataControl-instance')/importStatus"
+                    value="'noRegDocInTemplate'"/>
+            </xf:action>
+        </xf:action>
+
+        <!-- There isn't one EHR_Extract, so can't generate test data -->
+        <xf:action if="$extractCount != 1">
+            <xf:setvalue ref="xxf:instance('testDataControl-instance')/importStatus"
+                value="'noSingleExtractInTemplate'"/>
+        </xf:action>
+
+        <!-- Template is OK - so can set up dictionary elements and gender value set -->
+        <xf:action if="xxf:instance('testDataControl-instance')/importStatus = ''">
+            <!-- Set dictionary elements for enumerated values.
+                 Includes the enumerated values for gender needed by set-GenderValueSet-->
+            <xf:dispatch name="set-dictionaryElementSet" target="testData-model">
+                <xxf:context name="templateInstance" select="$templateInstance"/>
+                <xxf:context name="specialtyIRIList" select="$specialtyIRIList"/>
+            </xf:dispatch>
+
+            <!-- Set gender values -->
+            <xf:dispatch name="set-GenderValueSet" target="testData-model">
+                <xxf:context name="genderValueSet" select="$genderValueSet"/>
+            </xf:dispatch>
+
+            <!-- Final check is of the gender values (i.e. number of records assigned to each gender) -->
+            <xf:dispatch name="verify-genderPercentages" target="testData-model">
+                <xxf:context name="genderValueSet" select="$genderValueSet"/>
+                <xxf:context name="status"
+                    select="xxf:instance('testDataControl-instance')/importStatus"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Set the return importStatus -->
+        <xf:setvalue ref="$importStatus"
+            value="xxf:instance('testDataControl-instance')/importStatus"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set the elements used for enumerated values.
+         Including the element for the gender values.
+         The elements are found in any of the specialty dictionaries.
+         The list of eleeentIRIs is found from the cdaTemplate
+         The ist of specialties is passed from the list list used in cityEHRAdmin for the managed application
+         -->
+    <xf:action ev:event="set-dictionaryElementSet">
+        <xxf:variable name="templateInstance" select="event('templateInstance')"/>
+        <xxf:variable name="specialtyIRIList" select="event('specialtyIRIList')"/>
+
+        <!-- Clear the dictionaryElementSet -->
+        <xxf:variable name="dictionaryElementSet"
+            select="xxf:instance('testDataControl-instance')/dictionaryElementSet"/>
+        <xf:delete nodeset="$dictionaryElementSet/*"/>
+
+        <!-- Get the list of elementIRIs for enumeratedValue elements in the templateInstance -->
+        <xxf:variable name="elementIRIList"
+            select="distinct-values($templateInstance//cda:value[@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedValue']/@root)"/>
+
+        <!-- Iterate through the specialties and load the dictionary for each one.
+             Then iterate through the elementIRIList to find the element definitions -->
+        <xf:action xxf:iterate="$specialtyIRIList">
+            <xxf:variable name="specialtyIRI" select="."/>
+
+            <!-- Load the dictionary -->
+            <xf:dispatch name="load-dictionary" target="dictionary-model">
+                <xxf:context name="specialtyIRI" select="$specialtyIRI"/>
+            </xf:dispatch>
+
+            <!-- Iterate through the elementsIRIs, looking for definitions in the dictionary -->
+            <xf:action xxf:iterate="$elementIRIList">
+                <xxf:variable name="elementIRI" select="."/>
+                <xxf:variable name="elementDefinition"
+                    select="xxf:instance('dictionary-instance')/iso-13606:elementCollection/iso-13606:element[@root=$elementIRI]"/>
+                <!-- Definition exists so add to the dictionaryElementSet
+                     But only if its not already there (because the same element might exist in multiple dictionaries) -->
+                <xf:action if="exists($elementDefinition)">
+                    <xf:action
+                        if="not(exists($dictionaryElementSet/iso-13606:element[@root=$elementIRI]))">
+                        <xf:insert context="$dictionaryElementSet" nodeset="*"
+                            origin="$elementDefinition" at="last()" position="after"/>
+                    </xf:action>
+                </xf:action>
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set the baseDate and incrementDuration.
+         The baseDate is the minimum setting for the birthDate, based on the maximumAge input by the user (ages are relative to the current date)
+         The incrementDuration is the age range (as a duration) divided by the randomNumberBase.
+                 Then to create a random birthDate to give a patient between minimumAge and maximumAge:
+                    Generate a random number (between 1 and randomNumberBase)
+                    Add that number of incrementDuration to the baseDate
+            -->
+    <xf:action ev:event="set-BaseDate">
+        <xxf:variable name="maximumAge" select="event('maximumAge')"/>
+        <xxf:variable name="minimumAge" select="event('minimumAge')"/>
+
+        <xf:setvalue ref="xxf:instance('testDataControl-instance')/baseDate"
+            value="xs:date(current-date() - xs:yearMonthDuration(12 * xs:yearMonthDuration(xxf:instance('testDataControl-instance')/monthDuration) * ($maximumAge + 1)) + xs:dayTimeDuration(xxf:instance('testDataControl-instance')/dayDuration))"/>
+
+        <xxf:variable name="minAgeDate"
+            select="xs:date(current-date() - xs:yearMonthDuration(12 * xs:yearMonthDuration(xxf:instance('testDataControl-instance')/monthDuration) * $minimumAge))"/>
+        <xf:setvalue ref="xxf:instance('testDataControl-instance')/incrementDuration"
+            value="xs:dayTimeDuration(xs:date($minAgeDate) - xs:date(xxf:instance('testDataControl-instance')/baseDate)) div xxf:instance('testDataControl-instance')/randomNumberBase"
+        />
+    </xf:action>
+
+
+    <!-- Application defined action to set the gender values from the information model.
+                 Get gender element from patient registration configuration.
+                 Get set of values for the gender element from the information model dictionary 
+                 That dictionary must be for the model that contains the registration events/elements
+                 Set up gender values in the control-instance generateTestData/genderValueSet.
+                 Uses the template generateTestData/genderValue
+            -->
+    <xf:action ev:event="set-GenderValueSet">
+        <xxf:variable name="genderValueSet" select="event('genderValueSet')"/>
+
+        <!-- Gender element - should be enumeratedValue (TBD - allow for enumeratedClass, enumeratedDirectory) -->
+        <xxf:variable name="administrativeGenderCodeElementIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/administrativeGenderCode/@element"/>
+        <!-- Set of gender values -->
+        <xxf:variable name="dictionaryElementSet"
+            select="xxf:instance('testDataControl-instance')/dictionaryElementSet"/>
+        <xxf:variable name="genderValues"
+            select="$dictionaryElementSet/iso-13606:element[@root=$administrativeGenderCodeElementIRI]/iso-13606:data"/>
+
+        <!-- Set genderValues in control-instance.
+             Blank value is set from template in view-parameters -->
+        <xxf:variable name="genderValueTemplate"
+            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/generateTestData/genderValue"/>
+        <xf:delete nodeset="$genderValueSet/*"/>
+        <xf:insert context="$genderValueSet" origin="$genderValueTemplate"/>
+
+        <!-- Other values are from the data dictionary.
+             The percentage for each category is set evenly -->
+        <xxf:variable name="categoryPercentage"
+            select="if (count($genderValues) gt 0) then floor(100 div count($genderValues)) else 0"/>
+        <xf:action xxf:iterate="$genderValues">
+            <xxf:variable name="genderValue" select="."/>
+            <xf:insert context="$genderValueSet" nodeset="genderValue" origin="$genderValueTemplate"
+                at="last()" position="after"/>
+            <xxf:variable name="genderValueOption" select="$genderValueSet/genderValue[last()]"/>
+            <xf:setvalue ref="$genderValueOption/@value" value="$genderValue/@value"/>
+            <xf:setvalue ref="$genderValueOption/@displayName" value="$genderValue/@displayName"/>
+            <xf:setvalue ref="$genderValueOption/@percentage" value="$categoryPercentage"/>
+        </xf:action>
+        <!-- Adjust final percentage so that they add to 100 -->
+        <xxf:variable name="percentageAdjustment"
+            select="100 - sum($genderValueSet/genderValue[@percentage castable as xs:integer]/@percentage)"/>
+        <xf:setvalue ref="$genderValueSet/genderValue[last()]/@percentage"
+            value="if (. castable as xs:integer) then xs:integer(.)+ $percentageAdjustment else $percentageAdjustment"
+        />
+    </xf:action>
+
+
+    <!-- Application defined action to verify genderValue percentages.
+         Invoked when a genderValue is set.
+         The full genderValueSet is passed as a parameter
+         
+                 Checks the sum of all genderValue percentages.
+                    If 100% or less then 100% then just set status.
+                    Until 2022-11-22
+                    If greater than 100% then reduce the first non-zero percentages, not the genderValue parameter   
+                    No longer doing this, since its very annoying!
+            -->
+    <xf:action ev:event="verify-genderPercentages">
+        <xxf:variable name="genderValueSet" select="event('genderValueSet')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Only use genderValues with percentage properly set -->
+        <xxf:variable name="validGenderValueSet"
+            select="$genderValueSet/genderValue[@percentage castable as xs:integer]"/>
+        <xxf:variable name="genderValuePercentageSum" select="sum($validGenderValueSet/@percentage)"/>
+
+        <!-- Set status (button to generate test records is only displayed when importStatus = 'ready' in cityEHRAdmin).
+             genderValuePercentageSum will have been adjusted down if greater than 100% -->
+        <xf:setvalue ref="$status"
+            value="if (xs:integer($genderValuePercentageSum) eq 100) then '' else 'badPercentages'"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set the numberOfRecords for each genderValue.
+         Invoked when any genderValue is set.
+         Sets numberOfRecords to 0 for all genderValues with percentages that are non-integer
+         Sets numberOfRecords of all other genderValues to their percentage of the overall numberOfRecords
+            -->
+    <xf:action ev:event="set-GenderRecords">
+        <xxf:variable name="genderValueSet" select="event('genderValueSet')"/>
+        <xxf:variable name="numberOfRecords" select="event('numberOfRecords')"/>
+
+        <!-- Set non-integer percentages to zero record count -->
+        <xxf:variable name="zeroedGenderValueSet"
+            select="$genderValueSet/genderValue[not(@percentage castable as xs:integer)]"/>
+        <xf:action xxf:iterate="$zeroedGenderValueSet">
+            <xf:setvalue ref="@numberOfRecords" value="0"/>
+        </xf:action>
+
+        <!-- Set numberOfRecords for valid percentages -->
+        <xxf:variable name="validGenderValueSet"
+            select="$genderValueSet/genderValue[@percentage castable as xs:integer]"/>
+        <xf:action xxf:iterate="$validGenderValueSet">
+            <xxf:variable name="genderValue" select="."/>
+            <xf:setvalue ref="$genderValue/@numberOfRecords"
+                value="floor((xs:integer($genderValue/@percentage) div 100) * xs:integer($numberOfRecords))"
+            />
+        </xf:action>
+
+        <!-- If genderValue percentages total 100%, then genderValue numberOfRecords must total $numberOfRecords.
+                     Adjustment should always be positive, since percentatge of $numberOfRecords were rounded down for all genderValues.
+                     Make adjustment to the genderValue with largest percentage -->
+        <xxf:variable name="percentageTotal"
+            select="sum($genderValueSet/genderValue[@percentage castable as xs:integer]/@percentage)"/>
+        <xxf:variable name="maxPercentage"
+            select="max($genderValueSet/genderValue[@percentage castable as xs:integer]/@percentage)"/>
+
+        <xxf:variable name="adjustment"
+            select="if ($percentageTotal eq 100) then xs:integer($numberOfRecords) - sum($genderValueSet/genderValue[@numberOfRecords castable as xs:integer]/@numberOfRecords) else 0"/>
+        <xf:setvalue
+            ref="($genderValueSet/genderValue[@percentage=$maxPercentage])[1]/@numberOfRecords"
+            value="xs:integer(.) + xs:integer($adjustment)"/>
+    </xf:action>
+
+
+    <!-- Application defined action to set the default CDA Header for test data
+         Also sets the elementIRI used to define each component
+         These definitions are specified in the application-parameters -->
+    <xf:action ev:event="set-defaultCDAHeader">
+        <!-- Iterate through the header components -->
+        <xf:action xxf:iterate="xxf:instance('testDataControl-instance')/cdaHeader/*">
+            <xxf:variable name="headerElement" select="."/>
+            <xf:setvalue ref="$headerElement" value="@default"/>
+
+            <xxf:variable name="headerElementName" select="$headerElement/name()"/>
+            <xxf:variable name="headerElementDefinition"
+                select="xxf:instance('application-parameters-instance')/patientRegistration/*[name()=$headerElementName]"/>
+            <xf:setvalue ref="$headerElement/@elementIRI" value="$headerElementDefinition/@element"
+            />
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to generate a random number from the current-dateTime,
+         The number is set in randomNumber of testDataControl-instance
+         If maxNumber is supplied and is an integer, then the random number is in the range 1 to maxNumber
+         If randomNumber is supplied then this is set (returned) as the random number
+         If randomString is supplied then this is set (returned) as the random number string (of length maxNumer, if supplied)
+         
+                The randomString from the current-dateTime, of the form 2014-06-30T19:03:28.047+01:00 
+                Timezone can be Z or +/- HH:MM
+                Just take the first 23 characters which will strip the timezone and leave milliseconds as the last three characters.
+                Except that the milliseconds may not use all three decimal places, so the resulting string may be between 20 and 23 characters
+                Then remove the characters -T:.+Z using translate to give the randomString
+                
+                The scrambledString uses the hmac xpath function to encrypt the randomString, using the seedKey.
+                Small variations in the randomString will create larger and unpredicatable variations in the scambledString
+                
+                randomNumberString is a string made from concatenating the codepoints of scrambledString
+                so will be castable to an integer, but may be very large (possibly too large)
+                
+                The randomNumber gets the last randomNumberSize characters of randomNumberString and may include leading zeros
+                The random number set for ongoing use is usually 1-999 (determined by randomNumberSize=3)               
+                -->
+    <xf:action ev:event="generate-RandomNumber">
+        <xxf:variable name="maxNumberParameter" select="event('maxNumber')"/>
+        <xxf:variable name="randomNumber" select="event('randomNumber')"/>
+        <xxf:variable name="randomString" select="event('randomString')"/>
+
+        <!-- maxNumber only used if its an integer greater than zero -->
+        <xxf:variable name="maxNumber"
+            select="if (exists($maxNumberParameter) and $maxNumberParameter castable as xs:integer and xs:integer($maxNumberParameter) gt 0) then $maxNumberParameter else ()"/>
+
+        <!-- Random string is generated from the current dateTime, which will be most random in the milliseconds -->
+        <xxf:variable name="randomStringBase"
+            select="xs:string(translate(substring(xs:string(current-dateTime()),1,23),'0123456789-T:.+Z','0123456789'))"/>
+
+        <!-- The scrambled string creates bigger variations for small differences in the random string -->
+        <xxf:variable name="scrambledString"
+            select="hmac($randomStringBase,reverse($randomStringBase), 'MD5', 'hex')"/>
+
+        <!-- Get the sequence of codepoints (integers) for the scrambledString -->
+        <xxf:variable name="randomCodepointSequence" select="string-to-codepoints($scrambledString)"/>
+
+        <!-- Get the sequence of strings for the integers 0 to 9
+             This is done by taking the last digit of the codepoint, since that varies more than the first digit -->
+        <xxf:variable name="randomNumberStringSequence"
+            select="for $i in $randomCodepointSequence return substring(xs:string($i),string-length(xs:string($i)),1)"/>
+
+        <!-- Join the randomNumberStringSequence to get the randomNumberString -->
+        <xxf:variable name="randomNumberString" select="string-join($randomNumberStringSequence,'')"/>
+
+
+        <xxf:variable name="randomNumberBaseSize"
+            select="string-length(xxf:instance('testDataControl-instance')/randomNumberBase)"/>
+        <xf:setvalue ref="xxf:instance('testDataControl-instance')/randomNumberSize"
+            value="$randomNumberBaseSize - 1"/>
+        <xf:setvalue ref="xxf:instance('testDataControl-instance')/randomNumber"
+            value="xs:integer(substring($randomNumberString, string-length($randomNumberString) - $randomNumberBaseSize, xxf:instance('testDataControl-instance')/randomNumberSize))"/>
+
+        <!-- Only set the randomNumber return parameter if it was passed
+            
+             The ceiling function evaluates a decimal number and returns 
+             the smallest integer greater than or equal to the decimal number.
+        
+             To create a random number in the range 1 to M
+             If the randomNumber is R and the randomNumberBase is B, then the number = ceiling(M*R/B)
+        -->
+        <xf:action if="exists($randomNumber)">
+            <!-- Return in range 1 to maxNumber -->
+            <xf:action if="exists($maxNumber)">
+                <xf:setvalue ref="$randomNumber"
+                    value="ceiling((xs:integer($maxNumber) * xs:integer(xxf:instance('testDataControl-instance')/randomNumber)) div xs:integer(xxf:instance('testDataControl-instance')/randomNumberBase))"
+                />
+            </xf:action>
+            <!-- Or just return the number -->
+            <xf:action if="not(exists($maxNumber))">
+                <xf:setvalue ref="$randomNumber"
+                    value="xxf:instance('testDataControl-instance')/randomNumber"/>
+            </xf:action>
+        </xf:action>
+
+
+        <!-- Only set the randomString return parameter if it was passed
+             Either the whole string generated, or limited to maxNumber characters, if specified
+        -->
+        <xf:action if="exists($randomString)">
+            <!-- Return of maxNumber length-->
+            <xf:action if="exists($maxNumber)">
+                <xf:setvalue ref="$randomString" value="substring($randomNumberString,1,$maxNumber)"
+                />
+            </xf:action>
+            <!-- Or just return the whole string -->
+            <xf:action if="not(exists($maxNumber))">
+                <xf:setvalue ref="$randomString" value="$randomNumberString"/>
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to generate a random CDA Header.
+         Selections from names use the count of the number of names (C)
+         If the randomNumber is R and the base of the randomNumberBase is B, then the selection = ceiling(C*R/B)
+            ceiling rounds up to the nearest integer
+                 
+            e.g. randomNumberBase of 1000 generates randomNumber between 1 and 999
+                 selecting from a count of 4 names gives 4/1000 of the random number = 0.something up to R=250, 1.something 250 - 500, etc
+        
+         The cdaHeader has been set with the user selections for setBirthTime and setEnumeratedValues (in generate-test-data)
+    
+         -->
+    <xf:action ev:event="set-cdaHeader">
+        <xxf:variable name="cdaHeader" select="event('cdaHeader')"/>
+        <xxf:variable name="identifierPrefix" select="event('identifierPrefix')"/>
+        <xxf:variable name="identifierLength" select="event('identifierLength')"/>
+        <xxf:variable name="numberOfRecords" select="event('numberOfRecords')"/>
+        <xxf:variable name="numberOfGenders" select="event('numberOfGenders')"/>
+        <xxf:variable name="genderValue" select="event('genderValue')"/>
+        <xxf:variable name="genderCount" select="event('genderCount')"/>
+        <xxf:variable name="count" select="event('count')"/>
+
+        <!-- setBirthTime has been set in the cdaHeader template -->
+        <xxf:variable name="setBirthTime" select="$cdaHeader/@setBirthTime"/>
+
+        <!-- patientId -->
+        <xf:dispatch name="set-patientId" target="testData-model">
+            <xxf:context name="patientId" select="$cdaHeader/id"/>
+            <xxf:context name="identifierPrefix" select="$identifierPrefix"/>
+            <xxf:context name="identifierLength" select="$identifierLength"/>
+            <xxf:context name="numberOfRecords" select="$numberOfRecords"/>
+            <xxf:context name="numberOfGenders" select="$numberOfGenders"/>
+            <xxf:context name="genderValue" select="$genderValue"/>
+            <xxf:context name="genderCount" select="$genderCount"/>
+            <xxf:context name="count" select="$count"/>
+        </xf:dispatch>
+
+        <!-- prefix (is gender-specific) -->
+        <xf:setvalue ref="$cdaHeader/prefix" value="$genderValue/@prefix"/>
+
+        <!-- given name (is gender-specific) 
+             select randomly (randomSelection), between 1 and givenNamesCount -->
+        <xf:setvalue ref="$cdaHeader/given" value="''"/>
+        <xf:action if="$genderValue/@givenName != ''">
+
+            <xxf:variable name="givenNames" select="xxf:instance($genderValue/@givenName)"/>
+            <xxf:variable name="givenNamesCount" select="count($givenNames/name)"/>
+
+            <xf:dispatch name="generate-RandomNumber" target="testData-model">
+                <xxf:context name="maxNumber" select="$givenNamesCount"/>
+                <xxf:context name="randomNumber"
+                    select="xxf:instance('testDataControl-instance')/randomSelection"/>
+            </xf:dispatch>
+
+            <xf:setvalue ref="$cdaHeader/given"
+                value="$givenNames/name[position()=xxf:instance('testDataControl-instance')/randomSelection]"
+            />
+        </xf:action>
+
+        <!-- family name 
+             select randomly (randomSelection), between 1 and familyNamesCount-->
+        <xf:dispatch name="generate-RandomNumber" target="testData-model"/>
+        <xxf:variable name="familyNamesCount"
+            select="count(xxf:instance('familyNames-instance')/name)"/>
+
+        <xxf:variable name="familyNamesSelection"
+            select="ceiling((xs:integer(xxf:instance('testDataControl-instance')/randomNumber) * $familyNamesCount) div xs:integer(xxf:instance('testDataControl-instance')/randomNumberBase))"/>
+        <xf:setvalue ref="$cdaHeader/family"
+            value="xxf:instance('familyNames-instance')/name[position()=$familyNamesSelection]"/>
+
+        <!-- birthTime -->
+        <xxf:variable name="incrementDuration"
+            select="xs:integer(xxf:instance('testDataControl-instance')/randomNumber) * xs:dayTimeDuration(xxf:instance('testDataControl-instance')/incrementDuration)"/>
+        <xf:setvalue ref="$cdaHeader/birthTime"
+            value="if ($setBirthTime = true()) then substring(xs:string(xs:date(xxf:instance('testDataControl-instance')/baseDate) + xs:dayTimeDuration($incrementDuration)),1,10) else xxf:instance('testDataControl-instance')/templateBirthTime"/>
+
+        <!-- administrativeGenderCode -->
+        <xf:setvalue ref="$cdaHeader/administrativeGenderCode" value="$genderValue/@value"/>
+    </xf:action>
+
+
+    <!-- Application defined action to set the patientId (passed as a parameter).
+         The id is identifierLength chanracters long, made up of
+         
+            [identifierPrefix][genderCount][count][randomSuffix]
+         
+         The genderCount and count need to be padded out with leading 0s
+         Otherwise there is a possibility to get duplicate ids
+         
+         The randomSuffix is a rondom string that is appended to pad out the patientId to the full identifierLength
+         
+         To pad a string with prefix characters, so that it is always N characters long:
+            Generate a prefixString of N prefix characters long
+            Append the string to the prefixString, to get fullString
+            Get the last N characters of fullString to get paddedString
+         -->
+
+    <xf:action ev:event="set-patientId">
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="identifierPrefix" select="event('identifierPrefix')"/>
+        <xxf:variable name="identifierLength" select="event('identifierLength')"/>
+        <xxf:variable name="numberOfRecords" select="event('numberOfRecords')"/>
+        <xxf:variable name="numberOfGenders" select="event('numberOfGenders')"/>
+        <xxf:variable name="genderCount" select="event('genderCount')"/>
+        <xxf:variable name="count" select="event('count')"/>
+
+        <!-- The gender prefix needs to be padded -->
+        <xxf:variable name="genderCountPrefixLength"
+            select="string-length(xs:string($numberOfGenders))"/>
+        <xxf:variable name="genderCountPad"
+            select="string-join(for $x in 1 to $genderCountPrefixLength return '0', '')"/>
+        <xxf:variable name="fullGenderCountPrefix"
+            select="concat($genderCountPad,xs:string($genderCount))"/>
+        <xxf:variable name="genderCountPrefixStart"
+            select="string-length($fullGenderCountPrefix) - $genderCountPrefixLength + 1"/>
+        <xxf:variable name="genderCountPrefix"
+            select="substring($fullGenderCountPrefix,$genderCountPrefixStart,$genderCountPrefixLength)"/>
+
+        <!-- The count prefix needs to be padded -->
+        <xxf:variable name="countPrefixLength" select="string-length(xs:string($numberOfRecords))"/>
+        <xxf:variable name="countPad"
+            select="string-join(for $x in 1 to $countPrefixLength return '0', '')"/>
+        <xxf:variable name="fullCountPrefix" select="concat($countPad,xs:string($count))"/>
+        <xxf:variable name="countPrefixStart"
+            select="string-length($fullCountPrefix) - $countPrefixLength + 1"/>
+        <xxf:variable name="countPrefix"
+            select="substring($fullCountPrefix,$countPrefixStart,$countPrefixLength)"/>
+
+
+        <xxf:variable name="countString" select="xs:string($count)"/>
+        <xxf:variable name="countStringLength" select="string-length($countString)"/>
+
+
+
+        <xxf:variable name="idPrefix"
+            select="concat($identifierPrefix,$genderCountPrefix,$countPrefix)"/>
+        <xxf:variable name="idPrefixLength" select="string-length($idPrefix)"/>
+
+        <!-- The identifierRandomSuffix is a string of identifierRandomSuffixLength digits -->
+        <xxf:variable name="identifierRandomSuffixLength"
+            select="xs:integer($identifierLength) - xs:integer($idPrefixLength)"/>
+        <xf:dispatch name="generate-RandomNumber" target="testData-model">
+            <xxf:context name="maxNumber" select="$identifierRandomSuffixLength"/>
+            <xxf:context name="randomString"
+                select="xxf:instance('testDataControl-instance')/identifierRandomSuffix"/>
+        </xf:dispatch>
+
+        <!-- The patient id is made up of the prefix and the random suffix -->
+        <xf:setvalue ref="$patientId"
+            value="concat($idPrefix,xxf:instance('testDataControl-instance')/identifierRandomSuffix)"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set the CDA Header elements in the record set template.
+                 The import-instance contains the set of CDA documents
+                 Need to set the CDA header and any entry/elements recorded in the body of the documents
+                 The values to set have already been set up in cdaHeader
+                 If the birthTime is set, then any dates in the template must be adjusted vs the previous birthTime in the template (templateBirthTime)
+            -->
+    <xf:action ev:event="set-TestRecordCDAHeaderComponents">
+        <xxf:variable name="cdaHeader" select="event('cdaHeader')"/>
+
+        <!-- CDA Headers -->
+        <xf:action xxf:iterate="xxf:instance('testRecord-instance')//cda:patientRole">
+            <xf:setvalue ref="cda:id/@extension" value="$cdaHeader/id"/>
+
+            <xf:setvalue ref="cda:patient/cda:name/cda:prefix" value="$cdaHeader/prefix"/>
+            <xf:setvalue ref="cda:patient/cda:name/cda:given" value="$cdaHeader/given"/>
+            <xf:setvalue ref="cda:patient/cda:name/cda:family" value="$cdaHeader/family"/>
+
+            <xf:setvalue ref="cda:patient/cda:administrativeGenderCode/@code"
+                value="$cdaHeader/administrativeGenderCode"/>
+            <xf:setvalue ref="cda:patient/cda:administrativeGenderCode/@displayName"
+                value="$cdaHeader/administrativeGenderCode"/>
+            <xf:setvalue ref="cda:patient/cda:administrativeGenderCode/@codeSystem"
+                value="'cityEHR'"/>
+
+            <!-- If not setting birthTime then cdaHeader/birthTime has been set to the date originally imported (set as templateBirthTime, and never changes) -->
+            <xf:setvalue ref="cda:patient/cda:birthTime/@value" value="$cdaHeader/birthTime"/>
+        </xf:action>
+
+        <!-- patientId -->
+        <xxf:variable name="patientIdEntryIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/id/@entry"/>
+        <xxf:variable name="patientIdElementIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/id/@element"/>
+        <xf:action
+            xxf:iterate="xxf:instance('testRecord-instance')/descendant::cda:observation[cda:id/@extension=$patientIdEntryIRI]/descendant::cda:value[@extension=$patientIdElementIRI]">
+            <xf:setvalue ref="./@value" value="$cdaHeader/id"/>
+        </xf:action>
+        <!-- prefix -->
+        <xxf:variable name="prefixEntryIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/prefix/@entry"/>
+        <xxf:variable name="prefixElementIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/prefix/@element"/>
+        <xf:action
+            xxf:iterate="xxf:instance('testRecord-instance')/descendant::cda:observation[cda:id/@extension=$prefixEntryIRI]/descendant::cda:value[@extension=$prefixElementIRI]">
+            <xf:setvalue ref="./@value" value="$cdaHeader/prefix"/>
+            <xf:setvalue ref="./@displayName" value="$cdaHeader/prefix"/>
+        </xf:action>
+        <!-- family -->
+        <xxf:variable name="familyEntryIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/family/@entry"/>
+        <xxf:variable name="familyElementIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/family/@element"/>
+        <xf:action
+            xxf:iterate="xxf:instance('testRecord-instance')/descendant::cda:observation[cda:id/@extension=$familyEntryIRI]/descendant::cda:value[@extension=$familyElementIRI]">
+            <xf:setvalue ref="./@value" value="$cdaHeader/family"/>
+            <xf:setvalue ref="./@displayName" value="$cdaHeader/family"/>
+        </xf:action>
+        <!-- given -->
+        <xxf:variable name="givenEntryIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/given/@entry"/>
+        <xxf:variable name="givenElementIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/given/@element"/>
+        <xf:action
+            xxf:iterate="xxf:instance('testRecord-instance')/descendant::cda:observation[cda:id/@extension=$givenEntryIRI]/descendant::cda:value[@extension=$givenElementIRI]">
+            <xf:setvalue ref="./@value" value="$cdaHeader/given"/>
+            <xf:setvalue ref="./@displayName" value="$cdaHeader/given"/>
+        </xf:action>
+        <!-- administrativeGenderCode -->
+        <xxf:variable name="administrativeGenderCodeEntryIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/administrativeGenderCode/@entry"/>
+        <xxf:variable name="administrativeGenderCodeElementIRI"
+            select="xxf:instance('application-parameters-instance')/patientRegistration/administrativeGenderCode/@element"/>
+        <xf:action
+            xxf:iterate="xxf:instance('testRecord-instance')/descendant::cda:observation[cda:id/@extension=$administrativeGenderCodeEntryIRI]/descendant::cda:value[@extension=$administrativeGenderCodeElementIRI]">
+            <xf:setvalue ref="./@value" value="$cdaHeader/administrativeGenderCode"/>
+            <xf:setvalue ref="./@displayName" value="$cdaHeader/administrativeGenderCode"/>
+        </xf:action>
+
+        <!-- Adjust dates, based on the birthTime set in the cdaHeader
+                     All xs:date and xs:dateTime elements in the record are shifted by a proportion of the offset between the templateBirthTime and the random birthTime 
+                     Need to be careful, because if the random birthTime is more recent than the templateBirthTime, a simple offset adjustment will create dates into the future.
+                     So need to get the proportional offset of the date
+                     This will include the element for the birthTime itself in the registration entries, which when adjusted should remain unchanged -->
+        <xf:action if="$cdaHeader/@setBirthTime='true'">
+            <!-- birthTime and templateBirthTime -->
+            <xxf:variable name="birthTime" select="$cdaHeader/birthTime"/>
+            <xxf:variable name="templateBirthTime"
+                select="xxf:instance('testDataControl-instance')/templateBirthTime"/>
+            <!-- Ages (in days) for birthTime and templateBirthTime -->
+            <xxf:variable name="age"
+                select="days-from-duration(current-date() - xs:date($cdaHeader/birthTime))"/>
+            <xxf:variable name="templateAge"
+                select="days-from-duration(current-date() - xs:date(xxf:instance('testDataControl-instance')/templateBirthTime))"/>
+            <xxf:variable name="ageRatio" select="$age div $templateAge"/>
+            <!-- Adjust effectiveTime of compositions -->
+            <xf:action
+                xxf:iterate="xxf:instance('testRecord-instance')/descendant::cda:ClinicalDocument/cda:effectiveTime">
+                <xf:dispatch name="adjustDate" target="testData-model">
+                    <xxf:context name="date" select="./@value"/>
+                    <xxf:context name="baseDate" select="$birthTime"/>
+                    <xxf:context name="ratio" select="$ageRatio"/>
+                </xf:dispatch>
+            </xf:action>
+            <!-- Adjust element values that are of type xs:date or xs:dateTime -->
+            <xf:action
+                xxf:iterate="xxf:instance('testRecord-instance')/descendant::cda:value[@xsi:type=('xs:date','xs:dateTime')]">
+                <xf:dispatch name="adjustDate" target="testData-model">
+                    <xxf:context name="date" select="./@value"/>
+                    <xxf:context name="baseDate" select="$birthTime"/>
+                    <xxf:context name="ratio" select="$ageRatio"/>
+                </xf:dispatch>
+                <xf:setvalue ref="./@displayName" value="''"/>
+            </xf:action>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to adjust a date/dateTime 
+         The date (date or dateTime) is offset from the baseDate (always a date) by the ratio (a double)
+            -->
+    <xf:action ev:event="adjustDate">
+        <xxf:variable name="date" select="event('date')"/>
+        <xxf:variable name="baseDate" select="event('baseDate')"/>
+        <xxf:variable name="ratio" select="event('ratio')"/>
+
+        <!-- Must have a valid baseDate -->
+        <xf:action if="$baseDate castable as xs:date">
+            <xxf:variable name="baseDateTime" select="concat($baseDate,'T00:00:00')"/>
+
+            <!-- Get the duration of date from baseDate -->
+            <xf:variable name="durationFromBase"
+                select="if ($date castable as xs:dateTime) then  xs:dateTime($date) - xs:dateTime($baseDateTime) else if ($date castable as xs:date) then xs:date($date) - xs:date($baseDate) else ''"/>
+
+            <!-- Adjust the duration using the ratio, if durationFromBase is valid -->
+            <xf:variable name="adjustedDurationFromBase"
+                select="if ($durationFromBase castable as xs:dayTimeDuration) then xs:dayTimeDuration($durationFromBase) * $ratio else ''"/>
+
+            <!-- Reset the date, using the adjusted duration.
+                             Date is set as xs:date or xs:dateTime -->
+            <xf:setvalue ref="$date"
+                value="if (. castable as xs:date and $adjustedDurationFromBase castable as xs:dayTimeDuration) then xs:date($baseDate) + xs:dayTimeDuration($adjustedDurationFromBase) 
+                        else if (. castable as xs:dateTime and $adjustedDurationFromBase castable as xs:dayTimeDuration) then xs:dateTime($baseDateTime) + xs:dayTimeDuration($adjustedDurationFromBase) else ''"/>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set enumerated values in the test record.
+            Iterates through the enueratedValue type elements
+            Gets the set of data values from the dictionaryElementSet
+            Either sets the value from the cdaHeader or from a randomly selected data value
+            Sets code, codeSystem, value and displayName
+            -->
+    <xf:action ev:event="set-enumeratedValues">
+        <xxf:variable name="testRecordInstance" select="event('testRecordInstance')"/>
+        <xxf:variable name="cdaHeader" select="event('cdaHeader')"/>
+
+        <xxf:variable name="dictionaryElementSet"
+            select="xxf:instance('testDataControl-instance')/dictionaryElementSet"/>
+
+        <!-- Iterate through the enueratedValue type elements -->
+        <xf:action
+            xxf:iterate="$testRecordInstance//cda:value[@cityEHR:elementType='#CityEHR:ElementProperty:enumeratedValue']">
+            <xxf:variable name="element" select="."/>
+            <xxf:variable name="elementIRI" select="$element/@root"/>
+
+            <!-- Get the set of data values from the dictionary -->
+            <xxf:variable name="dictionaryElement"
+                select="$dictionaryElementSet/iso-13606:element[@root=$elementIRI]"/>
+            <xxf:variable name="dictionaryDataSet" select="$dictionaryElement/iso-13606:data"/>
+
+            <!-- Don't set values in the first component of a ME organizer.
+                 Such a component is directly in the ME organizer for the cda:entry -->
+            <xf:action if="not($element/ancestor::cda:organizer[1]/..[name()='entry'])">
+
+                <!-- Check to see if the element is in the cdaHeader -->
+                <xxf:variable name="cdaHeaderComponent"
+                    select="$cdaHeader/*[@elementIRI=$elementIRI]"/>
+
+                <!-- If the element is for the CDA header - set its value from cdaHeader
+                     The value will already have been set by set-TestRecordCDAHeaderComponents
+                     but code, codeSystem and displayName will not have been set -->
+                <xf:action if="exists($cdaHeaderComponent)">
+
+                    <xf:setvalue ref="$element/@value" value="$cdaHeaderComponent"/>
+
+                    <!-- Get the data value (matching the cdaHeaderComponent value) from the dictionary -->
+                    <xxf:variable name="data"
+                        select="$dictionaryDataSet[@value = $cdaHeaderComponent]"/>
+
+                    <!-- Set the other attributes for the element, if data was found -->
+                    <xf:action if="exists($data)">
+                        <xf:setvalue ref="$element/@code" value="$data/@code"/>
+                        <xf:setvalue ref="$element/@codeSystem" value="$data/@codeSystem"/>
+                        <xf:setvalue ref="$element/@displayName" value="$data/@displayName"/>
+                    </xf:action>
+                </xf:action>
+
+                <!-- Not in the cdaHeader - randomly select one data value -->
+                <xf:action if="not(exists($cdaHeaderComponent))">
+                    <xxf:variable name="dataSetCount" select="count($dictionaryDataSet)"/>
+
+                    <!-- Generate the random number for selection -->
+                    <xf:dispatch name="generate-RandomNumber" target="testData-model">
+                        <xxf:context name="maxNumber" select="$dataSetCount"/>
+                        <xxf:context name="randomNumber"
+                            select="xxf:instance('testDataControl-instance')/randomSelection"/>
+                    </xf:dispatch>
+
+                    <!-- Get the data value (random selection) from the dictionary -->
+                    <xxf:variable name="data"
+                        select="$dictionaryDataSet[position() = xxf:instance('testDataControl-instance')/randomSelection]"/>
+
+                    <!-- Set the attributes for the element -->
+                    <xf:setvalue ref="$element/@code" value="$data/@code"/>
+                    <xf:setvalue ref="$element/@codeSystem" value="$data/@codeSystem"/>
+                    <xf:setvalue ref="$element/@value" value="$data/@value"/>
+                    <xf:setvalue ref="$element/@displayName" value="$data/@displayName"/>
+                </xf:action>
+
+
+                <!-- Set the element in the test record -->
+            </xf:action>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to generate test data.
+                 Called when user presses the button after the parameters have been set.
+                 
+                 The number of records to be generated (by gender) have been set in generateTestData/genderValueSet
+                 First set up the cdaHeaderSet for the number of records to be generated.
+                 Then invoke run-process for generate-test-data
+            -->
+    <xf:action ev:event="generate-test-data">
+        <xxf:variable name="identifierPrefix" select="event('identifierPrefix')"/>
+        <xxf:variable name="identifierLength" select="event('identifierLength')"/>
+        <xxf:variable name="genderValueSet" select="event('genderValueSet')"/>
+        <xxf:variable name="setBirthTime" select="event('setBirthTime')"/>
+        <xxf:variable name="maximumAge" select="event('maximumAge')"/>
+        <xxf:variable name="minimumAge" select="event('minimumAge')"/>
+        <xxf:variable name="setEnumeratedValues" select="event('setEnumeratedValues')"/>
+
+        <!-- Set the base date and increment for random date generation. -->
+        <xf:dispatch name="set-BaseDate" target="testData-model">
+            <xxf:context name="maximumAge" select="$maximumAge"/>
+            <xxf:context name="minimumAge" select="$minimumAge"/>
+        </xf:dispatch>
+
+        <!-- Set up the cdaHeaderTemplate.
+             This is used as the basis for the iteration in run-process for generate-test-data
+             So it needs to contain all information needed to generate a record -->
+        <xxf:variable name="cdaHeaderTemplate"
+            select="xxf:instance('testDataControl-instance')/cdaHeader"/>
+        <xf:setvalue ref="$cdaHeaderTemplate/@setBirthTime" value="$setBirthTime"/>
+        <xf:setvalue ref="$cdaHeaderTemplate/@setEnumeratedValues" value="$setEnumeratedValues"/>
+
+        <!-- Generate the cdaHeaderSet for the selected number of records for each gender -->
+        <xf:delete nodeset="xxf:instance('testDataControl-instance')/cdaHeaderSet/*"/>
+
+        <xxf:variable name="numberOfGenders" select="count($genderValueSet/*)"/>
+        <xxf:variable name="validGenderValueSet"
+            select="$genderValueSet/genderValue[@numberOfRecords castable as xs:integer and xs:integer(@numberOfRecords) gt 0]"/>
+
+        <!-- Iterate through the genderValues that have some record to generate -->
+        <xf:action xxf:iterate="$validGenderValueSet">
+            <xxf:variable name="genderValue" select="."/>
+            <xxf:variable name="genderCount" select="position()"/>
+
+            <!-- Create one cdaHeader for each of the @numberOfRecords.
+                 Then set the parameters -->
+            <xxf:variable name="numberOfRecords" select="$genderValue/@numberOfRecords"/>
+            <xf:action xxf:iterate="1 to xs:integer($numberOfRecords)">
+                <xxf:variable name="count" select="."/>
+
+                <xf:insert context="xxf:instance('testDataControl-instance')/cdaHeaderSet"
+                    nodeset="cdaHeader" origin="$cdaHeaderTemplate" at="last()" position="after"/>
+                <xxf:variable name="cdaHeader"
+                    select="xxf:instance('testDataControl-instance')/cdaHeaderSet/cdaHeader[last()]"/>
+
+                <xf:dispatch name="set-cdaHeader" target="testData-model">
+                    <xxf:context name="cdaHeader" select="$cdaHeader"/>
+                    <xxf:context name="identifierPrefix" select="$identifierPrefix"/>
+                    <xxf:context name="identifierLength" select="$identifierLength"/>
+                    <xxf:context name="numberOfRecords" select="$numberOfRecords"/>
+                    <xxf:context name="numberOfGenders" select="$numberOfGenders"/>
+                    <xxf:context name="genderValue" select="$genderValue"/>
+                    <xxf:context name="genderCount" select="$genderCount"/>
+                    <xxf:context name="count" select="$count"/>
+                </xf:dispatch>
+            </xf:action>
+        </xf:action>
+
+        <!-- Run the process to generate test data.
+             Invokes generate-test-record for each instance of the cdaHeaderSet -->
+        <xf:dispatch name="run-process" target="process-model">
+            <xxf:context name="processName" select="'generate-test-data'"/>
+            <xxf:context name="contextSet"
+                select="xxf:instance('testDataControl-instance')/cdaHeaderSet/cdaHeader"/>
+            <xxf:context name="completionActionModel" select="testData-model"/>
+            <xxf:context name="completionActionName" select="generate-test-data-completed"/>
+        </xf:dispatch>
+
+
+
+    </xf:action>
+
+
+    <!-- Application defined action to generate a single test record.
+         Invoked through run-process for generate-test-data.
+         Once for each of the cdaHeader elements set up in cdaHeaderSet.
+         The cdaHeader is passed as the context parameter by run-process
+                
+         Steps to generate a test data record.
+            Set up testRecord-instance with the template uploaded to import-instance in cityEHRAdmin
+            Set header components in the testRecord-instance (id, names, gender, birthDate)
+            Adjust dates in the testRecord-instance
+            Set enumeratedValues
+            Import the set of cda documents for the record
+            -->
+    <xf:action ev:event="generate-test-record">
+        <xxf:variable name="cdaHeader" select="event('context')"/>
+
+        <!-- Record patientId in the process execution log -->
+        <xf:dispatch name="log-processMessage" target="process-model">
+            <xxf:context name="message" select="concat($cdaHeader/id,' / ',$cdaHeader/family)"/>
+        </xf:dispatch>
+
+        <!-- Copy template to the test-record -->
+        <xf:insert nodeset="xxf:instance('testRecord-instance')"
+            origin="xxf:instance('import-instance')"/>
+
+        <!-- Set the patient id in the template EHR_Extract (import-RecordSet checks this matches cda:id in each ClinicalDocument) -->
+        <xf:setvalue
+            ref="xxf:instance('testRecord-instance')/descendant-or-self::iso-13606:EHR_Extract[1]/@patientId"
+            value="$cdaHeader/id"/>
+
+        <!-- Set header components in the test record 
+             Includes adjustment of dates in the template record
+             -->
+        <xf:dispatch name="set-TestRecordCDAHeaderComponents" target="testData-model">
+            <xxf:context name="cdaHeader" select="$cdaHeader"/>
+        </xf:dispatch>
+
+        <!-- Set enumerated values, if selected
+             setEnumeratedValues has been set in the cdaHeader template 
+             Includes setting of any emunerated values (e.g. gender, prefix) used in the CDA header
+             These need to be set to the values already set in the cdaHeader passed
+             Any other emunerated values are set randomly -->
+        <xf:action if="$cdaHeader/@setEnumeratedValues = true()">
+            <xf:dispatch name="set-enumeratedValues" target="testData-model">
+                <xxf:context name="testRecordInstance" select="xxf:instance('testRecord-instance')"/>
+                <xxf:context name="cdaHeader" select="$cdaHeader"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Import the test-record
+                     The timestamp is set to the current-dataTime and so should be unique for each record generated
+                     Timestamp format replaces ':' and '+' in standard time format with - and * 
+                     setCompositionId is set to 'generate' (actually can be anything other than 'preserve' so that compositionId is reset -->
+        <xxf:variable name="timeStamp"
+            select="replace(replace(string(current-dateTime()),':','-'),'\+','*')"/>
+        <xf:dispatch name="import-RecordSet" target="recordImport-model">
+            <xxf:context name="record-set" select="xxf:instance('testRecord-instance')"/>
+            <xxf:context name="identifierPrefix" select="$timeStamp"/>
+            <xxf:context name="setCompositionId" select="'generate'"/>
+            <xxf:context name="status" select="xxf:instance('testDataControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Log a message, if there was an error -->
+        <xf:action if="xxf:instance('testDataControl-instance')/status != ''">
+            <xf:dispatch name="log-processMessage" target="process-model">
+                <xxf:context name="message"
+                    select="concat($cdaHeader/id,' / ',xxf:instance('testDataControl-instance')/status)"
+                />
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action invoked when generate-test-data process is completed.
+         Setting this status doesn't have any effect (so not necessary)
+            -->
+    <xf:action ev:event="generate-test-data-completed">
+        <!-- Set the status -->
+        <xf:setvalue ref="xxf:instance('testDataControl-instance')/status" value="'generated'"/>
+    </xf:action>
+
+
+
+
+</xf:model>

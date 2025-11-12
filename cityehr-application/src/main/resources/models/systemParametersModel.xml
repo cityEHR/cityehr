@@ -50,7 +50,6 @@
             <systemResourceURL/>
             <systemResourceStatus/>
             <systemResourcesURL/>
-            <systemIconsURL/>
             <storageLocation/>
             <displayMode>dialog | inline</displayMode>
             <confirmationMode>'' | close | save | saveAndRestart | reset </confirmationMode>
@@ -102,7 +101,7 @@
         <xf:insert nodeset="xxf:instance('systemResource-instance')"
             origin="xxf:instance('emptySystemResource-instance')"/>
 
-        <!-- Load the resource -->
+        <!-- Load the resource (sets systemResourceStatus, '' if success -->
         <xf:send submission="load-systemResource" target="systemParameters-model"/>
 
         <!-- Transfer to the specified instance if loaded successfully -->
@@ -356,7 +355,8 @@
 
 
     <!-- Application defined action to load system parameters.
-         Called in xforms-model-construct-done in the main-model of cityEHRSignOn and in configuration-model
+         Invoked in xforms-model-construct-done in the configuration-model in configuration-model
+         Except for cityEHRSignOn where it is called in set-default-application-splash, invoked on xforms-ready
          This is the first action invoked on every page, so cannot use the DAL.
          The system-parameters loaded here may be replaced by the language variant, later in the page initiation.
          -->
@@ -578,6 +578,9 @@
             <!-- Save the system-parameters.
                  This will also invoke build-database-parameters, since the databaseChecksum is blank in the default-system-parameters-instance -->
             <xf:dispatch name="save-system-parameters" target="systemParameters-model"/>
+            
+            <!-- Set up the system stylesheets -->
+            <xf:dispatch name="initialize-system-stylesheets" target="manageParameters-model"/>
 
         </xf:action>
 
@@ -668,7 +671,7 @@
     <!-- ========= System Icons ========================= 
          Used for triggers.
          Managed in manageSystemIcons in cityEHRAdmin
-         Icons are shipped in resources/icons directoru
+         Icons are shipped in resources/icons directory
          ================================================ -->
 
     <xf:instance id="shippedIconList-instance">
@@ -786,7 +789,7 @@
         <xxf:variable name="iconResourceName"
             select="xxf:instance('view-parameters-instance')/systemResourcesURL/@iconResource"/>
 
-        <!-- Load the system resource -->
+        <!-- Save the system resource -->
         <xf:dispatch name="save-systemResource" target="systemParameters-model">
             <xxf:context name="systemResource-instance" select="xxf:instance('iconList-instance')"/>
             <xxf:context name="systemResourceName" select="$iconResourceName"/>
@@ -794,7 +797,6 @@
                 select="xxf:instance('systemParametersControl-instance')/status"/>
         </xf:dispatch>
     </xf:action>
-
 
 
     <!-- === Action when the model is ready ====

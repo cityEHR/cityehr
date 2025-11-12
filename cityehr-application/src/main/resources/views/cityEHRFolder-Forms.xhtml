@@ -35,21 +35,11 @@
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
 
-    <!-- ========= HTML Head - Includes the Xforms Model ========= 
-        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+    
+    <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css" href="../resources/styles/cityEHRSkin.css"
-            media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
@@ -358,12 +348,6 @@
             <!-- Application defined action to print the current form.
                  First generate HTML, then send to the print pipeline -->
             <xf:action ev:event="print">
-                <!-- Set externalId for the patient -->
-                <xf:dispatch name="set-externalId" target="pageNavigation-model">
-                    <xxf:context name="type" select="'patient'"/>
-                    <xxf:context name="externalId"
-                        select="xxf:instance('view-parameters-instance')/externalId"/>
-                </xf:dispatch>
 
                 <!-- Convert form to HTML.
                      Also saves the session-parameters -->
@@ -373,8 +357,10 @@
                     <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
                 </xf:dispatch>
 
-                <!-- Call submission to generate PDF for HTML -->
-                <xf:dispatch name="print-html" target="pageNavigation-model"/>
+                <!-- Invoke action to generate PDF for HTML -->
+                <xf:dispatch name="print-html" target="pageNavigation-model">
+                    <xxf:context name="externalIdType" select="'patient'"/>                   
+                </xf:dispatch>
             </xf:action>
 
 
@@ -476,7 +462,7 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo" mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -620,6 +606,7 @@
                     <!-- Include filler so that sections at foot of form can scroll to the top -->
                     <xi:include href="cityEHRFormFootPadding.xhtml"/>
 
+                    
                     <!--
                     <xhtml:p class="message">
                         getLatestEntrySetXQuery-instance: <xf:output

@@ -108,10 +108,12 @@
             <xf:bind nodeset=".[@xsi:type='xs:base64Binary']/@value" type="xs:base64Binary"/>
         </xf:bind>
 
-        <!-- Media stored in the displayName of media rendered entries -->
+        <!-- Media stored in the displayName of media rendered entries (until 2025-05-19.
+             Or (from 2025-05-19) in Elements of datatype xs:Name -->
         <xf:bind
             nodeset="//cda:entry[@cityEHR:rendition='#CityEHR:EntryProperty:Image']//cda:value/@displayName"
             type="xs:base64Binary"/>
+        <xf:bind nodeset="//cda:value[@xsi:type='xs:Name']/@displayName" type="xs:base64Binary"/>
 
 
         <!-- Calculate values designated as calculatedValue or age types. (age added 2018-02-15)
@@ -150,17 +152,18 @@
             If there are no conditions to set visibilty then leave it as it was found (needed to keep hidden sections in place and allow for pre-conditions)
             Note that these bindings will trigger the ev:observer="form-instance" that is used to set the editStatus 
         -->
-        <xf:bind nodeset="//cda:section/@cityEHR:visibility"
+        <xf:bind nodeset="//cda:sectionX/@cityEHR:visibility"
             calculate="if (exists(../@cityEHR:conditions[.!=''])) then xxf:evaluate(../@cityEHR:conditions) else ."/>
 
         <!-- Set visibility of conditional entries.
             If there are no conditions to set visibilty then leave it as it was found (needed to allow for pre-conditions)
         -->
-        <xf:bind nodeset="//cda:entry/@cityEHR:visibility"
+        <xf:bind nodeset="//cda:entryX/@cityEHR:visibility"
             calculate="if (exists(../@cityEHR:conditions[.!=''])) then xxf:evaluate(../@cityEHR:conditions) else ."/>
+        
         <!-- Set visibility of conditional clusters and elements -->
         <xf:bind
-            nodeset="//cda:structuredBody/cda:component/cda:section/descendant::cda:value/@cityEHR:visibility"
+            nodeset="//cda:structuredBody/cda:component/cda:section/descendant::cda:valueX/@cityEHR:visibility"
             calculate="if (exists(../@cityEHR:conditions[.!=''])) then xxf:evaluate(../@cityEHR:conditions) else ''"/>
 
         <!-- Set visibility of clinical codes (cda:code-1 for now) -->
@@ -169,11 +172,9 @@
 
 
         <!-- Check constraints on elements -->
-        <!--
             <xf:bind
-            nodeset="cda:component/cda:structuredBody/cda:component/cda:section/descendant::cda:value[@cityEHR:constraints]"
+            nodeset="cda:component/cda:structuredBody/cda:component/cda:section/descendant::cda:valueX[@cityEHR:constraints]"
             constraint="xxf:evaluate(../@cityEHR:constraints)"/>
-        -->
 
         <!-- Set required values on elements -->
         <!-- Do we need this? 2013-12-04
@@ -284,8 +285,8 @@
     </xf:action>
 
 
-    <!-- === Queries and instances to get the set of latest entries for a patient 
-         Gets all the listed entries and returns in 
+    <!-- === Setting up the composition based on the stored patient record 
+         Pre-filled values, default values and expanded multiple entries 
          ========================================================= -->
 
     <xf:instance id="getLatestEntrySetXQuery-instance"
@@ -297,7 +298,6 @@
     <xf:instance id="latestEntrySet-instance">
         <eventValue/>
     </xf:instance>
-
 
 
     <!-- Application defined action to set pre-filled values
@@ -319,17 +319,10 @@
     -->
     <xf:action ev:event="set-pre-filled-values">
         <!-- Get the main section (body) of the CDA document for use in processing below.
-             This returns a sequence of the top-level sections in the document -->
+             This returns a sequence of the top-level sections in the document 
+             Note that the form-instance may have a document element of cda:ClinicalDocument or response from a query -->
         <xxf:variable name="cdaBody"
-            select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
-
-        <!-- Application id -->
-        <xxf:variable name="applicationId"
-            select="xxf:instance('session-parameters-instance')/applicationId"/>
-        <xxf:variable name="patientId"
-            select="xxf:instance('session-parameters-instance')/patientId"/>
-        <xxf:variable name="patientRecordLocation"
-            select="concat('/xmlstore/applications/',$applicationId,'/records/',$patientId)"/>
+            select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
 
         <!-- Get pre-filled entries and latest values from xmlstore.
              Note that pre-filled entries use the extension, not the root of the entry to get the stored value
@@ -342,29 +335,13 @@
         <xxf:variable name="prefilledEntryIRISet"
             select="distinct-values(for $entry in $prefilledEntrySet return $entry[not(@cityEHR:evaluationContext)]/descendant::cda:id[1]/@extension)"/>
 
-        <!-- Get set of stored entries for all entryIRI where the entry has no evaluation context.
-             This allows a single query to get all such values and place them in latestEntrySet-instance -->
-        <xf:setvalue ref="xxf:instance('getLatestEntrySetXQuery-instance')/entryIRISet"
-            value="string-join($prefilledEntryIRISet,''',''')"/>
-        <xf:setvalue ref="xxf:instance('getLatestEntrySetXQuery-instance')/evaluationContext"
-            value="''"/>
-
-        <!-- Return entries to latestEntrySet-instance -->
-        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
-            <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="$patientRecordLocation"/>
-            <xxf:context name="query" select="xxf:instance('getLatestEntrySetXQuery-instance')"/>
-            <xxf:context name="sortOrder" select="'descending'"/>
-            <xxf:context name="response" select="xxf:instance('latestEntrySet-instance')"/>
-            <xxf:context name="status" select="xxf:instance('cdaControl-instance')/status"/>
-        </xf:dispatch>
-
-        <!-- Check if there was an error -->
-        <xf:action if="not(xxf:instance('cdaControl-instance')/status = '')">
-            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetLatestEntry']"
+        <!-- Get the latestEntrySet-instance -->
+        <xf:dispatch name="get-latestEntrySet" target="cda-model">
+            <xxf:context name="entryIRISet" select="$prefilledEntryIRISet"/>
+            <xxf:context name="evaluationContext" select="''"/>
+            <xxf:context name="latestEntryInstance" select="xxf:instance('latestEntrySet-instance')"
             />
-        </xf:action>
+        </xf:dispatch>
 
         <!-- Iterate through pre-filled entries.
              This must include all entries (even where @extension is repeated for different @root) -->
@@ -382,28 +359,13 @@
                      The stored entries are placed in latestEntry-instance (as opposed to latestEntrySet-instance)
                  -->
                 <xf:action if="$evaluationContext!=''">
-                    <xf:setvalue ref="xxf:instance('getLatestEntrySetXQuery-instance')/entryIRISet"
-                        value="$prefilledEntryIRI"/>
-                    <xf:setvalue
-                        ref="xxf:instance('getLatestEntrySetXQuery-instance')/evaluationContext"
-                        value="concat('[',$evaluationContext,']')"/>
 
-                    <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
-                        <xxf:context name="system" select="'ehr'"/>
-                        <xxf:context name="storageLocation" select="$patientRecordLocation"/>
-                        <xxf:context name="query"
-                            select="xxf:instance('getLatestEntrySetXQuery-instance')"/>
-                        <xxf:context name="response" select="xxf:instance('latestEntry-instance')"/>
-                        <xxf:context name="status"
-                            select="xxf:instance('cdaControl-instance')/status"/>
+                    <xf:dispatch name="get-latestEntrySet" target="cda-model">
+                        <xxf:context name="entryIRISet" select="$prefilledEntryIRI"/>
+                        <xxf:context name="evaluationContext" select="$evaluationContext"/>
+                        <xxf:context name="latestEntryInstance"
+                            select="xxf:instance('latestEntry-instance')"/>
                     </xf:dispatch>
-
-                    <!-- Flag if there was an error, but don't stop processing -->
-                    <xf:action if="not)xxf:instance('cdaControl-instance')/status = '')">
-                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                            value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetLatestEntry']"
-                        />
-                    </xf:action>
 
                 </xf:action>
 
@@ -447,12 +409,57 @@
                  (Note that the template entry for pre-filled multiple entries has already been set to #CityEHR:Property:InitialValue:Default above
               -->
                 <xf:action
-                    if="not(exists($storedEntrySet)) and not(exists($prefilledEntry/parent::cda:section[@cityEHR:visibility='alwaysHidden']))">
+                    if="not(exists($storedEntrySet)) and not(exists($prefilledEntry/ancestor::cda:section[@cityEHR:visibility='alwaysHidden']))">
                     <xf:setvalue ref="$prefilledEntry/@cityEHR:initialValue"
                         value="'#CityEHR:Property:InitialValue:Default'"/>
                 </xf:action>
             </xf:action>
         </xf:action>
+    </xf:action>
+
+
+    <!-- Application defined action to get latest (most recent) ebtries from the stored record.
+         The set of one or more entryIRIs is passed as entryIRISet
+         Used to get the single latestEntry-instance or the latestEntrySet-instance
+         Which are passed as the return parameter latestEntryInstance
+     -->
+    <xf:action ev:event="get-latestEntrySet">
+        <xxf:variable name="entryIRISet" select="event('entryIRISet')"/>
+        <xxf:variable name="evaluationContext" select="event('evaluationContext')"/>
+        <xxf:variable name="latestEntryInstance" select="event('latestEntryInstance')"/>
+
+        <!-- Set patientRecordLocation based on applicationId and patientId -->
+        <xxf:variable name="applicationId"
+            select="xxf:instance('session-parameters-instance')/applicationId"/>
+        <xxf:variable name="patientId"
+            select="xxf:instance('session-parameters-instance')/patientId"/>
+        <xxf:variable name="patientRecordLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/records/',$patientId)"/>
+
+        <!-- Get set of stored entries for all entryIRI where the entry has no evaluation context.
+             This allows a single query to get all such values and place them in latestEntrySet-instance -->
+        <xf:setvalue ref="xxf:instance('getLatestEntrySetXQuery-instance')/entryIRISet"
+            value="string-join($entryIRISet,''',''')"/>
+        <xf:setvalue ref="xxf:instance('getLatestEntrySetXQuery-instance')/evaluationContext"
+            value="if (exists($evaluationContext)) then $evaluationContext else ''"/>
+
+        <!-- Return entries to latestEntryInstance -->
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$patientRecordLocation"/>
+            <xxf:context name="query" select="xxf:instance('getLatestEntrySetXQuery-instance')"/>
+            <xxf:context name="sortOrder" select="'descending'"/>
+            <xxf:context name="response" select="$latestEntryInstance"/>
+            <xxf:context name="status" select="xxf:instance('cdaControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Check if there was an error -->
+        <xf:action if="not(xxf:instance('cdaControl-instance')/status = '')">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+                value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedGetLatestEntry']"
+            />
+        </xf:action>
+
     </xf:action>
 
 
@@ -622,76 +629,75 @@
             <xxf:variable name="distinctStoredEntryComponentSet"
                 select="for $k in $storedEntryKeys return $sortedStoredEntryComponentSet[string-join(descendant::cda:value/@value,'') = $k][1]"/>
 
-                <!-- Debugging -->
-                <!--
+            <!-- Debugging -->
+            <!--
                     <xf:action if="$pre-fillType = ('#CityEHR:EntryProperty:AllValues','#CityEHR:Property:InitialValue:AllValues')">
                         <xf:message ref="concat(count($distinctStoredObservations),' / ',count($sortedStoredObservationSet))"/>
                     </xf:action>
                     -->
 
-                <!-- Insert an entry for each instance of an entry found in the stored entry set.
+            <!-- Insert an entry for each instance of an entry found in the stored entry set.
                  For DistinctValues then use $distinctStoredEntryComponentSet, otherwise $sortedStoredEntryComponentSet 
                  OR if this is an expanded multipleEntry then just set the values of the entry that has already been inserted (by expand-multiple-entries)
                  The storedEntry instance is a cda:component that contains a cda:observation  -->
 
-                <xf:action 
-                    xxf:iterate="if ($pre-fillType=('#CityEHR:EntryProperty:DistinctValues','#CityEHR:Property:InitialValue:DistinctValues')) then $distinctStoredEntryComponentSet else $sortedStoredEntryComponentSet">
+            <xf:action
+                xxf:iterate="if ($pre-fillType=('#CityEHR:EntryProperty:DistinctValues','#CityEHR:Property:InitialValue:DistinctValues')) then $distinctStoredEntryComponentSet else $sortedStoredEntryComponentSet">
 
-                    <xxf:variable name="storedEntryComponent" select="."/>
+                <xxf:variable name="storedEntryComponent" select="."/>
 
-                    <!-- If the entry has pre-conditions then evaluate them.
+                <!-- If the entry has pre-conditions then evaluate them.
                      If conditions are true then insert the entry, otherwise don't.
                      Pre-conditions are evaluated relative to the first child of the storedEntryComponent.
                      This allows for the context of the expression which uses the elements values relative to the specific entry, if necessary 
                  -->
-                    <xxf:variable name="preConditions"
-                        select="$prefilledEntry/@cityEHR:preConditions"/>
-                    <xxf:variable name="preConditionsEvaluation" context="$storedEntryComponent//cda:id[1]"
-                        select="if (exists($preConditions)) then xxf:evaluate($preConditions) else 'true'"/>
+                <xxf:variable name="preConditions" select="$prefilledEntry/@cityEHR:preConditions"/>
+                <xxf:variable name="preConditionsEvaluation"
+                    context="$storedEntryComponent//cda:id[1]"
+                    select="if (exists($preConditions)) then xxf:evaluate($preConditions) else 'true'"/>
 
 
-                    <!-- Insert the entryTemplate (or find the entry already inserted by expand-multiple-entries) and set values, but only if conditions allow -->
-                    <xf:action if="$preConditionsEvaluation">
-                        <xf:action if="$expandedMultipleEntry='false'">
-                            <xf:insert
-                                context="$prefilledEntry/cda:organizer/cda:component[2]/cda:organizer"
-                                nodeset="cda:component" position="last()" origin="$entryTemplate"/>
-                        </xf:action>
+                <!-- Insert the entryTemplate (or find the entry already inserted by expand-multiple-entries) and set values, but only if conditions allow -->
+                <xf:action if="$preConditionsEvaluation">
+                    <xf:action if="$expandedMultipleEntry='false'">
+                        <xf:insert
+                            context="$prefilledEntry/cda:organizer/cda:component[2]/cda:organizer"
+                            nodeset="cda:component" position="last()" origin="$entryTemplate"/>
+                    </xf:action>
 
-                        <!-- Set values in the entryTemplate after inserting it.
+                    <!-- Set values in the entryTemplate after inserting it.
                                  First need to get the inserted entry 
                                  This entry should be at the last() position in the entry set if it has just been inserted,
                                  or is the entry that has the same value of the expandedElement as the storedEntryComponent. 
                             -->
-                        <xxf:variable name="expandedElementValue"
-                            select="$storedEntryComponent/descendant::cda:value[@root=$expandedElementIRI][1]/@value"/>
-                        <xxf:variable name="insertedComponent"
-                            select="if ($expandedMultipleEntry='false') then $prefilledEntry/cda:organizer/cda:component[2]/cda:organizer/cda:component[last()] else $prefilledEntry/cda:organizer/cda:component[2]/cda:organizer/cda:component[descendant::cda:value[@root=$expandedElementIRI][1]/@value=$expandedElementValue]"/>
+                    <xxf:variable name="expandedElementValue"
+                        select="$storedEntryComponent/descendant::cda:value[@root=$expandedElementIRI][1]/@value"/>
+                    <xxf:variable name="insertedComponent"
+                        select="if ($expandedMultipleEntry='false') then $prefilledEntry/cda:organizer/cda:component[2]/cda:organizer/cda:component[last()] else $prefilledEntry/cda:organizer/cda:component[2]/cda:organizer/cda:component[descendant::cda:value[@root=$expandedElementIRI][1]/@value=$expandedElementValue]"/>
 
-                        <!-- Check here that the insertedComponent exists - should do, but just in case -->
-                        <xf:action if="exists($insertedComponent)">
-                            <!-- Set the CRUD attribute on the inserted entry (which is a cda:component).
+                    <!-- Check here that the insertedComponent exists - should do, but just in case -->
+                    <xf:action if="exists($insertedComponent)">
+                        <!-- Set the CRUD attribute on the inserted entry (which is a cda:component).
                                      Since these are pre-filled entries, we need to consider whether the entry can be updated.
                                      If $entryCRUDValue contains 'U' then it can be updated (edited) and also deleted.
                                      If $entryCRUDValue does not contain 'U' then the pre-filled entries are read-only.
                                      -->
-                            <xf:setvalue ref="$insertedComponent/@cityEHR:CRUD"
-                                value="if (contains($entryCRUDValue,'U')) then '#CityEHR:Property:CRUD:U' else '#CityEHR:Property:CRUD:R'"/>
-                            <!-- Set the origin attribute on the inserted entry -->
-                            <xf:setvalue
-                                ref="$insertedComponent/descendant::cda:id[1]/@cityEHR:origin"
-                                value="''"/>
+                        <xf:setvalue ref="$insertedComponent/@cityEHR:CRUD"
+                            value="if (contains($entryCRUDValue,'U')) then '#CityEHR:Property:CRUD:U' else '#CityEHR:Property:CRUD:R'"/>
+                        <!-- Set the origin attribute on the inserted entry -->
+                        <xf:setvalue ref="$insertedComponent/descendant::cda:id[1]/@cityEHR:origin"
+                            value="''"/>
 
-                            <!-- Set the pre-filled values for the inserted component.
+                        <!-- Set the pre-filled values for the inserted component.
                                  This is done with a recursive call to set-pre-filled-entry -->
-                            <xf:dispatch name="set-pre-filled-entry" target="cda-model">
-                                <xxf:context name="prefilledEntry" select="$insertedComponent"/>
-                                <xxf:context name="pre-fillType" select="$pre-fillType"/>
-                                <xxf:context name="storedEntrySet" select="$storedEntryComponent"/>
-                            </xf:dispatch>
+                        <xf:dispatch name="set-pre-filled-entry" target="cda-model">
+                            <xxf:context name="prefilledEntry" select="$insertedComponent"/>
+                            <xxf:context name="pre-fillType" select="$pre-fillType"/>
+                            <xxf:context name="storedEntrySet" select="$storedEntryComponent"/>
+                        </xf:dispatch>
 
 
-                            <!--
+                        <!--
                             <xf:action
                                 xxf:iterate="$insertedComponent/cda:observation/descendant::cda:value[exists(@value)]">
                                 <xxf:variable name="prefilledElement" select="."/>
@@ -707,22 +713,22 @@
                                 </xf:action>
                             </xf:action>
 -->
-                        </xf:action>
-                        <!-- End of handing inserted entry -->
-
                     </xf:action>
-                    <!-- End of processing for valid preConditions -->
+                    <!-- End of handing inserted entry -->
 
                 </xf:action>
-                <!-- End iteration through stored entries -->
+                <!-- End of processing for valid preConditions -->
+
+            </xf:action>
+            <!-- End iteration through stored entries -->
 
 
 
-                <!-- Reset the initialValue property so that template entry uses default values -->
-                <xf:setvalue ref="$prefilledEntry/@cityEHR:initialValue"
-                    value="'#CityEHR:Property:InitialValue:Default'"/>
+            <!-- Reset the initialValue property so that template entry uses default values -->
+            <xf:setvalue ref="$prefilledEntry/@cityEHR:initialValue"
+                value="'#CityEHR:Property:InitialValue:Default'"/>
 
-            
+
         </xf:action>
         <!-- End of multipleEntry -->
 
@@ -823,6 +829,55 @@
         </xf:action>
     </xf:action>
 
+    <!-- Application defined action to set the external entries referenced in a letter template. 
+         Finds the entries referenced in the letter templae that are not in the CDA instance.
+         Gets the most recent entry and inserts in the #CityEHR:ExternalReferences section of the CDA instance
+     -->
+    <xf:action ev:event="set-externalReferencesEntries">
+        <xxf:variable name="cdaInstance" select="event('cdaInstance')"/>
+        <xxf:variable name="letterTemplate" select="event('letterTemplate')"/>
+
+        <!-- Get list of external entries from the letterTemplate
+             These are entries that are referenced in the template but are not in the cdaInstance
+             Get the entries referenced in the letter template
+             Then the entries in the CDA instance (including entries in the hidden #CityEHR:ExternalVariables section)
+             The external entries are the ones that are referenced in the template, but are not in the CDA -->
+        <xxf:variable name="letterTemplateEntries"
+            select="distinct-values($letterTemplate/letterTemplateVariables/variable[starts-with(@ref,'#ISO-13606:Entry')]/tokenize(@ref,'/')[1])"/>
+        <xxf:variable name="cdaInstanceEntries"
+            select="distinct-values($cdaInstance//cda:id[starts-with(@extension,'#ISO-13606:Entry')]/@extension)"/>
+        <xxf:variable name="externalEntries"
+            select="$letterTemplateEntries[not(.=$cdaInstanceEntries)]"/>
+
+        <!-- Load the external entries from the patient record -->
+        <xf:dispatch name="get-latestEntrySet" target="cda-model">
+            <xxf:context name="entryIRISet" select="$externalEntries"/>
+            <xxf:context name="evaluationContext" select="''"/>
+            <xxf:context name="latestEntryInstance" select="xxf:instance('latestEntrySet-instance')"
+            />
+        </xf:dispatch>
+
+        <!-- Clear the #CityEHR:ExternalReferences section -->
+        <xxf:variable name="externalReferencesSection"
+            select="$cdaInstance//cda:section[cda:id/@extension='#CityEHR:ExternalReferences']"/>
+        <xf:delete nodeset="$externalReferencesSection/cda:entry"/>
+
+        <!-- Insert externally referenced entries -->
+        <xf:action xxf:iterate="$externalEntries">
+            <xxf:variable name="externalEntryIRI" select="."/>
+
+            <!-- Get the stored entry from the latestEkntrySet instance.
+                 The entries are returned in effectiveTime order, with the most recent first.
+                 So just need the first one to get the current entry value -->
+            <xxf:variable name="storedEntry"
+                select="xxf:instance('latestEntrySet-instance')/cda:entry[descendant::cda:id[1]/@extension=$externalEntryIRI][1]"/>
+
+            <!-- Insert the entry in the externalReferencesSection -->
+            <xf:insert context="$externalReferencesSection" nodeset="*" origin="$storedEntry"
+                at="last()" position="after"/>
+        </xf:action>
+
+    </xf:action>
 
     <!-- Application defined action to set default values. 
         This is only done when a new form is loaded (not a saved form)
@@ -914,6 +969,9 @@
             xxf:iterate="$entry/descendant::cda:value[@cityEHR:defaultValue!='' or @xsi:type='xs:boolean']">
 
             <xxf:variable name="element" select="."/>
+            <!--
+            <xf:message ref="$element/@root"/>
+-->
 
             <!-- Element has a default value specified then use xxf:evaluate to set it               
                  Context of evaluation must be the value attribute.
@@ -922,10 +980,12 @@
                  If there is no default value specified and the type is xs:boolean, then set to false()
                  The defaultValue variable can then be set for ongoing processing
             -->
-            <xf:setvalue ref="$element/@value"
-                value="if ($element/@cityEHR:defaultValue!='') then xxf:evaluate($element/@cityEHR:defaultValue) else if ($element/@xsi:type='xs:boolean') then false() else ''"/>
             <xxf:variable name="defaultValue" select="$element/@value"/>
-
+            <xf:setvalue ref="$defaultValue"
+                value="if ($element/@cityEHR:defaultValue!='') then xxf:evaluate($element/@cityEHR:defaultValue) else if ($element/@xsi:type='xs:boolean') then false() else ''"/>
+            <!--
+            <xf:message ref="concat($element/@root,' / ',$defaultValue)"/>
+-->
             <!-- If the element is an enumeratedValue, enumeratedCalculatedValue, enumeratedClass or enumeratedDirectory 
                 then need to check that the value set is allowable
                 and also need to set the displayName (and code).
@@ -1061,7 +1121,8 @@
             The descendant axis takes care of enumeratedClass entries and the expanded element being inside a cluster.
             Need to use the root of the id.
             
-            The expanded element can be enumeratedValue, enumeratedCalculatedValue, enumeratedClass or enumeratedDirectory. -->
+            The expanded element can be enumeratedValue, enumeratedCalculatedValue, enumeratedClass or enumeratedDirectory.
+            It must have the Scope of expanded (R1) or Full (R2) -->
         <xxf:variable name="expandedElementTemplate"
             select="($entryTemplate/descendant::cda:value[@cityEHR:Scope=('#CityEHR:ElementProperty:Expanded','#CityEHR:ElementProperty:Full')])[1]"/>
         <xxf:variable name="expandedElementIRI" select="$expandedElementTemplate/@root"/>

@@ -30,7 +30,15 @@
          ==================================================================================================== -->
     <!-- Set global variable to toggle display of the CDA Header -->
     <xsl:variable name="outputHeader" select="'no'"/>
-
+    
+    <!-- Set pageFlow - this is the page being loaded when this transformation is invoked -->
+    <xsl:variable name="pageFlow" select="$session-parameters/@pageFlow"/>
+    
+    <!-- Set excluded sections - normally those with visibility alwaysHidden.
+         But not if this HTML is generated in cityEHRWordProcessorCDA-->
+    <xsl:variable name="excludedSections" select="if ($pageFlow='cityEHRWordProcessorCDA') then '##NeverExclused##' else 'alwaysHidden'"/>
+    
+    
     <!-- Set externalId -->
     <xsl:variable name="externalId" select="$session-parameters/externalId"/>
 
@@ -104,6 +112,7 @@
         <head>
             <link rel="stylesheet" type="text/css" href="../styles/cityEHR.css" media="screen"/>
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+            <meta name="pageFlow" content="{$pageFlow}"/>
             <meta name="externalId" content="{$externalId}"/>
             <meta name="applicationIRI" content="{$applicationIRI}"/>
             <meta name="specialtyIRI" content="{$specialtyIRI}"/>
@@ -147,7 +156,7 @@
             <div class="ISO-13606:Composition">
                 <!-- Iterate through sections of the form.
              This template has matched cda:ClinicalDocument, so iteration is relative to that. 
-             alwaysHidden sections do not need to be rendered. -->
+             excludedSections (normally alwaysHidden) sections do not need to be rendered. -->
 
                 <!-- Output composition title if this is a folder view (i.e. can have multiple compositions) -->
                 <xsl:if test="$outputType = 'Folder'">
@@ -176,9 +185,11 @@
                     </xsl:call-template>
                 </xsl:for-each>
 
-                <!-- Get all other sections to render (not the header and must be visible) -->
+                <!-- Get all other sections to render (not the header and must be visible, unless alwaysHidden sections are required.
+                     This is the case when the HTML is generated for wordprocessor attachments which may reference entries in the alwaysHidden sections.
+                     The HTML is not actually displayed in this case, so there is no problem generating HTML for the alwaysHidden sections) -->
                 <xsl:variable name="renderedSectionList"
-                    select="./cda:component/cda:structuredBody/cda:component/cda:section[not(@cityEHR:visibility = ('alwaysHidden', 'false'))][not(@cityEHR:Rendition = 'Header')]"/>
+                    select="./cda:component/cda:structuredBody/cda:component/cda:section[not(@cityEHR:visibility = ($excludedSections, 'false'))][not(@cityEHR:Rendition = 'Header')]"/>
 
                 <!-- If there are no visible sections -->
                 <xsl:if test="empty($renderedSectionList)">
@@ -232,10 +243,10 @@
 
         <table class="displayList">
             <tbody>
-                <!-- Report has one row for each element in the entry set, but not for hidden elements (scope v1 or rendition v2)
+                <!-- Report has one row for each element in the entry set, but not for hidden elements (scope v1 or rendition v2 or precision 2025)
                      The entry set has already been filtered to only contain entries that are not hidden -->
                 <xsl:for-each
-                    select="$dataSetTemplate/cda:entry/descendant::cda:value[not(@cityEHR:Scope = '#CityEHR:ElementProperty:Hidden' or @cityEHR:elementRendition = '#CityEHR:ElementProperty:Hidden')]">
+                    select="$dataSetTemplate/cda:entry/descendant::cda:value[not(@cityEHR:Scope = '#CityEHR:ElementProperty:Hidden' or @cityEHR:elementRendition = '#CityEHR:ElementProperty:Hidden' or @cityEHR:Precision = '0')]">
                     <xsl:variable name="entry" select="ancestor::cda:entry"/>
                     <xsl:variable name="entryDisplayName"
                         select="$entry/descendant::cda:code[@codeSystem = 'cityEHR'][1]/@displayName"/>

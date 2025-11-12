@@ -24,6 +24,12 @@
     xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
     <xsl:output method="xml" indent="yes" name="xml"/>
+    
+    
+    <!-- Include model utilities -->
+    <xsl:include href="OWL2ModelUtilities.xsl"/>
+    <xsl:include href="OWL2ModelExpressions.xsl"/>
+   
 
     <!-- === Global Variables === -->
 

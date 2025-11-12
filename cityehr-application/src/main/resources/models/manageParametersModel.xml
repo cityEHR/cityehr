@@ -6,6 +6,8 @@
     
     Xforms model for general management of parameters, loaded for cityEHRSignOn and cityEHRAdmin.
     Has general actions used for both application and system parameters.
+    
+    Also has actions for management of parameter language packs.
    
     Copyright (C) 2013-2021 John Chelsom.
     
@@ -21,13 +23,17 @@
     **********************************************************************************************************
 -->
 
-<xf:model id="manageParameters-model" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
-    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
-    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
-    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xxf:session-heartbeat="true">
+<xf:model id="manageParameters-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xxf:session-heartbeat="true">
 
 
     <!-- === Control of the configuration management === -->
@@ -54,6 +60,12 @@
                 <name>label</name>
                 <name>hint</name>
             </termLiterals>
+            <!-- Template for reading/storing stylesheet -->
+            <stylesheetFile last-modified-ms="" last-modified-date="" size=""
+                content-type="text/css" path="" name="" selected="false"/>
+            <!-- Database locations for stylesheets -->
+            <systemStylesheetListLocation>system-stylesheets</systemStylesheetListLocation>
+            <applicationStylesheetListLocation>/systemConfiguration/application-stylesheets</applicationStylesheetListLocation>
         </control>
     </xf:instance>
 
@@ -110,10 +122,12 @@
         <xxf:variable name="editMode" select="event('editMode')"/>
 
         <!-- Set the parameters-instance in managed-parameters-instance -->
-        <xf:insert nodeset="xxf:instance('managed-parameters-instance')" origin="$parameters-instance"/>
-        
+        <xf:insert nodeset="xxf:instance('managed-parameters-instance')"
+            origin="$parameters-instance"/>
+
         <!-- Set the editContext -->
-        <xf:setvalue ref="xxf:instance('parametersControl-instance')/editContext" value="xxf:instance('managed-parameters-instance')/*[1]/name()"/>
+        <xf:setvalue ref="xxf:instance('parametersControl-instance')/editContext"
+            value="xxf:instance('managed-parameters-instance')/*[1]/name()"/>
 
         <!-- Set the editMode -->
         <xf:setvalue ref="xxf:instance('parametersControl-instance')/editMode" value="$editMode"/>
@@ -180,12 +194,16 @@
     <xf:action ev:event="rebuild-parameters">
         <xxf:variable name="parameters-instance" select="event('parameters-instance')"/>
         <xxf:variable name="stored-parameters-instance" select="event('stored-parameters-instance')"/>
-        <xxf:variable name="default-parameters-instance" select="event('default-parameters-instance')"/>
+        <xxf:variable name="default-parameters-instance"
+            select="event('default-parameters-instance')"/>
 
         <!-- Check that all instances exist so that rebuild can proceed -->
-        <xxf:variable name="validParametersInstance" select="if (exists($parameters-instance)) then 'true' else 'false'"/>
-        <xxf:variable name="validStoredParametersInstance" select="if (exists($stored-parameters-instance)) then 'true' else 'false'"/>
-        <xxf:variable name="validDefaultParametersInstance" select="if (exists($default-parameters-instance)) then 'true' else 'false'"/>
+        <xxf:variable name="validParametersInstance"
+            select="if (exists($parameters-instance)) then 'true' else 'false'"/>
+        <xxf:variable name="validStoredParametersInstance"
+            select="if (exists($stored-parameters-instance)) then 'true' else 'false'"/>
+        <xxf:variable name="validDefaultParametersInstance"
+            select="if (exists($default-parameters-instance)) then 'true' else 'false'"/>
 
         <!-- Check that top level paraemters in default are unique (i.e. unique names) and none are controls (from cityEHR namespace) -->
         <xxf:variable name="parameterNames"
@@ -203,11 +221,12 @@
             <!-- Prepare the parameters-instance.
              parameters-instance is first set up as the default-parameters-instance.
              So any attrbutes on the document element (parameters) are as set in the cityEHR distribution (default-parameters-instance)
-             If in default-parameters-instance, the top-level cityEHR:edit attribute has replace instruction, then the rebuild is not done
+             If in default-parameters-instance, the top-level cityEHR:edit attribute has replace instruction, then the rebuild is not performed
              (i.e. parameters-instance is completely replaced by the default)
              Otherwise parameters-instance starts as the cleared out shell of the default-parameters-instance.and the rebuild is done
              -->
-            <xf:insert nodeset="xxf:instance('working-parameters-instance')" origin="$default-parameters-instance"/>
+            <xf:insert nodeset="xxf:instance('working-parameters-instance')"
+                origin="$default-parameters-instance"/>
 
             <!-- The build is driven by the default-parameters-instance.
                  But not if edit instruction is to replace -->
@@ -222,18 +241,20 @@
                      Top level parameters must have unique names and not be cityEHR controls  (this is assumed, since it was checked above) -->
                 <xf:action xxf:iterate="$default-parameters-instance/*">
                     <xxf:variable name="defaultParameter" select="."/>
-                    <xxf:variable name="storedParameter" select="$stored-parameters-instance/*[name()=$defaultParameter/name()]"/>
+                    <xxf:variable name="storedParameter"
+                        select="$stored-parameters-instance/*[name()=$defaultParameter/name()]"/>
 
                     <!-- If there is no stored-parameter then just use the default -->
                     <xf:action if="not(exists($storedParameter))">
-                        <xf:insert context="xxf:instance('working-parameters-instance')" nodeset="*" origin="$defaultParameter" at="last()"
-                            position="after"/>
+                        <xf:insert context="xxf:instance('working-parameters-instance')" nodeset="*"
+                            origin="$defaultParameter" at="last()" position="after"/>
                     </xf:action>
 
                     <!-- Otherwise build the parameter, based on default and stored instances -->
                     <xf:action if="exists($storedParameter)">
                         <xf:dispatch name="build-parameter" target="manageParameters-model">
-                            <xxf:context name="parent" select="xxf:instance('working-parameters-instance')"/>
+                            <xxf:context name="parent"
+                                select="xxf:instance('working-parameters-instance')"/>
                             <xxf:context name="defaultParameter" select="$defaultParameter"/>
                             <xxf:context name="storedParameter" select="$storedParameter"/>
                         </xf:dispatch>
@@ -243,10 +264,12 @@
             </xf:action>
 
             <!-- Rebuild is done in working-parameters-instance - transfer to $parameters-instance -->
-            <xf:insert nodeset="$parameters-instance" origin="xxf:instance('working-parameters-instance')"/>
+            <xf:insert nodeset="$parameters-instance"
+                origin="xxf:instance('working-parameters-instance')"/>
 
             <!-- Set the status when done -->
-            <xf:setvalue ref="xxf:instance('parametersControl-instance')/status" value="if (.='rebuilding') then 'rebuilt' else ."/>
+            <xf:setvalue ref="xxf:instance('parametersControl-instance')/status"
+                value="if (.='rebuilding') then 'rebuilt' else ."/>
 
         </xf:action>
 
@@ -269,14 +292,16 @@
         <xxf:variable name="storedParameter" select="event('storedParameter')"/>
 
         <!-- The parameter is inserted from the default -->
-        <xf:insert context="$parent" nodeset="*" origin="$defaultParameter" at="last()" position="after"/>
+        <xf:insert context="$parent" nodeset="*" origin="$defaultParameter" at="last()"
+            position="after"/>
         <xxf:variable name="parameter" select="$parent/*[last()]"/>
         <xxf:variable name="parameterName" select="$parameter/name()"/>
 
         <!-- If there is no stored parameter, or the default has @cityEHR:edit set as 'replace', 
              then the rebuilt parameter is just the default, so no further processing is required.
              Otherwise continue to rebuild using the stored values -->
-        <xf:action if="exists($storedParameter) and not(contains($parameter/@cityEHR:edit,'replace'))">
+        <xf:action
+            if="exists($storedParameter) and not(contains($parameter/@cityEHR:edit,'replace'))">
 
             <!-- Clear out the parameter -->
             <xf:delete nodeset="$parameter/*"/>
@@ -288,8 +313,10 @@
                 <xxf:variable name="attributeName" select="$attribute/name()"/>
 
                 <xf:action if="not(starts-with($attributeName,'cityEHR:'))">
-                    <xxf:variable name="storedAttribute" select="$storedParameter/@*[name()=$attributeName]"/>
-                    <xf:setvalue ref="$attribute" value="if (exists($storedAttribute)) then $storedAttribute else ."/>
+                    <xxf:variable name="storedAttribute"
+                        select="$storedParameter/@*[name()=$attributeName]"/>
+                    <xf:setvalue ref="$attribute"
+                        value="if (exists($storedAttribute)) then $storedAttribute else ."/>
                 </xf:action>
             </xf:action>
 
@@ -298,7 +325,8 @@
             <xf:setvalue ref="$parameter" value="$storedParameter"/>
 
             <!-- Get the set of parameters defined in cityEHR:template for this default-parameter  -->
-            <xxf:variable name="templateParameterNameSet" select="distinct-values($defaultParameter/cityEHR:template/*/name())"/>
+            <xxf:variable name="templateParameterNameSet"
+                select="distinct-values($defaultParameter/cityEHR:template/*/name())"/>
 
             <!-- Build the child parameters that have a template, if there are any.
                  The number of parameters built is driven by the storedParameter.
@@ -306,7 +334,8 @@
                  Which is why we need to iterate through the names of the template parameters, to make sure we get them all. -->
             <xf:action xxf:iterate="$templateParameterNameSet">
                 <xxf:variable name="templateParameterName" select="."/>
-                <xxf:variable name="templateParameter" select="$defaultParameter/cityEHR:template/*[name()=$templateParameterName]"/>
+                <xxf:variable name="templateParameter"
+                    select="$defaultParameter/cityEHR:template/*[name()=$templateParameterName]"/>
 
                 <!-- Iterate through the stored parameters of the same name as the template -->
                 <xf:action xxf:iterate="$storedParameter/*[name()=$templateParameterName]">
@@ -331,11 +360,13 @@
             <xf:action xxf:iterate="$defaultParameter/*[not(name()=$templateParameterNameSet)]">
                 <xxf:variable name="childParameter" select="."/>
                 <xxf:variable name="childParameterName" select="$childParameter/name()"/>
-                <xxf:variable name="childParameterPosition" select="count($childParameter/preceding-sibling::*[name()=$childParameterName])"/>
+                <xxf:variable name="childParameterPosition"
+                    select="count($childParameter/preceding-sibling::*[name()=$childParameterName])"/>
 
                 <!-- cityEHR control - just insert into the parameter -->
                 <xf:action if="starts-with($childParameterName,'cityEHR:')">
-                    <xf:insert context="$parameter" origin="$childParameter" nodeset="*" at="last()" position="after"/>
+                    <xf:insert context="$parameter" origin="$childParameter" nodeset="*" at="last()"
+                        position="after"/>
                 </xf:action>
 
                 <!-- Not a cityEHR control - call build-parameter action (recursively).
@@ -384,27 +415,32 @@
         <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
         <xxf:variable name="languagePack-instance" select="event('languagePack-instance')"/>
         <xxf:variable name="status" select="event('status')"/>
-        
+
         <!-- Use the language pack template as the empty language pack
              Load to workingParametersLanguagePack instance -->
-        <xxf:variable name="staticResourceLocation" select="'/templates/cityEHRparameterLanguagePack.xml'"/>
+        <xxf:variable name="staticResourceLocation"
+            select="'/templates/cityEHRparameterLanguagePack.xml'"/>
         <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
             <xxf:context name="staticResourceLocation" select="$staticResourceLocation"/>
-            <xxf:context name="resource" select="xxf:instance('workingParametersLanguagePack-instance')"/>
+            <xxf:context name="resource"
+                select="xxf:instance('workingParametersLanguagePack-instance')"/>
             <xxf:context name="status" select="xxf:instance('parametersControl-instance')/status"/>
         </xf:dispatch>
 
         <!-- Template for new terms in the language pack -->
-        <xxf:variable name="termTemplate" select="xxf:instance('parametersControl-instance')/languagePack/term"/>
+        <xxf:variable name="termTemplate"
+            select="xxf:instance('parametersControl-instance')/languagePack/term"/>
         <xf:setvalue ref="$termTemplate/variant/@code" value="$baseLanguageCode"/>
         <xxf:variable name="contextTemplate" select="$termTemplate/context"/>
 
         <!-- Iterate through parameter attributes representing term literals.
              (but only those that have a value set)
              Add terms to the language pack using the base language specified -->
-        <xf:action xxf:iterate="$parameters-instance//@*[name() = xxf:instance('parametersControl-instance')/termLiterals/name][.!='']">
+        <xf:action
+            xxf:iterate="$parameters-instance//@*[name() = xxf:instance('parametersControl-instance')/termLiterals/name][.!='']">
             <xxf:variable name="termLiteral" select="."/>
-            <xxf:variable name="contextPath" select="string-join($termLiteral/ancestor-or-self::*/name(),'/')"/>
+            <xxf:variable name="contextPath"
+                select="string-join($termLiteral/ancestor-or-self::*/name(),'/')"/>
 
             <!-- Check for an existing term in the languagePack-instance passed.
                  and n the workingParametersLanguagePack-instance being built
@@ -413,7 +449,7 @@
                 select="xxf:instance('languagePack-instance')/term/variant[@code=$baseLanguageCode][@literal=$termLiteral][context=$contextPath]"/>
             <xxf:variable name="existingWorkingTerm"
                 select="xxf:instance('languagePack-instance')/term/variant[@code=$baseLanguageCode][@literal=$termLiteral][context=$contextPath]"/>
-            
+
             <!-- There are now three cases to consider:
                     existingWorkingTerm - do nothing (the term was already added with a different context)
                     existingTerm and no existingWorkingTerm - insert the existing term
@@ -423,19 +459,22 @@
             <xf:action if="not(exists($existingTerm))">
                 <xf:setvalue ref="$termTemplate/variant/@literal" value="$termLiteral"/>
                 <xf:setvalue ref="$termTemplate/context/@path" value="$contextPath"/>
-                <xf:insert context="xxf:instance('workingParametersLanguagePack-instance')" nodeset="*" origin="$termTemplate" at="last()"
-                    position="after"/>
+                <xf:insert context="xxf:instance('workingParametersLanguagePack-instance')"
+                    nodeset="*" origin="$termTemplate" at="last()" position="after"/>
             </xf:action>
 
             <!-- If term doesn't already exist with this context -->
-            <xf:action if="exists($existingTerm) and not(exists($existingTerm[context/@path=$contextPath]))">
+            <xf:action
+                if="exists($existingTerm) and not(exists($existingTerm[context/@path=$contextPath]))">
                 <xf:setvalue ref="$termTemplate/context/@path" value="$contextPath"/>
-                <xf:insert context="$existingTerm" nodeset="*" origin="$termTemplate/context" at="last()" position="after"/>
+                <xf:insert context="$existingTerm" nodeset="*" origin="$termTemplate/context"
+                    at="last()" position="after"/>
             </xf:action>
         </xf:action>
 
         <!-- Finished adding term literals - set the return workingParametersLanguagePack instance -->
-        <xf:insert nodeset="$languagePack-instance" origin="xxf:instance('workingParametersLanguagePack-instance')"/>
+        <xf:insert nodeset="$languagePack-instance"
+            origin="xxf:instance('workingParametersLanguagePack-instance')"/>
 
     </xf:action>
 
@@ -457,10 +496,12 @@
         <xf:action if="$languageCode!=''">
 
             <!-- Start with workingParametersLanguagePack instance as the languagePack instance passed -->
-            <xf:insert nodeset="xxf:instance('workingParametersLanguagePack-instance')" origin="$languagePack-instance"/>
+            <xf:insert nodeset="xxf:instance('workingParametersLanguagePack-instance')"
+                origin="$languagePack-instance"/>
 
             <!-- Template for new terms in the language pack -->
-            <xxf:variable name="termTemplate" select="xxf:instance('parametersControl-instance')/languagePack/term"/>
+            <xxf:variable name="termTemplate"
+                select="xxf:instance('parametersControl-instance')/languagePack/term"/>
             <xf:setvalue ref="$termTemplate/variant/@code" value="$languageCode"/>
 
             <!-- Iterate through the terms in the language pack
@@ -468,20 +509,25 @@
             <xf:action xxf:iterate="xxf:instance('workingParametersLanguagePack-instance')/term">
                 <xxf:variable name="term" select="."/>
 
-                <xxf:variable name="existingBaseLanguageVariant" select="$term/variant[@code=$baseLanguageCode]"/>
+                <xxf:variable name="existingBaseLanguageVariant"
+                    select="$term/variant[@code=$baseLanguageCode]"/>
                 <xxf:variable name="existingVariant" select="$term/variant[@code=$languageCode]"/>
 
                 <!-- Only add variant if it doesn't already exist -->
-                <xf:action if="not(exists($existingVariant)) and exists($existingBaseLanguageVariant)">
-                    <xf:setvalue ref="$termTemplate/variant/@literal" value="$existingBaseLanguageVariant/@literal"/>
-                    <xf:insert context="$term" nodeset="variant" origin="$termTemplate/variant" at="last()" position="after"/>
+                <xf:action
+                    if="not(exists($existingVariant)) and exists($existingBaseLanguageVariant)">
+                    <xf:setvalue ref="$termTemplate/variant/@literal"
+                        value="$existingBaseLanguageVariant/@literal"/>
+                    <xf:insert context="$term" nodeset="variant" origin="$termTemplate/variant"
+                        at="last()" position="after"/>
                 </xf:action>
 
             </xf:action>
 
             <!-- Finished adding term literals - 
              Set the return workingParametersLanguagePack instance -->
-            <xf:insert nodeset="$languagePack-instance" origin="xxf:instance('workingParametersLanguagePack-instance')"/>
+            <xf:insert nodeset="$languagePack-instance"
+                origin="xxf:instance('workingParametersLanguagePack-instance')"/>
 
         </xf:action>
 
@@ -494,31 +540,38 @@
          -->
     <xf:action ev:event="merge-parametersLanguagePack">
         <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
-        <xxf:variable name="storedLanguagePack-instance" select="event('storedLanguagePack-instance')"/>
-        <xxf:variable name="importedLanguagePack-instance" select="event('importedLanguagePack-instance')"/>
+        <xxf:variable name="storedLanguagePack-instance"
+            select="event('storedLanguagePack-instance')"/>
+        <xxf:variable name="importedLanguagePack-instance"
+            select="event('importedLanguagePack-instance')"/>
         <xxf:variable name="status" select="event('status')"/>
-        
+
 
         <!-- Start with workingParametersLanguagePack instance as the storedLanguagePack instance passed -->
-        <xf:insert nodeset="xxf:instance('workingParametersLanguagePack-instance')" origin="$storedLanguagePack-instance"/>        
+        <xf:insert nodeset="xxf:instance('workingParametersLanguagePack-instance')"
+            origin="$storedLanguagePack-instance"/>
 
         <!-- Iterate through the terms in the (stored) language pack
              Add variants from the imported the language pack if they don't exist.
              The imported term is matched on its baseLanguage literal -->
         <xf:action xxf:iterate="xxf:instance('workingParametersLanguagePack-instance')/term">
             <xxf:variable name="storedTerm" select="."/>
-            <xxf:variable name="baseLanguageLiteral" select="$storedTerm/variant[@code=$baseLanguageCode]/@literal"/>
+            <xxf:variable name="baseLanguageLiteral"
+                select="$storedTerm/variant[@code=$baseLanguageCode]/@literal"/>
             <xxf:variable name="importedTerm"
                 select="$importedLanguagePack-instance/term[variant[@code=$baseLanguageCode]/@literal=$baseLanguageLiteral]"/>
-            
-           <!-- Iterate through variants in the importedTerm, add them if not in the storedTerm -->
+
+            <!-- Iterate through variants in the importedTerm, add them if not in the storedTerm -->
             <xf:action xxf:iterate="$importedTerm/variant">
                 <xxf:variable name="importedTermVariant" select="."/>
-                <xxf:variable name="importedTermVariantLanguageCode" select="$importedTermVariant/@code"/>
-                                
+                <xxf:variable name="importedTermVariantLanguageCode"
+                    select="$importedTermVariant/@code"/>
+
                 <!-- Add variant if it doesn't exist in the storedTerm -->
-                <xf:action if="not(exists($storedTerm/variant[@code=$importedTermVariantLanguageCode]))">
-                    <xf:insert context="$storedTerm" nodeset="*" origin="$importedTermVariant" at="last()" position="after"/>
+                <xf:action
+                    if="not(exists($storedTerm/variant[@code=$importedTermVariantLanguageCode]))">
+                    <xf:insert context="$storedTerm" nodeset="*" origin="$importedTermVariant"
+                        at="last()" position="after"/>
                 </xf:action>
             </xf:action>
 
@@ -528,13 +581,15 @@
             Add to the stored language pack if the term doesn't exist there -->
         <xf:action xxf:iterate="$importedLanguagePack-instance/term">
             <xxf:variable name="importedTerm" select="."/>
-            <xxf:variable name="baseLanguageLiteral" select="$importedTerm/variant[@code=$baseLanguageCode]/@literal"/>
+            <xxf:variable name="baseLanguageLiteral"
+                select="$importedTerm/variant[@code=$baseLanguageCode]/@literal"/>
             <xxf:variable name="storedTerm"
                 select="xxf:instance('workingParametersLanguagePack-instance')/term[variant[@code=$baseLanguageCode][@literal=$baseLanguageLiteral]]"/>
 
             <!-- Add term if it doesn't exist in the stored language pack -->
             <xf:action if="not(exists($storedTerm))">
-                <xf:insert context="xxf:instance('workingParametersLanguagePack-instance')" nodeset="term" origin="$importedTerm" at="last()" position="after"/>
+                <xf:insert context="xxf:instance('workingParametersLanguagePack-instance')"
+                    nodeset="term" origin="$importedTerm" at="last()" position="after"/>
             </xf:action>
 
         </xf:action>
@@ -542,7 +597,8 @@
 
         <!-- Finished merging language packs - 
              Set the return workingParametersLanguagePack instance -->
-        <xf:insert nodeset="$storedLanguagePack-instance" origin="xxf:instance('workingParametersLanguagePack-instance')"/>
+        <xf:insert nodeset="$storedLanguagePack-instance"
+            origin="xxf:instance('workingParametersLanguagePack-instance')"/>
     </xf:action>
 
 
@@ -555,14 +611,17 @@
         <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
         <xxf:variable name="languageCode" select="event('languageCode')"/>
         <xxf:variable name="languagePack-instance" select="event('languagePack-instance')"/>
-        <xxf:variable name="variant-parameters-instance" select="event('variant-parameters-instance')"/>
+        <xxf:variable name="variant-parameters-instance"
+            select="event('variant-parameters-instance')"/>
         <xxf:variable name="status" select="event('status')"/>
 
         <!-- Start with the parameters instance as passed -->
-        <xf:insert nodeset="xxf:instance('working-parameters-instance')" origin="$parameters-instance"/>
+        <xf:insert nodeset="xxf:instance('working-parameters-instance')"
+            origin="$parameters-instance"/>
 
         <!-- Set the language code -->
-        <xf:setvalue ref="xxf:instance('working-parameters-instance')/@languageCode" value="$languageCode"/>
+        <xf:setvalue ref="xxf:instance('working-parameters-instance')/@languageCode"
+            value="$languageCode"/>
 
         <!-- Iterate through parameter attrbutes representing term literals.
              Add terms to the language pack using the base language specified -->
@@ -571,15 +630,388 @@
             <xxf:variable name="termLiteral" select="."/>
 
             <!-- Find variant literal in the langugae pack -->
-            <xxf:variable name="term" select="$languagePack-instance/term[variant[@code=$baseLanguageCode][@literal=$termLiteral]]"/>
-            <xxf:variable name="variantTermLiteral" select="$term/variant[@code=$languageCode]/@literal"/>
+            <xxf:variable name="term"
+                select="$languagePack-instance/term[variant[@code=$baseLanguageCode][@literal=$termLiteral]]"/>
+            <xxf:variable name="variantTermLiteral"
+                select="$term/variant[@code=$languageCode]/@literal"/>
 
             <xf:setvalue ref="$termLiteral" value="$variantTermLiteral"/>
         </xf:action>
 
         <!-- Finished replacing term literals - set the return variant-parameters-instance  -->
-        <xf:insert nodeset="$variant-parameters-instance" origin="xxf:instance('working-parameters-instance')"/>
+        <xf:insert nodeset="$variant-parameters-instance"
+            origin="xxf:instance('working-parameters-instance')"/>
 
+    </xf:action>
+
+
+
+    <!-- ========= System and Application Stylesheets ========================= 
+         Managed in manageStylesheets in cityEHRAdmin
+         Stylesheets are shipped in resources/styles directory (for system)
+         And resources/applications/[applicationId]/styles directory of each shipped application
+         ================================================ -->
+
+    <xf:instance id="shippedStylesheetList-instance">
+        <stylesheetList/>
+    </xf:instance>
+    <xf:instance id="stylesheetList-instance">
+        <stylesheetList/>
+    </xf:instance>
+
+    <xf:instance id="systemStylesheetList-instance">
+        <stylesheetList/>
+    </xf:instance>
+    <xf:instance id="applicationStylesheetList-instance">
+        <stylesheetList/>
+    </xf:instance>
+    <xf:bind nodeset="xxf:instance('systemStylesheetList-instance')/stylesheetFile/@selected"
+        type="xs:boolean"/>
+    <xf:bind nodeset="xxf:instance('applicationStylesheetList-instance')/stylesheetFile/@selected"
+        type="xs:boolean"/>
+
+    <xf:instance id="stylesheet-instance">
+        <stylesheet/>
+    </xf:instance>
+
+
+    <!-- Application defined action to initialize the list of shipped stylesheets.
+         Gets the shippedStylesheetList in shippedStylesheetList-instance.
+         Used for system and application stylesheets (if applicationIRI is passed as a parameter) -->
+    <xf:action ev:event="initialize-shippedStylesheetList">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+        <xxf:variable name="staticResourceLocation"
+            select="if ($applicationId='') then '/styles' else concat('/applications/',$applicationId,'/styles')"/>
+
+        <!-- Get the list of shipped stylesheets -->
+        <xf:dispatch name="dal-getStaticResourceList" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="$staticResourceLocation"/>
+            <xxf:context name="staticResourceList-instance"
+                select="xxf:instance('shippedStylesheetList-instance')"/>
+            <xxf:context name="fileTemplate"
+                select="xxf:instance('parametersControl-instance')/stylesheetFile"/>
+            <xxf:context name="status" select="xxf:instance('parametersControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Load each stylesheet from disk -->
+        <xf:action xxf:iterate="xxf:instance('shippedStylesheetList-instance')/*">
+            <xxf:variable name="stylesheetFile" select="."/>
+
+            <xf:dispatch name="load-stylesheet-from-disk" target="manageParameters-model">
+                <xxf:context name="stylesheetFile" select="$stylesheetFile"/>
+                <xxf:context name="stylesheetLocation" select="$staticResourceLocation"/>
+                <xxf:context name="status"
+                    select="xxf:instance('systemParametersControl-instance')/status"/>
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load a stylesheet file from disk.
+         The stylesheet fileName is passed as a parameter 
+         Locate stylesheet on disk and load into stylesheet-instance
+         -->
+    <xf:action ev:event="load-stylesheet-from-disk">
+        <xxf:variable name="stylesheetFile" select="event('stylesheetFile')"/>
+        <xxf:variable name="stylesheetLocation" select="event('stylesheetLocation')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xxf:variable name="fileName" select="$stylesheetFile/@name"/>
+
+        <!-- Filename must not be blank -->
+        <xf:action if="$fileName !=''">
+            <!-- Set the staticResourceLocation -->
+            <xxf:variable name="staticResourceLocation"
+                select="concat($stylesheetLocation,'/',$fileName)"/>
+
+            <!-- Load the stylesheet from disk -->
+            <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+                <xxf:context name="staticResourceLocation" select="$staticResourceLocation"/>
+                <xxf:context name="resource" select="xxf:instance('stylesheet-instance')"/>
+                <xxf:context name="status"
+                    select="xxf:instance('parametersControl-instance')/status"/>
+            </xf:dispatch>
+
+            <!-- Set the stylsheet content for the $stylesheetFile -->
+            <xf:setvalue ref="$stylesheetFile" value="xxf:instance('stylesheet-instance')"/>
+
+            <xf:setvalue ref="$status" value="xxf:instance('parametersControl-instance')/status"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to transfer shipped stylesheets to the specified list.
+         The stylesheetList (systemStylesheetList or applicationStylesheetList) is passed as a parameter.
+         Each shipped stylesheet is added to the stylesheetList, if it doesn't already exist there.
+         When loaded from disk, the stylesheetFile has @path and @name set as the same value (the name of the file)
+         If the stylesheetFile has been uploaded by the user, then @path is the full path and does not match @name.
+         
+         There are three cases:
+            new (uploaded) stylesheetFile in stylesheetList - do not add it
+            shipped stylesheetFile in stylesheetList - replace it 
+            stylesheetFile not in stylesheetList - add it
+         
+         -->
+    <xf:action ev:event="transfer-stylesheetList">
+        <xxf:variable name="shippedStylesheetList" select="event('shippedStylesheetList')"/>
+        <xxf:variable name="stylesheetList" select="event('stylesheetList')"/>
+
+        <!-- Remove empty stylesheetFiles before saving -->
+        <xf:delete nodeset="$stylesheetList/stylesheetFile[@path='']"/>
+
+        <!-- Iterate through stylesheets in shippedStylesheetList -->
+        <xf:action xxf:iterate="$shippedStylesheetList/stylesheetFile">
+            <xxf:variable name="stylesheetFile" select="."/>
+            <xxf:variable name="stylesheetFileName" select="$stylesheetFile/@name"/>
+
+            <!-- New (uploaded) stylesheetFile does not exist -->
+            <xf:action
+                if="not(exists($stylesheetList/stylesheetFile[@name=$stylesheetFileName][@path=@name]))">
+
+                <!-- Add the shipped stylesheetFile
+                    Removes existing stylesheetFile of the same name, if it exists -->
+                <xf:dispatch name="add-stylesheet" target="manageParameters-model">
+                    <xxf:context name="stylesheetList" select="$stylesheetList"/>
+                    <xxf:context name="stylesheetFile" select="$stylesheetFile"/>
+                </xf:dispatch>
+
+            </xf:action>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to add a stylesheet to the specified list.
+         The stylesheetFile to add is passed as a parameter or
+         if no stylesheetFile is passed then an empty stylesheetFile is added
+         The stylesheetList (systemStylesheetList or applicationStylesheetList) is passed as a parameter 
+         -->
+    <xf:action ev:event="add-stylesheet">
+        <xxf:variable name="stylesheetList" select="event('stylesheetList')"/>
+        <xxf:variable name="stylesheetFile" select="event('stylesheetFile')"/>
+
+        <!-- Remove existing stylesheetFile of the same name
+             It may not exist, but that's OK -->
+        <xxf:variable name="stylesheetFileName" select="$stylesheetFile/@name"/>
+        <xf:delete nodeset="$stylesheetList/stylesheetFile[@name=$stylesheetFileName]"/>
+
+        <!-- Add either the stylesheetFile passed as parameter or the blank template -->
+        <xxf:variable name="addedStylesheetFile"
+            select="if (exists($stylesheetFile)) then $stylesheetFile else xxf:instance('parametersControl-instance')/stylesheetFile"/>
+        <xf:insert context="$stylesheetList" nodeset="stylesheetFile" origin="$addedStylesheetFile"
+            at="last()" position="after"/>
+    </xf:action>
+
+
+    <!-- Application defined action to update a stylesheet that has been uploaded.
+         The stylesheetFile parameter has its @path and @name set
+         The uploaded stylesheet (base64) is passed as stylesheetContent
+         The stylesheetList (systemStylesheetList or applicationStylesheetList) may contain another stylesheet of the same name.
+         Ifo so, then remove it before setting the stylesheetFile content
+         -->
+    <xf:action ev:event="update-stylesheet">
+        <xxf:variable name="stylesheetList" select="event('stylesheetList')"/>
+        <xxf:variable name="stylesheetFile" select="event('stylesheetFile')"/>
+        <xxf:variable name="stylesheetContent" select="event('stylesheetContent')"/>
+
+        <!-- Remove existing stylesheetFile of the same name
+             It may not exist, but that's OK -->
+        <xxf:variable name="stylesheetFilePath" select="$stylesheetFile/@path"/>
+        <xxf:variable name="stylesheetFileName" select="$stylesheetFile/@name"/>
+        <xf:delete
+            nodeset="$stylesheetList/stylesheetFile[not(@path=$stylesheetFilePath)][@name=$stylesheetFileName]"/>
+
+        <!-- Set the stylesheetFile content -->
+        <xf:setvalue ref="$stylesheetFile" value="$stylesheetContent"/>
+    </xf:action>
+
+
+    <!-- Application defined action to initialize the system stylesheets.
+         Gets the shippedStylesheetList in shippedStylesheetList-instance.
+         Set the stylesheets
+         Save to xmlstore
+    -->
+    <xf:action ev:event="initialize-system-stylesheets">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Get the stylesheet files from disk -->
+        <xf:dispatch name="initialize-shippedStylesheetList" target="manageParameters-model"/>
+
+        <!-- Transfer shipped stylesheets to systemStylesheetList -->
+        <xf:dispatch name="transfer-stylesheetList" target="manageParameters-model">
+            <xxf:context name="shippedStylesheetList"
+                select="xxf:instance('shippedStylesheetList-instance')"/>
+            <xxf:context name="stylesheetList"
+                select="xxf:instance('systemStylesheetList-instance')"/>
+        </xf:dispatch>
+
+        <!-- If no system stylesheet is selected, then set the default
+             This preserves any setting made by the user -->
+        <xf:action
+            if="not(xxf:instance('systemStylesheetList-instance')/stylesheetFile/@selected='true')">
+            <xxf:variable name="defaultSystemStylesheet"
+                select="xxf:instance('system-parameters-instance')/dynamicParameters/systemStylesheet/@value"/>
+            <xf:setvalue
+                ref="xxf:instance('systemStylesheetList-instance')/stylesheetFile[@name=$defaultSystemStylesheet]/@selected"
+                value="'true'"/>
+        </xf:action>
+
+        <!-- Save the stylesheetList -->
+        <xf:dispatch name="save-system-stylesheets" target="manageParameters-model">
+            <xxf:context name="status" select="$status"/>
+        </xf:dispatch>
+    </xf:action>
+
+
+    <!-- Application defined action to load the list of system stylesheets.
+         Gets the stored stylesheetList in systemStylesheetList-instance -->
+    <xf:action ev:event="load-system-stylesheets">
+
+        <!-- Location defined in parametersControl-instance -->
+        <xxf:variable name="systemStylesheetListLocation"
+            select="xxf:instance('parametersControl-instance')/systemStylesheetListLocation"/>
+
+        <!-- Load the system resource -->
+        <xf:dispatch name="load-systemResource" target="systemParameters-model">
+            <xxf:context name="systemResource-instance"
+                select="xxf:instance('stylesheetList-instance')"/>
+            <xxf:context name="systemResourceName" select="$systemStylesheetListLocation"/>
+            <xxf:context name="status" select="xxf:instance('parametersControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- If stylesheetList loaded then set as systemStylesheetList, otherwise return empty systemStylesheetList  -->
+        <xf:delete nodeset="xxf:instance('systemStylesheetList-instance')/*"/>
+        <xf:action if="xxf:instance('parametersControl-instance')/status = ''">
+            <xf:insert nodeset="xxf:instance('systemStylesheetList-instance')"
+                origin="xxf:instance('stylesheetList-instance')"/>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to save the list of system stylesheets.
+         Saves the stylesheetList-instance -->
+    <xf:action ev:event="save-system-stylesheets">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Remove empty stylesheetFiles before saving -->
+        <xf:delete nodeset="xxf:instance('systemStylesheetList-instance')/stylesheetFile[@path='']"/>
+
+        <!-- Location defined in parametersControl-instance -->
+        <xxf:variable name="systemStylesheetListLocation"
+            select="xxf:instance('parametersControl-instance')/systemStylesheetListLocation"/>
+
+        <!-- Save the system resource -->
+        <xf:dispatch name="save-systemResource" target="systemParameters-model">
+            <xxf:context name="systemResource-instance"
+                select="xxf:instance('systemStylesheetList-instance')"/>
+            <xxf:context name="systemResourceName" select="$systemStylesheetListLocation"/>
+            <xxf:context name="status" select="xxf:instance('parametersControl-instance')/status"/>
+        </xf:dispatch>
+
+        <xf:setvalue ref="$status" value="xxf:instance('parametersControl-instance')/status"/>
+    </xf:action>
+
+
+    <!-- Application defined action to initialize the application stylesheets.
+         Gets the shippedStylesheetList in shippedStylesheetList-instance.
+         Set the stylesheets
+         Save to xmlstore
+    -->
+    <xf:action ev:event="initialize-application-stylesheets">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+
+        <!-- Get the stylesheet files from disk -->
+        <xf:dispatch name="initialize-shippedStylesheetList" target="manageParameters-model">
+            <xxf:context name="applicationIRI" select="$applicationIRI"/>
+        </xf:dispatch>
+
+        <!-- Transfer shipped stylesheets to applicationStylesheetList -->
+        <xf:dispatch name="transfer-stylesheetList" target="manageParameters-model">
+            <xxf:context name="shippedStylesheetList"
+                select="xxf:instance('shippedStylesheetList-instance')"/>
+            <xxf:context name="stylesheetList"
+                select="xxf:instance('applicationStylesheetList-instance')"/>
+        </xf:dispatch>
+        
+        <!-- If no application stylesheet is selected, then set the default
+             This preserves any setting made by the user -->
+        <xf:action
+            if="not(xxf:instance('applicationStylesheetList-instance')/stylesheetFile/@selected='true')">
+            <xxf:variable name="defaultApplicationStylesheet"
+                select="xxf:instance('application-parameters-instance')/application/applicationStylesheet/@value"/>
+            <xf:setvalue
+                ref="xxf:instance('applicationStylesheetList-instance')/stylesheetFile[@name=$defaultApplicationStylesheet]/@selected"
+                value="'true'"/>
+        </xf:action>
+        
+        <!-- Save the applicationStylesheetList -->
+        <xf:dispatch name="save-application-stylesheets" target="manageParameters-model">
+            <xxf:context name="applicationId" select="$applicationId"/>
+            <xxf:context name="status" select="$status"/>
+        </xf:dispatch>
+    </xf:action>
+
+
+    <!-- Load the applicationStylesheetList
+         e.g. in /db/ehr/xmlstore/applications/ISO-13606-EHR_Extract-cityEHR/systemConfiguration/application-stylesheets -->
+    <xf:action ev:event="load-application-stylesheets">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+        <!-- Location defined in parametersControl-instance -->
+        <xxf:variable name="storageLocation"
+            select="concat('/xmlstore/applications/',$applicationId,xxf:instance('parametersControl-instance')/applicationStylesheetListLocation)"/>
+
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$storageLocation"/>
+            <xxf:context name="resource" select="xxf:instance('stylesheetList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('parametersControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- If stylesheetList loaded then set as applicationStylesheetList, otherwise return empty applicationStylesheetList  -->
+        <xf:delete nodeset="xxf:instance('applicationStylesheetList-instance')/*"/>
+        <xf:action if="xxf:instance('parametersControl-instance')/status = ''">
+            <xf:insert nodeset="xxf:instance('applicationStylesheetList-instance')"
+                origin="xxf:instance('stylesheetList-instance')"/>
+        </xf:action>
+    </xf:action>
+
+
+    <!-- Save the applicationStylesheetList
+         e.g. in /db/ehr/xmlstore/applications/ISO-13606-EHR_Extract-cityEHR/systemConfiguration/application-stylesheets -->
+    <xf:action ev:event="save-application-stylesheets">
+        <xxf:variable name="applicationId" select="event('applicationId')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Remove empty stylesheetFiles before saving -->
+        <xf:delete
+            nodeset="xxf:instance('applicationStylesheetList-instance')/stylesheetFile[@path='']"/>
+
+        <!-- Location defined in parametersControl-instance -->
+        <xxf:variable name="storageLocation"
+            select="concat('/xmlstore/applications/',$applicationId,xxf:instance('parametersControl-instance')/applicationStylesheetListLocation)"/>
+
+        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$storageLocation"/>
+            <xxf:context name="resource" select="xxf:instance('applicationStylesheetList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('parametersControl-instance')/status"/>
+        </xf:dispatch>
+
+        <xf:setvalue ref="$status" value="xxf:instance('parametersControl-instance')/status"/>
     </xf:action>
 
 

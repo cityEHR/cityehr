@@ -127,11 +127,11 @@
     <xsl:variable name="displayNameTerms" select="$modelComponentSheets/record[position() gt 1][field[1] != '']/field[2][normalize-space(.) != '']"/>
 
     <!-- Element value displayNames are in the Data of the Element sheet.
-         But only for elements with an Id and of enumeratedValue, enumeratedClass or enumeratedDirectory type -->
+         But only for elements with an Id and of enumeratedValue, enumeratedCalculatedValue, enumeratedClass or enumeratedDirectory type -->
     <xsl:variable name="elementTable" select="database/table[@id = 'Element']"/>
     <xsl:variable name="typePosition" select="$elementTable/record[1]/field[. = 'ElementType']/count(preceding-sibling::*) + 1"/>
     <xsl:variable name="elementTableRecords"
-        select="$elementTable/record[position() gt 1][field[1] != ''][field[position() = $typePosition] = ('enumeratedValue', 'enumeratedClass', 'enumeratedDirectory')]"/>
+        select="$elementTable/record[position() gt 1][field[1] != ''][field[position() = $typePosition] = ('enumeratedValue','enumeratedCalculatedValue', 'enumeratedClass', 'enumeratedDirectory')]"/>
     <xsl:variable name="valuePosition" select="$elementTable/record[1]/field[. = 'Data']/count(preceding-sibling::*) + 1"/>
     <xsl:variable name="elementValueTerms" select="cityEHRFunction:GetValueDisplayNames($elementTableRecords, $valuePosition)"/>
 

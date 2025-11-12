@@ -23,8 +23,9 @@
 
 
 
-<xsl:stylesheet exclude-result-prefixes="xs" version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+<xsl:stylesheet exclude-result-prefixes="xs" version="2.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
     xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
 
@@ -50,7 +51,8 @@
             else
                 ''"/>
     <!-- Strip the leading # from the IRI and replace : with - to get an Id suitable for eXist -->
-    <xsl:variable name="applicationId" as="xs:string" select="replace(substring($applicationIRI, 2), ':', '-')"/>
+    <xsl:variable name="applicationId" as="xs:string"
+        select="replace(substring($applicationIRI, 2), ':', '-')"/>
 
     <!-- Set the Specialty for this ontology configuration -->
     <xsl:variable name="specialtyIRI" as="xs:string"
@@ -60,7 +62,8 @@
             else
                 ''"/>
     <!-- Strip the leading # from the IRI and replace : with - to get an Id suitable for eXist -->
-    <xsl:variable name="specialtyId" as="xs:string" select="replace(substring($specialtyIRI, 2), ':', '-')"/>
+    <xsl:variable name="specialtyId" as="xs:string"
+        select="replace(substring($specialtyIRI, 2), ':', '-')"/>
 
     <!-- Set the type of dictionary - class or specialty -->
     <xsl:variable name="informationModelType"
@@ -107,7 +110,8 @@
 
         <!-- Something wrong, so don't generate dictionary -->
         <xsl:if test="$status = 'error'">
-            <EHR_Extract xmlns="http://www.iso.org/iso-13606" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="#CityEHR:Error"
+            <EHR_Extract xmlns="http://www.iso.org/iso-13606"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="#CityEHR:Error"
                 codeSystem="cityEHR" displayName="Failed to generate dictionary"/>
         </xsl:if>
 
@@ -128,7 +132,8 @@
                     else
                         ''"/>
 
-            <EHR_Extract xmlns="http://www.iso.org/iso-13606" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="{$specialtyIRI}"
+            <EHR_Extract xmlns="http://www.iso.org/iso-13606"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" code="{$specialtyIRI}"
                 commonModelCode="" codeSystem="cityEHR" displayName="{$specialtyDisplayNameTerm}">
 
                 <!-- === 
@@ -158,9 +163,11 @@
                         For views, also output the set of compositions it contains and the type of the view.
                         == -->
 
-                    <folder code="{$specialtyIRI}" codeSystem="cityEHR" displayName="{$specialtyDisplayNameTerm}">
+                    <folder code="{$specialtyIRI}" codeSystem="cityEHR"
+                        displayName="{$specialtyDisplayNameTerm}">
 
-                        <xsl:for-each select="//owl:Ontology/owl:SubClassOf[owl:Class[2]/@IRI = '#ISO-13606:Composition']/owl:Class[1]/@IRI">
+                        <xsl:for-each
+                            select="//owl:Ontology/owl:SubClassOf[owl:Class[2]/@IRI = '#ISO-13606:Composition']/owl:Class[1]/@IRI">
                             <xsl:variable name="compositionTypeIRI" as="xs:string" select="."/>
 
                             <xsl:for-each select="key('individualIRIList', $compositionTypeIRI)">
@@ -179,12 +186,16 @@
                                             ''"/>
 
                                 <!-- Get all the sections in this composition -->
-                                <xsl:variable name="allFormSections" select="cityEHRFunction:getFormSections($rootNode, $compositionIRI)"/>
-                                <xsl:variable name="formSections" select="distinct-values($allFormSections)"/>
+                                <xsl:variable name="allFormSections"
+                                    select="cityEHRFunction:getFormSections($rootNode, $compositionIRI)"/>
+                                <xsl:variable name="formSections"
+                                    select="distinct-values($allFormSections)"/>
 
                                 <!-- Get all the entries on this form -->
-                                <xsl:variable name="allFormEntries" select="cityEHRFunction:getFormEntries($rootNode, $formSections)"/>
-                                <xsl:variable name="formEntries" select="distinct-values($allFormEntries)"/>
+                                <xsl:variable name="allFormEntries"
+                                    select="cityEHRFunction:getFormEntries($rootNode, $formSections)"/>
+                                <xsl:variable name="formEntries"
+                                    select="distinct-values($allFormEntries)"/>
 
 
                                 <!-- Get data property for #hasRank -->
@@ -195,8 +206,9 @@
                                         else
                                             '0'"/>
 
-                                <composition typeId="{$compositionTypeIRI}" code="{$compositionIRI}" codeSystem="cityEHR"
-                                    displayName="{$compositionDisplayNameTerm}" cityEHR:rank="{$compositionRank}">
+                                <composition typeId="{$compositionTypeIRI}" code="{$compositionIRI}"
+                                    codeSystem="cityEHR" displayName="{$compositionDisplayNameTerm}"
+                                    cityEHR:rank="{$compositionRank}">
                                     <!-- If the composition is a view then add attribute to specify its type and list the compositions it contains -->
                                     <xsl:if test="$compositionTypeIRI = '#CityEHR:View'">
                                         <!-- In V1 viewType is in the dataProperty hasType in V2 is in the objectProperty hasViewType -->
@@ -208,7 +220,8 @@
                                                     ''"/>
                                         <xsl:variable name="viewTypeObjectProperty" as="xs:string"
                                             select="cityEHRFunction:getObjectPropertyValue($rootNode, $compositionIRI, 'EntryProperty', '#hasViewType')"/>
-                                        <xsl:variable name="viewTypeObjectPropertyValue" as="xs:string"
+                                        <xsl:variable name="viewTypeObjectPropertyValue"
+                                            as="xs:string"
                                             select="tokenize($viewTypeObjectProperty, ':')[last()]"/>
 
                                         <xsl:variable name="viewType" as="xs:string"
@@ -220,8 +233,10 @@
                                         <xsl:attribute name="cityEHR:viewType">
                                             <xsl:value-of select="$viewType"/>
                                         </xsl:attribute>
-                                        <xsl:for-each select="key('contentsIRIList', $compositionIRI)">
-                                            <xsl:variable name="viewCompositionIRI" as="xs:string" select="."/>
+                                        <xsl:for-each
+                                            select="key('contentsIRIList', $compositionIRI)">
+                                            <xsl:variable name="viewCompositionIRI" as="xs:string"
+                                                select="."/>
                                             <composition>
                                                 <xsl:value-of select="$viewCompositionIRI"/>
                                             </composition>
@@ -284,7 +299,8 @@
                                     else
                                         ''"/>
 
-                            <folder code="{$folderIRI}" codeSystem="cityEHR" displayName="{$folderDisplayNameTerm}">
+                            <folder code="{$folderIRI}" codeSystem="cityEHR"
+                                displayName="{$folderDisplayNameTerm}">
 
                                 <!-- Iterate through compositions in this folder (can be forms or views)
                         <ObjectPropertyAssertion>
@@ -301,7 +317,8 @@
                                             else
                                                 ''"/>
 
-                                    <xsl:variable name="compositionDisplayNameTermIRI" as="xs:string"
+                                    <xsl:variable name="compositionDisplayNameTermIRI"
+                                        as="xs:string"
                                         select="
                                             if (exists(key('termIRIList', $compositionIRI))) then
                                                 key('termIRIList', $compositionIRI)[1]
@@ -322,8 +339,10 @@
                                             else
                                                 '0'"/>
 
-                                    <composition typeId="{$compositionTypeIRI}" code="{$compositionIRI}" codeSystem="cityEHR"
-                                        displayName="{$compositionDisplayNameTerm}" cityEHR:rank="{$compositionRank}"/>
+                                    <composition typeId="{$compositionTypeIRI}"
+                                        code="{$compositionIRI}" codeSystem="cityEHR"
+                                        displayName="{$compositionDisplayNameTerm}"
+                                        cityEHR:rank="{$compositionRank}"/>
                                 </xsl:for-each>
                             </folder>
                         </xsl:for-each>
@@ -447,7 +466,8 @@
                                     ''"/>
 
                         <!-- Generate entry -->
-                        <entry cityEHR:cohortSearch="{$cohortSearch}" cityEHR:rendition="{$entryRendition}" cityEHR:CRUD="{$entryCRUD}"
+                        <entry cityEHR:cohortSearch="{$cohortSearch}"
+                            cityEHR:rendition="{$entryRendition}" cityEHR:CRUD="{$entryCRUD}"
                             cityEHR:labelWidth="{cityEHRFunction:getEntryLabelWidth($entryIRI)}">
                             <!-- Add attribute if the entry has sort order set -->
                             <xsl:if test="string-length($entrySortOrder) &gt; 0">
@@ -469,7 +489,8 @@
                                 <xsl:call-template name="generateEntry">
                                     <xsl:with-param name="rootNode" select="$rootNode"/>
                                     <xsl:with-param name="entryIRI" select="$entryIRI"/>
-                                    <xsl:with-param name="displayName" select="$entryDisplayNameTerm"/>
+                                    <xsl:with-param name="displayName"
+                                        select="$entryDisplayNameTerm"/>
                                     <xsl:with-param name="usingExpressions" select="'true'"/>
                                 </xsl:call-template>
                             </component>
@@ -510,25 +531,30 @@
 
                         <!-- Get property for #hasDataType
                              Properties are of the form #CityEHR:Property:DataType:string or #CityEHR:DataType:string
-                             Depending on whether 2018 or 2017 ontologyVersion -->
+                             Depending on whether 2018 or 2017 ontologyVersion ***jc -->
                         <!--
                         <xsl:variable name="elementDataType" as="xs:string"
                             select="if (exists(key('specifiedObjectPropertyList',concat('#hasDataType',$elementIRI),$rootNode))) then key('specifiedObjectPropertyList',concat('#hasDataType',$elementIRI),$rootNode)[1] else ''"/>
                         -->
-                        <xsl:variable name="elementDataType" as="xs:string"
+                        <xsl:variable name="elementDataTypeObjectPropertyValue" as="xs:string"
                             select="cityEHRFunction:getObjectPropertyValue($rootNode, $elementIRI, 'ElementProperty', '#hasDataType')"/>
+
+                        <!-- elementDataType is of the form #CityEHR:ElementProperty:Name
+                             But the xsi:type attrbbute is of the fomr :xs:Name -->
+                        <xsl:variable name="elementDataType" as="xs:string"
+                            select="tokenize($elementDataTypeObjectPropertyValue, ':')[last()]"/>
                         <xsl:variable name="dataType" as="xs:string"
                             select="
-                                if (string-length(substring-after($elementDataType, 'DataType:')) > 0) then
-                                    concat('xs:', substring-after($elementDataType, 'DataType:'))
+                                if ($elementDataType != '') then
+                                    concat('xs:', $elementDataType)
                                 else
                                     'xs:string'"/>
 
                         <!-- Get property for #hasPrecision -->
                         <xsl:variable name="elementFieldLength" as="xs:string"
                             select="
-                            if (exists(key('specifiedDataPropertyList', concat('#hasPrecision', $elementIRI), $rootNode))) then
-                            key('specifiedDataPropertyList', concat('#hasPrecision', $elementIRI), $rootNode)[1]
+                                if (exists(key('specifiedDataPropertyList', concat('#hasPrecision', $elementIRI), $rootNode))) then
+                                    key('specifiedDataPropertyList', concat('#hasPrecision', $elementIRI), $rootNode)[1]
                                 else
                                     ''"/>
 
@@ -585,9 +611,11 @@
 
                     </xsl:if>
                     -->
-                        <xsl:if test="not($elementType = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass'))">
-                            <element root="{$elementIRI}" extension="{$recordedElementIRI}" xsi:type="{$dataType}"
-                                displayName="{$elementDisplayNameTerm}" cityEHR:elementType="{$elementType}" cityEHR:Scope="{$elementScope}"
+                        <xsl:if
+                            test="not($elementType = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass'))">
+                            <element root="{$elementIRI}" extension="{$recordedElementIRI}"
+                                xsi:type="{$dataType}" displayName="{$elementDisplayNameTerm}"
+                                cityEHR:elementType="{$elementType}" cityEHR:Scope="{$elementScope}"
                                 cityEHR:fieldLength="{$elementFieldLength}">
 
                                 <!-- Element only needs a full entry in elementCollection if it is of the following types:
@@ -642,7 +670,8 @@
                                                 else
                                                     ''"/>
 
-                                        <xsl:variable name="elementValueDisplayNameTermIRI" as="xs:string"
+                                        <xsl:variable name="elementValueDisplayNameTermIRI"
+                                            as="xs:string"
                                             select="
                                                 if (exists(key('termIRIList', $dataValueIRI))) then
                                                     key('termIRIList', $dataValueIRI)[1]
@@ -655,7 +684,8 @@
                                                 else
                                                     ''"/>
 
-                                        <data code="{$dataValueIRI}" codeSystem="cityEHR" value="{$elementValue}"
+                                        <data code="{$dataValueIRI}" codeSystem="cityEHR"
+                                            value="{$elementValue}"
                                             displayName="{$elementValueDisplayName}"/>
 
                                     </xsl:for-each>
@@ -700,19 +730,21 @@
                     </ObjectPropertyAssertion>
                     
                     -->
-                        <xsl:if test="$elementType = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
+                        <xsl:if
+                            test="$elementType = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
 
-                            <element root="{$elementIRI}" extension="{$recordedElementIRI}" displayName="{$elementDisplayNameTerm}"
+                            <element root="{$elementIRI}" extension="{$recordedElementIRI}"
+                                displayName="{$elementDisplayNameTerm}"
                                 cityEHR:elementType="{$elementType}">
-                                                               
+
                                 <!-- Get property for #hasDataClass -->
                                 <xsl:variable name="elementValueClass" as="xs:string"
                                     select="
-                                    if (exists(key('specifiedObjectPropertyList', concat('#hasDataClass', $elementIRI), $rootNode))) then
-                                    key('specifiedObjectPropertyList', concat('#hasDataClass', $elementIRI), $rootNode)[1]
-                                    else
-                                    ''"/>
-                                
+                                        if (exists(key('specifiedObjectPropertyList', concat('#hasDataClass', $elementIRI), $rootNode))) then
+                                            key('specifiedObjectPropertyList', concat('#hasDataClass', $elementIRI), $rootNode)[1]
+                                        else
+                                            ''"/>
+
                                 <!-- Iterate through enumerated values for an element.
                                      The values specified are the nodes of the class to select from. -->
                                 <xsl:for-each select="key('dataValueIRIList', $elementIRI)">
@@ -726,7 +758,8 @@
                                             else
                                                 ''"/>
 
-                                    <xsl:variable name="elementValueDisplayNameTermIRI" as="xs:string"
+                                    <xsl:variable name="elementValueDisplayNameTermIRI"
+                                        as="xs:string"
                                         select="
                                             if (exists(key('termIRIList', $dataValueIRI))) then
                                                 key('termIRIList', $dataValueIRI)[1]
@@ -741,7 +774,8 @@
 
                                     <!-- The value here denotes the class:node that is used for the element selection.
                                          The code is the class of the node -->
-                                    <data code="{$elementValueClass}" codeSystem="CityEHR" value="{$elementValue}"
+                                    <data code="{$elementValueClass}" codeSystem="CityEHR"
+                                        value="{$elementValue}"
                                         displayName="{$elementValueDisplayName}"/>
 
                                 </xsl:for-each>
@@ -824,7 +858,8 @@
                             -->
 
                         <!-- Generate dictionary entry for the nested class hierarchy -->
-                        <element root="cityEHR" extension="{$classIRI}" displayName="{$classDisplayNameTerm}"
+                        <element root="cityEHR" extension="{$classIRI}"
+                            displayName="{$classDisplayNameTerm}"
                             cityEHR:elementType="#CityEHR:Property:ElementType:enumeratedClass">
 
                             <!-- Iterate through the root nodes. -->
@@ -934,15 +969,19 @@
                     else
                         ''"/>
 
-            <xsl:variable name="newLoopPath" as="xs:string" select="concat($loopPath, '@@@', $nodeIRI)"/>
+            <xsl:variable name="newLoopPath" as="xs:string"
+                select="concat($loopPath, '@@@', $nodeIRI)"/>
 
-            <data code="{$nodeIRI}" codeSystem="CityEHR" value="{$nodeIRI}" displayName="{$displayNameTerm}" units="{$unitTerm}"
+            <data code="{$nodeIRI}" codeSystem="CityEHR" value="{$nodeIRI}"
+                displayName="{$displayNameTerm}" units="{$unitTerm}"
                 cityEHR:suppDataSet="{$suppDataSetIRI}">
                 <!-- Record the clinical codes -->
                 <xsl:for-each select="('SNOMED', 'ICD-10', 'OPCS-4')">
                     <xsl:variable name="codeSystem" as="xs:string" select="."/>
-                    <xsl:variable name="dataProperty" as="xs:string" select="concat('#has', $codeSystem, 'Code')"/>
-                    <xsl:for-each select="key('specifiedDataPropertyList', concat($dataProperty, $nodeIRI), $rootNode)">
+                    <xsl:variable name="dataProperty" as="xs:string"
+                        select="concat('#has', $codeSystem, 'Code')"/>
+                    <xsl:for-each
+                        select="key('specifiedDataPropertyList', concat($dataProperty, $nodeIRI), $rootNode)">
                         <xsl:variable name="code" as="xs:string" select="."/>
                         <code code="{$code}" codeSystem="{$codeSystem}"/>
                     </xsl:for-each>
@@ -1033,7 +1072,8 @@
                     else
                         ''"/>
 
-            <xsl:variable name="newLoopPath" as="xs:string" select="concat($loopPath, '@@@', $nodeIRI)"/>
+            <xsl:variable name="newLoopPath" as="xs:string"
+                select="concat($loopPath, '@@@', $nodeIRI)"/>
             <xsl:variable name="leafNode" as="xs:string"
                 select="
                     if (exists(key('typeIRIList', $nodeIRI))) then
@@ -1043,7 +1083,8 @@
 
             <!-- Leaf node - output the value -->
             <xsl:if test="$leafNode = 'leaf' or $output = 'all'">
-                <data code="{$nodeIRI}" codeSystem="CityEHR" value="{$nodeIRI}" displayName="{$displayNameTerm}" units="{$unitTerm}"
+                <data code="{$nodeIRI}" codeSystem="CityEHR" value="{$nodeIRI}"
+                    displayName="{$displayNameTerm}" units="{$unitTerm}"
                     cityEHR:suppDataSet="{$suppDataSetIRI}"/>
             </xsl:if>
 

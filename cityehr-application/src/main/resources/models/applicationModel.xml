@@ -4,8 +4,14 @@
     cityEHR
     applicationModel.xml
     
-    Xforms model containing stuff for handling of the application and its information models.
+    Xforms model containing stuff for managing the application and its information models.
     This model is loaded for cityEHRSignOn, cityEHRAdmin and cityEHRCohortSearch
+    
+    The actions defined here are used for the following administration tasks (in cityEHRAdmin)
+    
+        manageApplication
+    
+        
     
     Copyright (C) 2013-2021 John Chelsom.
     
@@ -41,6 +47,7 @@
     <xf:instance id="applicationControl-instance">
         <control xmlns="">
             <status model="application-model"/>
+            <error/>
 
             <!-- Parameters for the importModel process -->
             <importModelParameters mergeCommonModel="true" mergeExistingModel="false"
@@ -108,6 +115,9 @@
         </control>
     </xf:instance>
 
+    <xf:instance id="applicationError-instance">
+        <errorReport/>
+    </xf:instance>
 
     <!-- === Utilities ===============================        
          ============================================= -->
@@ -242,8 +252,9 @@
 
 
 
-    <!-- === Managing Applications ===============================        
-         ======================================================== -->
+    <!-- === Managing Applications =============================== 
+         Task: manageApplication
+         ========================================================= -->
 
     <!-- Application defined action to get list of installed applications -->
     <xf:action ev:event="get-applicationList">
@@ -352,6 +363,7 @@
             <xxf:context name="status" select="$status"/>
         </xf:dispatch>
     </xf:action>
+
 
 
     <!-- === Creating Applications ===============================
@@ -1501,6 +1513,7 @@
 
     </xf:action>
 
+
     <!-- Application defined action to create a new letter letterTemplateFile in application-letterTemplateFile-instance
          This creates an empty letterTemplateFile containing with no binary content
          -->
@@ -1526,6 +1539,7 @@
             value="$letterTemplateContentType"/>
 
     </xf:action>
+
 
     <!-- Application defined action to create a new letter template in application-letterTemplate-instance
          Note that the id of the letterTemplate is "value" 
@@ -2070,11 +2084,19 @@
 
         <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
 
-        <!-- Media elements can be of any type.
+        <!-- Media elements can be of any type (old way until 2025-05-18)
+             From 2025-05-18 media elements are of type Name
              The root of the element is the elementIRI used to identify the mediaFile
-             The root element should have an extension of either an enumeratedValue or enumeratedDirectory type element that defines the values -->
+             The root element should have an extension of either an enumeratedValue, calculatedEnumeratedValue or enumeratedDirectory type element that defines the values -->
+        <!-- Old way - until 2025-05-18 -->
+        <!--
         <xxf:variable name="dictionaryMediaElementList"
             select="distinct-values($dictionary-instance/iso-13606:entryCollection/iso-13606:entry[@cityEHR:rendition='#CityEHR:EntryProperty:Image']//cda:value/@root)"/>
+ -->
+        <!-- Since 2025-05-18 -->
+        <xxf:variable name="dictionaryMediaElementList"
+            select="distinct-values($dictionary-instance/iso-13606:elementCollection/iso-13606:element[@xsi:type='xs:Name']/@root)"/>
+
 
         <!-- Clear out the storedMediaList-instance -->
         <xf:delete nodeset="xxf:instance('storedMediaList-instance')/*"/>
@@ -2686,12 +2708,25 @@
 
                 <!-- For release 1, set up pipeline to convert MS XML 2003 to OWL/XML
                      After 2023-03, release 2 set up pipeline to convert cityEHR database format to OWL/XML-->
+
+                <xxf:variable name="xsltPipeline"
+                    select="if ($resourceRoot='Workbook') then 'convertSpreadsheet2OWL.xpl' else 'convertDatabase2OWL.xpl'"/>
+
+                <!-- Set the informationModel-instance by invoking the pipeline -->
+                <!--
                 <xxf:variable name="xsltPipeline"
                     select="if ($resourceRoot='Workbook') then concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/convertSpreadsheet2OWL.xpl') else concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/convertDatabase2OWL.xpl')"/>
 
-                <!-- Set the informationModel-instance by invoking the pipeline -->
                 <xf:insert nodeset="xxf:instance('informationModel-instance')"
                     origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('uploadedInformationModel-instance'), 'data')"/>
+                    -->
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="$xsltPipeline"/>
+                    <xxf:context name="input-instance"
+                        select="xxf:instance('uploadedInformationModel-instance')"/>
+                    <xxf:context name="return-instance"
+                        select="xxf:instance('informationModel-instance')"/>
+                </xf:dispatch>
 
                 <!-- Set importedFromFile annotation in the ontology -->
                 <xf:setvalue
@@ -2715,7 +2750,7 @@
 
     <!-- Application defined action to initialize parameters before inporting shipped models.
          Used in create-application and import-shippedResources.
-         Scope is full, informationModels or applicationResources
+         Scope is full, informationModels or applicationResources (default is full)
          Requires working-application-parameters to be loaded for the application
          Sets up importModelParameters ready for the import of each model.
          Gets the defaultInformationModelList, languagePackList, directoryList, mediaList -->
@@ -2805,12 +2840,29 @@
             <xf:dispatch name="initialize-shippedLetterTemplateList" target="application-model">
                 <xxf:context name="applicationIRI" select="$applicationIRI"/>
             </xf:dispatch>
+
+            <!-- Load the application stylesheets - this from manageParametersModel
+                 Imported stylesheets are added to this list -->
+            <xf:dispatch name="load-application-stylesheets" target="manageParameters-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="status"
+                    select="xxf:instance('applicationControl-instance')/status"/>
+            </xf:dispatch>
+
+            <!-- Get the list of stylesheets - this from manageParametersModel -->
+            <xf:dispatch name="initialize-shippedStylesheetList" target="manageParameters-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+            </xf:dispatch>
+
         </xf:action>
     </xf:action>
 
 
     <!-- Application defined action to load default information models from disk.
          Plus other resources, depending on the setting of the scope parameter
+         
+         Scope is full, informationModels or applicationResources (default is full)
+  
          The default models are shipped with the cityEHR installation.
          The application may have a common model specified, which should have a specialty model and zero or more class models.
          
@@ -2847,9 +2899,10 @@
                 shippedMediaList
                 shippedImageMapFileList
                 shippedLetterTemplateList
+                shippedStylesheetList (defined in manageParametersModel)
         -->
         <xf:variable name="contextSet"
-            select="xxf:instance('defaultInformationModelList-instance')/file | xxf:instance('shippedLanguagePackList-instance')/languagePackFile | xxf:instance('shippedDirectoryList-instance')/directoryFile | xxf:instance('shippedMediaList-instance')/mediaFile | xxf:instance('shippedImageMapFileList-instance')/imageMapFile | xxf:instance('shippedLetterTemplateList-instance')/letterTemplateFile"/>
+            select="xxf:instance('defaultInformationModelList-instance')/file | xxf:instance('shippedLanguagePackList-instance')/languagePackFile | xxf:instance('shippedDirectoryList-instance')/directoryFile | xxf:instance('shippedMediaList-instance')/mediaFile | xxf:instance('shippedImageMapFileList-instance')/imageMapFile | xxf:instance('shippedLetterTemplateList-instance')/letterTemplateFile | xxf:instance('shippedStylesheetList-instance')/stylesheetFile"/>
         <xf:dispatch name="run-process" target="process-model">
             <xxf:context name="processName" select="'import-shippedResources'"/>
             <xxf:context name="contextSet" select="$contextSet"/>
@@ -2877,6 +2930,19 @@
 
          For each mediaFile in the contextSet:
             Invoke importShippedResources-importMedia to import the media  
+            
+         For each imageMapFile in the contextSet:
+            Invoke importShippedResources-importImageMaps to import the image map 
+ 
+         For each letterTemplateFile in the contextSet:
+            Invoke importShippedResources-importLetterTemplates to import the letter template 
+            
+         For each languagePackFile in the contextSet:
+            Invoke importShippedResources-importLanguagePacks to import the language pack 
+
+         For each stylesheetFile in the contextSet:
+            Invoke importShippedResources-importStylesheets to import the stylesheet 
+            
          
          Invoke resetSpecialtyList
         -->
@@ -3164,14 +3230,53 @@
     <xf:action ev:event="importShippedResources-importLanguagePacks"> </xf:action>
 
 
-    <!-- Application defined action to rest the specialtyList after models have been imported.
+    <!-- Application defined action to import the stylesheets shipped with an application.
+         An action in the importShippedResources process.
+         Add the stylesheet to the applicationStylesheetList-instance -->
+    <xf:action ev:event="importShippedResources-importStylesheets">
+        <xxf:variable name="stylesheetFile" select="event('context')"/>
+        <xxf:variable name="stylesheetName" select="$stylesheetFile/@name"/>
+
+        <!-- Remove existing stylesheet of the same name -->
+        <xf:delete
+            nodeset="xxf:instance('applicationStylesheetList-instance')/stylesheetFile[@name=$stylesheetName]"/>
+
+        <!-- Set the default stylsheet as selected.
+             On;y if there isn't another styelsheet set as selected in the list
+             Since there can nly be one default, this set it as selected so long as the user hasn't 
+             imported and set a different stylesheet -->
+        <xxf:variable name="defaultApplicationStylesheet"
+            select="xxf:instance('application-parameters-instance')/application/applicationStylesheet/@value"/>
+        <xf:action
+            if="not(xxf:instance('applicationStylesheetList-instance')/stylesheetFile/@selected='true')
+            and $stylesheetName = $defaultApplicationStylesheet">
+
+            <xf:setvalue ref="$stylesheetFile/@selected" value="'true'"/>
+        </xf:action>
+
+        <!-- Add the stylesheet -->
+        <xf:insert context="xxf:instance('applicationStylesheetList-instance')" nodeset="*"
+            origin="$stylesheetFile" at="last()" position="after"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to reset the specialtyList after models have been imported.
          An action in the importShippedResources process.. -->
-    <xf:action ev:event="importShippedResources-resetSpecialtyList">
+    <xf:action ev:event="importShippedResources-resetApplicationResources">
         <xxf:variable name="importModelParameters"
             select="xxf:instance('applicationControl-instance')/importModelParameters"/>
         <xxf:variable name="applicationId" select="$importModelParameters/applicationId"/>
 
+        <!-- Reset the specialtyList -->
         <xf:dispatch name="get-specialtyList" target="application-model">
+            <xxf:context name="applicationId" select="$applicationId"/>
+            <xxf:context name="status" select="xxf:instance('applicationControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Save the applicationStylesheetList
+              /db/ehr/xmlstore/applications/ISO-13606-EHR_Extract-cityEHR/systemConfiguration/application-stylesheets-->
+        <xf:dispatch name="save-application-stylesheets" target="manageParameters-model">
             <xxf:context name="applicationId" select="$applicationId"/>
             <xxf:context name="status" select="xxf:instance('applicationControl-instance')/status"/>
         </xf:dispatch>
@@ -3203,6 +3308,7 @@
          Invoked from cityEHRAdmin.
          Sets up parameters and then invokes the import-InformationModel process.
             This action should only be invoked after the informationModel-instance has been checked for application, specialty, model and language
+            The checks are perfromed in cityEHRAdmin by X
             (although these checks are also made again in importInformationModel-verify
          Or if checkExpressions is set to 'true' then invokes the check-expressions process (does not import) -->
     <xf:action ev:event="import-informationModel">
@@ -3334,10 +3440,12 @@
     </xf:action>
 
 
-    <!-- Application defined action to merge the information model with the common model.
+    <!-- Application defined action to merge the information model with the common model or the existing model.
          An action in the import-InformationModel process.
-         Either merges the common model or the existing (stored) model.
-         Only if the model is for the baseLanguage
+         The information model is in informationModel-instance
+         Either merges the common model or the existing model - these are loaded to stored-model.
+         Note that the information model being imported is the master - any assertions in it take precedence over the existing model
+         Only merge if the model is for the baseLanguage
          
          Only merge with the common model if:
             The mergeCommonModel parameter is true.
@@ -3360,8 +3468,7 @@
         <xxf:variable name="commonModelIRI" select="$importModelParameters/commonModelIRI"/>
         <xxf:variable name="mergeCommonModel" select="$importModelParameters/@mergeCommonModel"/>
         <xxf:variable name="mergeExistingModel" select="$importModelParameters/@mergeExistingModel"/>
-
-
+                 
         <!-- Only need to merge the base language model
              (Language variant models are generated from the base language, which will already have been merged) -->
         <xf:action
@@ -3406,10 +3513,20 @@
                     if="xxf:instance('applicationControl-instance')/status ='' and exists(xxf:instance('informationModel-instance')/owl:Declaration[1]) and exists(xxf:instance('storedInformationModel-instance')/owl:Declaration[1])">
 
                     <!-- Run pipeline to merge the models -->
+                    <xf:dispatch name="merge-ontologies" target="ontology-model">
+                        <xxf:context name="master-instance"
+                            select="xxf:instance('informationModel-instance')"/>
+                        <xxf:context name="merge-instance"
+                            select="xxf:instance('storedInformationModel-instance')"/>
+                        <xxf:context name="mergeResult-instance"
+                            select="xxf:instance('informationModel-instance')"/>
+                    </xf:dispatch>
+                    <!--
                     <xxf:variable name="xsltPipeline"
                         select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/mergeOntologies.xpl')"/>
                     <xf:insert nodeset="xxf:instance('informationModel-instance')"
                         origin="xxf:call-xpl($xsltPipeline, ('master','merge'), (xxf:instance('informationModel-instance'),xxf:instance('storedInformationModel-instance')) , 'data')/*"/>
+-->
 
                     <!-- If merging with the common model then will now have two subclass declarations for the specialty.
                          Need to remove the subclass declaration for the common model specislty
@@ -3441,12 +3558,15 @@
             select="xxf:instance('applicationControl-instance')/importModelParameters"/>
 
         <!-- Run pipeline to check expressios -->
+
+
         <xxf:variable name="xsltPipeline"
             select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/checkExpressions.xpl')"/>
         <xf:insert nodeset="xxf:instance('checkExpressions-instance')"
             origin="xxf:call-xpl($xsltPipeline, ('instance','parameters'), (xxf:instance('informationModel-instance'),xxf:instance('view-parameters-instance')) , 'data')"/>
 
     </xf:action>
+
 
     <!-- Application defined action to save the information model to the database.
          An action in the import-informationModel process.
@@ -3510,39 +3630,82 @@
         <xxf:variable name="modelId" select="$importModelParameters/modelId"/>
         <xxf:variable name="commonModelIRI" select="$importModelParameters/commonModelIRI"/>
 
-        <!-- Pipeline to generate dictionary from informationModel -->
-        <xxf:variable name="xsltPipeline"
-            select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/generateDictionary.xpl')"/>
-        <xf:insert nodeset="xxf:instance('modelDictionary-instance')"
-            origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('informationModel-instance'), 'data')"/>
-
-        <!-- Set the commonModelIRI in the dictionary.
-             The commonModelCode attribute is created but not set in the OWL2DataDictionary XSLT. -->
-        <xf:setvalue ref="xxf:instance('modelDictionary-instance')/@commonModelCode"
-            value="$commonModelIRI"/>
-
-        <!-- Set the language variant location (if model is not for the base language) -->
-        <xxf:variable name="languageVariantLocation"
-            select="if ($importModelParameters/languageCode != $importModelParameters/baseLanguageCode) then concat('/variants/',$importModelParameters/languageCode) else ''"/>
-
-        <!-- Set the storgage location for the dictionary -->
-        <xxf:variable name="dictionaryLocation"
-            select="if (($applicationId,$specialtyId,$modelId) = '') then '' else concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/dictionary/',$modelId)"/>
-
-        <!-- Save the dictionary to the database -->
-        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
-            <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="$dictionaryLocation"/>
-            <xxf:context name="resource" select="xxf:instance('modelDictionary-instance')"/>
-            <xxf:context name="status" select="xxf:instance('applicationControl-instance')/status"/>
+        <!-- Call pipeline to generate dictionary  -->
+        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+            <xxf:context name="pipeline" select="'convertOWL2DataDictionary.xpl'"/>
+            <xxf:context name="input-instance" select="xxf:instance('informationModel-instance')"/>
+            <xxf:context name="return-instance" select="xxf:instance('modelDictionary-instance')"/>
         </xf:dispatch>
 
-        <!-- Abort the import process if the dictionary was not saved successfully-->
-        <xf:action if="xxf:instance('applicationControl-instance')/status != ''">
+        <!-- Check the pipeline return -->
+        <xxf:variable name="pipelineReturn" select="xxf:instance('modelDictionary-instance')/name()"/>
+
+        <!-- Abort the process if there was an error in the pipeline -->
+        <xf:action if="not($pipelineReturn ='EHR_Extract')">
             <xf:dispatch name="abort-process" target="process-model">
-                <xxf:context name="errorCode"
-                    select="xxf:instance('applicationControl-instance')/status"/>
+                <xxf:context name="errorCode" select="'failed-generateDictionary'"/>
+                <xxf:context name="errorInstance" select="xxf:instance('modelDictionary-instance')"
+                />
             </xf:dispatch>
+        </xf:action>
+
+        <xf:action if="$pipelineReturn ='EHR_Extract'">
+            <!-- Check that there are no errors in the dictionary -->
+            <xxf:variable name="dictionaryErrorSet"
+                select="xxf:instance('modelDictionary-instance')//cityEHR:error | xxf:instance('modelDictionary-instance')//@cityEHR:error"/>
+
+            <xf:action if="exists($dictionaryErrorSet)">
+                <!-- Replace dictionary with the errors -->
+                <xf:delete nodeset="xxf:instance('applicationError-instance')/*"/>
+
+                <xf:action xxf:iterate="$dictionaryErrorSet">
+                    <xxf:variable name="dictionaryError" select="."/>
+                    <xf:insert context="xxf:instance('applicationError-instance')" nodeset="*"
+                        at="last()" position="after"
+                        origin="xxf:instance('applicationControl-instance')/error"/>
+                    <xf:setvalue ref="xxf:instance('applicationError-instance')/*[last()]"
+                        value="$dictionaryError"/>
+                </xf:action>
+
+                <xf:dispatch name="abort-process" target="process-model">
+                    <xxf:context name="errorCode" select="'errors-reported-generateDictionary'"/>
+                    <xxf:context name="errorInstance"
+                        select="xxf:instance('applicationError-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <xf:action if="not(exists($dictionaryErrorSet))">
+
+                <!-- Set the commonModelIRI in the dictionary.
+                     The commonModelCode attribute is created but not set in the OWL2DataDictionary XSLT. -->
+                <xf:setvalue ref="xxf:instance('modelDictionary-instance')/@commonModelCode"
+                    value="$commonModelIRI"/>
+
+                <!-- Set the language variant location (if model is not for the base language) -->
+                <xxf:variable name="languageVariantLocation"
+                    select="if ($importModelParameters/languageCode != $importModelParameters/baseLanguageCode) then concat('/variants/',$importModelParameters/languageCode) else ''"/>
+
+                <!-- Set the storgage location for the dictionary -->
+                <xxf:variable name="dictionaryLocation"
+                    select="if (($applicationId,$specialtyId,$modelId) = '') then '' else concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/dictionary/',$modelId)"/>
+
+                <!-- Save the dictionary to the database -->
+                <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="$dictionaryLocation"/>
+                    <xxf:context name="resource" select="xxf:instance('modelDictionary-instance')"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('applicationControl-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- Abort the import process if the dictionary was not saved successfully-->
+                <xf:action if="xxf:instance('applicationControl-instance')/status != ''">
+                    <xf:dispatch name="abort-process" target="process-model">
+                        <xxf:context name="errorCode"
+                            select="xxf:instance('applicationControl-instance')/status"/>
+                    </xf:dispatch>
+                </xf:action>
+            </xf:action>
         </xf:action>
 
     </xf:action>
@@ -3563,44 +3726,87 @@
         <xf:action if="$classId =''">
 
             <!-- Call pipleline to generate composition set -->
+            <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                <xxf:context name="pipeline" select="'convertOWL2CompositionSet.xpl'"/>
+                <xxf:context name="input-instance"
+                    select="xxf:instance('informationModel-instance')"/>
+                <xxf:context name="return-instance" select="xxf:instance('compositionSet-instance')"
+                />
+            </xf:dispatch>
+
+            <!--
             <xxf:variable name="xsltPipeline"
                 select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/convertOWL2CompositionSet.xpl')"/>
             <xf:insert nodeset="xxf:instance('compositionSet-instance')"
-                origin="xxf:call-xpl($xsltPipeline, ('instance','parameters'), (xxf:instance('informationModel-instance'),xxf:instance('view-parameters-instance')) , 'data')"/>
+                origin="xxf:call-xpl($xsltPipeline, ('instance','view-parameters'), (xxf:instance('informationModel-instance'),xxf:instance('view-parameters-instance')) , 'data')"/>
+-->
+            <!-- Check the pipeline return -->
+            <xxf:variable name="pipelineReturn"
+                select="xxf:instance('compositionSet-instance')/name()"/>
 
-            <!-- Set the language variant location (if model is not for the base language) -->
-            <xxf:variable name="languageVariantLocation"
-                select="if ($importModelParameters/languageCode != $importModelParameters/baseLanguageCode) then concat('/variants/',$importModelParameters/languageCode) else ''"/>
+            <!-- Abort the process if there was an error in the pipeline -->
+            <xf:action if="not($pipelineReturn ='compositionSet')">
+                <xf:dispatch name="abort-process" target="process-model">
+                    <xxf:context name="errorCode" select="'failed-convertOWL2CompositionSet'"/>
+                    <xxf:context name="errorInstance"
+                        select="xxf:instance('compositionSet-instance')"/>
+                </xf:dispatch>
+            </xf:action>
 
-            <!-- Now iterate through the composition set and import each composition -->
-            <xf:action xxf:iterate="xxf:instance('compositionSet-instance')/cda:ClinicalDocument">
-                <xxf:variable name="composition" select="."/>
-                <xxf:variable name="compositionIRI" select="$composition/cda:id/@extension"/>
-                <xxf:variable name="compositionId"
-                    select="replace(substring($compositionIRI,2),':','-')"/>
+            <!-- The pipeline completed successfully -->
+            <xf:action if="$pipelineReturn ='compositionSet'">
+                <!-- Set the language variant location (if model is not for the base language) -->
+                <xxf:variable name="languageVariantLocation"
+                    select="if ($importModelParameters/languageCode != $importModelParameters/baseLanguageCode) then concat('/variants/',$importModelParameters/languageCode) else ''"/>
 
-                <!-- Clear out the composition-instance -->
-                <xf:delete nodeset="xxf:instance('composition-instance')/*"/>
+                <!-- Record the compsition and status in the process execution log -->
+                <xf:dispatch name="log-processMessage" target="process-model">
+                    <xxf:context name="message"
+                        select="concat('compositionSet (',xs:string(count(xxf:instance('compositionSet-instance')/cda:ClinicalDocument)),') ',xxf:instance('compositionSet-instance')/name())"
+                    />
+                </xf:dispatch>
 
-                <!-- Set the composition-instance -->
-                <xf:action xxf:iterate="$composition/*">
-                    <xxf:variable name="compositionNode" select="."/>
-                    <xf:insert context="xxf:instance('composition-instance')" nodeset="*"
-                        at="last()" position="after" origin="$compositionNode"/>
+                <!-- Now iterate through the composition set and import each composition -->
+                <xf:action
+                    xxf:iterate="xxf:instance('compositionSet-instance')/cda:ClinicalDocument">
+                    <xxf:variable name="composition" select="."/>
+                    <xxf:variable name="compositionIRI" select="$composition/cda:id/@extension"/>
+                    <xxf:variable name="compositionId"
+                        select="replace(substring($compositionIRI,2),':','-')"/>
+
+                    <!-- Clear out the composition-instance -->
+                    <xf:delete nodeset="xxf:instance('composition-instance')/*"/>
+
+                    <!-- Set the composition-instance -->
+                    <xf:action xxf:iterate="$composition/*">
+                        <xxf:variable name="compositionNode" select="."/>
+                        <xf:insert context="xxf:instance('composition-instance')" nodeset="*"
+                            at="last()" position="after" origin="$compositionNode"/>
+                    </xf:action>
+
+                    <!-- Set the storage location for the composition -->
+                    <xxf:variable name="compositionLocation"
+                        select="if (($applicationId,$specialtyId,$compositionId) = '') then '' else concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/compositions/',$compositionId)"/>
+
+                    <!-- Save the composition to the database -->
+                    <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation" select="$compositionLocation"/>
+                        <xxf:context name="resource" select="xxf:instance('composition-instance')"/>
+                        <xxf:context name="status"
+                            select="xxf:instance('applicationControl-instance')/status"/>
+                    </xf:dispatch>
+
+                    <xxf:variable name="writeStatus"
+                        select="if (xxf:instance('applicationControl-instance')/status='') then 'stored' else xxf:instance('applicationControl-instance')/status"/>
+
+                    <!-- Record the compsition and status in the process execution log -->
+                    <xf:dispatch name="log-processMessage" target="process-model">
+                        <xxf:context name="message"
+                            select="concat($compositionIRI,' / ',$writeStatus)"/>
+                    </xf:dispatch>
                 </xf:action>
 
-                <!-- Set the storage location for the composition -->
-                <xxf:variable name="compositionLocation"
-                    select="if (($applicationId,$specialtyId,$compositionId) = '') then '' else concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/compositions/',$compositionId)"/>
-
-                <!-- Save the composition to the database -->
-                <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
-                    <xxf:context name="system" select="'ehr'"/>
-                    <xxf:context name="storageLocation" select="$compositionLocation"/>
-                    <xxf:context name="resource" select="xxf:instance('composition-instance')"/>
-                    <xxf:context name="status"
-                        select="xxf:instance('applicationControl-instance')/status"/>
-                </xf:dispatch>
             </xf:action>
         </xf:action>
     </xf:action>
@@ -3711,6 +3917,7 @@
 
         </xf:action>
     </xf:action>
+
 
     <!-- Application defined action to clear the form cache (for specialty models only).
          An action in the import-InformationModel process.
@@ -4219,12 +4426,22 @@
 
         <xf:action if="xxf:instance('applicationControl-instance')/status=''">
             <!-- Call the mergeOntology pipeline to merge the two models.
-                     The merged ontology is put into informationModel-instance so that it is ready for further processing -->
+                 The merged ontology is put into informationModel-instance so that it is ready for further processing -->
+
+            <xf:dispatch name="merge-ontologies" target="ontology-model">
+                <xxf:context name="master-instance" select="xxf:instance('languagePack-instance')"/>
+                <xxf:context name="merge-instance"
+                    select="xxf:instance('storedInformationModel-instance')"/>
+                <xxf:context name="mergeResult-instance"
+                    select="xxf:instance('informationModel-instance')"/>
+            </xf:dispatch>
+            <!--
             <xxf:variable name="xsltPipeline"
                 select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/mergeOntologies.xpl')"/>
             <xf:insert nodeset="xxf:instance('informationModel-instance')"
                 origin="xxf:call-xpl($xsltPipeline, ('master','merge'), (xxf:instance('languagePack-instance'),xxf:instance('storedInformationModel-instance')) , 'data')/*"
             />
+-->
         </xf:action>
 
         <!-- Debugging - save to xmlCache -->

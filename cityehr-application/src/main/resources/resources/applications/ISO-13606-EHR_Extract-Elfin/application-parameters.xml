@@ -31,7 +31,7 @@
     <!-- Application configuration - for the Elfin application
          Release 1 uses xml spreadsheet models (saved/exported from .ods)
          Release 2 uses ods spreadsheet models directly -->
-    <application release="1" cityEHR:displayName="Application Configuration" cityEHR:edit="newApp">
+    <application release="2" cityEHR:displayName="Application Configuration" cityEHR:edit="newApp">
         <cityEHR:selection>
             <iso-13606:EHR_Extract commonModel="" defaultSpecialty="" cityEHR:selection="cityEHR:specialty"/>
         </cityEHR:selection>

@@ -41,5 +41,7 @@
 <xxf:dialog id="testDialog" style="z-index: 9999;" appearance="full" level="modal" close="true" draggable="true" visible="false"
     xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
     xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
-    <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+    <xhtml:div id="logo">
+        <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo" mediatype="image/*"/>
+    </xhtml:div>
 </xxf:dialog>

@@ -204,7 +204,7 @@
 
             <!-- Action depends of the type of the entry - Simple or MultipleEntry -->
             <xxf:variable name="cdaBody"
-                select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+                select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
             <xxf:variable name="entry"
                 select="$cdaBody//cda:entry[descendant::cda:id[1]/@extension=$entryIRI]"/>
 
@@ -502,7 +502,7 @@
                  There should only be one, but this works if there are more than one 
                  Can be single or MultipleEntry -->
             <xxf:variable name="cdaBody"
-                select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+                select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
             <xxf:variable name="entry"
                 select="$cdaBody//cda:entry[descendant::cda:id[1]/@extension=$entryIRI]"/>
 

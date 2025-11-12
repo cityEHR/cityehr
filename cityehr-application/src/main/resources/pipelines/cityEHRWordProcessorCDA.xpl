@@ -40,10 +40,10 @@
     </p:processor>
 
     <!-- Submission to get XML document for the CDA
-         The resourceHandle is for the composition which has been saved in the xnlcache for the user-->
+         The xmlCacheHandle is for the composition which has been saved in the xnlcache for the user-->
     <p:processor name="oxf:xforms-submission">
         <p:input name="submission">
-            <xf:submission serialization="none" method="get" action="{//parameters[@type='session']/resourceHandle}"/>
+            <xf:submission serialization="none" method="get" action="{//parameters[@type='session']/xmlCacheHandle}"/>
         </p:input>
         <p:input name="request" href="#parameters"/>
         <p:output name="response" id="cdaReturned"/>

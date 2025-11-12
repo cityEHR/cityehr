@@ -53,7 +53,7 @@
     **********************************************************************************************************
 -->
 <!-- To force the whole configuration to be replaced in the xmlstore when updated, set cityEHR:edit="replace" -->
-<parameters type="application" version="" date="" languageCode="en-GB" cityEHR:edit="replace"
+<parameters type="application" version="" date="" languageCode="en-GB" cityEHR:edit=""
     xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
     xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
@@ -72,7 +72,10 @@
         <!-- The application id (fixed - actually an IRI), language and default models -->
         <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR" displayName="cityEHR"
             baseLanguageCode="en-GB" commonModel="#ISO-13606:Folder:cityEHRBase" defaultSpecialty=""/>
-
+        
+        <!-- The application stylesheet -->
+        <applicationStylesheet cityEHR:displayName="Application Stylesheet" value="cityEHRSkin.css"/>
+        
         <!-- The other parameters are all images which can be loaded from the location specified in the @value.
              These are stored as separate resources in systemConfiguration/images for the application in the xmlstore. -->
         <images>
@@ -218,6 +221,7 @@
             <birthTime element="" cityEHR:selection="cityEHR:element"/>
         </cityEHR:selection>
         <registrationEvent composition="#CityEHR:Form:BaseRegistration"/>
+
         <!-- These entries must exist in the registrationEvent -->
         <id deprecatedCharacters=" #:%£$@&amp;" displayName="Hospital Number"
             entry="#ISO-13606:Entry:Demographics" element="#ISO-13606:Element:HospitalNumber"/>
@@ -393,6 +397,7 @@
     <externalIdTemplateSet cityEHR:displayName="External Identifiers" defaultDisplayName="export">
         <externalIdTemplate type="patient">
             <component type="patientId"/>
+            <component type="label"/>
             <component type="compositionId"/>
             <component type="dateTime"/>
         </externalIdTemplate>
@@ -452,6 +457,11 @@
             <task display="">
                 <adminTask>manageSystemIcons</adminTask>
                 <adminTaskTitle>Manage System Icons</adminTaskTitle>
+                <adminTaskLoadFile/>
+            </task>
+            <task display="">
+                <adminTask>manageStylesheets</adminTask>
+                <adminTaskTitle>Manage Stylesheets</adminTaskTitle>
                 <adminTaskLoadFile/>
             </task>
             <task display="">
@@ -625,6 +635,11 @@
         <task display="">
             <adminTask>knowledgeSources</adminTask>
             <adminTaskTitle hint="Import">Knowledge Sources</adminTaskTitle>
+            <task display="">
+                <adminTask>mergeOntology</adminTask>
+                <adminTaskTitle>Merge Ontology Resources</adminTaskTitle>
+                <adminTaskLoadFile/>
+            </task>
             <task display="">
                 <adminTask>codeKnowledgeSources</adminTask>
                 <adminTaskTitle>Code Knowledge Sources</adminTaskTitle>
@@ -1197,6 +1212,9 @@
             <action id="register" displayName="Register" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Events" displayName="Patient Record" display="show">
+            <input id="useFederatedRecord" displayName="Use Federated Record" type="xs:boolean"
+                display="show"/>
+            <action id="patientEventsList" displayName="Show Patient Event List" display="show"/>
             <action id="html" displayName="Show HTML" display="show"/>
             <action id="xml" displayName="Show XML" display="show"/>
             <action id="annotations" displayName="Annotations" display="show"/>
@@ -1208,6 +1226,7 @@
                 <item displayName="HL7 v2 XML (pseudo)" value="HL7-V2-XML"/>
                 <item displayName="HL7 v2 (Z Segment)" value="HL7-V2"/>
                 <item displayName="HL7 FHIR" value="HL7-FHIR"/>
+                <item displayName="Valkyrie Token" value="ValkyrieToken"/>
             </select>
             <action id="export" displayName="Export Event" display="show"/>
             <action id="exportAll" displayName="Export Record" display="show"/>
@@ -1276,7 +1295,8 @@
             <action id="save" displayName="Save" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
-        <view viewType="cityEHRFolder-Prescriptions" displayName="Patient Presciptions" display="show">
+        <view viewType="cityEHRFolder-Prescriptions" displayName="Patient Presciptions"
+            display="show">
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="order" displayName="Prescribe" display="show"/>
@@ -1290,7 +1310,7 @@
             <action id="save" displayName="Cancel" display="show"/>
             <action id="print" displayName="Print" display="show"/>
         </view>
-        
+
     </viewControlsActions>
 
     <!-- Highlight entries -->
@@ -1461,7 +1481,7 @@
     <!-- Import and export of patient records.
          These are dependent on the information model.
          Originally these were in the view-parameters
-         Mirroed there until coed has been refactored 
+         Mirrored there until code has been refactored 
         -->
     <importExport cityEHR:displayName="Import and Export">
 

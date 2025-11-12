@@ -31,8 +31,6 @@
 
     <!-- Include main module and utilities -->
     <xsl:include href="checkExpressions-Module.xsl"/>
-    <xsl:include href="OWL2ModelUtilities.xsl"/>
-
 
     <!-- Match document element to process expressions -->
     <xsl:template match="owl:Ontology">

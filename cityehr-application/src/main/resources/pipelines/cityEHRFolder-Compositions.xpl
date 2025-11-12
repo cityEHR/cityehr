@@ -239,10 +239,10 @@
                     </p:processor>
 
                     <!-- 8a. Get the xmlCache of imageMaps in the composition.
-                         This was created by save-svgCache in inageMapModel which sets the resurceHandle -->
+                         This was created by save-svgCache in imageMapModel which sets the xmlCacheHandle -->
                     <p:processor name="oxf:xforms-submission">
                         <p:input name="submission">
-                            <xf:submission serialization="none" method="get" action="{//parameters[@type='session']/resourceHandle}"/>
+                            <xf:submission serialization="none" method="get" action="{//parameters[@type='session']/xmlCacheHandle}"/>
                         </p:input>
                         <p:input name="request" href="#parameters"/>
                         <p:output name="response" id="svgImageMaps"/>

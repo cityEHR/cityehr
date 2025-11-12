@@ -2,6 +2,9 @@
     cityEHR
     convertDatabase2OWL.xpl
     
+    Input (instance) is in cityEHR database format (read from a spreadsheet)
+    Invoked with a view-parameters inout, but this is not used.
+    
     Pipeline calls XSLT processor to convert cityEHR database (spreadsheet) format to OWL ontology.
     Database is a single XML document in the format:
     

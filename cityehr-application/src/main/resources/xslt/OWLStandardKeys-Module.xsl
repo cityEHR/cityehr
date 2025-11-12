@@ -3,6 +3,12 @@
     OWLStandardKeys-Module.xsl
     Included as a module in MergeOWL, etc
     Generates the XSLT keys for looking up elements in a standard OWL ontology
+    Only for use where the input ontology has been prepared as the master using:
+    
+    <Annotation xmlns="http://www.w3.org/2002/07/owl#">
+        <AnnotationProperty abbreviatedIRI="rdfs:master"/>
+        <Literal datatypeIRI="http://www.openhealthinformatics.org">Master ontology for merge</Literal>
+    </Annotation>
     
     Copyright (C) 2013-2021 John Chelsom.
     
@@ -71,6 +77,10 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema" exclude-result-prefixes="xs" version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
     <xsl:output method="xml" indent="yes" name="xml"/>
+    
+    <!-- Keys are made on the standard input.
+         By default keys are made on all inouts, which is not what is wanted -->
+    <xsl:variable name="keyRoot" select="//owl:Ontology[1]"/>
 
     <!-- Key for Declaration
         <Declaration>
@@ -117,8 +127,21 @@
             <NamedIndividual IRI="#ISO-13606:EHR_Extract:cityEHR"/>
             <NamedIndividual IRI="#CityEHR:Term:CityEHR"/>
         </ObjectPropertyAssertion>
+        
+        Note that standard properties generally have only one value (e.g. hasSequence, hasScope)
+        but a few (hasData and hasContent) have multiple values.
+        
+        ObjectPropertyAssertionList will return multiple values for a property, if they exist
+        
+        ObjectPropertyAssertionValue matches the precise value, so there is only one possible match (although multiple instances of the same value may be found)
+        
+        [owl:Annotation/owl:AnnotationProperty/@abbreviatedIRI='rdfs:master']
     -->
-    <xsl:key name="ObjectPropertyAssertionList" match="/owl:Ontology/owl:ObjectPropertyAssertion" use="concat(*[1]/@IRI,*[2]/@IRI,*[3]/@IRI)"/>
+    <xsl:key name="ObjectPropertyAssertionList" match="owl:Ontology/owl:ObjectPropertyAssertion" use="concat(*[1]/@IRI,*[2]/@IRI)"/>
+    
+    <xsl:key name="ObjectPropertyAssertionValue" match="owl:Ontology/owl:ObjectPropertyAssertion" use="concat(*[1]/@IRI,*[2]/@IRI,*[3]/@IRI)"/>
+    
+    
     
     <!-- Key for DataPropertyAssertion
         <DataPropertyAssertion>

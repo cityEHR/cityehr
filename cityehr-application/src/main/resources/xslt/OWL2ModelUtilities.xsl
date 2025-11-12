@@ -21,8 +21,9 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     ==================================================================== -->
 
-<xsl:stylesheet exclude-result-prefixes="xs" version="2.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+<xsl:stylesheet exclude-result-prefixes="xs" version="2.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
     xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
     <xsl:output method="xml" indent="yes" name="xml"/>
@@ -111,20 +112,35 @@
         <xsl:param name="formRecordedEntries"/>
 
         <!-- Get all the elements on this form -->
-        <xsl:variable name="allFormElements" select="cityEHRFunction:getElements($rootNode, $formEntries)"/>
+        <xsl:variable name="allFormElements"
+            select="cityEHRFunction:getElements($rootNode, $formEntries)"/>
         <xsl:variable name="formElements" select="distinct-values($allFormElements)"/>
 
         <!-- Get all evaluationContext for the sections and entries in the form.
              We need to use formEntries, since evaluation context may be different for an aliased root entry compared to its recorded entry.
              Include the empty evaluationContext in the set (is done in cityEHRFunction:getEvaluationContext) -->
-        <xsl:variable name="evaluationContextSet" select="distinct-values(cityEHRFunction:getEvaluationContext(($formSections, $formEntries)))"/>
+        <xsl:variable name="evaluationContextSet"
+            select="distinct-values(cityEHRFunction:getEvaluationContext(($formSections, $formEntries)))"/>
+
+        <!-- External references.
+             Hidden section contains all entries that are referenced in attachments but are not otherwise in the composition.
+             The section is just a stub because the entries it contacins are inserted when an attachment is associated -->
+        <component xmlns="urn:hl7-org:v3">
+            <section cityEHR:visibility="alwaysHidden">
+                <id root="cityEHR" extension="#CityEHR:ExternalReferences"/>
+                <title>j</title>
+
+            </section>
+        </component>
 
         <!-- External variables.
              Hidden section contains all entries that are used in expressions, but don't appear for user input on the form.
              Although evaluationContext is an expression, it is designed to evaluate conditions on other forms, so is not included in expressions to be analysed -->
         <component xmlns="urn:hl7-org:v3">
             <section cityEHR:visibility="alwaysHidden">
+                <id root="cityEHR" extension="#CityEHR:ExternalVariables"/>
                 <title>External Variables</title>
+
                 <!-- Entries are output for each evaluationContext -->
                 <xsl:for-each select="$evaluationContextSet">
                     <xsl:variable name="evaluationContext" select="."/>
@@ -135,8 +151,10 @@
                         select="$formSections[$evaluationContext = '' or cityEHRFunction:getEvaluationContextProperty(.) = $evaluationContext]"/>
                     <xsl:variable name="contextEntries"
                         select="$formEntries[$evaluationContext = '' or cityEHRFunction:getEvaluationContextProperty(.) = $evaluationContext]"/>
-                    <xsl:variable name="allContextElements" select="cityEHRFunction:getElements($rootNode, $contextEntries)"/>
-                    <xsl:variable name="contextElements" select="distinct-values($allContextElements)"/>
+                    <xsl:variable name="allContextElements"
+                        select="cityEHRFunction:getElements($rootNode, $contextEntries)"/>
+                    <xsl:variable name="contextElements"
+                        select="distinct-values($allContextElements)"/>
 
                     <!-- Get lists of entries in conditions, calculated and default values.
                          These are for the evaluationContext -->
@@ -151,24 +169,46 @@
 
                     <!-- Output these lists for debugging only -->
                     <!--
-            <p>Form sections: <xsl:value-of select="$formSections" separator="+"/></p>
-            <p>Form entries: <xsl:value-of select="$formEntries" separator="+"/></p>
-            <p>Form elements: <xsl:value-of select="$formElements" separator="+"/></p>
-            <p>Condition entries: <xsl:value-of select="$conditionEntries" separator="+"/></p>
-            <p>Calculated value entries: <xsl:value-of select="$calculatedValueEntries" separator="+"/></p>
-            <p>Default value entries: <xsl:value-of select="$defaultValueEntries" separator="+"/></p>
-            <p>Evaluation context set: <xsl:value-of select="$evaluationContextSet" separator="' / '"/></p>
-            -->
+                    <p>Form sections: <xsl:value-of select="$formSections" separator="+"/></p>
+                    <p>Form entries: <xsl:value-of select="$formEntries" separator="+"/></p>
+                    <p>Form elements: <xsl:value-of select="$formElements" separator="+"/></p>
+                    <p>Condition entries: <xsl:value-of select="$conditionEntries" separator="+"
+                        /></p>
+                    <p>Calculated value entries: <xsl:value-of select="$calculatedValueEntries"
+                            separator="+"/></p>
+                    <p>Default value entries: <xsl:value-of select="$defaultValueEntries"
+                            separator="+"/></p>
+                    <p>Evaluation context set: <xsl:value-of select="$evaluationContextSet"
+                            separator="' / '"/></p>
+-->
+                    <!-- Debugging information -->
+                    <!--
+                    <xsl:variable name="rankedComponents"
+                        select="$rootNode/owl:ObjectPropertyAssertion[owl:ObjectProperty/@IRI = '#hasSequence'][owl:NamedIndividual/@IRI = '#CityEHR:Property:Sequence:Ranked']/owl:NamedIndividual[1]/@IRI"/>
+                    <xsl:variable name="unrankedComponents"
+                        select="$rootNode/owl:ObjectPropertyAssertion[owl:ObjectProperty/@IRI = '#hasSequence'][owl:NamedIndividual/@IRI = '#CityEHR:Property:Sequence:Unranked']/owl:NamedIndividual[1]/@IRI"/>
+
+
+                    <p>errorComponents: <xsl:value-of select="for $c in $rankedComponents return if ($c = $unrankedComponents) then $c else ''" separator="' / '"
+                    /></p>
+                    
+                    <p>rankedComponents: <xsl:value-of select="$rankedComponents" separator="' / '"
+                        /></p>
+                    <p>unrankedComponents: <xsl:value-of select="$unrankedComponents"
+                            separator="' / '"/></p>
+                    -->
 
                     <!-- Need to cater for proxy entries/elements here -->
-                    <xsl:for-each select="distinct-values(($conditionEntries, $preConditionEntries, $calculatedValueEntries, $defaultValueEntries))">
+                    <xsl:for-each
+                        select="distinct-values(($conditionEntries, $preConditionEntries, $calculatedValueEntries, $defaultValueEntries))">
                         <xsl:variable name="entryIRI" select="."/>
 
                         <!-- Add Entry to section if it doesn't appear elsewhere on the form.
                              Note that the formEntries is a list of the entry root IRIs, so the test also needs to check
                              whether there is an entry on the form which is a root of the entryIRI.
                              **JC expressions should use the actual entry (@extension) so do we just need the test for $formRecordedEntries -->
-                        <xsl:if test="not($entryIRI = $formEntries) and not($entryIRI = $formRecordedEntries)">
+                        <xsl:if
+                            test="not($entryIRI = $formEntries) and not($entryIRI = $formRecordedEntries)">
 
                             <xsl:variable name="entryDisplayNameTermIRI" as="xs:string"
                                 select="
@@ -219,16 +259,21 @@
                                 <xsl:variable name="normalisedEvaluationContext" as="xs:string"
                                     select="cityEHRFunction:getNormalisedProperty($evaluationContext)"/>
                                 <!-- Single occurence, no enumeratedClass elements -->
-                                <xsl:if test="$entryOccurrence = ('#CityEHR:EntryProperty:Single', '#CityEHR:Property:Occurrence:Single')">
+                                <xsl:if
+                                    test="$entryOccurrence = ('#CityEHR:EntryProperty:Single', '#CityEHR:Property:Occurrence:Single')">
                                     <xsl:call-template name="generateEntry">
                                         <xsl:with-param name="rootNode" select="$rootNode"/>
                                         <xsl:with-param name="entryIRI" select="$entryIRI"/>
-                                        <xsl:with-param name="displayName" select="$entryDisplayNameTerm"/>
+                                        <xsl:with-param name="displayName"
+                                            select="$entryDisplayNameTerm"/>
                                         <xsl:with-param name="entryRendition" select="''"/>
-                                        <xsl:with-param name="formRecordedEntries" select="$formRecordedEntries"/>
+                                        <xsl:with-param name="formRecordedEntries"
+                                            select="$formRecordedEntries"/>
                                         <xsl:with-param name="usingExpressions" select="'true'"/>
-                                        <xsl:with-param name="recordEvaluationContext" select="'true'"/>
-                                        <xsl:with-param name="evaluationContext" select="$normalisedEvaluationContext"/>
+                                        <xsl:with-param name="recordEvaluationContext"
+                                            select="'true'"/>
+                                        <xsl:with-param name="evaluationContext"
+                                            select="$normalisedEvaluationContext"/>
                                         <xsl:with-param name="origin" select="''"/>
                                     </xsl:call-template>
                                 </xsl:if>
@@ -238,13 +283,18 @@
                                     <xsl:call-template name="generateMultipleEntry">
                                         <xsl:with-param name="rootNode" select="$rootNode"/>
                                         <xsl:with-param name="entryIRI" select="$entryIRI"/>
-                                        <xsl:with-param name="displayName" select="$entryDisplayNameTerm"/>
+                                        <xsl:with-param name="displayName"
+                                            select="$entryDisplayNameTerm"/>
                                         <xsl:with-param name="entryRendition" select="''"/>
                                         <xsl:with-param name="usingExpressions" select="'true'"/>
-                                        <xsl:with-param name="formRecordedEntries" select="$formRecordedEntries"/>
-                                        <xsl:with-param name="recordEvaluationContext" select="'true'"/>
-                                        <xsl:with-param name="evaluationContext" select="$normalisedEvaluationContext"/>
-                                        <xsl:with-param name="entryCRUD" select="'#CityEHR:Property:CRUD:CRUD'"/>
+                                        <xsl:with-param name="formRecordedEntries"
+                                            select="$formRecordedEntries"/>
+                                        <xsl:with-param name="recordEvaluationContext"
+                                            select="'true'"/>
+                                        <xsl:with-param name="evaluationContext"
+                                            select="$normalisedEvaluationContext"/>
+                                        <xsl:with-param name="entryCRUD"
+                                            select="'#CityEHR:Property:CRUD:CRUD'"/>
                                     </xsl:call-template>
                                 </xsl:if>
                             </entry>
@@ -276,7 +326,9 @@
 
                             <!-- Add Element to the entry if it doesn't appear elsewhere on the form  -->
                             <xsl:if test="not($elementIRI = $formElements)">
-                                <value root="{$elementIRI}" cityEHR:elementType="#CityEHR:Property:ElementType:enumeratedDirectory"/>
+                                <value root="{$elementIRI}"
+                                    cityEHR:elementType="#CityEHR:Property:ElementType:enumeratedDirectory"
+                                />
                             </xsl:if>
                         </xsl:for-each>
                     </observation>
@@ -314,7 +366,8 @@
                     ''"/>
 
         <component xmlns="urn:hl7-org:v3">
-            <section cityEHR:Sequence="{$sectionSequence}" cityEHR:labelWidth="{cityEHRFunction:getSectionLabelWidth($sectionIRI)}">
+            <section cityEHR:Sequence="{$sectionSequence}"
+                cityEHR:labelWidth="{cityEHRFunction:getSectionLabelWidth($sectionIRI)}">
 
                 <!-- Get property for #hasRendition -->
                 <!--
@@ -485,7 +538,7 @@
                              These are recorded in the cityEHR'Sequence attribute as Ranked or Unranked 
                              In V2 this is now an objectProperty, so need to handle both (data property or object property)
                              In the ontology V1 as Ranked or Unranked but in V2 as #CityEHR:Property:Sequence:Ranked or #CityEHR:Property:Sequence:Unranked-->
-                        <xsl:variable name="contentSequenceProperty" as="xs:string"
+                        <xsl:variable name="contentSequenceProperty"
                             select="
                                 if (exists(key('specifiedDataPropertyList', concat('#hasSequence', $contentIRI), $rootNode))) then
                                     key('specifiedDataPropertyList', concat('#hasSequence', $contentIRI), $rootNode)
@@ -495,100 +548,122 @@
                                     else
                                         '#CityEHR:Property:Sequence:Unranked'"/>
 
-                        <xsl:variable name="contentSequence" as="xs:string"
-                            select="
-                                if (contains($contentSequenceProperty, 'Unranked')) then
-                                    'Unranked'
-                                else
-                                    'Ranked'"/>
-
-                        <!-- Content is a section -->
-                        <xsl:if test="starts-with($contentIRI, '#ISO-13606:Section')">
-                            <xsl:call-template name="generateSection">
-                                <xsl:with-param name="rootNode" select="$rootNode"/>
-                                <xsl:with-param name="compositionTypeIRI" select="$compositionTypeIRI"/>
-                                <xsl:with-param name="sectionIRI" select="$contentIRI"/>
-                                <xsl:with-param name="sectionSequence" select="$contentSequence"/>
-                                <xsl:with-param name="formRecordedEntries" select="$formRecordedEntries"/>
-                                <xsl:with-param name="usingExpressions" select="$usingExpressions"/>
-                            </xsl:call-template>
+                        <!-- There should be only one sequence property -->
+                        <xsl:if test="not(count($contentSequenceProperty) = 1)">
+                            <cityEHR:error>
+                                <xsl:value-of
+                                    select="concat('multipleProperties: ', $contentIRI, ' - ', '#hasSequence')"
+                                />
+                            </cityEHR:error>
                         </xsl:if>
 
-                        <!-- Content is an entry -->
-                        <xsl:if test="starts-with($contentIRI, '#ISO-13606:Entry')">
-                            <!-- Get property for #hasOccurrence -->
-                            <xsl:variable name="entryOccurrence" as="xs:string"
+                        <!-- One sequence property -->
+                        <xsl:if test="count($contentSequenceProperty) = 1">
+                            <xsl:variable name="contentSequence" as="xs:string"
                                 select="
-                                    if (exists(key('specifiedObjectPropertyList', concat('#hasOccurrence', $contentIRI), $rootNode))) then
-                                        key('specifiedObjectPropertyList', concat('#hasOccurrence', $contentIRI), $rootNode)[1]
+                                    if (contains($contentSequenceProperty, 'Unranked')) then
+                                        'Unranked'
                                     else
-                                        '#CityEHR:Property:Occurrence:Single'"/>
+                                        'Ranked'"/>
 
-                            <!-- Check whether this entry is the root of another (i.e. is a proxy entry).
+                            <!-- Content is a section -->
+                            <xsl:if test="starts-with($contentIRI, '#ISO-13606:Section')">
+                                <xsl:call-template name="generateSection">
+                                    <xsl:with-param name="rootNode" select="$rootNode"/>
+                                    <xsl:with-param name="compositionTypeIRI"
+                                        select="$compositionTypeIRI"/>
+                                    <xsl:with-param name="sectionIRI" select="$contentIRI"/>
+                                    <xsl:with-param name="sectionSequence" select="$contentSequence"/>
+                                    <xsl:with-param name="formRecordedEntries"
+                                        select="$formRecordedEntries"/>
+                                    <xsl:with-param name="usingExpressions"
+                                        select="$usingExpressions"/>
+                                </xsl:call-template>
+                            </xsl:if>
+
+                            <!-- Content is an entry -->
+                            <xsl:if test="starts-with($contentIRI, '#ISO-13606:Entry')">
+                                <!-- Get property for #hasOccurrence -->
+                                <xsl:variable name="entryOccurrence" as="xs:string"
+                                    select="
+                                        if (exists(key('specifiedObjectPropertyList', concat('#hasOccurrence', $contentIRI), $rootNode))) then
+                                            key('specifiedObjectPropertyList', concat('#hasOccurrence', $contentIRI), $rootNode)[1]
+                                        else
+                                            '#CityEHR:Property:Occurrence:Single'"/>
+
+                                <!-- Check whether this entry is the root of another (i.e. is a proxy entry).
                              The root of the entry in the CDA is always the entryIRI.
                              If this entry is the root of another then the extension records that entry, otherwise the extension is the same as the root. -->
 
-                            <!-- Get property for #isRootOf or #hasExtension (from 2019-02-13).
+                                <!-- Get property for #isRootOf or #hasExtension (from 2019-02-13).
                                  2019-02-13 - the specialisationProperty changed from isRootOf to hasExtension -->
-                            <xsl:variable name="specialisationProperty" as="xs:string"
-                                select="
-                                    if (exists($rootNode/owl:Declaration[owl:ObjectProperty/@IRI = '#hasRoot'])) then
-                                        '#isRootOf'
-                                    else
-                                        '#hasExtension'"/>
-                            <xsl:variable name="recordedEntryIRI" as="xs:string"
-                                select="
-                                    if (exists(key('specifiedObjectPropertyList', concat($specialisationProperty, $contentIRI), $rootNode))) then
-                                        key('specifiedObjectPropertyList', concat($specialisationProperty, $contentIRI), $rootNode)[1]
-                                    else
-                                        $contentIRI"/>
+                                <xsl:variable name="specialisationProperty" as="xs:string"
+                                    select="
+                                        if (exists($rootNode/owl:Declaration[owl:ObjectProperty/@IRI = '#hasRoot'])) then
+                                            '#isRootOf'
+                                        else
+                                            '#hasExtension'"/>
+                                <xsl:variable name="recordedEntryIRI" as="xs:string"
+                                    select="
+                                        if (exists(key('specifiedObjectPropertyList', concat($specialisationProperty, $contentIRI), $rootNode))) then
+                                            key('specifiedObjectPropertyList', concat($specialisationProperty, $contentIRI), $rootNode)[1]
+                                        else
+                                            $contentIRI"/>
 
-                            <!-- Get normalized representation of evaluationContext -->
-                            <xsl:variable name="evaluationContext" as="xs:string"
-                                select="cityEHRFunction:getNormalisedProperty(cityEHRFunction:getEvaluationContextProperty($contentIRI))"/>
+                                <!-- Get normalized representation of evaluationContext -->
+                                <xsl:variable name="evaluationContext" as="xs:string"
+                                    select="cityEHRFunction:getNormalisedProperty(cityEHRFunction:getEvaluationContextProperty($contentIRI))"/>
 
-                            <!-- Conditions on entries only processed if usingExpressions.
+                                <!-- Conditions on entries only processed if usingExpressions.
                              Get data property for #hasConditions -->
-                            <xsl:variable name="entryConditions" as="xs:string"
-                                select="
-                                    if ($usingExpressions = 'true' and exists(key('specifiedDataPropertyList', concat('#hasConditions', $contentIRI), $rootNode))) then
-                                        key('specifiedDataPropertyList', concat('#hasConditions', $contentIRI), $rootNode)
-                                    else
-                                        ''"/>
-                            <xsl:variable name="expandedEntryConditions">
-                                <xsl:call-template name="expandExpression">
-                                    <xsl:with-param name="expressionType" select="'condition'"/>
-                                    <xsl:with-param name="contextEntryIRI" select="''"/>
-                                    <xsl:with-param name="contextContentIRI" select="''"/>
-                                    <xsl:with-param name="formRecordedEntries" select="$formRecordedEntries"/>
-                                    <xsl:with-param name="evaluationContext" select="$evaluationContext"/>
-                                    <xsl:with-param name="expression" select="$entryConditions"/>
-                                </xsl:call-template>
-                            </xsl:variable>
+                                <xsl:variable name="entryConditions" as="xs:string"
+                                    select="
+                                        if ($usingExpressions = 'true' and exists(key('specifiedDataPropertyList', concat('#hasConditions', $contentIRI), $rootNode))) then
+                                            key('specifiedDataPropertyList', concat('#hasConditions', $contentIRI), $rootNode)
+                                        else
+                                            ''"/>
+                                <xsl:variable name="expandedEntryConditions">
+                                    <xsl:call-template name="expandExpression">
+                                        <xsl:with-param name="expressionType" select="'condition'"/>
+                                        <xsl:with-param name="contextEntryIRI" select="''"/>
+                                        <xsl:with-param name="contextContentIRI" select="''"/>
+                                        <xsl:with-param name="formRecordedEntries"
+                                            select="$formRecordedEntries"/>
+                                        <xsl:with-param name="evaluationContext"
+                                            select="$evaluationContext"/>
+                                        <xsl:with-param name="expression" select="$entryConditions"
+                                        />
+                                    </xsl:call-template>
+                                </xsl:variable>
 
-                            <!-- PreConditions on entries only processed if usingExpressions.
+                                <!-- PreConditions on entries only processed if usingExpressions.
                              Pre-conditions are evaluated when pre-filling entries using the context of the entry, 
                              so contextEntryIRI is set to the recordedEntryIRI
                              Get data property for #hasPreConditions -->
-                            <xsl:variable name="entryPreConditions" as="xs:string"
-                                select="
-                                    if ($usingExpressions = 'true' and exists(key('specifiedDataPropertyList', concat('#hasPreConditions', $contentIRI), $rootNode))) then
-                                        key('specifiedDataPropertyList', concat('#hasPreConditions', $contentIRI), $rootNode)
-                                    else
-                                        ''"/>
-                            <xsl:variable name="expandedEntryPreConditions">
-                                <xsl:call-template name="expandExpression">
-                                    <xsl:with-param name="expressionType" select="'condition'"/>
-                                    <xsl:with-param name="contextEntryIRI" select="$recordedEntryIRI"/>
-                                    <xsl:with-param name="contextContentIRI" select="$recordedEntryIRI"/>
-                                    <xsl:with-param name="formRecordedEntries" select="$formRecordedEntries"/>
-                                    <xsl:with-param name="evaluationContext" select="$evaluationContext"/>
-                                    <xsl:with-param name="expression" select="$entryPreConditions"/>
-                                </xsl:call-template>
-                            </xsl:variable>
+                                <xsl:variable name="entryPreConditions" as="xs:string"
+                                    select="
+                                        if ($usingExpressions = 'true' and exists(key('specifiedDataPropertyList', concat('#hasPreConditions', $contentIRI), $rootNode))) then
+                                            key('specifiedDataPropertyList', concat('#hasPreConditions', $contentIRI), $rootNode)
+                                        else
+                                            ''"/>
+                                <xsl:variable name="expandedEntryPreConditions">
+                                    <xsl:call-template name="expandExpression">
+                                        <xsl:with-param name="expressionType" select="'condition'"/>
+                                        <xsl:with-param name="contextEntryIRI"
+                                            select="$recordedEntryIRI"/>
+                                        <xsl:with-param name="contextContentIRI"
+                                            select="$recordedEntryIRI"/>
+                                        <xsl:with-param name="formRecordedEntries"
+                                            select="$formRecordedEntries"/>
+                                        <xsl:with-param name="evaluationContext"
+                                            select="$evaluationContext"/>
+                                        <xsl:with-param name="expression"
+                                            select="$entryPreConditions"/>
+                                    </xsl:call-template>
+                                </xsl:variable>
 
-                            <!-- Get property for #hasRendition -->
-                            <!--
+                                <!-- Get property for #hasRendition -->
+                                <!--
                             <xsl:variable name="entryRendition" as="xs:string"
                                 select="
                                     if (exists(key('specifiedObjectPropertyList', concat('#hasRendition', $contentIRI), $rootNode))) then
@@ -596,12 +671,12 @@
                                     else
                                         '#CityEHR:Property:Rendition:Form'"/>
                                         -->
-                            <xsl:variable name="entryRendition" as="xs:string"
-                                select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasRendition')"/>
+                                <xsl:variable name="entryRendition" as="xs:string"
+                                    select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasRendition')"/>
 
 
-                            <!-- Get property for #hasInitialValue -->
-                            <!--
+                                <!-- Get property for #hasInitialValue -->
+                                <!--
                             <xsl:variable name="entryInitialValue" as="xs:string"
                                 select="
                                     if (exists(key('specifiedObjectPropertyList', concat('#hasInitialValue', $contentIRI), $rootNode))) then
@@ -609,12 +684,12 @@
                                     else
                                         '#CityEHR:Property:InitialValue:Default'"/>
                                         -->
-                            <xsl:variable name="entryInitialValue" as="xs:string"
-                                select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasInitialValue')"/>
+                                <xsl:variable name="entryInitialValue" as="xs:string"
+                                    select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasInitialValue')"/>
 
 
-                            <!-- Get property for #hasCRUD -->
-                            <!--
+                                <!-- Get property for #hasCRUD -->
+                                <!--
                             <xsl:variable name="entryCRUD" as="xs:string"
                                 select="
                                     if (exists(key('specifiedObjectPropertyList', concat('#hasCRUD', $contentIRI), $rootNode))) then
@@ -622,12 +697,12 @@
                                     else
                                         '#CityEHR:Property:CRUD:CRUD'"/>
                                         -->
-                            <xsl:variable name="entryCRUD" as="xs:string"
-                                select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasCRUD')"/>
+                                <xsl:variable name="entryCRUD" as="xs:string"
+                                    select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasCRUD')"/>
 
 
-                            <!-- Get property for #hasSortOrder -->
-                            <!--
+                                <!-- Get property for #hasSortOrder -->
+                                <!--
                             <xsl:variable name="entrySortOrder" as="xs:string"
                                 select="
                                     if (exists(key('specifiedObjectPropertyList', concat('#hasSortOrder', $contentIRI), $rootNode))) then
@@ -635,28 +710,28 @@
                                     else
                                         ''"/>
                                         -->
-                            <xsl:variable name="entrySortOrder" as="xs:string"
-                                select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasSortOrder')"/>
+                                <xsl:variable name="entrySortOrder" as="xs:string"
+                                    select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasSortOrder')"/>
 
 
-                            <!-- Get property for #hasSortCriteria -->
-                            <xsl:variable name="entrySortCriteria" as="xs:string"
-                                select="
-                                    if (exists(key('specifiedObjectPropertyList', concat('#hasSortCriteria', $contentIRI), $rootNode))) then
-                                        key('specifiedObjectPropertyList', concat('#hasSortCriteria', $contentIRI), $rootNode)[1]
-                                    else
-                                        ''"/>
+                                <!-- Get property for #hasSortCriteria -->
+                                <xsl:variable name="entrySortCriteria" as="xs:string"
+                                    select="
+                                        if (exists(key('specifiedObjectPropertyList', concat('#hasSortCriteria', $contentIRI), $rootNode))) then
+                                            key('specifiedObjectPropertyList', concat('#hasSortCriteria', $contentIRI), $rootNode)[1]
+                                        else
+                                            ''"/>
 
-                            <!-- Get property for #hasCategorizationCriteria -->
-                            <xsl:variable name="entryCategorizationCriteria" as="xs:string"
-                                select="
-                                    if (exists(key('specifiedObjectPropertyList', concat('#hasCategorizationCriteria', $contentIRI), $rootNode))) then
-                                        key('specifiedObjectPropertyList', concat('#hasCategorizationCriteria', $contentIRI), $rootNode)[1]
-                                    else
-                                        ''"/>
+                                <!-- Get property for #hasCategorizationCriteria -->
+                                <xsl:variable name="entryCategorizationCriteria" as="xs:string"
+                                    select="
+                                        if (exists(key('specifiedObjectPropertyList', concat('#hasCategorizationCriteria', $contentIRI), $rootNode))) then
+                                            key('specifiedObjectPropertyList', concat('#hasCategorizationCriteria', $contentIRI), $rootNode)[1]
+                                        else
+                                            ''"/>
 
-                            <!-- Get property for #hasScope -->
-                            <!--
+                                <!-- Get property for #hasScope -->
+                                <!--
                             <xsl:variable name="entryScope" as="xs:string"
                                 select="
                                     if (exists(key('specifiedObjectPropertyList', concat('#hasScope', $contentIRI), $rootNode))) then
@@ -664,135 +739,155 @@
                                     else
                                         ''"/>
                                         -->
-                            <xsl:variable name="entryScope" as="xs:string"
-                                select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasScope')"/>
+                                <xsl:variable name="entryScope" as="xs:string"
+                                    select="cityEHRFunction:getObjectPropertyValue($rootNode, $contentIRI, 'EntryProperty', '#hasScope')"/>
 
 
-                            <entry cityEHR:Sequence="{$contentSequence}" cityEHR:rendition="{$entryRendition}"
-                                cityEHR:initialValue="{$entryInitialValue}" cityEHR:labelWidth="{cityEHRFunction:getEntryLabelWidth($contentIRI)}">
+                                <entry cityEHR:Sequence="{$contentSequence}"
+                                    cityEHR:rendition="{$entryRendition}"
+                                    cityEHR:initialValue="{$entryInitialValue}"
+                                    cityEHR:labelWidth="{cityEHRFunction:getEntryLabelWidth($contentIRI)}">
 
-                                <xsl:if test="$usingExpressions = 'true'">
-                                    <!-- Add attibutes if the entry has conditional visibility
+                                    <xsl:if test="$usingExpressions = 'true'">
+                                        <!-- Add attibutes if the entry has conditional visibility
                                      The cityEHR:visibility attribute has no value but is set when the conditions are evaluated -->
-                                    <xsl:if test="string-length($expandedEntryConditions) &gt; 0">
-                                        <xsl:attribute name="cityEHR:conditions">
-                                            <xsl:value-of select="$expandedEntryConditions"/>
-                                        </xsl:attribute>
-                                        <xsl:attribute name="cityEHR:visibility"/>
-                                    </xsl:if>
+                                        <xsl:if
+                                            test="string-length($expandedEntryConditions) &gt; 0">
+                                            <xsl:attribute name="cityEHR:conditions">
+                                                <xsl:value-of select="$expandedEntryConditions"/>
+                                            </xsl:attribute>
+                                            <xsl:attribute name="cityEHR:visibility"/>
+                                        </xsl:if>
 
-                                    <!-- Add attributes if the entry has PreConditions.
+                                        <!-- Add attributes if the entry has PreConditions.
                                      The cityEHR:visibility attribute has no value but is set when the pre-conditions are evaluated -->
-                                    <xsl:if test="string-length($expandedEntryPreConditions) &gt; 0">
-                                        <xsl:attribute name="cityEHR:preConditions">
-                                            <xsl:value-of select="$expandedEntryPreConditions"/>
-                                        </xsl:attribute>
-                                        <xsl:attribute name="cityEHR:visibility"/>
+                                        <xsl:if
+                                            test="string-length($expandedEntryPreConditions) &gt; 0">
+                                            <xsl:attribute name="cityEHR:preConditions">
+                                                <xsl:value-of select="$expandedEntryPreConditions"/>
+                                            </xsl:attribute>
+                                            <xsl:attribute name="cityEHR:visibility"/>
+                                        </xsl:if>
                                     </xsl:if>
-                                </xsl:if>
 
-                                <!-- Add attribute if the entry contains an expanded scope element -->
-                                <!-- Now using specific property on the entry to set the scope.
+                                    <!-- Add attribute if the entry contains an expanded scope element -->
+                                    <!-- Now using specific property on the entry to set the scope.
                                  This is needed so that aliased entries containing an expanded element can be set to not expand -->
-                                <!--
+                                    <!--
                             <xsl:variable name="containsExpandedScope" select="cityEHRFunction:containsExpandedScope($contentIRI)"/>
                             -->
-                                <xsl:if test="$entryScope != ''">
-                                    <xsl:attribute name="cityEHR:Scope">
-                                        <xsl:value-of select="$entryScope"/>
-                                    </xsl:attribute>
-                                </xsl:if>
+                                    <xsl:if test="$entryScope != ''">
+                                        <xsl:attribute name="cityEHR:Scope">
+                                            <xsl:value-of select="$entryScope"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
 
-                                <!-- Add attribute if the entry is not the standard CRUD (the assumed default) -->
-                                <xsl:if test="not($entryCRUD = ('#CityEHR:EntryProperty:CRUD', '#CityEHR:Property:CRUD:CRUD'))">
-                                    <xsl:attribute name="cityEHR:CRUD">
-                                        <xsl:value-of select="$entryCRUD"/>
-                                    </xsl:attribute>
-                                </xsl:if>
+                                    <!-- Add attribute if the entry is not the standard CRUD (the assumed default) -->
+                                    <xsl:if
+                                        test="not($entryCRUD = ('#CityEHR:EntryProperty:CRUD', '#CityEHR:Property:CRUD:CRUD'))">
+                                        <xsl:attribute name="cityEHR:CRUD">
+                                            <xsl:value-of select="$entryCRUD"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
 
-                                <!-- Add attribute if the entry has sort order -->
-                                <xsl:if test="$entrySortOrder != ''">
-                                    <xsl:attribute name="cityEHR:sortOrder">
-                                        <xsl:value-of select="$entrySortOrder"/>
-                                    </xsl:attribute>
-                                </xsl:if>
+                                    <!-- Add attribute if the entry has sort order -->
+                                    <xsl:if test="$entrySortOrder != ''">
+                                        <xsl:attribute name="cityEHR:sortOrder">
+                                            <xsl:value-of select="$entrySortOrder"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
 
-                                <!-- Add attribute if the entry has sort criteria -->
-                                <xsl:if test="$entrySortCriteria != ''">
-                                    <xsl:attribute name="cityEHR:sortCriteria">
-                                        <xsl:value-of select="$entrySortCriteria"/>
-                                    </xsl:attribute>
-                                </xsl:if>
+                                    <!-- Add attribute if the entry has sort criteria -->
+                                    <xsl:if test="$entrySortCriteria != ''">
+                                        <xsl:attribute name="cityEHR:sortCriteria">
+                                            <xsl:value-of select="$entrySortCriteria"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
 
-                                <!-- Add attribute if the entry has categorization criteria -->
-                                <xsl:if test="$entryCategorizationCriteria != ''">
-                                    <xsl:attribute name="cityEHR:categorizationCriteria">
-                                        <xsl:value-of select="$entryCategorizationCriteria"/>
-                                    </xsl:attribute>
-                                </xsl:if>
+                                    <!-- Add attribute if the entry has categorization criteria -->
+                                    <xsl:if test="$entryCategorizationCriteria != ''">
+                                        <xsl:attribute name="cityEHR:categorizationCriteria">
+                                            <xsl:value-of select="$entryCategorizationCriteria"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
 
-                                <!-- Add atrributes for hint and alert -->
-                                <!-- Get property for #hasAlert -->
-                                <xsl:variable name="entryAlert" as="xs:string"
-                                    select="
-                                        if (exists(key('specifiedDataPropertyList', concat('#hasAlert', $contentIRI), $rootNode))) then
-                                            key('specifiedDataPropertyList', concat('#hasAlert', $contentIRI), $rootNode)[1]
-                                        else
-                                            ''"/>
-                                <xsl:if test="$entryAlert != ''">
-                                    <xsl:attribute name="cityEHR:Alert">
-                                        <xsl:value-of select="$entryAlert"/>
-                                    </xsl:attribute>
-                                </xsl:if>
+                                    <!-- Add atrributes for hint and alert -->
+                                    <!-- Get property for #hasAlert -->
+                                    <xsl:variable name="entryAlert" as="xs:string"
+                                        select="
+                                            if (exists(key('specifiedDataPropertyList', concat('#hasAlert', $contentIRI), $rootNode))) then
+                                                key('specifiedDataPropertyList', concat('#hasAlert', $contentIRI), $rootNode)[1]
+                                            else
+                                                ''"/>
+                                    <xsl:if test="$entryAlert != ''">
+                                        <xsl:attribute name="cityEHR:Alert">
+                                            <xsl:value-of select="$entryAlert"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
 
-                                <!-- Get property for #hasHint -->
-                                <xsl:variable name="entryHint" as="xs:string"
-                                    select="
-                                        if (exists(key('specifiedDataPropertyList', concat('#hasHint', $contentIRI), $rootNode))) then
-                                            key('specifiedDataPropertyList', concat('#hasHint', $contentIRI), $rootNode)[1]
-                                        else
-                                            ''"/>
-                                <xsl:if test="$entryHint != ''">
-                                    <xsl:attribute name="cityEHR:Hint">
-                                        <xsl:value-of select="$entryHint"/>
-                                    </xsl:attribute>
-                                </xsl:if>
+                                    <!-- Get property for #hasHint -->
+                                    <xsl:variable name="entryHint" as="xs:string"
+                                        select="
+                                            if (exists(key('specifiedDataPropertyList', concat('#hasHint', $contentIRI), $rootNode))) then
+                                                key('specifiedDataPropertyList', concat('#hasHint', $contentIRI), $rootNode)[1]
+                                            else
+                                                ''"/>
+                                    <xsl:if test="$entryHint != ''">
+                                        <xsl:attribute name="cityEHR:Hint">
+                                            <xsl:value-of select="$entryHint"/>
+                                        </xsl:attribute>
+                                    </xsl:if>
 
-                                <!-- Single occurence, no enumeratedClass elements ***jc -->
-                                <xsl:if test="$entryOccurrence = ('#CityEHR:EntryProperty:Single', '#CityEHR:Property:Occurrence:Single')">
-                                    <xsl:call-template name="generateEntry">
-                                        <xsl:with-param name="rootNode" select="$rootNode"/>
-                                        <xsl:with-param name="entryIRI" select="$contentIRI"/>
-                                        <xsl:with-param name="displayName" select="$contentDisplayNameTerm"/>
-                                        <xsl:with-param name="entryRendition" select="$entryRendition"/>
-                                        <xsl:with-param name="formRecordedEntries" select="$formRecordedEntries"/>
-                                        <xsl:with-param name="usingExpressions" select="$usingExpressions"/>
-                                        <xsl:with-param name="recordEvaluationContext" select="'false'"/>
-                                        <xsl:with-param name="evaluationContext" select="$evaluationContext"/>
-                                        <xsl:with-param name="origin" select="''"/>
-                                    </xsl:call-template>
-                                </xsl:if>
+                                    <!-- Single occurence, no enumeratedClass elements ***jc -->
+                                    <xsl:if
+                                        test="$entryOccurrence = ('#CityEHR:EntryProperty:Single', '#CityEHR:Property:Occurrence:Single')">
+                                        <xsl:call-template name="generateEntry">
+                                            <xsl:with-param name="rootNode" select="$rootNode"/>
+                                            <xsl:with-param name="entryIRI" select="$contentIRI"/>
+                                            <xsl:with-param name="displayName"
+                                                select="$contentDisplayNameTerm"/>
+                                            <xsl:with-param name="entryRendition"
+                                                select="$entryRendition"/>
+                                            <xsl:with-param name="formRecordedEntries"
+                                                select="$formRecordedEntries"/>
+                                            <xsl:with-param name="usingExpressions"
+                                                select="$usingExpressions"/>
+                                            <xsl:with-param name="recordEvaluationContext"
+                                                select="'false'"/>
+                                            <xsl:with-param name="evaluationContext"
+                                                select="$evaluationContext"/>
+                                            <xsl:with-param name="origin" select="''"/>
+                                        </xsl:call-template>
+                                    </xsl:if>
 
 
-                                <!-- Multiple occurrence -->
-                                <xsl:if
-                                    test="$entryOccurrence = ('#CityEHR:EntryProperty:MultipleEntry', '#CityEHR:Property:Occurrence:MultipleEntry')">
-                                    <xsl:call-template name="generateMultipleEntry">
-                                        <xsl:with-param name="rootNode" select="$rootNode"/>
-                                        <xsl:with-param name="entryIRI" select="$contentIRI"/>
-                                        <xsl:with-param name="displayName" select="$contentDisplayNameTerm"/>
-                                        <xsl:with-param name="entryRendition" select="$entryRendition"/>
-                                        <xsl:with-param name="formRecordedEntries" select="$formRecordedEntries"/>
-                                        <xsl:with-param name="usingExpressions" select="$usingExpressions"/>
-                                        <xsl:with-param name="recordEvaluationContext" select="'false'"/>
-                                        <xsl:with-param name="evaluationContext" select="$evaluationContext"/>
-                                        <xsl:with-param name="entryCRUD" select="$entryCRUD"/>
-                                    </xsl:call-template>
-                                </xsl:if>
-                            </entry>
+                                    <!-- Multiple occurrence -->
+                                    <xsl:if
+                                        test="$entryOccurrence = ('#CityEHR:EntryProperty:MultipleEntry', '#CityEHR:Property:Occurrence:MultipleEntry')">
+                                        <xsl:call-template name="generateMultipleEntry">
+                                            <xsl:with-param name="rootNode" select="$rootNode"/>
+                                            <xsl:with-param name="entryIRI" select="$contentIRI"/>
+                                            <xsl:with-param name="displayName"
+                                                select="$contentDisplayNameTerm"/>
+                                            <xsl:with-param name="entryRendition"
+                                                select="$entryRendition"/>
+                                            <xsl:with-param name="formRecordedEntries"
+                                                select="$formRecordedEntries"/>
+                                            <xsl:with-param name="usingExpressions"
+                                                select="$usingExpressions"/>
+                                            <xsl:with-param name="recordEvaluationContext"
+                                                select="'false'"/>
+                                            <xsl:with-param name="evaluationContext"
+                                                select="$evaluationContext"/>
+                                            <xsl:with-param name="entryCRUD" select="$entryCRUD"/>
+                                        </xsl:call-template>
+                                    </xsl:if>
+                                </entry>
+
+                            </xsl:if>
+                            <!-- End of handling an entry -->
 
                         </xsl:if>
-                        <!-- End of handling an entry -->
                     </xsl:if>
                 </xsl:for-each>
 
@@ -902,7 +997,8 @@
                     else
                         ''"/>
 
-            <act xmlns="urn:hl7-org:v3" cityEHR:role="" cityEHR:start="" cityEHR:delay="{$entryInterval}" cityEHR:status="charted"
+            <act xmlns="urn:hl7-org:v3" cityEHR:role="" cityEHR:start=""
+                cityEHR:delay="{$entryInterval}" cityEHR:status="charted"
                 cityEHR:sessionStatus="charted" cityEHR:outcome="toBeConfirmed">
                 <xsl:call-template name="generateEntryContent">
                     <xsl:with-param name="rootNode" select="$rootNode"/>
@@ -971,7 +1067,8 @@
                 else
                     $entryIRI"/>
         <typeId xmlns="urn:hl7-org:v3" root="cityEHR" extension="{$entryType}"/>
-        <id xmlns="urn:hl7-org:v3" root="{$entryIRI}" extension="{$recordedEntryIRI}" cityEHR:origin="{$origin}"/>
+        <id xmlns="urn:hl7-org:v3" root="{$entryIRI}" extension="{$recordedEntryIRI}"
+            cityEHR:origin="{$origin}"/>
         <code xmlns="urn:hl7-org:v3" code="" codeSystem="cityEHR" displayName="{$displayName}"/>
 
         <!-- Add a code element for each codePoint with this entry as Context ***jc
@@ -1042,8 +1139,9 @@
                     else
                         ''"/>
 
-            <code-1 xmlns="urn:hl7-org:v3" code="{$code}" codeSystem="{$codeSystem}" displayName="{$displayNameTerm}"
-                cityEHR:conditions="{$expandedConditions}" cityEHR:visibility="{$visibility}"/>
+            <code-1 xmlns="urn:hl7-org:v3" code="{$code}" codeSystem="{$codeSystem}"
+                displayName="{$displayNameTerm}" cityEHR:conditions="{$expandedConditions}"
+                cityEHR:visibility="{$visibility}"/>
         </xsl:for-each>
 
         <!--
@@ -1087,7 +1185,8 @@
             <subject xmlns="urn:hl7-org:v3">
                 <typeId root="{$subjectCompositionTypeIRI}" extension="{$subjectCompositionIRI}"/>
                 <id root="cityEHR" extension=""/>
-                <code xmlns="urn:hl7-org:v3" code="" codeSystem="cityEHR" displayName="{$subjectCompositionDisplayNameTerm}"/>
+                <code xmlns="urn:hl7-org:v3" code="" codeSystem="cityEHR"
+                    displayName="{$subjectCompositionDisplayNameTerm}"/>
             </subject>
         </xsl:if>
 
@@ -1326,8 +1425,8 @@
                     ''"/>
         <xsl:variable name="contents" select="tokenize($contentsList, ' ')"/>
 
-        <value xmlns="urn:hl7-org:v3" code="" codeSystem="" displayName="" root="{$clusterIRI}" extension="{$clusterIRI}"
-            cityEHR:elementDisplayName="{$clusterDisplayNameTerm}">
+        <value xmlns="urn:hl7-org:v3" code="" codeSystem="" displayName="" root="{$clusterIRI}"
+            extension="{$clusterIRI}" cityEHR:elementDisplayName="{$clusterDisplayNameTerm}">
 
             <xsl:call-template name="addComponentAttribute">
                 <xsl:with-param name="rootNode" select="$rootNode"/>
@@ -1409,7 +1508,7 @@
 
         <!-- Get property for #hasDataType
              Properties are of the form #CityEHR:Property:DataType:string or #CityEHR:DataType:string
-             Depending on whether 2018 or 2017 ontologyVersion -->
+             Depending on whether 2018 or 2017 ontologyVersion ***jc works -->
         <xsl:variable name="elementDataType" as="xs:string"
             select="
                 if (exists(key('specifiedObjectPropertyList', concat('#hasDataType', $elementIRI), $rootNode))) then
@@ -1470,7 +1569,8 @@
                     ''"/>
 
         <!-- If elementTypeIRI is #CityEHR:ElementProperty:url then the value and displayName for the element need to be fixed. -->
-        <xsl:if test="$elementTypeIRI = ('#CityEHR:ElementProperty:url', '#CityEHR:Property:ElementType:url')"> </xsl:if>
+        <xsl:if
+            test="$elementTypeIRI = ('#CityEHR:ElementProperty:url', '#CityEHR:Property:ElementType:url')"> </xsl:if>
 
         <!-- Value for element is blank unless its an xs:boolean or a URL
              2018-02-12 Now setting default value of false for xs:boolean when forms are loaded -->
@@ -1504,7 +1604,8 @@
                     key('specifiedObjectPropertyList', concat('#hasUnit', $elementIRI), $rootNode)[1]
                 else
                     ''"/>
-        <xsl:variable name="elementUnitClassIRI" select="key('classIRIList', $elementUnitIRI, $rootNode)"/>
+        <xsl:variable name="elementUnitClassIRI"
+            select="key('classIRIList', $elementUnitIRI, $rootNode)"/>
         <xsl:variable name="elementUnitTermIRI" as="xs:string"
             select="
                 if ($elementUnitClassIRI = '#CityEHR:Unit' and exists(key('termIRIList', $elementUnitIRI, $rootNode))) then
@@ -1628,10 +1729,12 @@
 
         <!-- Element in entry which is an observation  -->
         <xsl:if test="$entryType = '#HL7-CDA:Observation'">
-            <value xmlns="urn:hl7-org:v3" root="{$elementIRI}" extension="{$recordedElementIRI}" xsi:type="{$dataType}" value="{$value}"
-                units="{$elementUnitTerm}" code="" codeSystem="" displayName="{$displayName}" cityEHR:elementDisplayName="{$elementDisplayNameTerm}"
+            <value xmlns="urn:hl7-org:v3" root="{$elementIRI}" extension="{$recordedElementIRI}"
+                xsi:type="{$dataType}" value="{$value}" units="{$elementUnitTerm}" code=""
+                codeSystem="" displayName="{$displayName}"
+                cityEHR:elementDisplayName="{$elementDisplayNameTerm}"
                 cityEHR:elementType="{$elementTypeIRI}" cityEHR:focus="">
-                
+
                 <!-- Add attribute for RequiredValue -->
                 <xsl:call-template name="addComponentAttribute">
                     <xsl:with-param name="rootNode" select="$rootNode"/>
@@ -1640,21 +1743,27 @@
                 </xsl:call-template>
 
                 <!-- Add attribute if the element has a specified field length -->
-                <xsl:if test="string-length($elementPrecision) &gt; 0">
+                <xsl:if test="$elementPrecision != ''">
                     <xsl:attribute name="cityEHR:Precision">
                         <xsl:value-of select="$elementPrecision"/>
                     </xsl:attribute>
                 </xsl:if>
 
                 <!-- Add attribute if the element has a rendition other than the default (#CityEHR:ElementProperty:Form or #CityEHR:Property:Rendition:Form) -->
+                <!-- 2025-05-26 Rendition no lobger used as an element propoerty.
+                     Use Precsion instead for hiddne elements -->
+                <!--
                 <xsl:if test="not($elementRenditionIRI = ('#CityEHR:ElementProperty:Form', '#CityEHR:Property:Rendition:Form'))">
                     <xsl:attribute name="cityEHR:elementRendition">
                         <xsl:value-of select="$elementRenditionIRI"/>
                     </xsl:attribute>
                 </xsl:if>
+                -->
 
-                <!-- Add attribute if the element id for an entry with Image rendition -->
-                <xsl:if test="$entryRendition = ('#CityEHR:EntryProperty:Image', '#CityEHR:Property:Rendition:Image')">
+                <!-- Add attribute if the element id for an entry with Image rendition
+                     From 2025-05-19 images are rendered for DataType of Name -->
+                <xsl:if
+                    test="$dataType = 'xs:Name' or $entryRendition = ('#CityEHR:EntryProperty:Image', '#CityEHR:Property:Rendition:Image')">
                     <xsl:attribute name="cityEHR:height"/>
                     <xsl:attribute name="cityEHR:width"/>
                 </xsl:if>
@@ -1674,11 +1783,13 @@
                 </xsl:if>
 
                 <!-- Add attribute to carry supplementary data set if element is of enumeratedClass type -->
-                <xsl:if test="$elementTypeIRI = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
+                <xsl:if
+                    test="$elementTypeIRI = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
                     <xsl:attribute name="cityEHR:suppDataSet"/>
                 </xsl:if>
                 <!-- Add attribute to carry input control Id if element is of enumeratedClass type -->
-                <xsl:if test="$elementTypeIRI = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
+                <xsl:if
+                    test="$elementTypeIRI = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
                     <xsl:attribute name="cityEHR:elementControlId"/>
                 </xsl:if>
 
@@ -1727,7 +1838,8 @@
             The elementIRI in this case is a compositionIRI - the form, letter, pathway, etc which is the subject of the act.
             -->
         <xsl:if test="$entryType = '#HL7-CDA:Act'">
-            <xsl:variable name="subjectCompositionIRI" as="xs:string" select="replace($elementIRI, '#ISO-13606:', '#CityEHR:')"/>
+            <xsl:variable name="subjectCompositionIRI" as="xs:string"
+                select="replace($elementIRI, '#ISO-13606:', '#CityEHR:')"/>
 
             <xsl:variable name="subjectCompositionTypeIRI" as="xs:string"
                 select="
@@ -1751,7 +1863,8 @@
             <subject xmlns="urn:hl7-org:v3">
                 <typeId root="{$subjectCompositionTypeIRI}" extension="{$subjectCompositionIRI}"/>
                 <id root="cityEHR" extension=""/>
-                <code xmlns="urn:hl7-org:v3" code="" codeSystem="cityEHR" displayName="{$subjectCompositionDisplayNameTerm}"/>
+                <code xmlns="urn:hl7-org:v3" code="" codeSystem="cityEHR"
+                    displayName="{$subjectCompositionDisplayNameTerm}"/>
             </subject>
         </xsl:if>
 
@@ -1768,16 +1881,18 @@
             <participant xmlns="urn:hl7-org:v3">
                 <participantRole>
                     <id root="{$elementIRI}" extension="{$recordedElementIRI}"/>
-                    <playingEntity xsi:type="{$dataType}" value="{$value}" units="" code="" codeSystem="" displayName=""
-                        cityEHR:elementDisplayName="{$elementDisplayNameTerm}" cityEHR:elementType="{$elementTypeIRI}">
-                        
+                    <playingEntity xsi:type="{$dataType}" value="{$value}" units="" code=""
+                        codeSystem="" displayName=""
+                        cityEHR:elementDisplayName="{$elementDisplayNameTerm}"
+                        cityEHR:elementType="{$elementTypeIRI}">
+
                         <!-- Add attribute for RequiredValue -->
                         <xsl:call-template name="addComponentAttribute">
                             <xsl:with-param name="rootNode" select="$rootNode"/>
                             <xsl:with-param name="componentIRI" select="$elementIRI"/>
                             <xsl:with-param name="property" select="'#hasRequiredValue'"/>
                         </xsl:call-template>
-                        
+
 
                         <!-- Add attribute if the element has a specified field length -->
                         <xsl:if test="string-length($elementPrecision) &gt; 0">
@@ -1787,7 +1902,8 @@
                         </xsl:if>
 
                         <!-- Add attribute to carry supplementary data set if element is of enumeratedClass type -->
-                        <xsl:if test="$elementTypeIRI = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
+                        <xsl:if
+                            test="$elementTypeIRI = ('#CityEHR:ElementProperty:enumeratedClass', '#CityEHR:Property:ElementType:enumeratedClass')">
                             <xsl:attribute name="cityEHR:suppDataSet"/>
                         </xsl:if>
 
@@ -1838,12 +1954,14 @@
 
         <!-- If the composition has a header, then this is also a section -->
 
-        <xsl:if test="exists(key('specifiedObjectPropertyList', concat('#hasHeader', $compositionIRI), $rootNode))">
+        <xsl:if
+            test="exists(key('specifiedObjectPropertyList', concat('#hasHeader', $compositionIRI), $rootNode))">
             <xsl:variable name="headerSectionIRI" as="xs:string"
                 select="key('specifiedObjectPropertyList', concat('#hasHeader', $compositionIRI), $rootNode)"/>
             <xsl:if test="$headerSectionIRI != ''">
                 <xsl:value-of select="$headerSectionIRI"/>
-                <xsl:for-each select="cityEHRFunction:getSectionSections($rootNode, $headerSectionIRI)">
+                <xsl:for-each
+                    select="cityEHRFunction:getSectionSections($rootNode, $headerSectionIRI)">
                     <xsl:value-of select="."/>
                 </xsl:for-each>
             </xsl:if>
@@ -1934,6 +2052,7 @@
         </xsl:for-each>
     </xsl:function>
 
+
     <!-- ====================================================================
         Get the recorded entries from a list of root entryIRIs.
         Returns the list of entries recorded (i.e. the set of @extension values)
@@ -1982,7 +2101,8 @@
         <xsl:for-each select="$componentIRIList">
             <xsl:variable name="componentIRI" as="xs:string" select="."/>
 
-            <xsl:variable name="evaluationContextKey" as="xs:string" select="concat('#hasEvaluationContext', $componentIRI)"/>
+            <xsl:variable name="evaluationContextKey" as="xs:string"
+                select="concat('#hasEvaluationContext', $componentIRI)"/>
             <xsl:value-of
                 select="
                     if (exists(key('specifiedDataPropertyList', $evaluationContextKey, $rootNode))) then
@@ -2038,21 +2158,33 @@
         <xsl:param name="componentIRI"/>
         <xsl:param name="property"/>
 
-        <xsl:variable name="propertyAssertion" as="xs:string"
+        <xsl:variable name="propertyAssertion"
             select="
                 if (exists(key('specifiedObjectPropertyList', concat($property, $componentIRI), $rootNode))) then
                     key('specifiedObjectPropertyList', concat($property, $componentIRI), $rootNode)
                 else
                     ''"/>
 
-        <xsl:variable name="propertyAssertionTokens" select="tokenize($propertyAssertion, ':')"/>
-        <xsl:variable name="propertyName" select="concat('cityEHR:',$propertyAssertionTokens[3])"/>
-        <xsl:variable name="propertyValue" select="$propertyAssertionTokens[4]"/>
-
-        <xsl:if test="$propertyValue != ''">
-            <xsl:attribute name="{$propertyName}">
-                <xsl:value-of select="$propertyValue"/>
+        <!-- There should be only one propertyAssertion, so raise an error if not -->
+        <xsl:if test="not(count($propertyAssertion) = 1)">
+            <xsl:attribute name="cityEHR:error">
+                <xsl:value-of
+                    select="concat('multipleProperties: ', $componentIRI, ' - ', $property)"/>
             </xsl:attribute>
+        </xsl:if>
+
+        <!-- Add the property attribute -->
+        <xsl:if test="count($propertyAssertion) = 1">
+            <xsl:variable name="propertyAssertionTokens" select="tokenize($propertyAssertion, ':')"/>
+            <xsl:variable name="propertyName"
+                select="concat('cityEHR:', $propertyAssertionTokens[3])"/>
+            <xsl:variable name="propertyValue" select="$propertyAssertionTokens[4]"/>
+
+            <xsl:if test="$propertyValue != ''">
+                <xsl:attribute name="{$propertyName}">
+                    <xsl:value-of select="$propertyValue"/>
+                </xsl:attribute>
+            </xsl:if>
         </xsl:if>
 
     </xsl:template>
@@ -2145,7 +2277,8 @@
 
         <xsl:for-each select="$componentSet">
             <xsl:variable name="componentIRI" select="."/>
-            <xsl:variable name="expression" select="key('specifiedDataPropertyList', concat($property, $componentIRI), $rootNode)"/>
+            <xsl:variable name="expression"
+                select="key('specifiedDataPropertyList', concat($property, $componentIRI), $rootNode)"/>
 
             <xsl:if test="exists($expression)">
 
@@ -2194,7 +2327,8 @@
         <xsl:for-each select="$componentSet">
             <xsl:variable name="componentIRI" select="."/>
 
-            <xsl:variable name="expression" select="key('specifiedDataPropertyList', concat($property, $componentIRI), $rootNode)"/>
+            <xsl:variable name="expression"
+                select="key('specifiedDataPropertyList', concat($property, $componentIRI), $rootNode)"/>
 
             <xsl:if test="exists($expression)">
 
@@ -2366,12 +2500,15 @@
         <!-- Match any quoted text and pass it straight through, so that variables and built-ins don't get found inside quotes -->
         <xsl:variable name="regexQuoted" select="'(''[^'']*'')'"/>
         <!-- Match the variables -->
-        <xsl:variable name="regexVariables" select="concat('([-a-zA-Z0-9_]+)', $pathSeparator, '([-a-zA-Z0-9_]+)')"/>
+        <xsl:variable name="regexVariables"
+            select="concat('([-a-zA-Z0-9_]+)', $pathSeparator, '([-a-zA-Z0-9_]+)')"/>
         <!-- Match the built-in functions (which may contain sub-patterns that look like variables)
              2018-11-15 - added ? (after ,) so that arguments are not required -->
-        <xsl:variable name="regexBuiltInFunctions" select="concat('(', $builtInPrefix, '[^(]*)\(([^,]*),?([^)]*)\)')"/>
+        <xsl:variable name="regexBuiltInFunctions"
+            select="concat('(', $builtInPrefix, '[^(]*)\(([^,]*),?([^)]*)\)')"/>
 
-        <xsl:variable name="regex" select="concat($regexQuoted, '|', $regexBuiltInFunctions, '|', $regexVariables)"/>
+        <xsl:variable name="regex"
+            select="concat($regexQuoted, '|', $regexBuiltInFunctions, '|', $regexVariables)"/>
 
 
         <!-- Match the patterns in the expression. 
@@ -2417,11 +2554,14 @@
                 <!-- Variable -->
                 <xsl:if test="$matchType = 'variable'">
 
-                    <xsl:variable name="entryIRI" as="xs:string" select="concat('#ISO-13606:Entry:', $group5)"/>
-                    <xsl:variable name="elementIRI" as="xs:string" select="concat('#ISO-13606:Element:', $group6)"/>
+                    <xsl:variable name="entryIRI" as="xs:string"
+                        select="concat('#ISO-13606:Entry:', $group5)"/>
+                    <xsl:variable name="elementIRI" as="xs:string"
+                        select="concat('#ISO-13606:Element:', $group6)"/>
 
                     <!-- Check that element belongs to the entry - path is returned as a sequence -->
-                    <xsl:variable name="pathToEntry" select="cityEHRFunction:getPathFromContent($entryIRI, $elementIRI, 'attribute', '')"/>
+                    <xsl:variable name="pathToEntry"
+                        select="cityEHRFunction:getPathFromContent($entryIRI, $elementIRI, 'attribute', '')"/>
 
                     <!-- Only make cast expression for the variable if the entry/element exists in the model
                          Otherwise, this is just something that looks like a variable (or its an error)
@@ -2459,7 +2599,8 @@
 
                 <!-- Built-in
                      Look for variables in the 2nd argument of cityEHR:lookup, cityEHR:instance, cityEHR:getAttribute -->
-                <xsl:if test="$matchType = 'built-in' and $group2 = ('cityEHR:lookup', 'cityEHR:instance', 'cityEHR:getAttribute')">
+                <xsl:if
+                    test="$matchType = 'built-in' and $group2 = ('cityEHR:lookup', 'cityEHR:instance', 'cityEHR:getAttribute')">
                     <xsl:variable name="castExpression"
                         select="cityEHRFunction:getExpressionCasts($contextEntryIRI, $contextContentIRI, $evaluationContext, $formRecordedEntries, $group4)"/>
                     <xsl:sequence select="$castExpression"/>
@@ -2525,12 +2666,15 @@
         <!-- Match any quoted text and pass it straight through, so that variables and built-ins don't get found inside quotes -->
         <xsl:variable name="regexQuoted" select="'(''[^'']*'')'"/>
         <!-- Match the variables -->
-        <xsl:variable name="regexVariables" select="concat('([-a-zA-Z0-9_]+)', $pathSeparator, '([-a-zA-Z0-9_]+)')"/>
+        <xsl:variable name="regexVariables"
+            select="concat('([-a-zA-Z0-9_]+)', $pathSeparator, '([-a-zA-Z0-9_]+)')"/>
         <!-- Match the built-in functions (which may contain sub-patterns that look like variables)
              2018-11-15 - added ? (after ,) so that arguments are not required - also need [^,)]* as pattern for argument1 -->
-        <xsl:variable name="regexBuiltInFunctions" select="concat('(', $builtInPrefix, '[^(]*)\(([^,)]*),?([^)]*)\)')"/>
+        <xsl:variable name="regexBuiltInFunctions"
+            select="concat('(', $builtInPrefix, '[^(]*)\(([^,)]*),?([^)]*)\)')"/>
 
-        <xsl:variable name="regex" select="concat($regexQuoted, '|', $regexBuiltInFunctions, '|', $regexVariables)"/>
+        <xsl:variable name="regex"
+            select="concat($regexQuoted, '|', $regexBuiltInFunctions, '|', $regexVariables)"/>
 
 
         <!-- Match the patterns in the expression. 
@@ -2598,7 +2742,8 @@
                       effectiveTime - returns effectiveTime attribute on parent entry or component. Used as a pre-condition on pre-filled entries.
                      -->
                 <xsl:if test="$matchType = 'built-in'">
-                    <xsl:variable name="function" as="xs:string" select="substring-after($group2, $builtInPrefix)"/>
+                    <xsl:variable name="function" as="xs:string"
+                        select="substring-after($group2, $builtInPrefix)"/>
                     <xsl:variable name="argument1" as="xs:string" select="$group3"/>
                     <xsl:variable name="argument2" as="xs:string" select="$group4"/>
 
@@ -2611,11 +2756,13 @@
                     <xsl:if test="$function = 'instance'">
                         <xsl:variable name="expandedArgument"
                             select="string-join(cityEHRFunction:replaceExpressionVariables('', $contextContentIRI, 'attribute', $predicateEntryIRI, $formRecordedEntries, $evaluationContext, $argument2), '')"/>
-                        <xsl:sequence select="concat('xxf:instance(''', $argument1, ''')/', $expandedArgument)"/>
+                        <xsl:sequence
+                            select="concat('xxf:instance(''', $argument1, ''')/', $expandedArgument)"
+                        />
                     </xsl:if>
 
                     <!-- lookup = get value from directoryElements-instance.
-                         Also replace any variables found in the path (argument 2) - this needs to use contextRoot of 'external' since the expression is evaluated in the contect of directoryElements-instance.
+                         Also replace any variables found in the path (argument 2) - this needs to use contextRoot of 'external' since the expression is evaluated in the context of directoryElements-instance.
                          The comparison of the directory element value is on ($expandedPath) so that the expanded path can be a list of more than one term, separated by commas.
                          Only one value can be returned from the directory lookup, even if there are multiple matches ( so use (match)[1]/@displayName )-->
                     <xsl:if test="$function = 'lookup'">
@@ -2636,8 +2783,10 @@
                         <xsl:variable name="entryId" select="substring-before($argument1, '/')"/>
                         <xsl:variable name="elementId" select="substring-after($argument1, '/')"/>
 
-                        <xsl:variable name="entryIRI" as="xs:string" select="concat('#ISO-13606:Entry:', $entryId)"/>
-                        <xsl:variable name="elementIRI" as="xs:string" select="concat('#ISO-13606:Element:', $elementId)"/>
+                        <xsl:variable name="entryIRI" as="xs:string"
+                            select="concat('#ISO-13606:Entry:', $entryId)"/>
+                        <xsl:variable name="elementIRI" as="xs:string"
+                            select="concat('#ISO-13606:Element:', $elementId)"/>
 
                         <!-- Output the variable -  attribute is 'getValues' (i.e. no path to attribute is returned) -->
                         <xsl:sequence
@@ -2645,7 +2794,8 @@
 
                         <!-- Output the predicate and path to attribute - context is the entryIRI, elementIRI
                              But they were set to -->
-                        <xsl:variable name="attributePath" as="xs:string" select="'/xs:string(@value)'"/>
+                        <xsl:variable name="attributePath" as="xs:string"
+                            select="'/xs:string(@value)'"/>
                         <xsl:variable name="expandedArgument"
                             select="string-join(cityEHRFunction:replaceExpressionVariables($contextEntryIRI, $contextContentIRI, 'element', $entryIRI, $formRecordedEntries, $evaluationContext, $argument2), '')"/>
                         <xsl:sequence
@@ -2724,11 +2874,13 @@
 
 
         <xsl:variable name="entryIRI" as="xs:string" select="concat('#ISO-13606:Entry:', $entryId)"/>
-        <xsl:variable name="elementIRI" as="xs:string" select="concat('#ISO-13606:Element:', $elementId)"/>
+        <xsl:variable name="elementIRI" as="xs:string"
+            select="concat('#ISO-13606:Element:', $elementId)"/>
 
         <!-- Check that element belongs to the entry - path to entry from the element is returned as a sequence.
              If the path does not exist (empty) then the element does not belong to the entry in the model -->
-        <xsl:variable name="pathToEntry" select="cityEHRFunction:getPathFromContent($entryIRI, $elementIRI, $contextRoot, '')"/>
+        <xsl:variable name="pathToEntry"
+            select="cityEHRFunction:getPathFromContent($entryIRI, $elementIRI, $contextRoot, '')"/>
 
         <!-- Only expand the variable if the entry/element exists in the model
              Otherwise, this is just something that looks like a variable (or its an error) -->
@@ -2835,21 +2987,21 @@
 
             <xsl:value-of select="$compositionValuePath"/>
         </xsl:if>
-        
+
         <!-- contextRoot is 'external' for expressions in the evaluationContext of an external instance -->
         <xsl:if test="$contextRoot = 'external'">
             <xsl:variable name="externalValuePath" as="xs:string"
                 select="concat('$entry/ancestor::cda:ClinicalDocument/descendant::cda:entry/descendant::*[cda:id[@extension=''', $entryIRI, '''][@cityEHR:origin!=''#CityEHR:Template'']]', $evaluationContextSelector, '/descendant::cda:value[@extension=''', $elementIRI, ''']')"/>
-            
+
             <xsl:value-of select="$externalValuePath"/>
         </xsl:if>
 
         <!-- contextRoot is 'element' or 'attribute' -->
-        <xsl:if test="$contextRoot = ('element','attribute')">
+        <xsl:if test="$contextRoot = ('element', 'attribute')">
             <!-- The global context of the value. -->
             <xsl:if test="$contextEntryIRI != $entryIRI and $predicateEntryIRI != $entryIRI">
                 <xsl:variable name="globalValuePath" as="xs:string"
-                    select="concat('ancestor::cda:ClinicalDocument/descendant::cda:entry/descendant::*[cda:id[@extension=''', $entryIRI, '''][@cityEHR:origin!=''#CityEHR:Template'']]', $evaluationContextSelector, '/descendant::cda:value[@extension=''', $elementIRI, ''']')"/>
+                    select="concat('$entry/ancestor::cda:ClinicalDocument/descendant::cda:entry/descendant::*[cda:id[@extension=''', $entryIRI, '''][@cityEHR:origin!=''#CityEHR:Template'']]', $evaluationContextSelector, '/descendant::cda:value[@extension=''', $elementIRI, ''']')"/>
 
                 <xsl:value-of select="$globalValuePath"/>
             </xsl:if>
@@ -2890,7 +3042,8 @@
             select="string-join(cityEHRFunction:getLocalValuePath($entryIRI,$contextContentIRI,$contextRoot,$elementIRI),'')"/>
             <xsl:value-of select="if ($localValuePath!='') then $localValuePath else $globalValuePath"/>
             -->
-                <xsl:variable name="localValuePath" as="xs:string" select="concat('$entry/descendant::cda:value[@extension=''', $elementIRI, ''']')"/>
+                <xsl:variable name="localValuePath" as="xs:string"
+                    select="concat('$entry/descendant::cda:value[@extension=''', $elementIRI, ''']')"/>
                 <xsl:value-of select="$localValuePath"/>
             </xsl:if>
         </xsl:if>
@@ -2911,7 +3064,8 @@
 
         <xsl:variable name="pathToEntry" as="xs:string"
             select="string-join(cityEHRFunction:getPathFromContent($entryIRI, $contextContentIRI, $contextRoot, ''), '')"/>
-        <xsl:variable name="pathToValue" as="xs:string" select="string-join(cityEHRFunction:getPathToContent($entryIRI, $elementIRI, ''), '')"/>
+        <xsl:variable name="pathToValue" as="xs:string"
+            select="string-join(cityEHRFunction:getPathToContent($entryIRI, $elementIRI, ''), '')"/>
 
         <!-- If sourceElementIRI and targetElementIRI are in the entryIRI then the paths will not be empty -->
         <xsl:if test="$pathToEntry != '' and $pathToValue != ''">
@@ -2957,10 +3111,13 @@
             <xsl:variable name="nextPath" select="concat($path, '../')"/>
             <xsl:for-each select="key('contentsIRIList', $containerIRI, $rootNode)">
                 <xsl:variable name="nextContainerIRI" select="."/>
-                <xsl:value-of select="cityEHRFunction:getPathFromContent($nextContainerIRI, $contentIRI, $contextRoot, $nextPath)"/>
+                <xsl:value-of
+                    select="cityEHRFunction:getPathFromContent($nextContainerIRI, $contentIRI, $contextRoot, $nextPath)"
+                />
             </xsl:for-each>
         </xsl:if>
     </xsl:function>
+
 
     <!-- ====================================================================
         Recursive function that returns the path to content from its ancestor container.
@@ -2977,8 +3134,11 @@
         <xsl:if test="$containerIRI != $contentIRI">
             <xsl:for-each select="key('contentsIRIList', $containerIRI, $rootNode)">
                 <xsl:variable name="nextContainerIRI" select="."/>
-                <xsl:variable name="nextPath" select="concat($path, '/cda:value[@extension=''', $nextContainerIRI, ''']')"/>
-                <xsl:value-of select="cityEHRFunction:getPathToContent($nextContainerIRI, $contentIRI, $nextPath)"/>
+                <xsl:variable name="nextPath"
+                    select="concat($path, '/cda:value[@extension=''', $nextContainerIRI, ''']')"/>
+                <xsl:value-of
+                    select="cityEHRFunction:getPathToContent($nextContainerIRI, $contentIRI, $nextPath)"
+                />
             </xsl:for-each>
         </xsl:if>
     </xsl:function>
@@ -2997,6 +3157,7 @@
         <xsl:value-of select="count($expressionCodePoints[. = $codePoints])"/>
 
     </xsl:function>
+
 
     <!-- ====================================================================
         Check whether characters in a string are balanced
@@ -3052,6 +3213,7 @@
 
     </xsl:function>
 
+
     <!-- ====================================================================
         Get the maximum length of displayName in the labels of an entry.
         ==================================================================== -->
@@ -3075,7 +3237,8 @@
         <xsl:variable name="entryLabelWidth" select="string-length($entryDisplayNameTerm)"/>
 
         <!-- Get the maximum width of element labels for the entry -->
-        <xsl:variable name="elementLabelWidth" as="xs:integer *" select="cityEHRFunction:getEntryElementLabelWidth($entryIRI)"/>
+        <xsl:variable name="elementLabelWidth" as="xs:integer *"
+            select="cityEHRFunction:getEntryElementLabelWidth($entryIRI)"/>
 
         <xsl:value-of
             select="
@@ -3085,6 +3248,7 @@
                     $entryLabelWidth"/>
 
     </xsl:function>
+
 
     <!-- ====================================================================
         Get the maximum length of displayName in the label of elements in an entry.
@@ -3122,6 +3286,7 @@
 
         <xsl:value-of select="$maxElementLabelWidth"/>
     </xsl:function>
+
 
     <!-- ====================================================================
         Get the length of displayName in the label of an element.
@@ -3222,7 +3387,8 @@
     <xsl:function name="cityEHRFunction:getEvaluationContextProperty">
         <xsl:param name="componentIRI"/>
 
-        <xsl:variable name="evaluationContextKey" as="xs:string" select="concat('#hasEvaluationContext', $componentIRI)"/>
+        <xsl:variable name="evaluationContextKey" as="xs:string"
+            select="concat('#hasEvaluationContext', $componentIRI)"/>
         <xsl:value-of
             select="
                 if (exists(key('specifiedDataPropertyList', $evaluationContextKey, $rootNode))) then
@@ -3231,6 +3397,7 @@
                     ''"/>
 
     </xsl:function>
+
 
     <!-- ====================================================================
          Get normalised property

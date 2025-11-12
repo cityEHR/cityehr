@@ -226,7 +226,7 @@
         <!-- Get the main section (body) of the CDA document for use in processing below.
             This returns a sequence of sections on the form -->
         <xxf:variable name="cdaBody"
-            select="xxf:instance('view-instance')/cda:ClinicalDocument/cda:component/cda:structuredBody/cda:component/cda:section"/>
+            select="xxf:instance('view-instance')//cda:structuredBody/cda:component/cda:section"/>
 
         <xf:action
             xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:Scope='#CityEHR:EntryProperty:Expanded']/cda:organizer[@classCode='MultipleEntry']">

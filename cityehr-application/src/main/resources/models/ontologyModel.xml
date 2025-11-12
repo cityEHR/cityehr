@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    ontologyModel.xml
+    
+    Xforms model containing stuff for handing ontologies
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="ontology-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:controller="http://www.orbeon.com/oxf/controller">
+
+    <xf:instance id="ontologyControl-instance">
+        <control>
+            <status/>
+
+            <mergeResources>
+                <ontology resource="master" last-modified-ms="" last-modified-date="" size=""
+                    path="" name="" content-type="" value=""/>
+                <ontology resource="merge" last-modified-ms="" last-modified-date="" size="" path=""
+                    name="" content-type="" value=""/>
+            </mergeResources>
+
+            <summaryLine name="hello" count="1"/>
+
+            <Ontology xmlns="http://www.w3.org/2002/07/owl#">
+                <ClassAssertion>
+                    <Class IRI="#ISO-13606:EHR_Extract"/>
+                    <NamedIndividual IRI=""/>
+                </ClassAssertion>
+                <Declaration>
+                    <NamedIndividual IRI=""/>
+                </Declaration>
+            </Ontology>
+            
+            <Annotation xmlns="http://www.w3.org/2002/07/owl#">
+                <AnnotationProperty abbreviatedIRI="rdfs:master"/>
+                <Literal datatypeIRI="http://www.openhealthinformatics.org">Master ontology for merge</Literal>
+            </Annotation>
+        </control>
+    </xf:instance>
+
+    <!-- Instances for the ontology resources -->
+    <xf:instance id="working-ontology-instance">
+        <owl:Ontology/>
+    </xf:instance>
+
+    <xf:instance id="master-ontology-instance">
+        <owl:Ontology/>
+    </xf:instance>
+    <xf:instance id="merge-ontology-instance">
+        <owl:Ontology/>
+    </xf:instance>
+    <xf:instance id="mergeResult-ontology-instance">
+        <owl:Ontology/>
+    </xf:instance>
+
+    <xf:instance id="master-ontologySummary-instance">
+        <ontologySummary>
+            <summaryLine name="" count=""/>
+        </ontologySummary>
+    </xf:instance>
+    <xf:instance id="merge-ontologySummary-instance">
+        <ontologySummary>
+            <summaryLine name="" count=""/>
+        </ontologySummary>
+    </xf:instance>
+    <xf:instance id="mergeResult-ontologySummary-instance">
+        <ontologySummary>
+            <summaryLine name="" count=""/>
+        </ontologySummary>
+    </xf:instance>
+
+
+    <!-- Create the working-ontology-instance from template.
+         Add assertions for application and specialty, if passed as parametrs -->
+    <xf:action ev:event="create-workingOntology">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+
+        <!-- Load ontology from template -->
+        <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="'/templates/ontology.xml'"/>
+            <xxf:context name="resource" select="xxf:instance('working-ontology-instance')"/>
+            <xxf:context name="status" select="xxf:instance('ontologyControl-instance')/status"/>
+        </xf:dispatch>
+
+
+
+    </xf:action>
+
+
+    <!-- Extract the ontology for the individual in extractIRI
+         Builds the extract in working-ontology-instance and then transfers to the specific export instance 
+         Designed to extract a composition from an information model, but could be used for any extraction -->
+    <xf:action ev:event="extract-ontology">
+        <xxf:variable name="ontology-instance" select="event('ontology-instance')"/>
+        <xxf:variable name="extractIRI" select="event('extractIRI')"/>
+        <xxf:variable name="extract-instance" select="event('extract-instance')"/>
+
+        <!-- Set up the working-ontology-instance -->
+        <xf:dispatch name="" target="ontology-create-workingOntologymodel"/>
+
+        <!-- Extract the ontology for the individual defined by exportExtractIRI.
+                     That is any assertion which involves exportExtractIRI as subject ot object -->
+        <xxf:variable name="extractAssertionSet"
+            select="$ontology-instance/*[owl:NamedIndividual/@IRI=$extractIRI]"/>
+
+        <xf:dispatch name="extract-ontologyAssertionSet" target="ontology-model">
+            <xxf:context name="ontology-instance" select="$ontology-instance"/>
+            <xxf:context name="assertionSet" select="$extractAssertionSet"/>
+            <xxf:context name="extract-instance" select="xxf:instance('working-ontology-instance')"
+            />
+        </xf:dispatch>
+
+        <xf:insert nodeset="$extract-instance" origin="xxf:instance('working-ontology-instance')"/>
+
+    </xf:action>
+
+
+    <!-- Extract the ontology for a set of assertions.
+         Inserts all assertions from ontology-instance into the extract-instance
+         This action is recursive - it is applied to the set of individuals that are the object of assertions passed -->
+    <xf:action ev:event="extract-ontologyAssertionSet">
+        <xxf:variable name="ontology-instance" select="event('ontology-instance')"/>
+        <xxf:variable name="assertionSet" select="event('assertionSet')"/>
+        <xxf:variable name="extract-instance" select="event('extract-instance')"/>
+
+        <!-- The subject is always the first NamedIndividual in the assertion       
+             These can have one, two or three elements in the assertion, e.g.
+                     
+                           <Declaration>
+                                <NamedIndividual IRI="#CityEHR:Form:registration"/>
+                            </Declaration>
+    
+                           <ClassAssertion>
+                                <Class IRI="#CityEHR:Form"/>
+                                <NamedIndividual IRI="#CityEHR:Form:registration"/>
+                            </ClassAssertion>
+    
+                            <ObjectPropertyAssertion>
+                                <ObjectProperty IRI="#hasContent"/>
+                                <NamedIndividual IRI="#CityEHR:View:deathdetails"/>
+                                <NamedIndividual IRI="#CityEHR:Form:registration"/>
+                            </ObjectPropertyAssertion>
+    
+                            <ObjectPropertyAssertion>
+                                <ObjectProperty IRI="#hasContent"/>
+                                <NamedIndividual IRI="#CityEHR:Form:registration"/>
+                                <NamedIndividual IRI="#ISO-13606:Section:patientdemographics"/>
+                            </ObjectPropertyAssertion>
+    
+                            <DataPropertyAssertion>
+                                <DataProperty IRI="#hasRank"/>
+                                <NamedIndividual IRI="#CityEHR:Form:registration"/>
+                                <Literal xml:lang="en-gb" datatypeIRI="&amp;rdf;PlainLiteral">0</Literal>
+                            </DataPropertyAssertion>
+                -->
+
+        <!-- Write namedIndividuals to the ontology extract -->
+        <xf:action xxf:iterate="$assertionSet">
+            <xxf:variable name="extractAssertion" select="."/>
+
+            <!-- Check that the assertion is not already in the extract-instance, then insert if necessary -->
+            <xxf:variable name="extractAssertionSignature"
+                select="string-join(($extractAssertion/name(), $extractAssertion//@IRI),'')"/>
+            <xxf:variable name="existingAssertion"
+                select="$extract-instance/*[string-join((./name() , .//@IRI),'') = $extractAssertionSignature]"/>
+
+            <xf:action if="not(exists($existingAssertion))">
+                <xf:insert context="$extract-instance" nodeset="*" origin="$extractAssertion"
+                    at="last()" position="after"/>
+            </xf:action>
+
+            <!-- If the extractAssertion an ObjectPropertyAssertion
+                 Then extract-ontologyAssertionSet (recursively) for the individual (object) in the third element -->
+            <xf:action if="$extractAssertion/name()='ObjectPropertyAssertion'">
+                <xxf:variable name="objectIRI" select="$extractAssertion/*[3]/@IRI"/>
+
+                <xxf:variable name="subjectAssertionSet"
+                    select="$ontology-instance/*[owl:NamedIndividual[1]/@IRI=$objectIRI]"/>
+
+                <!-- Extract the assertions where objectIRI id the subject of the assertion -->
+                <xf:dispatch name="extract-ontologyAssertionSet" target="ontology-model">
+                    <xxf:context name="ontology-instance" select="$ontology-instance"/>
+                    <xxf:context name="assertionSet" select="$subjectAssertionSet"/>
+                    <xxf:context name="extract-instance" select="$extract-instance"/>
+                </xf:dispatch>
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Clear out the ontology resources for working, master and merge -->
+    <xf:action ev:event="clear-ontologyResources">
+        <xf:delete nodeset="xxf:instance('working-ontology-instance')/*"/>
+
+        <xf:delete nodeset="xxf:instance('master-ontology-instance')/*"/>
+        <xf:delete nodeset="xxf:instance('merge-ontology-instance')/*"/>
+        <xf:delete nodeset="xxf:instance('mergeResult-ontology-instance')/*"/>
+
+        <xf:delete nodeset="xxf:instance('master-ontologySummary-instance')/*"/>
+        <xf:delete nodeset="xxf:instance('merge-ontologySummary-instance')/*"/>
+        <xf:delete nodeset="xxf:instance('mergeResult-ontologySummary-instance')/*"/>
+    </xf:action>
+
+
+    <!-- Clear out a single ontology -->
+    <xf:action ev:event="clear-ontology">
+        <xxf:variable name="ontology-instance" select="event('ontology-instance')"/>
+
+        <xf:delete nodeset="$ontology-instance/*"/>
+    </xf:action>
+
+
+
+
+    <!-- Merge ontologies
+         Call the mergeOntology pipeline to merge the ontologies.
+         Master ontology assertions are copied to result.
+         Assertions from merge ontology are added if they don't exist in the master
+     -->
+    <xf:action ev:event="merge-ontologies">
+        <xxf:variable name="master-instance" select="event('master-instance')"/>
+        <xxf:variable name="merge-instance" select="event('merge-instance')"/>
+        <xxf:variable name="mergeResult-instance" select="event('mergeResult-instance')"/>
+        
+        <xf:insert context="$master-instance"
+            origin="xxf:instance('ontologyControl-instance')/owl:Annotation"/>
+
+        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+            <xxf:context name="pipeline" select="'mergeOntologies.xpl'"/>
+            <xxf:context name="pipelineInputs" select="('master','merge')"/>
+            <xxf:context name="input-instance" select="($master-instance,$merge-instance)"/>
+            <xxf:context name="return-instance" select="$mergeResult-instance"/>
+        </xf:dispatch>
+
+<!--
+        <xf:message ref="count($master-instance//*)"/>
+        <xf:message ref="count($merge-instance//*)"/>
+        <xf:message ref="count($mergeResult-instance//*)"/>
+        -->
+
+    </xf:action>
+
+    <!-- Validate ontology
+         Invoked after user has uploaded an ontology file (to be merged in cityEHRAdmin mergeOntology task)
+     -->
+    <xf:action ev:event="validate-ontologyResource">
+        <xxf:variable name="ontologyResource-instance" select="event('ontologyResource-instance')"/>
+        <xxf:variable name="ontology-instance" select="event('ontology-instance')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xf:dispatch name="transform-ontologyResource" target="ontology-model">
+            <xxf:context name="ontologyResource-instance" select="$ontologyResource-instance"/>
+            <xxf:context name="ontology-instance" select="xxf:instance('working-ontology-instance')"/>
+            <xxf:context name="status" select="$status"/>
+        </xf:dispatch>
+
+        <!-- Return the ontology-instance -->
+        <xf:insert nodeset="$ontology-instance" origin="xxf:instance('working-ontology-instance')"/>
+
+    </xf:action>
+
+
+    <!-- Transform ontology resource
+         Invoked after user has uploaded an ontology file 
+         which can be in any of the formats listed in supportedModelFormats (view-parameters)
+         The ontologyResource-instance is transformed an OWL/XML ontology
+         And returned as ontology-instance
+     -->
+    <xf:action ev:event="transform-ontologyResource">
+        <xxf:variable name="ontologyResource-instance" select="event('ontologyResource-instance')"/>
+        <xxf:variable name="ontology-instance" select="event('ontology-instance')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xxf:variable name="resourceXMLRoot" select="$ontologyResource-instance/name()"/>
+        <xxf:variable name="supportedFormat"
+            select="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importInformationModel/supportedModelFormats/format[@root=$resourceXMLRoot]"/>
+
+        <!-- Invoke pipeline to transform to OWL/XML -->
+        <xf:action if="exists($supportedFormat) and $supportedFormat/@transformation!=''">
+            <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                <xxf:context name="pipeline" select="$supportedFormat/@transformation"/>
+                <xxf:context name="input-instance" select="$ontologyResource-instance"/>
+                <xxf:context name="return-instance" select="$ontology-instance"/>
+            </xf:dispatch>
+        </xf:action>
+
+        <!-- Supported format, but no transformation required -->
+        <xf:action if="exists($supportedFormat) and $supportedFormat/@transformation=''">
+            <xf:insert nodeset="$ontology-instance" origin="$ontologyResource-instance"/>
+        </xf:action>
+
+        <!-- Format is not supported -->
+        <xf:action if="not(exists($supportedFormat))">
+            <xf:message ref="concat('Not supported: ',$resourceXMLRoot)"/>
+        </xf:action>
+
+        <xf:action if="false()">
+
+            <!-- 2019-04-25 Deprecated - just for debugging - MS Office XML 2003 format saved from ODF spreadsheet -->
+            <xf:action if="$resourceXMLRoot='Workbook'">
+
+                <!-- Set up pipeline -->
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/manageInformationModel/informationModelType"
+                    value="if (exists(xxf:instance('import-instance')/ss:Worksheet[@ss:Name='Class Hierarchy'])) then 'Class' else 'Specialty'"/>
+                <xxf:variable name="xsltPipeline"
+                    select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/convertSpreadsheet2OWL.xpl')"/>
+                <!-- Replace root node of 'import-instance' with pipeline output -->
+                <xf:insert nodeset="xxf:instance('import-instance')"
+                    origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('import-instance'), 'data')"
+                />
+            </xf:action>
+
+            <!-- ods, xlsx, MS 2003 XML format are transformed to cityEHR database format in the upload pipeline -->
+            <xf:action if="xxf:instance('control-instance')/importXMLRoot='database'">
+                <!-- Recognised format -->
+                <xxf:variable name="source" select="xxf:instance('import-instance')/@source"/>
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importInformationModel/supportedModelFormats/@displayName,' ',xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importInformationModel/supportedModelFormats/format[@type=$source]/@displayName)"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+
+                <!-- Processing message -->
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='convertingSpreadsheetToOWLXML']"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+
+                <!-- Set up pipeline
+                 For class models, V2 format has a sheet for 'Class'  -->
+                <xf:setvalue
+                    ref="xxf:instance('control-instance')/manageInformationModel/informationModelType"
+                    value="if (exists(xxf:instance('import-instance')/table[@id='Class'])) then 'Class' else 'Specialty'"/>
+
+                <!-- Replace root node of 'import-instance' with pipeline output using invoke-pipeline -->
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'convertDatabase2OWL.xpl'"/>
+                    <xxf:context name="input-instance" select="xxf:instance('import-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('import-instance')"/>
+                </xf:dispatch>
+
+
+                <!-- Store in xmlCache for debugging -->
+                <xf:dispatch name="store-xmlCache" target="pageNavigation-model">
+                    <xxf:context name="xml-instance" select="xxf:instance('import-instance')"/>
+                </xf:dispatch>
+            </xf:action>
+
+            <!-- GraphML Uploaded -->
+            <xf:action if="xxf:instance('control-instance')/importXMLRoot='graphml'">
+                <!-- Recognised format -->
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importInformationModel/supportedModelFormats/@displayName,' ',xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importInformationModel/supportedModelFormats/format[@type='graphML']/@displayName)"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+
+                <!-- Processing message -->
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='convertingGraphToOWLXML']"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                <!-- Set up pipeline -->
+                <xxf:variable name="xsltPipeline"
+                    select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/convertGraph2OWL.xpl')"/>
+                <!-- Replace root node of 'import-instance' with pipeline output -->
+                <xf:insert nodeset="xxf:instance('import-instance')"
+                    origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('import-instance'), 'data')"
+                />
+            </xf:action>
+
+            <!-- Mind map Uploaded -->
+            <xf:action if="xxf:instance('control-instance')/importXMLRoot='map'">
+                <!-- Recognised format -->
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="concat(xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importInformationModel/supportedModelFormats/@displayName,' ',xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importInformationModel/supportedModelFormats/format[@type='mindmap']/@displayName)"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+
+                <!-- Processing message -->
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='convertingMindMaptoOWLXML']"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                <!-- Set up pipeline -->
+                <xxf:variable name="xsltPipeline"
+                    select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/convertMindMap2OWL.xpl')"/>
+                <!-- Replace root node of 'import-instance' with pipeline output -->
+                <xf:insert nodeset="xxf:instance('import-instance')"
+                    origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('import-instance'), 'data')"
+                />
+            </xf:action>
+
+            <!-- Set processing status if an ontology was not created as a result of the transformation 
+                     But not if the format is unsupported (its then not processed) -->
+            <xf:action
+                if="xxf:instance('import-instance')[name(.)!='Ontology'] and xxf:instance('control-instance')/importStatus!='unsupported'">
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='errorTransformingToOWLXML']"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+            </xf:action>
+
+            <!-- Set processing status if successful transformation (or no transformation was necessary)  -->
+            <xf:action if="xxf:instance('import-instance')[name(.)='Ontology']">
+                <!-- Set importedFromFile annotation in the ontology -->
+                <xf:setvalue
+                    ref="xxf:instance('import-instance')/owl:Annotation[owl:AnnotationProperty/@abbreviatedIRI='rdfs:importedFromFile']/owl:Literal"
+                    value="xxf:instance('control-instance')/uploadedFileName"/>
+                <!-- Set the status message -->
+                <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                    value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='transformedToOWLXML']"/>
+                <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                    origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                <!-- Reset the importXMLRoot -->
+                <xf:setvalue ref="xxf:instance('control-instance')/importXMLRoot"
+                    value="xxf:instance('import-instance')/name(.)"/>
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Summarize ontology
+         Creates a summary of the assertions found in the ontology
+     -->
+    <xf:action ev:event="generate-ontologySummary">
+        <xxf:variable name="ontology-instance" select="event('ontology-instance')"/>
+        <xxf:variable name="ontologySummary-instance" select="event('ontologySummary-instance')"/>
+
+        <!-- Clear the summary -->
+        <xf:delete nodeset="$ontologySummary-instance/*"/>
+        
+        <!-- Set the total number of assertions -->
+        <xf:insert context="$ontologySummary-instance" nodeset="*"
+            origin="xxf:instance('ontologyControl-instance')/summaryLine" at="last()"
+            position="after"/>
+
+        <xxf:variable name="firstSummaryLine" select="$ontologySummary-instance/summaryLine[last()]"/>
+        <xf:setvalue ref="$firstSummaryLine/@name" value="$ontology-instance/name()"/>
+        <xf:setvalue ref="$firstSummaryLine/@count" value="count($ontology-instance/*)"/>
+
+
+        <!-- Get list of assertion element names in the ontology -->
+        <xxf:variable name="assertionNameSet" select="distinct-values($ontology-instance/*/name())"/>
+
+        <!-- Add a summary line for each assertion name -->
+        <xf:action xxf:iterate="$assertionNameSet">
+            <xxf:variable name="assertionName" select="."/>
+
+            <xf:insert context="$ontologySummary-instance" nodeset="*"
+                origin="xxf:instance('ontologyControl-instance')/summaryLine" at="last()"
+                position="after"/>
+
+            <xxf:variable name="summaryLine" select="$ontologySummary-instance/summaryLine[last()]"/>
+
+            <xf:setvalue ref="$summaryLine/@name" value="$assertionName"/>
+            <xf:setvalue ref="$summaryLine/@count"
+                value="count($ontology-instance/*[name()=$assertionName])"/>
+        </xf:action>
+
+    </xf:action>
+
+</xf:model>

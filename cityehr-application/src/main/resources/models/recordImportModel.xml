@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    recordImportModel.xml
+    
+    Xforms model containing stuff for importing record to the xmlstore
+    Just used in cityEHRAdmin (and in testData-model)
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="recordImport-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    
+    <!-- Control of the model -->
+    <xf:instance id="recordImportControl-instance">
+        <control xmlns="">
+            <status/>
+            <importStatus/>
+        </control>
+    </xf:instance>
+    
+
+    <!-- Application defined action to import a record set as XML.
+                 Iterate through HL7 CDA compositions in the record set 
+                 This can be called when importing an individual HL7 CDA composition, a record set or when generating test data
+                
+                 Can be used to import records (#CityEHR:Form, etc) or notifications (#CityEHR:Notification)
+                
+                 When importing a record set that was previosuly exported from cityEHR it is contained in EHR_Extract
+                 The EHR_Extract is of the form:
+                
+                <export>
+                    <iso-13606:EHR_Extract patientId="XXXX">
+                        <cda:ClinicalDocument>
+                            ...
+                        </cda:ClinicalDocument>
+                             ...
+                    </iso-13606:EHR_Extract>
+                </export>
+                -->
+    <xf:action ev:event="import-RecordSet">
+        <xxf:variable name="record-set" select="event('record-set')"/>
+        <xxf:variable name="identifierPrefix" select="event('identifierPrefix')"/>
+        <xxf:variable name="setCompositionId" select="event('setCompositionId')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xf:setvalue ref="xxf:instance('recordImportControl-instance')/importStatus" value="''"/>
+
+        <!-- Iterate through the CDA documents in the record set (could be only one).
+             Check for each one that the cda:id matches the expected patientId, if the patientId exists
+             -->
+        <xf:action xxf:iterate="$record-set/descendant-or-self::cda:ClinicalDocument">
+            <xxf:variable name="composition" select="."/>
+            <xxf:variable name="patientId"
+                select="$composition/cda:recordTarget/cda:patientRole/cda:id/@extension"/>
+            <xxf:variable name="patientRecord" select="ancestor::iso-13606:EHR_Extract"/>
+
+
+            <!-- Only import the document if its patient id matches the containing iso-13606:EHR_Extract.
+                 or there is no containing iso-13606:EHR_Extract -->
+            <xf:action if="not(exists($patientRecord)) or $patientId = $patientRecord/@patientId">
+                <xxf:variable name="importDocumentStartTime" select="current-time()"/>
+                <!-- Get the composition type -->
+                <xxf:variable name="compositionType" select="$composition/cda:typeId/@extension"/>
+
+                <!-- Get CDA Header parameters from the composition.
+                                 If the effectiveTime is not a valid dateTime or date then it is reset -->
+                <xxf:variable name="documentType" select="$composition/cda:code/@displayName"/>
+                <xxf:variable name="compositionTypeId"
+                    select="replace(replace($compositionType,':','-'),'#','')"/>
+                <xxf:variable name="effectiveTime"
+                    select="if (exists($composition/cda:effectiveTime/@value) and ($composition/cda:effectiveTime/@value castable as xs:dateTime or $composition/cda:effectiveTime/@value castable as xs:date)) then $composition/cda:effectiveTime/@value else current-dateTime()"/>
+                <xf:setvalue ref="$composition/cda:effectiveTime/@value" value="$effectiveTime"/>
+                <xxf:variable name="timeStamp"
+                    select="replace(replace(string($effectiveTime),':','-'),'\+','*')"/>
+
+                <!-- Set the compositionId.
+                                 Uses the identifierPrefix parameter, if passed - so that generated records can be given different compositionIds.
+                                 If setCompositionId is 'preserve' then use the current compositionId, otherwise generate a new one -->
+                <xxf:variable name="prefix"
+                    select="if ($identifierPrefix!='') then concat($identifierPrefix,xxf:instance('view-parameters-instance')/idSeparator) else ''"/>
+                <xxf:variable name="compositionId"
+                    select="if ($setCompositionId='preserve') then $composition/cda:id/@extension else concat($prefix,$timeStamp,xxf:instance('view-parameters-instance')/idSeparator,$compositionTypeId,xxf:instance('view-parameters-instance')/idSeparator,xxf:instance('view-parameters-instance')/userId)"/>
+                <xf:setvalue ref="$composition/cda:id/@extension" value="$compositionId"/>
+
+                <!-- Records are imported for the current application -->
+                <xxf:variable name="applicationIRI"
+                    select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+                <xxf:variable name="applicationId"
+                    select="replace(substring($applicationIRI,2),':','-')"/>
+
+                <!-- Set the storageLocation, dependant on whether record or notification -->
+                <xxf:variable name="compositionCollection"
+                    select="if ($compositionType = '#CityEHR:Notification') then 'data' else 'records'"/>
+                <xxf:variable name="storageLocation"
+                    select="concat('/xmlstore/applications/',$applicationId,'/',$compositionCollection,'/',$patientId,'/',$compositionId)"/>
+
+                <!-- Import the CDA document  -->
+                <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="$storageLocation"/>
+                    <xxf:context name="resource" select="$composition"/>
+                    <xxf:context name="status" select="xxf:instance('recordImportControl-instance')/status"/>
+                </xf:dispatch>
+
+                <!-- Return status if there was an error -->
+                <xf:action if="xxf:instance('recordImportControl-instance')/status != ''">
+                    <xf:setvalue ref="xxf:instance('recordImportControl-instance')/importStatus"
+                        value="if (.='') then xxf:instance('recordImportControl-instance')/status else ."/>
+                </xf:action>
+
+            </xf:action>
+
+            <!-- Set error status if the document patient id does not match the containing iso-13606:EHR_Extract. -->
+            <xf:action if="exists($patientRecord) and $patientId != $patientRecord/@patientId">
+                <xf:setvalue ref="xxf:instance('recordImportControl-instance')/importStatus"
+                    value="if (.='') then 'badCompositionId' else ."/>
+            </xf:action>
+
+        </xf:action>
+
+        <!-- End of iteration through record set -->
+
+        <!-- Set the return status -->
+        <xf:setvalue ref="$status" value="xxf:instance('recordImportControl-instance')/importStatus"/>
+    </xf:action>
+
+
+    <!-- Application defined action to import record set as cityEHR database.
+                 The database was generated from a spreadsheet and is now in import-instance.
+            
+                 The database is of the form:
+                 
+                 <database>
+                    <table>
+                        <record>
+                            <field/>
+                            ...
+                        </record>
+                        ...
+                    </table>
+                    ...
+                 </database>
+            
+               -->
+    <xf:action ev:event="import-RecordSetFromDatabase">
+        <!-- Check the format.
+             Three header rows are for Composition/Entry/Element -->
+        <xf:message ref="'Importing from spreadsheet'"/>
+
+    </xf:action>
+
+    <!-- === Record import maps -->
+    <xf:instance id="storedRecordImportMapListXQuery-instance"
+        src="oxf:/apps/ehr/xquery/storedRecordImportMapListXQuery.xml"/>
+
+    <!-- storedRecordImportMapList -->
+    <xf:instance id="storedRecordImportMapList-instance">
+        <list>
+            <recordImportMap/>
+        </list>
+    </xf:instance>
+
+    <!-- Application defined action to get stored recordImportMaps.
+                -->
+    <xf:action ev:event="get-storedRecordImportMapList">
+        <!-- Records are imported for the current application -->
+        <xxf:variable name="applicationIRI"
+            select="xxf:instance('view-parameters-instance')/applicationIRI"/>
+        <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
+
+        <xxf:variable name="mapLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/systemConfiguration/recordImportMaps')"/>
+
+        <xf:dispatch name="dal-query" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$mapLocation"/>
+            <xxf:context name="query"
+                select="xxf:instance('storedRecordImportMapListXQuery-instance')"/>
+            <xxf:context name="response" select="xxf:instance('storedRecordImportMapList-instance')"/>
+            <xxf:context name="status" select="xxf:instance('recordImportControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- Application defined action to set the active table when records are imported from a spreadsheet.
+                -->
+    <xf:action ev:event="set-activeTable">
+        <xxf:variable name="tableSet" select="event('tableSet')"/>
+        <xxf:variable name="tableId" select="event('tableId')"/>
+
+        <!-- Reset the patientId field -->
+        <xf:setvalue
+            ref="xxf:instance('control-instance')/importRecords/recordImportMap/@patientIdField"
+            value="1"/>
+        <!-- Set the count of records and fields per record of the active table -->
+        <xxf:variable name="activeTable"
+            select="$tableSet[@id=xxf:instance('control-instance')/importRecords/recordImportMap/@activeTable]"/>
+        <!-- Only use records that have something in them and have a valid (i.e. non-blank) patientId -->
+        <xxf:variable name="activeRecords" select="$activeTable/record[field[1]!='']"/>
+        <xf:setvalue ref="xxf:instance('control-instance')/importRecords/activeTableRecordCount"
+            value="count($activeRecords)"/>
+        <!-- Field count - don't assume that all records have the same number of fields.
+                                                 The field count is only for the active records -->
+        <xf:setvalue ref="xxf:instance('control-instance')/importRecords/activeTableFieldCount"
+            value="max($activeRecords/count(field))"/>
+    </xf:action>
+
+
+    <!-- Load recordImportMap template from file -->
+    <xf:instance id="recordImportMapTemplate-instance"
+        src="oxf:/apps/ehr/resources/templates/recordImportMap.xml"/>
+
+    <!-- recordImportMap instance -->
+    <xf:instance id="recordImportMap-instance">
+        <recordImportMap/>
+    </xf:instance>
+
+    <!-- storedecordImportMap instance -->
+    <xf:instance id="storedRecordImportMap-instance">
+        <recordImportMap/>
+    </xf:instance>
+
+    <!-- Application defined action to generate a recordImportMap
+         Creates the map in recordImportMap-instance 
+         Using details for the spreadsheet passed in tableInfo -->
+    <xf:action ev:event="generate-recordImportMap">
+        <xxf:variable name="spreadsheetInfo" select="event('spreadsheetInfo')"/>
+
+        <xxf:variable name="recordImportMapTemplate"
+            select="xxf:instance('recordImportMapTemplate-instance')"/>
+        <xxf:variable name="tableMapTemplate" select="$recordImportMapTemplate/tableMap[1]"/>
+        <xxf:variable name="fieldMapTemplate" select="$tableMapTemplate/fieldMap[1]"/>
+
+        <!-- First clear out the map, then iterate through tables and fields for the spreadsheet -->
+        <xf:insert nodeset="xxf:instance('recordImportMap-instance')"
+            origin="xxf:instance('recordImportMapTemplate-instance')"/>
+        <xf:delete nodeset="xxf:instance('recordImportMap-instance')/*"/>
+
+        <!-- Set the specialtyIRI -->
+        <xf:setvalue ref="xxf:instance('recordImportMap-instance')/@specialtyIRI"
+            value="xxf:instance('specialtyList-instance')/iso-13606:Folder[1]/@id"/>
+
+        <!-- Iterate through tables, setting up the tableMap -->
+        <xf:action xxf:iterate="$spreadsheetInfo/tableInfo">
+            <xxf:variable name="tableInfo" select="."/>
+
+            <xf:insert context="xxf:instance('recordImportMap-instance')" nodeset="*"
+                origin="$tableMapTemplate" at="last()" position="after"/>
+            <xxf:variable name="tableMap"
+                select="xxf:instance('recordImportMap-instance')/tableMap[last()]"/>
+
+            <xf:setvalue ref="$tableMap/@id" value="$tableInfo/@id"/>
+            <xf:delete nodeset="$tableMap/*"/>
+
+            <!-- Iterate through fields in the table, setting up the fieldMaps.
+                         Need to find the maximum number of fields in any record that isn't blank -->
+            <xf:action xxf:iterate="1 to $tableInfo/@fieldCount">
+                <xxf:variable name="fieldNo" select="."/>
+                <xf:insert context="$tableMap" nodeset="fieldMap" origin="$fieldMapTemplate"
+                    at="last()" position="after"/>
+                <xxf:variable name="fieldMap" select="$tableMap/fieldMap[last()]"/>
+                <xf:setvalue ref="$fieldMap/@fieldNo" value="$fieldNo"/>
+            </xf:action>
+        </xf:action>
+
+    </xf:action>
+
+    <!-- Application defined action save a recordImportMap.
+                 Can be either the recordImportMap-instance or the storedRecordImportMap-instance
+                -->
+    <xf:action ev:event="save-storedRecordImportMap">
+        <xf:message ref="'Save recordImprtMap'"/>
+    </xf:action>
+
+    <!-- Application defined action to copy a recordImportMap.
+                 With a stored map loaded, create a copy in the recordMap-instance
+                 Invoke after the user has confirmed they want to overwrite the existing 
+                -->
+    <xf:action ev:event="copy-storedRecordImportMap">
+        <xf:message ref="'Copy recordImprtMap'"/>
+    </xf:action>
+
+    <!-- Application defined action to delete a stored recordImportMap.
+                 With a stored map loaded, delete it from the xmlstore
+                 Invoked after the user has confirmed they want to delete the storedRecordImportMap
+                -->
+    <xf:action ev:event="delete-storedRecordImportMap">
+        <xf:message ref="'Delete recordImprtMap'"/>
+    </xf:action>
+
+
+    <!-- Submission to load recordImportMap -->
+    <xf:submission id="load-recordImportMap-submission" serialization="none"
+        action="{xxf:instance('control-instance')/storageObject}" validate="false" method="get"
+        replace="instance" instance="recordImportMap-instance" f:url-type="resource">
+        <!-- Set recordImportMap in control instance -->
+        <xf:action ev:event="xforms-submit-done">
+            <xf:delete nodeset="xxf:instance('control-instance')/importRecords/recordImportMap"/>
+            <xf:insert context="xxf:instance('control-instance')/importRecords"
+                origin="xxf:instance('recordImportMap-instance')"/>
+            <!-- The feildMap template is set from the recordImportMap template, so isn't set again when loaidn a saved map -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
+        </xf:action>
+    </xf:submission>
+
+    <!-- Submission to save recordImportMap to xmlstore.
+                 Saves to the location in  storageObject -->
+    <xf:submission id="save-recordImportMap-submission"
+        ref="xxf:instance('recordImportMap-instance')"
+        action="{xxf:instance('control-instance')/storageObject}" method="put" replace="none"
+        f:url-type="resource" includenamespacesprefixes="">
+        <xf:action ev:event="xforms-submit-done">
+            <!-- TBD -->
+        </xf:action>
+        <xf:action ev:event="xforms-submit-error">
+            <!-- TBD -->
+        </xf:action>
+    </xf:submission>
+
+
+
+
+</xf:model>

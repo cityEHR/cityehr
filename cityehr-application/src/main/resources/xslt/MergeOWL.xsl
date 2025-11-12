@@ -27,7 +27,8 @@
     <xsl:variable name="merge" select="document('input:merge')"/>
 
  
-    <!-- Set up the XSLT keys for the OWL ontology -->
+    <!-- Set up the XSLT keys for the OWL ontology.
+         The keys are made on the standard input, so for the master ontology only -->
     <xsl:include href="OWLStandardKeys-Module.xsl"/>
     
     <!-- Main templates for copy and merge of OWL -->

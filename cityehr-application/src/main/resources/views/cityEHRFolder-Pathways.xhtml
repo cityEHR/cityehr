@@ -22,26 +22,26 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}" xmlns:xf="http://www.w3.org/2002/xforms"
-    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
-    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
-    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
-    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<xhtml:html lang="{xxf:instance('session-parameters-instance')/languageCode}"
+    xmlns:xf="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
 
-    <!-- ========= HTML Head - Includes the Xforms Model ========= 
-        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+
+    <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css" href="../resources/styles/cityEHRSkin.css" media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
@@ -203,7 +203,8 @@
             -->
             <xf:action ev:event="open">
                 <!-- Set up details fo the currently selected action -->
-                <xxf:variable name="subjectHandleId" select="xxf:instance('notificationsControl-instance')/currentAction/subjectHandleId"/>
+                <xxf:variable name="subjectHandleId"
+                    select="xxf:instance('notificationsControl-instance')/currentAction/subjectHandleId"/>
                 <xxf:variable name="subjectCompositionTypeIRI"
                     select="xxf:instance('notificationsControl-instance')/currentAction/subjectCompositionTypeIRI"/>
 
@@ -212,7 +213,8 @@
 
                 <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionHandle"
                     value="concat(xxf:instance('view-parameters-instance')/applicationDatabaseLocation,'/data/',xxf:instance('view-parameters-instance')/patientId,'/',$subjectHandleId)"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus" value="'saved'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionStatus"
+                    value="'saved'"/>
 
                 <!-- Load the composition for the action -->
                 <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
@@ -239,7 +241,8 @@
                 <xf:dispatch name="save-cda-composition" target="main-model"/>
 
                 <!-- Set the viewNavigationType to show the saved CDA (inProgress) -->
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType" value="'inProgress'"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewNavigationType"
+                    value="'inProgress'"/>
 
                 <!-- Actions on successful start -->
                 <xf:action if="xxf:instance('control-instance')/status=''">
@@ -248,7 +251,8 @@
                     <!-- Update the list of action notifications for this pathway -->
                     <xf:dispatch name="get-pathway-action-notifications" target="pathway-model"/>
                     <!-- Reset the dirty flag -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+                        value="'unedited'"/>
                 </xf:action>
             </xf:action>
 
@@ -273,33 +277,30 @@
                     <!-- Update the session status on tasks/actions -->
                     <xf:dispatch name="set-session-status" target="pathway-model"/>
                     <!-- Reset the dirty flag -->
-                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus" value="'unedited'"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
+                        value="'unedited'"/>
                 </xf:action>
             </xf:action>
 
 
             <!-- Application defined action to print the current form.
                  First generate HTML, then send to the print pipeline -->
-            <xf:action ev:event="printX">
-                <xf:action ev:event="print">
-                    <!-- Set externalId for the patient -->
-                    <xf:dispatch name="set-externalId" target="pageNavigation-model">
-                        <xxf:context name="type" select="'patient'"/>
-                        <xxf:context name="externalId" select="xxf:instance('view-parameters-instance')/externalId"/>
-                    </xf:dispatch>
+            <xf:action ev:event="print">
 
-                    <!-- Convert form to HTML.
+                <!-- Convert form to HTML.
                      Also saves the session-parameters -->
-                    <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
-                        <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
-                        <xxf:context name="input-instance" select="xxf:instance('form-instance')"/>
-                        <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
-                    </xf:dispatch>
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
+                    <xxf:context name="input-instance" select="xxf:instance('form-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
+                </xf:dispatch>
 
-                    <!-- Call submission to generate PDF for HTML -->
-                    <xf:dispatch name="print-html" target="pageNavigation-model"/>
-                </xf:action>
+                <!-- Invoke action to generate PDF for HTML -->
+                <xf:dispatch name="print-html" target="pageNavigation-model">
+                    <xxf:context name="externalIdType" select="'patient'"/>
+                </xf:dispatch>
             </xf:action>
+
 
 
             <!-- Application defined action to published a pathway, when it is complete.
@@ -318,7 +319,8 @@
 
                 <!-- Remove any data compositions that at documenttionOf the pathway.
                      These should get removed as the pathwya progresses, but clear up here, just in case -->
-                <xxf:variable name="pathwayId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                <xxf:variable name="pathwayId"
+                    select="xxf:instance('control-instance')/current-form/handleId"/>
                 <xf:action xxf:iterate="xxf:instance('inProgressSubjectDocuments-instance')/event">
                     <xxf:variable name="documentHandle" select="handle"/>
                     <xxf:variable name="documentationOf" select="documentationOf"/>
@@ -328,7 +330,8 @@
                         <xf:dispatch name="dal-delete" target="databaseAccessLayer-model">
                             <xxf:context name="system" select="'ehr'"/>
                             <xxf:context name="storageLocation" select="$documentHandle"/>
-                            <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/status"/>
                         </xf:dispatch>
                     </xf:action>
 
@@ -354,11 +357,13 @@
                      careSettingIRI is passed in view-parameters, but use the default if it is not set -->
                 <xxf:variable name="careSetting"
                     select="if (xxf:instance('view-parameters-instance')/careSettingIRI='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[1] else xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=xxf:instance('view-parameters-instance')/careSettingIRI]"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI" value="$careSetting/@code"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/careSettingIRI"
+                    value="$careSetting/@code"/>
 
 
                 <!-- Set the viewcontrols selection options when loaded -->
-                <xxf:variable name="viewSelection" select="xxf:instance('viewControlsActions-instance')/view/select[@id='view']"/>
+                <xxf:variable name="viewSelection"
+                    select="xxf:instance('viewControlsActions-instance')/view/select[@id='view']"/>
                 <!-- The options for the view dropdown are found in configuration parameters -->
                 <!--
                 <xf:action
@@ -368,7 +373,8 @@
                 </xf:action>
                 -->
                 <xf:setvalue ref="$viewSelection/@value" value="$viewSelection/item[1]/@value"/>
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionDisplay" value="$viewSelection/@value"/>
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/compositionDisplay"
+                    value="$viewSelection/@value"/>
 
                 <xf:action if="true()">
 
@@ -385,7 +391,8 @@
 
 
                     <!-- Set up the pathway, if one is loaded -->
-                    <xf:action if="xxf:instance('view-parameters-instance')/compositionStatus!='none'">
+                    <xf:action
+                        if="xxf:instance('view-parameters-instance')/compositionStatus!='none'">
                         <!-- Set the pathwayStatus - on load this will either be charted or inProgress -->
                         <!--
                     <xf:setvalue ref="xxf:instance('control-instance')/current-form/pathwayStatus" value="if (xxf:instance('control-instance')/current-form/status='saved') then 'inProgess' else if (xxf:instance('control-instance')/current-form/status='new') then 'charted' else ''"/>
@@ -395,19 +402,24 @@
                         <xf:dispatch name="set-action-roles" target="pathway-model"/>
 
                         <!-- Get the action notification template- -->
-                        <xf:dispatch name="load-action-notification-template" target="notification-model"/>
+                        <xf:dispatch name="load-action-notification-template"
+                            target="notification-model"/>
 
                         <!-- Get the list of action notifications for this pathway -->
                         <xf:dispatch name="get-pathway-action-notifications" target="pathway-model"/>
 
                         <!-- Get the list of pathway-inProgressSubjectDocuments for this pathway -->
-                        <xf:dispatch name="get-pathway-inProgressSubjectDocuments" target="pathway-model">
-                            <xxf:context name="pathwayId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                        <xf:dispatch name="get-pathway-inProgressSubjectDocuments"
+                            target="pathway-model">
+                            <xxf:context name="pathwayId"
+                                select="xxf:instance('control-instance')/current-form/handleId"/>
                         </xf:dispatch>
 
                         <!-- Get the list of completedSubjectDocuments for this pathway -->
-                        <xf:dispatch name="get-pathway-completedSubjectDocuments" target="pathway-model">
-                            <xxf:context name="pathwayId" select="xxf:instance('control-instance')/current-form/handleId"/>
+                        <xf:dispatch name="get-pathway-completedSubjectDocuments"
+                            target="pathway-model">
+                            <xxf:context name="pathwayId"
+                                select="xxf:instance('control-instance')/current-form/handleId"/>
                         </xf:dispatch>
 
                         <!-- Recalculate the model so that button displays are based on the current state of the pathway -->
@@ -418,7 +430,8 @@
 
                     <!-- Progress the pathway to account for actions completed since the pathway was last loaded.
                          Only done when reloading an existing pathway -->
-                    <xf:action if="xxf:instance('view-parameters-instance')/compositionStatus='saved'">
+                    <xf:action
+                        if="xxf:instance('view-parameters-instance')/compositionStatus='saved'">
                         <xf:dispatch name="progress-on-load" target="pathway-model"/>
                     </xf:action>
 
@@ -467,7 +480,8 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -499,7 +513,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='collapseNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'landscape'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'landscape'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -509,12 +525,14 @@
                 <xhtml:div id="navigationDisplay" class="navigation">
 
                     <!-- List of forms saved and in-progress for this patient -->
-                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='inProgress']">
+                    <xf:group
+                        ref="xxf:instance('view-parameters-instance')[viewNavigationType='inProgress']">
                         <xi:include href="cityEHRSavedCompositionSelection.xhtml"/>
                     </xf:group>
 
                     <!-- List of new forms that could be started for this patient -->
-                    <xf:group ref="xxf:instance('view-parameters-instance')[viewNavigationType='new']">
+                    <xf:group
+                        ref="xxf:instance('view-parameters-instance')[viewNavigationType='new']">
                         <xi:include href="cityEHRCompositionSelection.xhtml"/>
                     </xf:group>
 
@@ -542,7 +560,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandNavigation']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/viewDisplayLayout" value="'portrait'"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/viewDisplayLayout"
+                                    value="'portrait'"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -561,7 +581,9 @@
                             <xf:label
                                 ref="xxf:instance('view-parameters-instance')/staticParameters/layoutControls/activator[@type='expandInfo']/@displayName"/>
                             <xf:action ev:event="DOMActivate">
-                                <xf:setvalue ref="xxf:instance('view-parameters-instance')/ehrInfoLayout" value="''"/>
+                                <xf:setvalue
+                                    ref="xxf:instance('view-parameters-instance')/ehrInfoLayout"
+                                    value="''"/>
                             </xf:action>
                         </xf:trigger>
                     </xhtml:div>
@@ -576,9 +598,11 @@
                     <xxf:variable name="pathwaySourceInfoClass"
                         select="if (exists(xxf:instance('form-instance')//cda:documentationOf/cda:serviceEvent/cda:id[@extension != ''])) then 'message' else 'hidden'"/>
                     <xhtml:p class="{$pathwaySourceInfoClass}">
-                        <xf:output ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/pathwaySourceInfoLabel"/>
                         <xf:output
-                            ref="xxf:instance('form-instance')//cda:documentationOf/cda:serviceEvent/cda:code[@codeSystem='cityEHR']/@displayName"/>
+                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRFolder/pathwaySourceInfoLabel"/>
+                        <xf:output
+                            ref="xxf:instance('form-instance')//cda:documentationOf/cda:serviceEvent/cda:code[@codeSystem='cityEHR']/@displayName"
+                        />
                     </xhtml:p>
                 </xhtml:div>
 

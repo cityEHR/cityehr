@@ -43,7 +43,7 @@
     xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
     <xhtml:div class="dialogue">
         <xxf:variable name="activeDialogue" select="xxf:instance('pageNavigationControl-instance')/actionConfirmationDialogue/dialogue"/>
-        <xxf:variable name="logo" select="xxf:instance('logo-instance')"/>
+        <xxf:variable name="logo" select="xxf:instance('session-parameters-instance')/applicationLogo"/>
 
         <!-- The header -->
         <xhtml:table>

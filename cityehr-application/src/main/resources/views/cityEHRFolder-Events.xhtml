@@ -53,22 +53,11 @@
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
 
-    <!-- ========= HTML Head - Includes the Xforms Model ========= 
-        ========================================================= -->
+    <!-- Standard cityEHR page head with title, favicon and stylesheets -->
+    <xi:include href="cityEHRPageHead.xhtml"/>
+    
+    <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
-
-        <!-- Try this to force compatibility mode -->
-        <xhtml:meta http-equiv="X-UA-Compatible" content="IE=10" />
-
-        <!-- HTML Title is the displayName of the current application -->
-        <xhtml:title>
-            <xf:output ref="xxf:instance('view-parameters-instance')/applicationDisplayName"/>
-        </xhtml:title>
-
-        <!-- Stylesheet -->
-        <xhtml:link rel="stylesheet" type="text/css"
-            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
-            media="screen" />
 
 
         <!-- ========= System Parameters ===================================================== 
@@ -715,40 +704,32 @@
                 <!-- Save is for annotations only -->
                 <xf:bind nodeset="action[@id='save']/@display"
                     calculate="if (exists(xxf:instance('annotations-instance')/annotation)) then 'show' else 'hidden'"/>
-                <!-- Show HTML, XML only when debugging -->
+                <!-- Show HTML, XML, Event list only when debugging -->
+                <xf:bind nodeset="action[@id='html']/@display"
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
+                />
                 <xf:bind nodeset="action[@id='xml']/@display"
                     calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
                 />
-                <xf:bind nodeset="action[@id='html']/@display"
+                <xf:bind nodeset="action[@id='patientEventsList']/@display"
                     calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
                 />
             </xf:bind>
 
-
-            <!-- Application defined action when view navigation type changes -->
-            <xf:action ev:event="viewNavigationTypeChanged">
-                <xxf:variable name="viewNavigationType"
-                    select="xxf:instance('view-parameters-instance')/viewNavigationType"/>
-
-                <!-- Category set of events for annotations, lifeLine or (default) events -->
-                <xxf:variable name="categorySet"
-                    select="if ($viewNavigationType = 'annotations') then xxf:instance('control-instance')/annotationSet else if ($viewNavigationType = 'lifeLine') then xxf:instance('control-instance')/lifeLine else xxf:instance('control-instance')/compositionSet"/>
-
-                <!-- Get current event recorded for the categorySet -->
-                <xxf:variable name="currentEventCategory"
-                    select="$categorySet/@currentEventCategory"/>
-                <xxf:variable name="currentEventHandle" select="$categorySet/@currentEventHandle"/>
-                <xxf:variable name="currentEvent"
-                    select="$categorySet/eventCategory[@id=$currentEventCategory]/event[compositionHandle=$currentEventHandle][1]"/>
-
-                <!-- Set the current event (handles case where event does not exist)-->
-                <xf:dispatch name="set-currentEvent" target="main-model">
-                    <xxf:context name="categorySet" select="$categorySet"/>
-                    <xxf:context name="currentEvent" select="$currentEvent"/>
-                </xf:dispatch>
-
+            <!-- Application defined action to show HTML -->
+            <xf:action ev:event="useFederatedRecord">
+                <!-- Load the federated record view, if selected -->
+                <xf:message ref="'hello'"/>
             </xf:action>
 
+            <!-- Application defined action to show HTML -->
+            <xf:action ev:event="html">
+                <!-- Display the html instance -->
+                <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
+                    <xxf:context name="title" select="''"/>
+                    <xxf:context name="displayXML" select="xxf:instance('html-instance')"/>
+                </xf:dispatch>
+            </xf:action>
 
             <!-- Application defined action to show XML -->
             <xf:action ev:event="xml">
@@ -759,12 +740,12 @@
                 </xf:dispatch>
             </xf:action>
             
-            <!-- Application defined action to show HTML -->
-            <xf:action ev:event="html">
+            <!-- Application defined action to show patientEventsList  -->
+            <xf:action ev:event="patientEventsList">
                 <!-- Display the html instance -->
                 <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
                     <xxf:context name="title" select="''"/>
-                    <xxf:context name="displayXML" select="xxf:instance('html-instance')"/>
+                    <xxf:context name="displayXML" select="xxf:instance('patientEventsList-instance')"/>
                 </xf:dispatch>
             </xf:action>
 
@@ -796,14 +777,9 @@
             <!-- Application defined action to print the current composition -->
             <xf:action ev:event="print">
 
-                <!-- Set externalId for the patient -->
-                <xf:dispatch name="set-externalId" target="pageNavigation-model">
-                    <xxf:context name="type" select="'patient'"/>
-                    <xxf:context name="externalId"
-                        select="xxf:instance('view-parameters-instance')/externalId"/>
+                <xf:dispatch name="print-html" target="pageNavigation-model">
+                    <xxf:context name="externalIdType" select="'patient'"/>                   
                 </xf:dispatch>
-
-                <xf:dispatch name="print-html" target="pageNavigation-model"/>
 
             </xf:action>
 
@@ -859,12 +835,13 @@
                 <xxf:variable name="transformationXSL"
                     select="xxf:instance('system-parameters-instance')/staticParameters/cdaTransformation/transform[@format=$exportFormat]/@transformationXSL"/>
                 
-                <xf:dispatch name="export-xmlHandle" target="pageNavigation-model">
-                    <xxf:context name="exportHandle"
-                        select="xxf:instance('control-instance')/currentEvent/handle"/>
+                <!-- Export the event-instance via the xmlCache -->
+                <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                    <xxf:context name="export-instance" select="xxf:instance('event-instance')"/>
                     <xxf:context name="exportName"
                         select="xxf:instance('control-instance')/currentEvent/storageId"/>
-                    <xxf:context name="exportType" select="'xml'"/>
+                    <xxf:context name="exportType" select="'PatientEvent'"/>
+                    <xxf:context name="exportFormat" select="'xml'"/>
                     <xxf:context name="transformationXSL" select="$transformationXSL"/>
                 </xf:dispatch>
 
@@ -892,7 +869,7 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('logo-instance')" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo" mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -1546,12 +1523,10 @@
                     </xhtml:p>
                     -->
 
-
-                    <!--
                     <xhtml:p>Event List: 
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patientEventsList-instance'), 'data')/*, 'html')" mediatype="text/html"/>
                     </xhtml:p>   
-                    -->
+
                     <!--
                     <xhtml:p>Alert query: 
                         <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('alert-query-instance'), 'data')/*, 'html')" mediatype="text/html"/>

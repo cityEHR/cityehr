@@ -34,9 +34,9 @@
         for $entry in //cda:id[@extension=('<entryIRISet/>')]/ancestor::cda:entry[descendant::cda:value]<evaluationContext/>
         let $orderBy := $entry/ancestor::cda:ClinicalDocument/cda:effectiveTime/@value
         return 
-        &lt;cda:entry cityEHR:orderBy="{$orderBy}">
+        &lt;entry xmlns="urn:hl7-org:v3" cityEHR:orderBy="{$orderBy}">
           {$entry/(@*, *)}
-        &lt;/cda:entry>
+        &lt;/entry>
 </query>
 
 

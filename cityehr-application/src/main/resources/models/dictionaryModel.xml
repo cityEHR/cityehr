@@ -69,8 +69,11 @@
         <xxf:variable name="baseLanguageCodeSpecified" select="event('baseLanguageCode')"/>
         <xxf:variable name="dictionaryInstance" select="event('dictionaryInstance')"/>
 
+        <!-- applicationIRI defaults to the current application -->
         <xxf:variable name="applicationIRI"
             select="if (not(exists($applicationIRISpecified)) or $applicationIRISpecified='') then xxf:instance('view-parameters-instance')/applicationIRI else $applicationIRISpecified"/>
+
+        <!-- dictionaryIRI defaults to the specialtyIRI passed -->
         <xxf:variable name="dictionaryIRI"
             select="if (not(exists($dictionaryIRISpecified)) or $dictionaryIRISpecified='') then $specialtyIRI else $dictionaryIRISpecified"/>
 
@@ -78,6 +81,7 @@
         <xxf:variable name="specialtyId" select="replace(substring($specialtyIRI,2),':','-')"/>
         <xxf:variable name="dictionaryId" select="replace(substring($dictionaryIRI,2),':','-')"/>
 
+        <!-- languageCode and baseLanguageCode default to '' (blank) -->
         <xxf:variable name="languageCode"
             select="if (not(exists($languageCodeSpecified)) or $languageCodeSpecified='') then '' else $languageCodeSpecified"/>
         <xxf:variable name="baseLanguageCode"
@@ -89,7 +93,7 @@
         <xxf:variable name="dictionaryLocation"
             select="concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/systemConfiguration/',$specialtyId,'/dictionary/',$dictionaryId)"/>
 
-        <!-- Get the workingDictionary-instance -->
+        <!-- Get the $dictionaryInstance passed as the return parameter -->
         <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
             <xxf:context name="system" select="'ehr'"/>
             <xxf:context name="storageLocation" select="$dictionaryLocation"/>
@@ -101,8 +105,9 @@
 
 
     <!-- Application defined action to load dictionary for a specialty or class model
-         Dictionary is loaded to dictionary-instance.
-         Just invoke load-dictionaryInstance with dictionaryInstance set to dictionary-instance-->
+         The parameters are passed as applicationIRI, specialtyIRI, dictionaryIRI, languageCode, baseLanguageCode
+         Dictionary is loaded to dictionary-instance
+         Just invoke load-dictionaryInstance with dictionaryInstance set to dictionary-instance and the other parameter passed straight through -->
     <xf:action ev:event="load-dictionary">
         <!-- Invoke load-dictionaryInstance -->
         <xf:dispatch name="load-dictionaryInstance" target="dictionary-model">
@@ -186,7 +191,8 @@
     <!-- Application defined action to load all media for a composition.
          The composition is passed as the composition-instance parameter.
          Media are set as the content of displayName attribute in the associated cda:values.
-         Media are loaded for the application (shared between specialty models) -->
+         Media are loaded for the application (shared between specialty models)
+         From 2025-05-19 media elements have xsi:type of xs:Name -->
     <xf:action ev:event="load-compositionMedia">
         <xxf:variable name="applicationIRI"
             select="if (not(exists(event('applicationIRI'))) or event('applicationIRI')='') then xxf:instance('view-parameters-instance')/applicationIRI else event('applicationIRI')"/>
@@ -194,8 +200,13 @@
 
         <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
 
+        <!-- Deprecated 2025-05-19 -->
+        <!--
         <xxf:variable name="mediaElementList"
             select="$composition-instance//cda:entry[@cityEHR:rendition=('#CityEHR:EntryProperty:Image', '#CityEHR:Property:Rendition:Image')]//cda:value"/>
+-->
+        <xxf:variable name="mediaElementList"
+            select="$composition-instance//cda:value[@xsi:type='xs:Name']"/>
 
         <xf:action xxf:iterate="$mediaElementList">
             <xxf:variable name="mediaElement" select="."/>
@@ -224,13 +235,18 @@
 
         <xxf:variable name="applicationId" select="replace(substring($applicationIRI,2),':','-')"/>
 
+        <!-- Reset the image - in case the load fails or the value is blank -->
+        <xf:setvalue ref="$mediaElement/@displayName" value="xs:base64Binary('')"/>
+        <xf:setvalue ref="$mediaElement/@cityEHR:height" value="0"/>
+        <xf:setvalue ref="$mediaElement/@cityEHR:width" value="0"/>
+
 
         <!-- Clear the value of the media-instance, in case it doesn't load.
              (It won't load if it hasn't previously been configured) -->
         <xf:setvalue ref="xxf:instance('media-instance')" value="''"/>
         <xf:delete nodeset="xxf:instance('media-instance')/*"/>
 
-        <!-- Set the mediaName -->
+        <!-- Components of the mediaName -->
         <xxf:variable name="elementIRI" select="$mediaElement/@root"/>
         <xxf:variable name="elementId" select="substring-after($elementIRI,'#ISO-13606:Element:')"/>
         <xxf:variable name="value" select="$mediaElement/@value"/>
@@ -257,10 +273,9 @@
             <!-- Now set the image as binary value of mediaFile
                  With its height and width
                  If the image was loaded -->
-
             <xf:action if="xxf:instance('media-instance') !=''">
                 <xf:setvalue ref="$mediaElement/@displayName"
-                    value="if (xxf:instance('media-instance') castable as xs:base64Binary) then xs:base64Binary(xxf:instance('media-instance')) else ''"/>
+                    value="if (xxf:instance('media-instance') castable as xs:base64Binary) then xs:base64Binary(xxf:instance('media-instance')) else xs:base64Binary('')"/>
                 <xf:setvalue ref="$mediaElement/@cityEHR:height"
                     value="xxf:instance('media-instance')/@height"/>
                 <xf:setvalue ref="$mediaElement/@cityEHR:width"
@@ -357,7 +372,8 @@
 
     <!-- Application defined action to load the content for a letter template.
          letterTemplate is of the form used in storedLetterTemplateList - with just the stub of letterTemplateFile
-         The full letterTemplate is loaded from the xmlstore and the content is set in the template instance -->
+         The full letterTemplate is loaded from the xmlstore and the content is set in the template instance
+         The letterTemplateVariables are also inserted -->
     <xf:action ev:event="load-letterTemplateContent">
         <xxf:variable name="letterTemplate" select="event('letterTemplate')"/>
         <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
@@ -373,6 +389,12 @@
             <xxf:context name="resource" select="xxf:instance('letterTemplate-instance')"/>
             <xxf:context name="status" select="xxf:instance('applicationControl-instance')/status"/>
         </xf:dispatch>
+
+        <!-- Insert the variables, if they exist -->
+        <xf:action if="exists(xxf:instance('letterTemplate-instance')/letterTemplateVariables)">
+            <xf:insert context="$letterTemplate" nodeset="*"
+                origin="xxf:instance('letterTemplate-instance')/letterTemplateVariables"/>
+        </xf:action>
 
         <!-- Set content, if it was loaded -->
         <xf:action if="exists(xxf:instance('letterTemplate-instance')/letterTemplateFile)">

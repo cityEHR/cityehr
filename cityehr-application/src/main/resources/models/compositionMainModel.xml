@@ -766,7 +766,12 @@
         <!-- Export the composition if configured -->
         <xf:action
             if="xxf:instance('application-parameters-instance')/importExport/exportPipeline/exportOnCommit/@value='true'">
-            <xf:message ref="xxf:instance('control-instance')/current-form/publishHandle"/>
+            <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                <xxf:context name="export-instance" select="xxf:instance('form-instance')"/>
+                <xxf:context name="exportType" select="'PatientComposition'"/>
+                <xxf:context name="transformationXSL" select="'CDA2ValkyrieToken'"/>
+                <xxf:context name="exportDelivery" select="'fileSystem'"/>
+            </xf:dispatch>
         </xf:action>
 
     </xf:action>
@@ -1239,6 +1244,7 @@
             <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
         </xf:dispatch>
 
+
         <!-- Composition was loaded OK -->
         <xf:action if="xxf:instance('control-instance')/status=''">
 
@@ -1329,7 +1335,7 @@
 
                 <!-- Assign categories on sorted multipleEntries -->
                 <xxf:variable name="cdaBody"
-                    select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+                    select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
                 <xf:action
                     xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:categorizationCriteria!=''][cda:organizer[@classCode='MultipleEntry']]">
                     <xf:dispatch name="assign-sort-categories" target="main-model">
@@ -1412,6 +1418,9 @@
                 value="concat(xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedLoadFormSubmission'],' ',xxf:instance('control-instance')/status)"/>
             <xf:setvalue ref="xxf:instance('control-instance')/status" value="'failed'"/>
         </xf:action>
+
+
+
     </xf:action>
 
 
@@ -1455,7 +1464,7 @@
     -->
     <xf:action ev:event="evaluate-preconditions">
         <xxf:variable name="cdaBody"
-            select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+            select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
         <!-- Iterate through sections with pre-conditions -->
         <xf:action xxf:iterate="$cdaBody/descendant::cda:section[@cityEHR:preConditions!='']">
             <xxf:variable name="section" select="."/>
@@ -1579,7 +1588,7 @@
          This is needed when the key element gets set as a pre-filled, default or calculated value -->
     <xf:action ev:event="refresh-directory-entries">
         <xxf:variable name="cdaBody"
-            select="xxf:instance('form-instance')/cda:component/cda:structuredBody/cda:component/cda:section"/>
+            select="xxf:instance('form-instance')//cda:structuredBody/cda:component/cda:section"/>
 
         <xf:action
             xxf:iterate="$cdaBody/descendant::cda:entry[@cityEHR:CRUD=('#CityEHR:EntryProperty:L','#CityEHR:Property:CRUD:L')]">
@@ -1920,30 +1929,6 @@
     <!-- ========= Wordprocessor Rendition ============== 
          ================================================ -->
 
-    <!-- Application defined action to export HTML rendtion as a spreadsheet.
-         First save the html-instance in the HTML cache (user specific) 
-         Then load pipeline to create and return spreadsheet -->
-    <xf:action ev:event="store-cdaCache">
-        <xxf:variable name="cdaInstance" select="event('cdaInstance')"/>
-
-        <!-- Set the cache location (user specific) -->
-        <xxf:variable name="userId" select="xxf:instance('view-parameters-instance')/userId"/>
-        <xxf:variable name="cacheStorageLocation"
-            select="concat('/xmlstore/users/',$userId,'/cdaCache')"/>
-
-        <!-- Write cdaInstance to the user cache.
-             Return the URL for the resource in the database (in view-parameters-instance) -->
-        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
-            <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="$cacheStorageLocation"/>
-            <xxf:context name="resource" select="$cdaInstance"/>
-            <xxf:context name="resourceURL"
-                select="xxf:instance('view-parameters-instance')/resourceHandle"/>
-            <xxf:context name="status" select="xxf:instance('control-instance')/status"/>
-        </xf:dispatch>
-    </xf:action>
-
-
     <!-- Application defined action load wordprocessor templates for current composition
          Also sets the relevant view-controls -->
     <xf:action ev:event="initialize-wordProcessorTemplates">
@@ -1984,43 +1969,53 @@
     </xf:action>
 
 
-    <!-- Application defined action to return word proceesor rendition to browser -->
+    <!-- Application defined action to return word proceesor rendition to browser 
+         letterTemplate is just a stub from the storedLetterTemplateList-instance -->
     <xf:action ev:event="return-wordProcessorCDA">
         <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
         <xxf:variable name="letterTemplate" select="event('letterTemplate')"/>
         <xxf:variable name="cdaInstance" select="event('cdaInstance')"/>
 
-        <!-- Store cdaInstance in the XML cache,
-             Sets resourceHandle for use in cityEHRWordProcessorCDA pipelibe -->
-        <xf:dispatch name="store-xmlCache" target="pageNavigation-model">
-            <xxf:context name="xml-instance" select="$cdaInstance"/>
-        </xf:dispatch>
-
-        <!-- Load the letterTemplate, including its binary content -->
+        <!-- Load the letterTemplate, including its binary content.
+             This is returned in letterTemplate-instance and then set in $letterTemplate -->
         <xf:dispatch name="load-letterTemplateContent" target="dictionary-model">
             <xxf:context name="letterTemplate" select="$letterTemplate"/>
             <xxf:context name="applicationIRI" select="$applicationIRI"/>
         </xf:dispatch>
 
-        <!-- The template (binary) is stored to the binaryCache -->
-        <xf:setvalue ref="xxf:instance('letterTemplateBinary-instance')"
-            value="$letterTemplate/letterTemplateFile"/>
-        <xxf:variable name="binaryCacheLocation"
-            select="concat('/xmlstore/users/',xxf:instance('view-parameters-instance')/userId,'/binaryCache')"/>
+        <!-- Store the binary cache.
+             Sets binaryCacheHandle for use in cityEHRWordProcessorCDA pipeline -->
+        <xf:dispatch name="store-binaryCache" target="pageNavigation-model">
+            <xxf:context name="binaryFileContent" select="$letterTemplate/letterTemplateFile"/>
+        </xf:dispatch>
+              
+        <!-- Load the external entries from the patient record -->
+        <xf:dispatch name="set-externalReferencesEntries" target="cda-model">
+            <xxf:context name="cdaInstance" select="$cdaInstance"/>
+            <xxf:context name="letterTemplate" select="$letterTemplate"/>
+        </xf:dispatch>
+        
+        <!-- Store cdaInstance in the XML cache,
+             Sets xmlCacheHandle for use in cityEHRWordProcessorCDA pipeline -->
+        <xf:dispatch name="store-xmlCache" target="pageNavigation-model">
+            <xxf:context name="xml-instance" select="$cdaInstance"/>
+        </xf:dispatch>
 
-        <!-- Save binary letter to the binary cache -->
-        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
-            <xxf:context name="system" select="'ehr'"/>
-            <xxf:context name="storageLocation" select="$binaryCacheLocation"/>
-            <xxf:context name="resource" select="xxf:instance('letterTemplateBinary-instance')"/>
-            <xxf:context name="resourceURL"
-                select="xxf:instance('view-parameters-instance')/binaryCacheHandle"/>
-            <xxf:context name="status" select="xxf:instance('viewControlsActions-instance')/status"
-            />
+        <!-- Set the htmlCacheHandle for debugging in the cityEHRWordProcessorCDA pipeline -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/htmlCacheHandle"
+            value="replace(xxf:instance('view-parameters-instance')/xmlCacheHandle,'xmlCache','htmlCache')"/>
+
+        <!-- Set externalId for the patient -->
+        <xf:dispatch name="set-externalId" target="pageNavigation-model">
+            <xxf:context name="type" select="'patient'"/>
+            <xxf:context name="label" select="$letterTemplate/@displayName"/>
+            <xxf:context name="externalId"
+                select="xxf:instance('view-parameters-instance')/externalId"/>
         </xf:dispatch>
 
         <!-- Call pipeline through page-flow.
-             This uses resourceHandle and binaryCacheHandle to retrieve the cda and wordprocessor template.
+             This uses xmlCacheHandle and binaryCacheHandle to retrieve the cda and wordprocessor template.
+             Also stores HTML in htmlCacheHandle for degugging, so this must be set
              -->
         <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
             <xxf:context name="page" select="'cityEHRWordProcessorCDA'"/>

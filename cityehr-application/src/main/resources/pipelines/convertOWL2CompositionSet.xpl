@@ -21,7 +21,7 @@
 
     <!-- Input to pipeline is OWL/XML instance and a importControl-instance with parameters  -->
     <p:param name="instance" type="input"/>
-    <p:param name="parameters" type="input"/>
+    <p:param name="view-parameters" type="input"/>
 
     <!-- Standard pipeline output -->
     <p:param name="data" type="output"/>
@@ -31,7 +31,7 @@
         <p:input name="config"
         href="../xslt/OWL2CompositionSet.xsl"/>
         <p:input name="data" href="#instance"/>
-        <p:input name="parameters" href="#parameters"/>
+        <p:input name="parameters" href="#view-parameters"/>
         <p:output name="data" id="transformedData"/>
     </p:processor>
     

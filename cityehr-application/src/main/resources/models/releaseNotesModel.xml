@@ -49,7 +49,8 @@
     <xf:action ev:event="load-releaseNotes">
         <!-- Get the process status after running import-shippedResources -->
         <xf:dispatch name="get-processStatus" target="process-model">
-            <xxf:context name="status" select="xxf:instance('releaseNotesControl-instance')/status"/>
+            <xxf:context name="status" select="xxf:instance('releaseNotesControl-instance')/status"
+            />
         </xf:dispatch>
 
         <!-- There is no process running, so can perfrom the action -->
@@ -73,16 +74,20 @@
 
             <!-- If there was a problem loading, then set the default release notes text -->
             <xf:action if="xxf:instance('releaseNotesControl-instance')/status !=''">
+                <!-- Debugging -->
+                <!--
                 <xf:message ref="$staticResourceLocation"/>
+                -->
                 <xf:delete nodeset="xxf:instance('releaseNotes-instance')/*"/>
                 <xf:insert context="xxf:instance('releaseNotes-instance')" node="*"
                     origin="xxf:instance('view-parameters-instance')/versionNumber/releaseNotes/*"
                     at="last()" position="after"/>
             </xf:action>
-            
+
             <!-- Remove any elements targetted at specific pages, but not this one -->
-            <xf:delete nodeset="xxf:instance('releaseNotes-instance')//*[@class!=xxf:instance('view-parameters-instance')/page]"/>
-            
+            <xf:delete
+                nodeset="xxf:instance('releaseNotes-instance')//*[@class!=xxf:instance('view-parameters-instance')/page]"/>
+
             <!-- Show the release notes dialog.
                  This is defined in cityEHRFooter.xhtml which is the only place that this action can be invloked -->
             <xxf:show dialog="release-notes-dialog"/>
