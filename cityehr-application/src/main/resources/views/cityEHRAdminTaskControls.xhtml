@@ -1,0 +1,163 @@
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    cityEHRAdminTaskControls.xhtml
+    
+    Standard generation of controls for tasks in cityEHRadmin page.
+    The controls invoke actions in the main-,odel of cityEHRadmin
+    
+    This file is similar to cityEHRViewControlsActions.xhtml - could consider refactoring
+
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xhtml:div class="adminTaskControls" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms" xmlns:exforms="http://www.exforms.org/exf/1-0"
+    xmlns:widget="http://orbeon.org/oxf/xml/widget" xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    
+    <!-- Get the current task and its action display settings.
+         The taskControls have been copied from application-parameters-instance to control-instance when the task was selected
+         (done in the set-adminTask action)
+         Do not show controls which have @display set to 'hidden'
+         The actionList uses access control to only contain actions accessible by this user -->
+    <xxf:variable name="controlSet" select="xxf:instance('control-instance')/adminTask/taskControls"/>
+    <xxf:variable name="controlGroupSet" select="if (not(exists($controlSet))) then () else $controlSet/*[not(exists(role/@id)) or role/@id=xxf:instance('user-instance')/rbac/role/@value]"/>
+
+    <!-- All controls may be hidden -->
+    <xxf:variable name="showControlSet" select="if (exists($controlSet)) then $controlSet/@display else 'hidden'"/>
+
+    <!-- If display attributes are not set then default is to show icons and no labels -->
+    <xxf:variable name="showLabels" select="if ($controlSet/@showLabels='true') then 'true' else 'false'"/>
+    <xxf:variable name="showIcons" select="if ($controlSet/@showIcons='false') then 'false' else 'true'"/>
+
+    <xxf:variable name="separator" select="$controlSet/@separator"/>
+
+    <!-- Iterate through the configuration to get the controls for this view.
+         Each item is either an action, an input (which can be a selection or simple input) or a label.
+         Only the currenty displayed controls are included in the display -->
+
+    <xhtml:div class="controlSet {$showControlSet}">
+        <xf:repeat nodeset="$controlGroupSet">
+
+            <xxf:variable name="controlGroup" select="."/>
+                        
+            <xhtml:div class="controlGroup">
+                <xf:repeat nodeset="$controlGroup/*">   
+                <xxf:variable name="control" select="."/>
+                    
+            <!-- Get the type of the control -->
+            <xxf:variable name="controlType" select="$control/name()"/>
+            <xxf:variable name="showAction" select="if ($controlType='action') then 'viewControl' else 'hidden'"/>
+            <xxf:variable name="showSelect" select="if ($controlType='select') then '' else 'hidden'"/>
+            <xxf:variable name="showInput" select="if ($controlType='input') then '' else 'hidden'"/>
+            <xxf:variable name="showLabel" select="if ($controlType='label') then '' else 'hidden'"/>
+            <xxf:variable name="showIcon" select="if ($showIcons='true' and $controlType='action') then 'true' else 'false'"/>
+
+            <xxf:variable name="controlId" select="$control/@id"/>
+<!--
+            <xxf:variable name="icon"
+                select="if ($showIcons='true' and $controlType='action') then concat(xxf:instance('view-parameters-instance')/staticFileRoot,'/icons/',$controlId,'.png?',xxf:instance('view-parameters-instance')/versionNumber/@version) else ''"/>
+-->
+            <xxf:variable name="icon" select="concat($controlId,'.png')"/>
+            <xxf:variable name="displayName" select="$control/@displayName"/>
+            <xxf:variable name="size" select="$control/@size"/>
+            <xxf:variable name="incremental" select="$control/@incrementatal"/>
+
+            <!-- Control is displayed unless its display attribute is set to 'hidden' -->
+            <xhtml:span class="{if ($control/@display='hidden') then 'hidden' else''}">
+
+
+                <!-- Output separator -->
+                <xf:output ref="$separator"/>
+
+                <!-- Debugging - show the display property -->
+                <!--
+            <xf:output ref="$control/@display"/>
+            <xf:output ref="$icon"/>
+            -->
+
+                <!-- Control is an action.
+                     xxf:modal="true" on trigger blocks the UI until the action in the trigger is done.
+                     title="{$displayName}" -->
+                <xhtml:span class="{$showAction}">
+                    <xf:trigger appearance="minimal" xxf:modal="true">
+                        <xf:label>
+                            <xf:output ref="if ($showLabels='true') then $displayName else ''"/>
+                            <!--
+                            <xhtml:img src="{$icon}" class="{$showIcon}" alt=""/>
+                            -->
+                            <xhtml:img class="icon" src="data:image/png;base64,{xs:base64Binary(xxf:instance('iconList-instance')/iconFile[@name=$icon])}"/>
+                        </xf:label>
+                        <xf:hint class="actionHint" ref="$displayName"/>
+                        <xf:action ev:event="DOMActivate">
+                            <xxf:variable name="controlAction" select="concat($adminTask,'-',$controlId)"/>
+                            <xf:dispatch name="{$controlAction}" target="main-model"/>
+                        </xf:action>
+                    </xf:trigger>
+                </xhtml:span>
+
+                <!-- Control is a selection input.
+                 This is out of scope if the item doesn't exist in viewControls-input-instance.
+                 The list of selections comes from the viewControls-input-instance
+                 This may be a static list in the instance or (better) may be constructed there from configuration parameters when the viewControls-input-instance is loaded
+                 The items in the list must have a @displayName and @value, but can have any element name (hence the use of * to get the itemset)
+                 -->
+                <xhtml:span class="{$showSelect}">
+                    <xf:select1 ref="xxf:instance('control-instance')/*[name()=$adminTask]/*[name()=$controlId]">
+                        <xf:label ref="$displayName" class="label"/>
+                        <xf:itemset nodeset="../*">
+                            <xf:label ref="./@displayName"/>
+                            <xf:value ref="./@value"/>
+                        </xf:itemset>
+                        <!-- Call action when selection changes -->
+                        <xf:action ev:event="xforms-value-changed">
+                            <xxf:variable name="controlAction" select="concat($adminTask,'-',$controlId)"/>
+                            <xf:dispatch name="{$controlAction}" target="main-model"/>
+                        </xf:action>
+                    </xf:select1>
+                </xhtml:span>
+
+                <!-- Control is an input 
+                 This is out of scope if the item doesn't exist in control-instance. 
+                 Input depends on how the item is bound in the instance.
+                 Note that changes are incremental -->
+                <xhtml:span class="{$showInput}">
+                    <xf:input ref="xxf:instance('control-instance')/*[name()=$adminTask]/*[name()=$controlId]" xxf:size="{$size}" incremental="{$incremental}">
+                        <xf:label ref="$displayName" class="label"/>
+                        <!-- Call action when selection changes -->
+                        <xf:action ev:event="xforms-value-changed">
+                            <xxf:variable name="controlAction" select="concat($adminTask,'-',$controlId)"/>
+                            <xf:dispatch name="{$controlAction}" target="main-model"/>
+                        </xf:action>
+                    </xf:input>
+                </xhtml:span>
+
+                <!-- Control is a label. -->
+                <xhtml:span class="{$showLabel}">
+                    <xf:output ref="$displayName"/>
+                </xhtml:span>
+
+            </xhtml:span>
+                </xf:repeat>
+            </xhtml:div>
+            
+        </xf:repeat>
+    </xhtml:div>
+
+</xhtml:div>

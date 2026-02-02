@@ -53,7 +53,7 @@
     **********************************************************************************************************
 -->
 <!-- To force the whole configuration to be replaced in the xmlstore when updated, set cityEHR:edit="replace" -->
-<parameters type="application" version="" date="" languageCode="en-GB" cityEHR:edit=""
+<parameters type="application" version="" date="" languageCode="en-GB" cityEHR:edit="replace"
     xmlns="" xmlns:iso-13606="http://www.iso.org/iso-13606"
     xmlns:cityEHR="http://openhealthinformatics.org/ehr"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3">
@@ -72,10 +72,10 @@
         <!-- The application id (fixed - actually an IRI), language and default models -->
         <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR" displayName="cityEHR"
             baseLanguageCode="en-GB" commonModel="#ISO-13606:Folder:cityEHRBase" defaultSpecialty=""/>
-        
+
         <!-- The application stylesheet -->
         <applicationStylesheet cityEHR:displayName="Application Stylesheet" value="cityEHRSkin.css"/>
-        
+
         <!-- The other parameters are all images which can be loaded from the location specified in the @value.
              These are stored as separate resources in systemConfiguration/images for the application in the xmlstore. -->
         <images>
@@ -105,6 +105,18 @@
                 hint="Recommended width 360px or 180px" value=""/>
         </images>
     </application>
+
+    <!-- Valkyrie Federated Health Record -->
+    <valkyrie cityEHR:displayName="Valkyrie Federated Health Record">
+        <cityEHR:type>
+            <valkyrieSystem value="" xsi:type="xs:boolean"/>
+            <valkyrieSource value="" xsi:type="xs:boolean"/>
+        </cityEHR:type>
+        
+        <valkyrieSystem cityEHR:displayName="Valkyrie Federated Health Record" value=""/> 
+        <valkyrieSource cityEHR:displayName="Valkyrie Source System" value=""/>
+        <seedKey cityEHR:displayName="Hash key seed" value="h32y24765jreje"/>      
+    </valkyrie>
 
     <!-- Supported Languages.
          Use language codes from IETF RFC 5646 -->
@@ -630,6 +642,45 @@
                     <line>The file must contain a set of careTeam elements in the format required by
                         cityEHR.</line>
                 </adminTaskInstructions>
+            </task>
+        </task>
+        <task display="">
+            <adminTask>valkyrieConsole</adminTask>
+            <adminTaskTitle hint="Import">Valkyrie Console</adminTaskTitle>
+            <task display="">
+                <adminTask>patientLedger</adminTask>
+                <adminTaskTitle>Patient Ledger</adminTaskTitle>
+                <adminTaskLoadFile/>
+                <taskControls display="">
+                    <controlGroup>
+                        <action id="first" displayName="First page" display="show"/>
+                        <action id="previous" displayName="Back" display="show"/>
+                        <label id="page" displayName="Page 1 of 1" display="show"/>
+                        <action id="next" displayName="Next" display="show"/>
+                        <action id="last" displayName="Last page" display="show"/>
+                    </controlGroup>
+                    <controlGroup>
+                        <action id="export" displayName="Export" display="show"/>
+                    </controlGroup>
+                </taskControls>
+            </task>
+            <task display="">
+                <adminTask>blockChain</adminTask>
+                <adminTaskTitle>Blockchain and Tokens</adminTaskTitle>
+                <adminTaskLoadFile/>
+                <taskControls display="">
+                    <controlGroup>
+                        <input id="patientId" displayName="Patient Id;" type="xs:string" display="show"/>
+                        <action id="first" displayName="Genesis" display="show"/>
+                        <action id="previous" displayName="Back" display="show"/>
+                        <label id="block" displayName="Block 1 of 1" display="show"/>
+                        <action id="next" displayName="Next" display="show"/>
+                        <action id="last" displayName="Current" display="show"/>
+                    </controlGroup>
+                    <controlGroup>
+                        <action id="export" displayName="Export" display="show"/>
+                    </controlGroup>
+                </taskControls>
             </task>
         </task>
         <task display="">
@@ -1289,6 +1340,7 @@
             <action id="print" displayName="Print" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Orders" displayName="Patient Orders" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="order" displayName="Order" display="show"/>
@@ -1297,6 +1349,7 @@
         </view>
         <view viewType="cityEHRFolder-Prescriptions" displayName="Patient Presciptions"
             display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="order" displayName="Prescribe" display="show"/>
@@ -1304,6 +1357,7 @@
             <action id="print" displayName="Print" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Bookings" displayName="Patient Appointments" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="order" displayName="Book" display="show"/>

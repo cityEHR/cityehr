@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <encryptedToken id="" linkId="" securityDomain="patientDomain">
+    <patientId>1234567890</patientId>
+    <sessionParameters userId="" sessionId=""/>
+    <eventLocator securityDomain="ehrGatewayDomain">
+        <eventDomain>198.192.56.18</eventDomain>
+        <eventAddress securityDomain="sourceEHR">
+            ehr/access/38388383
+        </eventAddress>
+    </eventLocator>
+    <eventMetadata securityDomain="virtualRecordDomain">
+        <effectiveTime>2021-09-24</effectiveTime>
+        <eventType id="note123" displayName="Clinic Note"/>
+        <provenance organisation="" assignedPerson=""/>
+    </eventMetadata>
+    <clinicalCoding securityDomain="contentDomain">
+        <code codeSystem="SNOMED" code="3113331"/>
+        <code codeSystem="SNOMED" code="7575859"/>
+        <code codeSystem="SNOMED" code="9484847"/>
+    </clinicalCoding>
+ </encryptedToken>
+
+
+

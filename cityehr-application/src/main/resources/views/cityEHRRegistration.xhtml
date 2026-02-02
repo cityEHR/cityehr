@@ -109,6 +109,9 @@
             =================================================================== -->
         <xi:include href="../models/compositionMainModel.xml" xxi:omit-xml-base="true"/>
 
+        <!-- === Valkyrie federated health records     === -->
+        <xi:include href="../models/valkyrieModel.xml" xxi:omit-xml-base="true"/>
+
         <!-- ===  Manage image maps   === -->
         <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
 
@@ -174,7 +177,8 @@
 
 
             <!-- Prepare to register a new patient.
-                 Checks all is Ok and then displays dialogue box to confirm. -->
+                 Checks all is Ok and then displays dialogue box to confirm.
+                 If user confirms, then register-patient (below) is invoked -->
             <xf:action ev:event="prepare-register-patient">
 
                 <!-- If required values are unset, then display the information about them.
@@ -317,55 +321,30 @@
                 <!-- Publish the composition as the first event for this patient -->
                 <xf:dispatch name="publish-cda-composition" target="main-model"/>
 
+                <!-- Action on successful publish - Valkyrie
+                     Successfully published and this is a Valkyrie federated record system.
+                     create-patientBlockchain
+                        Check patient ledger
+                        Create valkyrie token (genesis block)
+                        Add entry to the patient ledger
+                        Store the token (as the genesis block for the blockchan of this patient -->
+                <xf:action
+                    if="xxf:instance('control-instance')/status='' and xxf:instance('application-parameters-instance')/valkyrie/valkyrieSystem/@value='true'">
+                    <xf:dispatch name="create-patientBlockchain" target="valkyrie-model">
+                        <xxf:context name="applicationIRI" select="xxf:instance('session-parameters-instance')/applicationIRI"/>
+                        <xxf:context name="composition" select="xxf:instance('form-instance')"/>
+                    </xf:dispatch>
+
+                </xf:action>
+
+
                 <!-- Action on successful publish -->
                 <xf:action if="xxf:instance('control-instance')/status=''">
-                    <xf:dispatch name="close-composition-view" target="main-model">
+                    <xf:dispatch name="close-composition-viewX" target="main-model">
                         <xxf:context name="newCompositionIRI" select="$newCompositionIRI"/>
                     </xf:dispatch>
                 </xf:action>
 
-                <xf:action if="false()">
-                    <!-- Successfully published -->
-                    <xf:action if="xxf:instance('control-instance')/status=''">
-                        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemStatus"
-                            value="concat(xxf:instance('system-parameters-instance')/staticParameters/cityEHRRegistration/createdRecord/@displayName,xxf:instance('view-parameters-instance')/patientId)"/>
-
-                        <!-- Must reset editStatus, so that load-new-composition does not post another confirmation dialogue -->
-                        <xf:setvalue ref="xxf:instance('control-instance')/current-form/status"
-                            value="'published'"/>
-                        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
-                            value="''"/>
-
-                        <!-- Get selection made by user in the confirmation dialogue
-                         Then load the next page for the new patient-->
-                        <xxf:variable name="specialtyIRI"
-                            select="xxf:instance('session-parameters-instance')/specialtyIRI"/>
-                        <xxf:variable name="newComposition"
-                            select="if (exists($navigationTarget) and $navigationTarget!='') then xxf:instance('dictionary-instance')/iso-13606:folderCollection/iso-13606:folder[@code=$specialtyIRI]/iso-13606:composition[@displayName!=''][@code=$navigationTarget] else ()"/>
-
-                        <!-- User selected to navigate to a specific form -->
-                        <xf:action if="exists($newComposition)">
-                            <xf:dispatch name="load-new-composition" target="main-model">
-                                <xxf:context name="composition" select="$newComposition"/>
-                            </xf:dispatch>
-                        </xf:action>
-
-                        <!-- No form specified for navigation, so go to the URL configured as the home page for patient views -->
-                        <xf:action if="not(exists($newComposition))">
-                            <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
-                                <xxf:context name="page"
-                                    select="xxf:instance('application-parameters-instance')/pageTransition/patientFolderURL/@value"
-                                />
-                            </xf:dispatch>
-                        </xf:action>
-                        <!-- Don't display actions now that the form is published -->
-                        <!-- TBD -->
-                        <!-- Reset dirty flag -->
-                        <xf:setvalue ref="xxf:instance('control-instance')/current-form/editStatus"
-                            value="'unedited'"/>
-                    </xf:action>
-
-                </xf:action>
             </xf:action>
             <!-- End register-patient -->
 

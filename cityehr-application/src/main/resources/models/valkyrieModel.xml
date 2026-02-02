@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    valkyrieModel.xml
+    
+    Xforms model for support of the Valkyrie federated record
+    Includes actions to implement:
+        Patient Ledger
+        Token Store
+        Federated Record Summary
+   
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="valkyrie-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr" xxf:session-heartbeat="true">
+
+
+    <!-- === Control of the valkyrie federated record === -->
+    <xf:instance id="valkyrieControl-instance">
+        <control xmlns="">
+            <status/>
+
+            <patientLedgerLocation>valkyrie/patientLedger</patientLedgerLocation>
+            <tokenStoreLocation>valkyrie/tokenStore</tokenStoreLocation>
+
+            <tokenTemplateLocation>/templates/encryptedToken.xml</tokenTemplateLocation>
+
+            <patientLedgerEntry patientId="" genesisBlockHashId=""/>
+        </control>
+    </xf:instance>
+
+
+    <!-- ==== Patiet Ledger ====================================================
+         The patient ledger is stored for the application in the location
+         xmlstore/applications/ISO-13606-EHR_Extract-valkyrie/valkyrie/patientLedger
+        
+         Within this collection, entries are individual resources of the form:
+         
+        <patientLedgerEntry patientId="" genesisBlockHashId=""/>
+        
+         ======================================================================= -->
+
+
+    <xf:instance id="patientLedgerEntry-instance">
+        <patientLedgerEntry patientId="" genesisBlockHashId=""/>
+    </xf:instance>
+
+
+    <!-- Get entry for a patient from the patient ledger for an application
+         patientId is passed as parameter
+         returns the matching patientLedgerEntry -->
+    <xf:action ev:event="get-patientFromLedger">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="patientLedgerEntry" select="event('patientLedgerEntry')"/>
+        <xxf:variable name="status" select="event('status')"/>
+        
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+        
+
+        <!-- Read the patient ledger entry from the xmlstore -->
+        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$patientLedgerEntryLocation"/>
+            <xxf:context name="resource" select="$patientLedgerEntry"/>
+            <xxf:context name="status" select="$status"/>
+        </xf:dispatch>
+
+
+    </xf:action>
+
+
+    <!-- Save a new entry to the patient ledger
+         Invoked from create-patientBlockchain
+         The hashId passed as a parameter is the hashId of the genesis block
+         That bloack must be created in the token store so that the blockchain is found
+         (That is done by create-patientBlockchain)
+          -->
+    <xf:action ev:event="save-patientToLedger">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="hashId" select="event('hashId')"/>
+
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+    </xf:action>
+
+
+
+    <!-- ==== Token Store (Blockchain) =============================================
+         The token store is held in the collection
+            xmlstore/applications/ISO-13606-EHR_Extract-valkyrie/valkyrie/tokenStore
+            
+         Each token is stored in a document that is named with the token's hashId   
+
+         =========================================================================== -->
+
+
+    <xf:instance id="encryptedToken-template-instance">
+        <encryptedToken/>
+    </xf:instance>
+
+    <xf:instance id="encryptedToken-instance">
+        <encryptedToken/>
+    </xf:instance>
+
+
+    <xf:instance id="blockChain-instance">
+        <blockChain/>
+    </xf:instance>
+
+
+    <!-- Application defined action to load the encryptedToken template -->
+    <xf:action ev:event="load-encryptedToken-template">
+        <!-- Load the template from static resources -->
+        <xxf:variable name="tokenTemplateLocation"
+            select="xxf:instance('valkyrieControl-instance')/tokenTemplateLocation"/>
+        <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+            <xxf:context name="staticResourceLocation" select="$encryptedTokenLocation"/>
+            <xxf:context name="resource" select="xxf:instance('encryptedToken-template-instance')"/>
+            <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"/>
+        </xf:dispatch>
+
+    </xf:action>
+
+
+    <!-- Application defined action to create the patient blockchain
+         Invoked from register-patient in cityEHRRegistration.xhtml 
+         When a new patient is registered from a designated Valkyrie system
+         This is when valkyrieSystem @value is true in the application-parameters
+           Check patient ledger, then if the patient is not already registered
+            Create valkyrie token (genesis block)
+            Save patient to the ledger
+            Store the token (as the genesis block for the blockchan of this patient) -->
+    <xf:action ev:event="create-patientBlockchain">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="composition" select="event('composition')"/>
+
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+        <!-- patientId is found from the CDA header -->
+        <xxf:variable name="patientId"
+            select="$composition//cda:recordTarget/cda:patientRole/cda:id/@extension"/>
+
+        <!-- Check patient ledger -->
+
+
+        <!-- Create valkyrie token (genesis block) -->
+
+
+        <!-- Save patient to the ledger -->
+        <xf:dispatch name="save-patientToLedger" target="valkyrie-model">
+            <xxf:context name="applicationIRI" select="$applicationIRI"/>
+            <xxf:context name="patientId" select="$patientId"/>
+            <xxf:context name="hashId" select="$hashId"/>
+        </xf:dispatch>
+
+
+
+        <!-- Store the token (as the genesis block for the blockchan of this patient) -->
+
+
+
+
+
+        <!-- Debugging -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+            value="$applicationId"/>
+
+    </xf:action>
+
+
+
+    <!-- Application defined action to get the full blockchain of tokens for a patient
+         Invoked with the genesis block hash
+         The invokes get-block until the current block is reached
+         Returns the complete set of tokens in blockchain order, starting with the genesis block-->
+    <xf:action ev:event="get-patientBlockchain"> </xf:action>
+
+
+    <!-- Application defined action to get a block, given its hashId
+         Searches for the block in the token store -->
+    <xf:action ev:event="get-blockFromHashId"> </xf:action>
+
+
+    <!-- Application defined action to generate a hashId from a patientId
+         Takes the input parameter patientId
+         Sets the paraemter hashId
+         Uses the seedkey defined in the application parameters
+          -->
+    <xf:action ev:event="generate-hashId">
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="hashId" select="event('hashId')"/>
+
+        <!-- Get the current timeStamp -->
+        <xxf:variable name="timeStamp"
+            select="substring(replace(replace(string(current-dateTime()),':','-'),'\+','*'),1,16)"/>
+
+        <!-- Set clearTextId from timeStamp and patientId -->
+        <xxf:variable name="clearTextId" select="concat($timeStamp,$patientId)"/>
+
+        <xxf:variable name="seedKey"
+            select="xxf:instance('application-parameters-instance')/valkyrie/seedkey/@value"/>
+
+        <xf:setvalue ref="$hashId"
+            value="if ($seedKey!= '') then hmac($seedKey,$clearTextId, 'MD5', 'hex') else $clearTextId"
+        />
+    </xf:action>
+
+
+
+
+
+    <!-- ==== Federated Record Summary =========================================
+     
+         ======================================================================= -->
+
+
+
+</xf:model>

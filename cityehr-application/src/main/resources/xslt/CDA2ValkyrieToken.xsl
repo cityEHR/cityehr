@@ -48,7 +48,7 @@
             select="cda:recordTarget[1]/cda:patientRole/cda:id/@extension"/>
 
 
-        <encryptedToken id="{$timeStamp}" securityDomain="patientDomain">
+        <encryptedToken id="{$timeStamp}" linkId="" securityDomain="patientDomain">
             <patientId>
                 <xsl:value-of select="$patientId"/>
             </patientId>

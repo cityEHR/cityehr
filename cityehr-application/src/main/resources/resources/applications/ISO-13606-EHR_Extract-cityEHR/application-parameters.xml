@@ -614,6 +614,7 @@
             <action id="print" displayName="Print" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Orders" displayName="Patient Orders" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="order" displayName="Order" display="show"/>
@@ -621,6 +622,7 @@
             <action id="print" displayName="Print" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Prescriptions" displayName="Patient Presciptions" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="order" displayName="Prescribe" display="show"/>
@@ -628,6 +630,7 @@
             <action id="print" displayName="Print" display="show"/>
         </view>
         <view viewType="cityEHRFolder-Bookings" displayName="Patient Appointments" display="show">
+            <action id="xml" displayName="Show XML" display="show"/>
             <action id="delete" displayName="Delete" display="show"/>
             <action id="reset" displayName="Reset" display="show"/>
             <action id="order" displayName="Book" display="show"/>

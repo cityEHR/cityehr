@@ -274,10 +274,10 @@
         <!-- Only display section if visibility is 'true' (need logic for this inside the class attribute, since sections may be siblings in the xhtml).
              Also, the rendition of the section may be hidden (in which case, don't display it).
              The compositionDisplay is used when displaying pathways
-             Can't have id on the xhtml:div, since it gets duplicated by Orbeon.
+             Can't have id on the xhtml:ul, since it gets duplicated by Orbeon.
              So have an empty xhtml:span to hold the id -->
 
-        <xhtml:div
+        <xhtml:ul
             class="ISO13606-Section {{$xformsShowStructureClass}} {{if (xxf:instance('view-parameters-instance')/compositionDisplay='current' and ({$sectionPath}/@cityEHR:visibility='false' or {$sectionPath}/@cityEHR:rendition=('#CityEHR:EntryProperty:Hidden','#CityEHR:Property:Rendition:Hidden'))) then 'hidden' else ''}}">
             <xhtml:span id="{$crossRefId}"/>
             <xhtml:span class="{{$xformsShowIdClass}}">
@@ -285,7 +285,7 @@
             </xhtml:span>
             <!-- Only output the section header if it has a display name, or this section is a task in a pathway -->
             <xsl:if test="$sectionTitle[data(.) != ''] or $compositionTypeIRI = '#CityEHR:Pathway'">
-                <xhtml:div class="ISO13606-Section-DisplayName">
+                <xhtml:li class="ISO13606-Section-DisplayName">
                     <xsl:value-of select="$sectionTitle"/>
                     <!-- User interaction if this section is a pathway task -->
                     <xsl:if test="$compositionTypeIRI = '#CityEHR:Pathway'">
@@ -327,9 +327,9 @@
                                     'satisfied'
                                 else
                                     'notSatisfied'"/>
-                        <xhtml:div class="ISO13606-Conditions {{$xformsSatisfiedClass}}">
+                        <xhtml:ul class="ISO13606-Conditions {{$xformsSatisfiedClass}}">
                             <xf:repeat nodeset="$xformsParameterList">
-                                <xhtml:div>
+                                <xhtml:li>
                                     <xxf:variable name="xformsParameterString" select="."/>
                                     <xxf:variable name="xformsParameter"
                                         select="
@@ -352,9 +352,9 @@
                                     <xf:output
                                         ref="if ($xformsParameterDisplayName!='' and $xformsParameterValue!='') then concat(xxf:evaluate($xformsParameterDisplayName),' is ',xxf:evaluate($xformsParameterValue)) else ''"
                                     />
-                                </xhtml:div>
+                                </xhtml:li>
                             </xf:repeat>
-                        </xhtml:div>
+                        </xhtml:ul>
 
                         <xhtml:span class="ISO13606-Element">
                             <xhtml:span class="ISO13606-Element-DisplayName">
@@ -410,14 +410,14 @@
                             </xhtml:span>
                         </xhtml:span>
                     </xsl:if>
-                </xhtml:div>
+                </xhtml:li>
             </xsl:if>
 
             <!-- Display alert for the section, if one exists -->
             <xsl:if test="$section/@cityEHR:Alert != ''">
-                <xhtml:div class="ISO13606-Section-Alert">
+                <xhtml:li class="ISO13606-Section-Alert">
                     <xsl:value-of select="$section/@cityEHR:Alert"/>
-                </xhtml:div>
+                </xhtml:li>
             </xsl:if>
 
             <!-- Iterate through each entry and sub-section in the section -->
@@ -425,13 +425,13 @@
                 <xsl:variable name="component" select="."/>
                 <!-- Entry - call template to render the entry -->
                 <xsl:if test="$component/name() = 'entry'">
-                    <xhtml:div class="{$sectionLayout}">
+                    <xhtml:li class="{$sectionLayout}">
                         <xsl:call-template name="renderFormEntry">
                             <xsl:with-param name="entry" select="$component"/>
                             <xsl:with-param name="sectionLayout" select="$sectionLayout"/>
                             <xsl:with-param name="labelWidth" select="$sectionLabelWidth"/>
                         </xsl:call-template>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:if>
 
                 <!-- Section - recursively call template to render sub-section 
@@ -443,26 +443,30 @@
                                 'Unranked'
                             else
                                 'Ranked'"/>
-                    <xhtml:div class="{$sectionLayout}">
+                    <xhtml:li class="{$sectionLayout}">
                         <xsl:call-template name="renderFormSection">
                             <xsl:with-param name="compositionTypeIRI" select="$compositionTypeIRI"/>
                             <xsl:with-param name="section" select="$component/cda:section"/>
                             <xsl:with-param name="sectionLayout" select="$subSectionLayout"/>
                             <xsl:with-param name="crossRefId" select="''"/>
                         </xsl:call-template>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:for-each>
 
             </xsl:for-each>
 
-        </xhtml:div>
+
+            <xsl:if test="$sectionLayout = 'Unranked'">
+                <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+            </xsl:if>
+        </xhtml:ul>
 
 
     </xsl:template>
 
 
     <!-- === Render entry on a form ==========================================================================
-        Entry is rendered as <xhtml:div> with each component (displayName, elements, etc) as <xhtml:div>
+        Entry is rendered as <xhtml:ul> with each component (displayName, elements, etc) as <xhtml:li>
          The layout of the entry is:
             Ranked
             Unranked
@@ -544,31 +548,31 @@
              The compositionDisplay is used when displaying pathways
              The child of entry could be cda:observation. cda:act, etc-->
 
-        <xhtml:div
+        <xhtml:ul
             class=" {{$xformsShowStructureClass}}  {{if (xxf:instance('view-parameters-instance')/compositionDisplay='current' and ({$entryPath}/@cityEHR:visibility='false' or {$entryPath}/@cityEHR:rendition=('#CityEHR:EntryProperty:Hidden','#CityEHR:Property:Rendition:Hidden') or {$entryPath}/@cityEHR:Scope='#CityEHR:EntryProperty:Hidden')) then 'hidden' else 'ISO13606-Entry'}}"
             style="{{if (xxf:instance('highlightEntryList-instance')/cda:id/@extension ='{$entry/descendant::cda:id/@extension}') then xxf:instance('control-instance')/highlightStyle else ''}}">
             <!-- Only output displayName for Single entries - MultipleEntry displayName is output in renderFormEntryContent -->
             <!-- Observation -->
             <xsl:if
                 test="exists($entry/cda:observation/cda:code[@codeSystem = 'cityEHR']/@displayName)">
-                <xhtml:div class="ISO13606-Entry-DisplayName {$entryLayout}" style="{$widthStyle}">
+                <xhtml:li class="ISO13606-Entry-DisplayName {$entryLayout}" style="{$widthStyle}">
                     <xsl:value-of select="$entry/*/cda:code[@codeSystem = 'cityEHR']/@displayName"/>
-                </xhtml:div>
+                </xhtml:li>
             </xsl:if>
             <!-- Debugging and showing ISO-13606 ids
                  Use the extension entry as the identity for the entry
                  This is because we want to show the ids used in calculations -->
-            <xhtml:div class="{{$xformsShowIdClass}}">
+            <xhtml:li class="{{$xformsShowIdClass}}">
                 <xsl:variable name="entryIRI" select="$entry/descendant::cda:id[1]/@extension"/>
                 <xsl:value-of select="$entryIRI"/>
-            </xhtml:div>
+            </xhtml:li>
 
             <!-- Act.
                  If the status of the act is inProgress then it can be selected as the currentAct and launched from the viewControlActions
                  If the status of the act is completed and outcome is completed then it can be selected to view the subject document.
                  Note that these use the status, not the sessionStatus -->
             <xsl:if test="exists($entry/cda:act/cda:code[@codeSystem = 'cityEHR']/@displayName)">
-                <xhtml:div class="ISO13606-Entry-DisplayName {$entryLayout}" style="{$widthStyle}">
+                <xhtml:li class="ISO13606-Entry-DisplayName {$entryLayout}" style="{$widthStyle}">
                     <xxf:variable name="xformsAct" select="{$entryPath}/cda:act"/>
                     <xxf:variable name="xformsSelectActionClass"
                         select="
@@ -627,14 +631,14 @@
                         <xsl:value-of
                             select="$entry/cda:act/cda:code[@codeSystem = 'cityEHR']/@displayName"/>
                     </xhtml:span>
-                </xhtml:div>
+                </xhtml:li>
             </xsl:if>
 
             <!-- Display alert for the entry, if one exists -->
             <xsl:if test="$entry/@cityEHR:Alert != ''">
-                <xhtml:div class="ISO13606-Entry-Alert">
+                <xhtml:li class="ISO13606-Entry-Alert">
                     <xsl:value-of select="$entry/@cityEHR:Alert"/>
-                </xhtml:div>
+                </xhtml:li>
             </xsl:if>
 
             <!-- Render the entry content (clusters and elements) -->
@@ -649,8 +653,10 @@
                 <xsl:with-param name="entryPath" select="$entryPath"/>
             </xsl:call-template>
 
-
-        </xhtml:div>
+            <xsl:if test="$entryLayout = 'Unranked'">
+                <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+            </xsl:if>
+        </xhtml:ul>
 
     </xsl:template>
 
@@ -716,12 +722,12 @@
             <!-- Debugging
                 <xf:output ref="$xformsEntry/@cityEHR:conditions"/>
             -->
-            <xhtml:div class="{$entryLayout}">
+            <xhtml:li class="{$entryLayout}">
                 <xxf:variable name="xformsParameterList"
                     select="tokenize(substring-after($xformsEntry/@cityEHR:conditions, 'if ('), ' castable as ')"/>
-                <xhtml:div class="ISO13606-Conditions">
+                <xhtml:ul class="ISO13606-Conditions">
                     <xf:repeat nodeset="$xformsParameterList">
-                        <xhtml:div>
+                        <xhtml:li>
                             <xxf:variable name="xformsParameterString" select="."/>
                             <xxf:variable name="xformsParameter"
                                 select="
@@ -744,12 +750,12 @@
                             <xf:output
                                 ref="if ($xformsParameterDisplayName!='' and $xformsParameterValue!='') then concat(xxf:evaluate($xformsParameterDisplayName),' is ',xxf:evaluate($xformsParameterValue)) else ''"
                             />
-                        </xhtml:div>
+                        </xhtml:li>
                     </xf:repeat>
-                </xhtml:div>
-            </xhtml:div>
+                </xhtml:ul>
+            </xhtml:li>
 
-            <xhtml:div class="{$entryLayout}">
+            <xhtml:li class="{$entryLayout}">
                 <!-- Select or display role of user for the action -->
                 <xhtml:span class="ISO13606-Element">
                     <xhtml:span class="ISO13606-Element-DisplayName">
@@ -869,7 +875,7 @@
                         />
                     </xhtml:span>
                 </xhtml:span>
-            </xhtml:div>
+            </xhtml:li>
         </xsl:if>
 
 
@@ -887,7 +893,7 @@
             <!-- render the elements for this entry -->
             <xsl:for-each select="$entry/cda:observation/cda:value">
                 <xsl:variable name="element" select="."/>
-                <xhtml:div class="{$entryLayout}">
+                <xhtml:li class="{$entryLayout}">
                     <xsl:call-template name="renderFormElement">
                         <xsl:with-param name="entryId" select="$entryId"/>
                         <xsl:with-param name="entryOccurrence" select="'Single'"/>
@@ -906,7 +912,7 @@
                         <xsl:with-param name="categoryValue" select="''"/>
                         <xsl:with-param name="mappedElementIRI" select="''"/>
                     </xsl:call-template>
-                </xhtml:div>
+                </xhtml:li>
             </xsl:for-each>
         </xsl:if>
         <!-- end of Single entry -->
@@ -921,7 +927,7 @@
         <xsl:if
             test="$entry[@cityEHR:rendition = ('#CityEHR:EntryProperty:ImageMap', '#CityEHR:Property:Rendition:ImageMap')]/cda:observation">
 
-            <xhtml:div class="Ranked">
+            <xhtml:li class="Ranked">
                 <!-- Image map. -->
                 <!-- Render image map - either the original way, or the new way with SVG -->
                 <xsl:call-template name="renderImageMap">
@@ -946,7 +952,7 @@
                         />
                     </xhtml:p>
                 </xsl:for-each>
-            </xhtml:div>
+            </xhtml:li>
 
             <!-- Test image map hilighting by including the test image and map -->
             <!--
@@ -972,7 +978,7 @@
             <xsl:for-each select="$entry/cda:observation/cda:value">
                 <xsl:variable name="element" select="."/>
 
-                <xhtml:div class="ISO13606-Data">
+                <xhtml:li class="ISO13606-Data">
                     <xxf:variable name="xformsElement"
                         select="{$entryPath}/cda:observation/cda:value[@extension='{$element/@extension}']"/>
 
@@ -1000,7 +1006,7 @@
                             </xf:dispatch>
                         </xf:action>
                     </xf:input>
-                </xhtml:div>
+                </xhtml:li>
             </xsl:for-each>
 
         </xsl:if>
@@ -1015,7 +1021,7 @@
         <xsl:if
             test="$entry[@cityEHR:rendition = ('#CityEHR:EntryProperty:Form', '#CityEHR:Property:Rendition:Form')]/cda:organizer[@classCode = 'MultipleEntry']">
 
-            <xhtml:div class="Ranked">
+            <xhtml:li class="Ranked">
                 <!-- xformsObservationTemplate is a cda:component to be inserted into the xformsObservationSetContainer which is a cda:organizer containing cda:components -->
                 <xxf:variable name="xformsObservationTemplate"
                     select="{$entryPath}/cda:organizer/cda:component[1]"/>
@@ -1032,7 +1038,7 @@
                     <xsl:with-param name="entryScope" select="$entryScope"/>
                     <xsl:with-param name="mappedElementIRI" select="''"/>
                 </xsl:call-template>
-            </xhtml:div>
+            </xhtml:li>
 
         </xsl:if>
         <!-- end of MultipleEntry -->
@@ -1071,7 +1077,7 @@
                 select="substring-after($mappedElementIRI, 'Element:')"/>
 
             <!-- Layout with the multipleEntry alongside the image -->
-            <xhtml:div class="Ranked">
+            <xhtml:li class="Ranked">
                 <!-- xformsObservationTemplate is a cda:component to be inserted into the xformsObservationSetContainer which is a cda:organizer containing cda:components -->
                 <xxf:variable name="xformsEntry" select="{$entryPath}"/>
 
@@ -1082,14 +1088,14 @@
                 <xxf:variable name="xformsMappedElementTemplate"
                     select="$xformsEntry/cda:organizer/cda:component[1]//cda:observation/cda:value[@extension = '{$mappedElementIRI}']"/>
 
-                <xhtml:div>
+                <xhtml:ul>
                     <!-- Render image map - either the original way, or the new way with SVG -->
                     <xsl:call-template name="renderImageMap">
                         <xsl:with-param name="entryId" select="$entryId"/>
                     </xsl:call-template>
 
                     <!-- Multiple entry stuff - Needs to be the same as non-image map ME -->
-                    <xhtml:div class="Unranked">
+                    <xhtml:li class="Unranked">
                         <xsl:call-template name="renderMultipleEntry">
                             <xsl:with-param name="entry" select="$entry"/>
                             <xsl:with-param name="entryLayout" select="$entryLayout"/>
@@ -1100,8 +1106,11 @@
                             <xsl:with-param name="entryScope" select="$entryScope"/>
                             <xsl:with-param name="mappedElementIRI" select="$mappedElementIRI"/>
                         </xsl:call-template>
-                    </xhtml:div>
-                </xhtml:div>
+                    </xhtml:li>
+                    <!--
+                    <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+                    -->
+                </xhtml:ul>
 
 
                 <!-- Render the hidden input to hold the selection from the image map.
@@ -1128,7 +1137,7 @@
                     </xf:input>
                 </xhtml:p>
 
-            </xhtml:div>
+            </xhtml:li>
         </xsl:if>
         <!-- end of MultipleEntry, image map rendition -->
 
@@ -1909,7 +1918,7 @@
         $xformsObservation has already been set (this is actually the cda:observation that contains the cda:values)
         $xformsObservationComponent must also be set for multiple entries
         
-        Element is rendered as <xhtml:div> with each component (displayName, value, units, etc) an <xhtml:div>
+        Element is rendered as <xhtml:ul> with each component (displayName, value, units, etc) an <xhtml:li>
         
         The parameters specify the entryOccurrence (Single or MultipleEntry), the element and the repeatCount (which is only supplied with multiple entries).
         
@@ -2054,7 +2063,7 @@
              The compositionDisplay is used when displaying pathways
              Note that such an element may still be involved in calculations 
              If @cityEHR:visibility='false' then it is removed when committed; if @cityEHR:Scope='#CityEHR:ElementProperty:Hidden' then it is stored -->
-        <xhtml:div
+        <xhtml:ul
             class="{if ($firstClusterElement) then 'ISO13606-ClusterElement' else $iso-13606Type}  {{$xformsShowStructureClass}}  {{if (xxf:instance('view-parameters-instance')/compositionDisplay='current' and (exists($xformsElement[@cityEHR:visibility='false']) or exists($xformsElement[@cityEHR:Scope ='#CityEHR:ElementProperty:Hidden']) or exists($xformsElement[@cityEHR:elementRendition ='#CityEHR:ElementProperty:Hidden']) or exists($xformsElement[@cityEHR:Precision ='0'])     )) then 'hidden' else ''}} {{if ($xformsElement/@cityEHR:RequiredValue='Required') then (if ($xformsElement/@value='') then 'requiredNotSet' else 'requiredSet') else ''}}">
 
             <!-- Since we are setting width in em, use half the character length of the width - this usually works fine.
@@ -2074,9 +2083,9 @@
 
             <!-- Debugging and showing ISO-13606 ids
                  Use the extension entry as the identity for the entry -->
-            <xhtml:div class="{{$xformsShowIdClass}}">
+            <xhtml:li class="{{$xformsShowIdClass}}">
                 <xsl:value-of select="$extension"/>
-            </xhtml:div>
+            </xhtml:li>
 
             <!-- Output the element displayName, except for the first element of an unranked cluster 
                  for Single entries
@@ -2086,9 +2095,9 @@
             <xsl:if test="$iso-13606Type = 'ISO13606-Element' and not($firstClusterElement)">
                 <xsl:if
                     test="$entryOccurrence = 'Single' or ($entryOccurrence = 'MultipleEntry' and not($topLevelElement))">
-                    <xhtml:div class="ISO13606-Element-DisplayName" style="{$widthStyle}">
+                    <xhtml:li class="ISO13606-Element-DisplayName" style="{$widthStyle}">
                         <xf:output ref="$xformsElement/@cityEHR:elementDisplayName"/>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:if>
             </xsl:if>
 
@@ -2128,16 +2137,16 @@
                             $element/@cityEHR:elementDisplayName"/>
                 <xsl:if
                     test="$entryOccurrence = 'Single' or ($entryOccurrence = 'MultipleEntry' and not($topLevelElement))">
-                    <xhtml:div class="ISO13606-Element-DisplayName {$clusterLayout}"
+                    <xhtml:li class="ISO13606-Element-DisplayName {$clusterLayout}"
                         style="{$widthStyle}">
                         <xf:output ref="'{$displayName}'"/>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:if>
 
                 <!-- Process cluster contents -->
                 <xsl:for-each select="$element/cda:value">
                     <xsl:variable name="clusterElement" select="."/>
-                    <xhtml:div class="{$clusterLayout}">
+                    <xhtml:li class="{$clusterLayout}">
                         <xsl:call-template name="renderFormElement">
                             <xsl:with-param name="entryId" select="$entryId"/>
                             <xsl:with-param name="entryOccurrence" select="$entryOccurrence"/>
@@ -2157,9 +2166,9 @@
                             <xsl:with-param name="categoryValue" select="$categoryValue"/>
                             <xsl:with-param name="mappedElementIRI" select="$mappedElementIRI"/>
                         </xsl:call-template>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:for-each>
-
+                <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
             </xsl:if>
 
 
@@ -2183,17 +2192,17 @@
                             $xformsElement/@displayName
                         else
                             $xformsElement/@value"/>
-                <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                     <xf:output
                         ref="if ($xformsValue castable as xs:dateTime) then format-dateTime(xs:dateTime($xformsValue),'{$view-parameters/dateTimeDisplayFormat}','{$view-parameters/languageCode}',(),()) else 
                             if ($xformsValue castable as xs:date) then format-date(xs:date($xformsValue),'{$view-parameters/dateDisplayFormat}', '{$view-parameters/languageCode}',(),()) else 
                             if ($xformsValue castable as xs:time) then format-time(xs:time($xformsValue),'{$view-parameters/timeDisplayFormat}', '{$view-parameters/languageCode}',(),()) else 
                         $xformsValue"
                     />
-                </xhtml:div>
+                </xhtml:li>
             </xsl:if>
 
-
+ 
             <!-- === Process element for data input.
                      If this is an element and the entry is not read-only.
                      Entries in multipleEntry have CRUD on the cda:component
@@ -2318,7 +2327,7 @@
                             else
                                 xxf:instance('application-parameters-instance')/displayFormat/unspecifiedElementValue/value"/>
 
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                         <!-- Debugging
                         <xf:output ref="sum((1,2,'hrh'[. castable as xs:integer],4[. castable as xs:integer][. gt 3]))"/>
                         <xf:output ref="count((xs:integer('1')[. gt 0],xs:integer(2)[. gt 3],3,4))"/>
@@ -2432,7 +2441,7 @@
                                 </xsl:if>
                             </xf:select1>
                         </xsl:if>
-                    </xhtml:div>
+                    </xhtml:li>
                     <!-- Display units for element, if they exist -->
                     <xsl:call-template name="renderUnits">
                         <xsl:with-param name="entryOccurrence" select="$entryOccurrence"/>
@@ -2475,7 +2484,7 @@
                     -->
                     <xsl:variable name="inputId" select="concat(generate-id(), '-', $setCount)"/>
 
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
 
                         <!-- Get the class and entry node from the data dictionary.
                              These can be done in XSLT since they don't change -->
@@ -2834,11 +2843,11 @@
                             <xxf:variable name="xformsLabelWidth"
                                 select="max($xformsSupplementaryEntry/cda:observation/cda:value[@value != '']/@cityEHR:elementDisplayName/string-length())"/>
 
-                            <xhtml:div
+                            <xhtml:ul
                                 class="SupplementaryEntry {{if ($xformsHasSetValues) then '' else 'hidden'}}">
                                 <xf:repeat nodeset="$xformsSetValues">
-                                    <xhtml:div class="Ranked">
-                                        <xhtml:div>
+                                    <xhtml:li class="Ranked">
+                                        <xhtml:ul>
                                             <!-- Value may have child elements if it is a cluster.
                                          Only want to display the elements that have set values in the cluster. -->
                                             <xf:repeat
@@ -2852,17 +2861,17 @@
                                                             'Unranked'
                                                         else
                                                             'Ranked'"/>
-                                                <xhtml:div class="{{$layoutClass}}">
-                                                  <xhtml:div
+                                                <xhtml:li class="{{$layoutClass}}">
+                                                  <xhtml:ul
                                                   class="ISO13606-Element {{$xformsShowStructureClass}} ">
-                                                  <xhtml:div class="ISO13606-Element-DisplayName">
+                                                  <xhtml:li class="ISO13606-Element-DisplayName">
                                                   <xf:output
                                                   ref="$xformsSupplementaryEntryValue/@cityEHR:elementDisplayName"
                                                   />
-                                                  </xhtml:div>
+                                                  </xhtml:li>
                                                   <xxf:variable name="xformsValue"
                                                   select="$xformsSupplementaryEntryValue/@value"/>
-                                                  <xhtml:div
+                                                  <xhtml:li
                                                   class="ISO13606-Data {{$xformsShowStructureClass}} ">
                                                   <xf:output
                                                   ref="if ($xformsValue castable as xs:dateTime) then format-dateTime(xs:dateTime($xformsValue),'{$view-parameters/dateTimeDisplayFormat}', '{$view-parameters/languageCode}',(),()) else 
@@ -2870,16 +2879,16 @@
                                                       if ($xformsValue castable as xs:time) then format-time(xs:time($xformsValue),'{$view-parameters/timeDisplayFormat}', '{$view-parameters/languageCode}',(),()) else 
                                                                 $xformsValue"
                                                   />
-                                                  </xhtml:div>
-                                                  </xhtml:div>
-                                                </xhtml:div>
+                                                  </xhtml:li>
+                                                  </xhtml:ul>
+                                                </xhtml:li>
                                             </xf:repeat>
-
-                                        </xhtml:div>
-                                    </xhtml:div>
+                                            <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+                                        </xhtml:ul>
+                                    </xhtml:li>
                                 </xf:repeat>
-
-                            </xhtml:div>
+                                <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
+                            </xhtml:ul>
 
                             <!-- Set up an observer to check when the value of this element changes.
                                  This is made as a hidden input.
@@ -2936,14 +2945,14 @@
                                 </xf:action>
                             </xf:input>
                         </xsl:if>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:if>
                 <!-- End of enumerated class -->
 
                 <!-- === (3) Element is memo type 2015-05-30 added incremental="true" -->
                 <xsl:if
                     test="$element[@cityEHR:elementType = ('#CityEHR:ElementProperty:memo', '#CityEHR:Property:ElementType:memo')]">
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                         <xf:textarea ref="$xformsElement/@value" appearance="xxf:autosize"
                             style="min-width: 30em;" incremental="true">
                             <xf:label/>
@@ -2958,7 +2967,7 @@
                                 </xsl:if>
                             </xf:action>
                         </xf:textarea>
-                    </xhtml:div>
+                    </xhtml:li>
                     <!-- Display units for element, if they exist -->
                     <xsl:call-template name="renderUnits">
                         <xsl:with-param name="entryOccurrence" select="$entryOccurrence"/>
@@ -2986,7 +2995,7 @@
                             else
                                 '100'"/>
 
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                         <xf:range ref="$xformsElement/@value" incremental="true" start="1" end="100">
                             <xf:label/>
                             <xf:action ev:event="xforms-value-changed"
@@ -3004,7 +3013,7 @@
                             </xf:action>
                         </xf:range>
                         <xf:output ref="$xformsElement/@value"/>
-                    </xhtml:div>
+                    </xhtml:li>
 
                     <!-- Display units for element, if they exist -->
                     <xsl:call-template name="renderUnits">
@@ -3023,7 +3032,7 @@
                 <!-- Until 2022-11-10 - now use rendtion on entry -->
                 <!--
                 <xsl:if test="$element[@cityEHR:elementType = ('#CityEHR:ElementProperty:media', '#CityEHR:Property:ElementType:media')]">
-                    <xhtml:div class="ISO13606-Data">
+                    <xhtml:li class="ISO13606-Data">
                        <xxf:variable name="xformsDisplayImageClass"
                             select="
                                 if ($xformsElement/@value != '') then
@@ -3031,7 +3040,7 @@
                                 else
                                     'hidden'"/>
                         <xhtml:img src="data:image/*;base64, {{xs:base64Binary($xformsElement/@value)}}" class="{{$xformsDisplayImageClass}}"/>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:if>
                 -->
 
@@ -3043,7 +3052,7 @@
                      Requires the value to be bound to xs:base64Binary (done in cdaModel) -->
                 <xsl:if
                     test="$element[@xsi:type = 'xs:base64Binary' and @cityEHR:elementType = ('#CityEHR:ElementProperty:patientMedia', '#CityEHR:Property:ElementType:patientMedia')]">
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                         <xf:upload ref="$xformsElement/@value" incremental="true">
                             <xf:action ev:event="xxforms-upload-done">
                                 <!-- Not doing anything here -->
@@ -3057,7 +3066,7 @@
                                 src="data:image/*;base64,{{xs:base64Binary($xformsElement/@value)}}"
                             />
                         </xf:group>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:if>
 
 
@@ -3072,7 +3081,7 @@
                                 'false'
                             else
                                 'true'"/>
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                         <xf:input ref="$xformsElement/@value" xxf:size="{$fieldLength}"
                             incremental="{$incremental}">
                             <!-- When value changes, but only when control loses focus (so not when the value is changed by an agent that is not the user) -->
@@ -3167,7 +3176,7 @@
                             </xsl:if>
 
                         </xf:input>
-                    </xhtml:div>
+                    </xhtml:li>
                     <!-- Display units for element, if they exist -->
                     <xsl:call-template name="renderUnits">
                         <xsl:with-param name="entryOccurrence" select="$entryOccurrence"/>
@@ -3181,7 +3190,7 @@
                     test="$element[@cityEHR:elementType = ('#CityEHR:ElementProperty:calculatedValue', '#CityEHR:ElementProperty:age', '#CityEHR:Property:ElementType:calculatedValue', '#CityEHR:Property:ElementType:age')]">
                     <xxf:variable name="xformsValue" select="$xformsElement/@value"/>
                     <xxf:variable name="xformsDisplayName" select="$xformsElement/@displayName"/>
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                         <!-- xf:group is needed to ensure that the xforms-value-changed event is triggered -->
                         <xf:group ref="$xformsValue">
                             <xsl:if test="$element/@xsi:type != 'xs:Name'">
@@ -3244,7 +3253,7 @@
                                 </xf:action>
                             </xsl:if>
                         </xf:group>
-                    </xhtml:div>
+                    </xhtml:li>
                     <!-- Display units for element, if they exist -->
                     <xsl:call-template name="renderUnits">
                         <xsl:with-param name="entryOccurrence" select="$entryOccurrence"/>
@@ -3256,18 +3265,19 @@
                 <!-- === (9) Element is URL -->
                 <xsl:if
                     test="$element[@cityEHR:elementType = ('#CityEHR:ElementProperty:url', '#CityEHR:Property:ElementType:url')]">
-                    <xhtml:div class="ISO13606-Data {{$xformsShowStructureClass}} ">
+                    <xhtml:li class="ISO13606-Data {{$xformsShowStructureClass}} ">
                         <xhtml:a href="{$element/@value}" target="_blank">
                             <xsl:value-of select="$element/@displayName"/>
                         </xhtml:a>
-                    </xhtml:div>
+                    </xhtml:li>
                 </xsl:if>
 
             </xsl:if>
 
+            <xhtml:li class="LayoutFooter">&#160;</xhtml:li>
             <!-- End of processing element -->
 
-        </xhtml:div>
+        </xhtml:ul>
 
 
         <!-- === Display stored media for xs:Name type element ***jc
@@ -3275,24 +3285,24 @@
                  This is outside the element display, since it is always visible, even for hidden elements 
                  -->
         <xsl:if test="$element/@xsi:type = 'xs:Name'">
-            <xhtml:div class="ISO13606-Data">
-
+            <xhtml:li class="ISO13606-Data">
+                
                 <xxf:variable name="xformsMediaClass"
                     select="
-                        if ($xformsElement/@displayName = xs:base64Binary('')) then
-                            'hidden'
-                        else
-                            ''"/>
+                    if ($xformsElement/@displayName = xs:base64Binary('')) then
+                    'hidden'
+                    else
+                    ''"/>
                 <xhtml:span class="{{$xformsMediaClass}}">
                     <xf:output
                         ref="if ($xformsElement/@displayName castable as xs:base64Binary) then $xformsElement/@displayName else()"
                         mediatype="image/*"/>
                 </xhtml:span>
-
+                
                 <!-- This crashes when the image is changed 
                     <xhtml:img class="{{$xformsMediaClass}}" src="data:image/*;base64, {{xs:base64Binary($xformsElement/@displayName)}}"/>
 -->
-
+                
                 <!-- Hidden input to deal with change in the value.
                          (This can be doe once here, instead of repeating for each case below -->
                 <xf:input class="hidden" ref="$xformsElement/@value">
@@ -3304,16 +3314,16 @@
                         </xf:dispatch>
                     </xf:action>
                 </xf:input>
-            </xhtml:div>
-
+            </xhtml:li>
+            
         </xsl:if>
-
-
+        
+        
 
         <!-- Handle result of directory look up for the key element.
              This is outside the element display, since it is always visible, even for hidden elements -->
         <xsl:if test="contains($elementCRUD, 'L') and $keyIRI = $root">
-            <xhtml:div class="Unranked">
+            <xhtml:li class="Unranked">
                 <xxf:variable name="directoryEntrySet"
                     select="xxf:instance('directoryEntry-instance')[@entryId = '{$entryId}'][@elementId = '{$elementId}']"/>
                 <!-- Message has been set in the lookup-directory-entry action -->
@@ -3341,7 +3351,7 @@
                     </xf:action>
                 </xf:select1>
 
-            </xhtml:div>
+            </xhtml:li>
         </xsl:if>
 
 
@@ -3372,7 +3382,7 @@
                 else
                     ()"/>
 
-        <xhtml:div class="Unranked imageContainer">
+        <xhtml:li class="Unranked imageContainer">
             <!-- SVG image map -->
             <xsl:if test="exists($imageMapContents)">
                 <xsl:call-template name="renderSVGImageMap">
@@ -3388,7 +3398,7 @@
                 </xsl:call-template>
             </xsl:if>
             -->
-        </xhtml:div>
+        </xhtml:li>
 
     </xsl:template>
 
@@ -3453,7 +3463,7 @@
         <xsl:param name="element"/>
 
         <xsl:if test="$entryOccurrence = 'Single' or exists($element/@cityEHR:calculatedUnit)">
-            <xhtml:div class="ISO13606-Element-Units">
+            <xhtml:li class="ISO13606-Element-Units">
                 <xxf:variable name="xformsElementUnitDisplayClass"
                     select="
                         if ($xformsElement/@units != '') then
@@ -3462,7 +3472,7 @@
                             'hidden'"/>
                 <xhtml:span class="{{$xformsElementUnitDisplayClass}}">(<xf:output
                         ref="$xformsElement/@units"/>) </xhtml:span>
-            </xhtml:div>
+            </xhtml:li>
         </xsl:if>
 
     </xsl:template>

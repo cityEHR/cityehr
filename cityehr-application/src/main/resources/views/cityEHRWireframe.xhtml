@@ -46,6 +46,12 @@
     <xhtml:head>
 
 
+        <!-- For testing - External Stylesheet Takes Precedence -->
+        <xhtml:link rel="stylesheet" type="text/css"
+            href="../resources/styles/cityEHRSkin.css?{xxf:instance('view-parameters-instance')/versionNumber/@version}"
+            media="screen" />
+
+
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
         <xi:include href="../models/systemParametersModel.xml" xxi:omit-xml-base="true"/>
@@ -229,6 +235,390 @@
                             </xf:dispatch>
                         </xf:action>
                     </xf:trigger>
+
+                    <!-- Composition -->
+                    <xhtml:div class="ISO13606-Composition ISO13606-Structure">
+                        <!-- Section - Ranked -->
+                        <xhtml:div class="ISO13606-Section Ranked ISO13606-Structure ">
+                            <!-- Subsection - Ranked -->
+                            <xhtml:div class="ISO13606-Section Ranked ISO13606-Structure ">
+                                <!-- Entry - Ranked-->
+                                <xhtml:div class="ISO13606-Entry Ranked ISO13606-Structure ">
+                                    <!-- Cluster - Ranked-->
+                                    <xhtml:div class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Cluster - Unranked-->
+                                    <xhtml:div class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                </xhtml:div>
+                                <!-- Entry - Unranked-->
+                                <xhtml:div class="ISO13606-Entry Unranked ISO13606-Structure ">
+                                    <!-- Cluster - Ranked-->
+                                    <xhtml:div class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Cluster - Unranked-->
+                                    <xhtml:div class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                </xhtml:div>
+                            </xhtml:div>
+                            <!-- Subsection - Unranked -->
+                            <xhtml:div class="ISO13606-Section Unranked ISO13606-Structure ">
+                                <!-- Entry - Ranked-->
+                                <xhtml:div class="ISO13606-Entry Ranked ISO13606-Structure ">
+                                    <!-- Cluster - Ranked-->
+                                    <xhtml:div class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Cluster - Unranked-->
+                                    <xhtml:div class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Entry - Unranked-->
+                                    <xhtml:div class="ISO13606-Entry Unranked ISO13606-Structure ">
+                                        <!-- Cluster - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                            <!-- Element - Ranked-->
+                                            <xhtml:div
+                                                class="ISO13606-Element Ranked ISO13606-Structure ">
+                                                <xhtml:div class="ISO13606-Element-DisplayName"
+                                                  >Element</xhtml:div>
+                                                <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                                <xhtml:div class="ISO13606-Element-Units"
+                                                  >Units</xhtml:div>
+                                            </xhtml:div>
+                                            <!-- Element - Unranked-->
+                                            <xhtml:div
+                                                class="ISO13606-Element Unranked ISO13606-Structure ">
+                                                <xhtml:div class="ISO13606-Element-DisplayName"
+                                                  >Element</xhtml:div>
+                                                <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                                <xhtml:div class="ISO13606-Element-Units"
+                                                  >Units</xhtml:div>
+                                            </xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Cluster - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                            <!-- Element - Ranked-->
+                                            <xhtml:div
+                                                class="ISO13606-Element Ranked ISO13606-Structure ">
+                                                <xhtml:div class="ISO13606-Element-DisplayName"
+                                                  >Element</xhtml:div>
+                                                <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                                <xhtml:div class="ISO13606-Element-Units"
+                                                  >Units</xhtml:div>
+                                            </xhtml:div>
+                                            <!-- Element - Unranked-->
+                                            <xhtml:div
+                                                class="ISO13606-Element Unranked ISO13606-Structure ">
+                                                <xhtml:div class="ISO13606-Element-DisplayName"
+                                                  >Element</xhtml:div>
+                                                <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                                <xhtml:div class="ISO13606-Element-Units"
+                                                  >Units</xhtml:div>
+                                            </xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                </xhtml:div>
+                            </xhtml:div>
+                        </xhtml:div>
+                        <!-- Section - Unranked -->
+                        <xhtml:div class="ISO13606-Section Unranked ISO13606-Structure ">
+                            <!-- Subsection - Ranked -->
+                            <xhtml:div class="ISO13606-Section Ranked ISO13606-Structure ">
+                                <!-- Entry - Ranked-->
+                                <xhtml:div class="ISO13606-Entry Ranked ISO13606-Structure ">
+                                    <!-- Cluster - Ranked-->
+                                    <xhtml:div class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Cluster - Unranked-->
+                                    <xhtml:div class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                </xhtml:div>
+                                <!-- Entry - Unranked-->
+                                <xhtml:div class="ISO13606-Entry Unranked ISO13606-Structure ">
+                                    <!-- Cluster - Ranked-->
+                                    <xhtml:div class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Cluster - Unranked-->
+                                    <xhtml:div class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                </xhtml:div>
+                            </xhtml:div>
+                            <!-- Subsection - Unranked -->
+                            <xhtml:div class="ISO13606-Section Unranked ISO13606-Structure ">
+                                <!-- Entry - Ranked-->
+                                <xhtml:div class="ISO13606-Entry Ranked ISO13606-Structure ">
+                                    <!-- Cluster - Ranked-->
+                                    <xhtml:div class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Cluster - Unranked-->
+                                    <xhtml:div class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                </xhtml:div>
+                                <!-- Entry - Unranked-->
+                                <xhtml:div class="ISO13606-Entry Unranked ISO13606-Structure ">
+                                    <!-- Cluster - Ranked-->
+                                    <xhtml:div class="ISO13606-Cluster Ranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                    <!-- Cluster - Unranked-->
+                                    <xhtml:div class="ISO13606-Cluster Unranked ISO13606-Structure ">
+                                        <!-- Element - Ranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Ranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                        <!-- Element - Unranked-->
+                                        <xhtml:div
+                                            class="ISO13606-Element Unranked ISO13606-Structure ">
+                                            <xhtml:div class="ISO13606-Element-DisplayName"
+                                                >Element</xhtml:div>
+                                            <xhtml:div class="ISO13606-Data">Data</xhtml:div>
+                                            <xhtml:div class="ISO13606-Element-Units"
+                                                >Units</xhtml:div>
+                                        </xhtml:div>
+                                    </xhtml:div>
+                                </xhtml:div>
+                            </xhtml:div>
+                        </xhtml:div>
+                    </xhtml:div>
                 </xhtml:div>
             </xhtml:div>
 

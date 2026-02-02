@@ -49,12 +49,12 @@ body {
     border: 5px solid red;
 }
 .wireframePane {
-    font-size: 14pt!important;
+    font-size: 12pt!important;
     font-family: sans-serif;
     text-decoration: none;
     font-weight: bold!important;
-    color: white!important;
-    background: orange!important;
+    color: #ffffff;!important;
+    background: #000000;!important;
 }
 
 /*
@@ -685,6 +685,30 @@ body {
     color: #fff;
     clear: both;
 }
+
+
+/*
+  =======================================================
+  Layout of Ranked/Unranked divs. flex
+  =======================================================
+ */
+ 
+div.Unranked {
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap; 
+    justify-content: left;
+    padding: 0px;
+}
+div.Ranked {
+    display:flex;
+    flex-direction: column;
+    flex-wrap: nowrap; 
+    justify-content: left;
+    padding: 0px;
+}
+ 
+ 
 /*
   =======================================================
   General Layout.
@@ -715,7 +739,7 @@ li {
     margin: 0px;
     padding: 0px;
 }
-.Ranked {
+.RankedX {
 }
 .imageContainer {
     backgroundAttachment: scroll;
@@ -978,7 +1002,7 @@ button, button:hover {
 }
 /*
   ================================
-  Control panels
+  Control panels - could be refactored with Admin task controls
   ================================
  */
 .controlPanel {
@@ -1040,6 +1064,22 @@ button, button:hover {
     font-weight: bold;
     color: #636677;
 }
+/*
+  ================================
+  Admin task controls
+  ================================
+ */
+ .controlSet {
+    display:flex;
+    flex-direction: row;
+    flex-wrap: nowrap; 
+    justify-content: space-between;
+    padding: 10px;
+     }
+  .controlGroup {
+     display:block;
+     }
+ 
 /*
   ========================================================
   Patient label (CDA Header)

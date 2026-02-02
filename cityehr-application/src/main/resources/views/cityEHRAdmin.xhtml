@@ -113,6 +113,8 @@
             =================================================================================== -->
         <xi:include href="../models/exportDataModel.xml" xxi:omit-xml-base="true"/>
 
+        <!-- === Valkyrie federated health records     === -->
+        <xi:include href="../models/valkyrieModel.xml" xxi:omit-xml-base="true"/>
 
         <!-- === Import patient records     === -->
         <xi:include href="../models/recordImportModel.xml" xxi:omit-xml-base="true"/>
@@ -187,6 +189,7 @@
                         <adminTaskTitle/>
                         <adminTaskHint/>
                         <adminTaskLoadFile/>
+                        <!-- taskControls inserted here for selected task -->
                     </adminTask>
 
                     <formatted-result/>
@@ -506,6 +509,17 @@
                     <importKnowledgeMap>
                         <!-- TBD -->
                     </importKnowledgeMap>
+
+                    <patientLedger>
+                        <page>1</page>
+                        <pageCount>1</pageCount>
+                    </patientLedger>
+
+                    <blockChain>
+                        <patientId/>
+                        <block>1</block>
+                        <bloackCount>1</bloackCount>
+                    </blockChain>
 
                     <generateTestData>
                         <status/>
@@ -3861,6 +3875,74 @@
                 </xf:action>
 
 
+            </xf:action>
+
+
+            <!-- ===
+                Patient Ledger
+                patientLedger
+                ====== -->
+
+            <!-- Navigation in patient ledger - first (genesis) -->
+            <xf:action ev:event="patientLedger-first">
+                <xf:message ref="'patientLedger-first'"/>
+            </xf:action>
+
+            <!-- Navigation in patient ledger - previous -->
+            <xf:action ev:event="patientLedger-previous">
+                <xf:message ref="'patientLedger-previous'"/>
+            </xf:action>
+
+            <!-- Navigation in patient ledger - next -->
+            <xf:action ev:event="patientLedger-next">
+                <xf:message ref="'patientLedger-next'"/>
+            </xf:action>
+
+            <!-- Navigation in patient ledger - last (current) -->
+            <xf:action ev:event="patientLedger-last">
+                <xf:message ref="'patientLedger-last'"/>
+            </xf:action>
+
+            <!-- Export patient ledger -->
+            <xf:action ev:event="patientLedger-export">
+                <xf:message ref="'patientLedger-export'"/>
+            </xf:action>
+
+
+            <!-- ===
+                 Blockchain of tokens for a paitent
+                 blockChain
+                 ====== -->
+
+            <!-- Input the patient Id 
+                 blockchain is then set from the patient ledger -->
+            <xf:action ev:event="blockChain-patientId">
+                <xf:message ref="xxf:instance('control-instance')/blockChain/patientId"/>
+            </xf:action>
+
+            <!-- Navigation in  blockChain - first (genesis) -->
+            <xf:action ev:event="blockChain-first">
+                <xf:message ref="'blockChain-first'"/>
+            </xf:action>
+
+            <!-- Navigation in blockChain - previous -->
+            <xf:action ev:event="blockChain-previous">
+                <xf:message ref="'blockChain-previous'"/>
+            </xf:action>
+
+            <!-- Navigation in blockChain - next -->
+            <xf:action ev:event="blockChain-next">
+                <xf:message ref="'blockChain-next'"/>
+            </xf:action>
+
+            <!-- Navigation in blockChain - last (current) -->
+            <xf:action ev:event="blockChain-last">
+                <xf:message ref="'blockChain-last'"/>
+            </xf:action>
+
+            <!-- Export blockChain -->
+            <xf:action ev:event="blockChain-export">
+                <xf:message ref="'blockChain-export'"/>
             </xf:action>
 
 
@@ -8716,6 +8798,12 @@
                 <xf:setvalue ref="xxf:instance('control-instance')/importActionMessage"
                     value="$task/adminTaskLoadFile/@importActionMessage"/>
 
+                <!-- === Set up for tasks with controls defined in application-parameters -->
+                <xf:delete nodeset="xxf:instance('control-instance')/adminTask/taskControls"/>
+                <xf:insert context="xxf:instance('control-instance')/adminTask"
+                    origin="$task/taskControls"/>
+
+
                 <!-- Reset processing status -->
                 <xf:delete nodeset="xxf:instance('control-instance')/statusMessage/entryList/entry"/>
 
@@ -8739,6 +8827,7 @@
                         value="'waiting'"/>
                     <xf:setvalue ref="xxf:instance('file-instance')/file/content" value="''"/>
                 </xf:action>
+
 
                 <!-- === Set up for specific actions -->
 
@@ -9755,6 +9844,15 @@
                     <!-- Controls are displayed for the current adminTask -->
                     <xxf:variable name="adminTask"
                         select="xxf:instance('control-instance')/adminTask/adminTask"/>
+
+
+                    <!-- === Standard controls, defined in the applcayion-parameters ======= 
+                         These controls in adminTaskList/task/taskControls have been 
+                         transfered to the control-instance when the task was selected (set-adminTask)
+                         =================================================================== -->
+
+                    <xi:include href="cityEHRAdminTaskControls.xhtml"/>
+
 
 
                     <!-- === Tasks using the Managed database ========================== 
@@ -12308,7 +12406,6 @@
                                     </xf:action>
                                 </xf:trigger>
                             </xhtml:span>
-                            
                             <!-- Reset - clear ontology resources and loaded files -->
                             <xhtml:span class="viewControl">
                                 <xxf:variable name="label"
@@ -17478,6 +17575,18 @@
                     <!-- End of select users for care team -->
 
 
+
+                    <!-- === Patient Ledger                        
+                        ================================================== -->
+                    <xhtml:div class="{if ($adminTask='patientLedger') then '' else 'hidden'}">
+                        <xhtml:p>control-instance:<xhtml:br />
+                            <xf:output
+                                ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/adminTask, 'data')/*, 'html')"
+                                mediatype="text/html"/>
+                        </xhtml:p>
+
+                    </xhtml:div>
+
                     <!-- === Merge ontologies                        
                         ================================================== -->
                     <xhtml:div class="{if ($adminTask='mergeOntology') then '' else 'hidden'}">
@@ -20978,7 +21087,7 @@
                             mediatype="text/html"/>
                     </xhtml:p>
 -->
-<!--
+                    <!--
                     <xhtml:p>master-ontology-instance<xhtml:br />
                         <xf:output
                             ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('master-ontology-instance'), 'data')/*, 'html')"
