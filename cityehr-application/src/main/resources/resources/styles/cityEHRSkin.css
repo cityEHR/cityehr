@@ -739,7 +739,7 @@ li {
     margin: 0px;
     padding: 0px;
 }
-.RankedX {
+.Ranked {
 }
 .imageContainer {
     backgroundAttachment: scroll;
@@ -749,6 +749,11 @@ li {
     clear: both;
 }
 .hidden {
+    display: none!important;
+    border: none!important;
+    padding: 0 0 0 0!important;
+}
+div.hidden {
     display: none!important;
     border: none!important;
     padding: 0 0 0 0!important;
@@ -1573,16 +1578,16 @@ width:48%;
     vertical-align:middle;
 }
 /* Element values, including contained Orbeon controls (select1, autocomplete, input) */
-li.ISO13606-Data input {
+div.ISO13606-Data input {
     background-color:#f8f8f8;
     font-size: 10pt;
     font-weight: bold;
 }
-.requiredNotSet li input {
+.requiredNotSet div input {
     background-color:#FFCCCC!important;
     font-size: 10pt;
 }
-.requiredNotSet li select {
+.requiredNotSet div select {
     background-color:#FFCCCC !important;
     font-size: 10pt;
 }

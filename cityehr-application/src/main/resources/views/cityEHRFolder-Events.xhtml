@@ -13,6 +13,9 @@
         patientEventsList-instance
         patientAnnotationsList-instance
         
+    For a federated record (Valkyrie) the virtual events are found in virtualEvents-instance
+    This is recreated by xxx whenever the useFederatedRecord control is toggle to 'true'
+        
     control-instance/compositionSet holds the categorized list of events from patientEventsList-instance
     This is created in the initialise-compositionSet action
     
@@ -55,7 +58,7 @@
 
     <!-- Standard cityEHR page head with title, favicon and stylesheets -->
     <xi:include href="cityEHRPageHead.xhtml"/>
-    
+
     <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
 
@@ -117,6 +120,9 @@
             =================================================================================== -->
         <xi:include href="../models/exportDataModel.xml" xxi:omit-xml-base="true"/>
 
+        <!-- === Valkyrie federated health records     === -->
+        <xi:include href="../models/valkyrieModel.xml" xxi:omit-xml-base="true"/>
+
 
         <!-- ========= Main model contains stuff specific to this page ========= 
             =================================================================== -->
@@ -131,12 +137,26 @@
                     <error/>
                     <statusMessage/>
                     <showAnnotations>false</showAnnotations>
+                    <useFederatedRecord>false</useFederatedRecord>
 
                     <!-- The eventCategory, eventCategoryList
                          Used to set up the compositionSet, annotationSet and lifeLine
                          -->
                     <eventCategory id="" displayName="" rank="1" startDate="" endDate=""/>
                     <eventCategoryList/>
+
+                    <!-- Template event for virtualEventsList -->
+                    <event>
+                        <handle>/db/ehr/xmlstore/applications/ISO-13606-EHR_Extract-valkyrie/records/28421024/2026-02-25T13-19-55.895Z-CityEHR-Form-BaseRegistration-valkyrie.admin</handle>
+                        <compositionHandle>2026-02-25T13-19-55.895Z-CityEHR-Form-BaseRegistration-valkyrie.admin</compositionHandle>
+                        <compositionTypeIRI>#CityEHR:Form</compositionTypeIRI>
+                        <compositionIRI>#CityEHR:Form:BaseRegistration</compositionIRI>
+                        <documentationOf>cityEHR</documentationOf>
+                        <effectiveTime>2026-02-25T13:19:55.895Z</effectiveTime>
+                        <displayName>Patient Registration</displayName>
+                        <author/>
+                        <authorTime>2026-02-25T13:20:35.467Z</authorTime>
+                    </event>
 
                     <!-- The category for all events for this patient -->
                     <allEventsCategory>
@@ -254,6 +274,77 @@
                             origin="$storedEvent"/>
                     </xf:action>
                 </xf:action>
+            </xf:action>
+
+
+
+            <xf:instance id="blockchain-instance">
+                <blockChain/>
+            </xf:instance>
+
+            <xf:instance id="virtualEventsList-instance">
+                <patientEvents/>
+            </xf:instance>
+
+            <!-- Application defined action to get all compositions for this patient
+                 for a federated record (i.e. virtual events)-->
+            <xf:action ev:event="load-virtualEvents">
+
+                <xxf:variable name="patientId"
+                    select="xxf:instance('view-parameters-instance')/patientId"/>
+
+                <!-- Get the blockchain for this patient -->
+                <xf:dispatch name="get-patientBlockchain" target="valkyrie-model">
+                    <xxf:context name="applicationIRI"
+                        select="xxf:instance('session-parameters-instance')/applicationIRI"/>
+                    <xxf:context name="patientId" select="$patientId"/>
+                    <xxf:context name="patientBlockchain"
+                        select="xxf:instance('blockchain-instance')"/>
+                </xf:dispatch>
+
+                <!-- Clear the virtual events -->
+                <xf:delete nodeset="xxf:instance('virtualEventsList-instance')/*"/>
+
+                <!-- Allocate compositions to patientEventsList or patientAnnotationsList.
+                     Use the storedEvents-instance sorted by effectiveTime (order by in the xquery is lost in dal-query)
+                     We eventually want the lists descending, but this will sort ascending because the xf:insert reverses the order.
+                     The insert into categories will reverse the order back to descending -->
+                <xf:action
+                    xxf:iterate="xxf:sort(xxf:instance('blockchain-instance')/encryptedToken,eventMetadata/effectiveTime,'text','descending')">
+                    <xxf:variable name="encryptedToken" select="."/>
+                    <xxf:variable name="eventTemplate"
+                        select="xxf:instance('control-instance')/event"/>
+                    <xf:insert context="xxf:instance('virtualEventsList-instance')"
+                        origin="$eventTemplate"/>
+                    <xxf:variable name="virtualEvent"
+                        select="xxf:instance('virtualEventsList-instance')/event[1]"/>
+
+                    <!-- /db/ehr/xmlstore/applications/ISO-13606-EHR_Extract-valkyrie/records/28421024/2026-02-25T13-19-55.895Z-CityEHR-Form-BaseRegistration-valkyrie.admin
+                    -->
+                    <xxf:variable name="sourceApplicationIRI"
+                        select="$encryptedToken/eventLocator/eventDomain"/>
+                    <xxf:variable name="sourceApplicationId"
+                        select="replace(substring($sourceApplicationIRI,2),':','-')"/>
+                    <xxf:variable name="compositionHandle"
+                        select="substring-after($encryptedToken/eventLocator/eventAddress,'/')"/>
+                    <xxf:variable name="handle"
+                        select="concat('/db/ehr/xmlstore/applications/',$sourceApplicationId,'/records/',$encryptedToken/eventLocator/eventAddress)"/>
+
+                    <xf:setvalue ref="$virtualEvent/handle" value="$handle"/>
+                    <xf:setvalue ref="$virtualEvent/compositionHandle" value="$compositionHandle"/>
+                    <xf:setvalue ref="$virtualEvent/compositionTypeIRI"
+                        value="$encryptedToken/eventMetadata/eventType/@id"/>
+                    <xf:setvalue ref="$virtualEvent/compositionIRI"
+                        value="$encryptedToken/eventMetadata/eventType/@id"/>
+                    <xf:setvalue ref="$virtualEvent/documentationOf" value="'hello'"/>
+                    <xf:setvalue ref="$virtualEvent/effectiveTime"
+                        value="$encryptedToken/eventMetadata/effectiveTime"/>
+                    <xf:setvalue ref="$virtualEvent/displayName"
+                        value="$encryptedToken/eventMetadata/eventType/@displayName"/>
+                    <xf:setvalue ref="$virtualEvent/author" value="'hello'"/>
+                    <xf:setvalue ref="$virtualEvent/authorTime" value="'hello'"/>
+                </xf:action>
+
             </xf:action>
 
             <!-- Application defined action to select the current event category -->
@@ -456,7 +547,7 @@
             <xf:action ev:event="initialise-compositionSet">
                 <!-- Get the list of composition types recorded for this patient -->
                 <xxf:variable name="eventList"
-                    select="xxf:instance('patientEventsList-instance')/event"/>
+                    select="if (xxf:instance('control-instance')/useFederatedRecord = 'true') then xxf:instance('virtualEventsList-instance')/event else xxf:instance('patientEventsList-instance')/event"/>
                 <xxf:variable name="compositionIRIList"
                     select="distinct-values($eventList/compositionIRI)"/>
 
@@ -706,20 +797,29 @@
                     calculate="if (exists(xxf:instance('annotations-instance')/annotation)) then 'show' else 'hidden'"/>
                 <!-- Show HTML, XML, Event list only when debugging -->
                 <xf:bind nodeset="action[@id='html']/@display"
-                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
-                />
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
                 <xf:bind nodeset="action[@id='xml']/@display"
-                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
-                />
+                    calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"/>
                 <xf:bind nodeset="action[@id='patientEventsList']/@display"
                     calculate="if (xxf:instance('session-parameters-instance')/debug='true') then 'show' else 'hidden'"
                 />
             </xf:bind>
 
-            <!-- Application defined action to show HTML -->
+            <!-- Application defined action to useFederatedRecord -->
             <xf:action ev:event="useFederatedRecord">
+                <!-- Set useFederatedRecord -->
+                <xf:setvalue ref="xxf:instance('control-instance')/useFederatedRecord"
+                    value="xxf:instance('viewControls-input-instance')/input[@id='useFederatedRecord']"/>
+
                 <!-- Load the federated record view, if selected -->
-                <xf:message ref="'hello'"/>
+                <xf:action if="xxf:instance('control-instance')/useFederatedRecord='true'">
+                    <xf:dispatch name="load-virtualEvents" target="main-model"/>
+                </xf:action>
+
+                <!-- Set up the compositionSet - list of different event types recorded for this patient.
+                     Will load the stored events or the virtual events, depending on useFederatedRecord -->
+                <xf:dispatch name="initialise-compositionSet" target="main-model"/>
+
             </xf:action>
 
             <!-- Application defined action to show HTML -->
@@ -739,13 +839,14 @@
                     <xxf:context name="displayXML" select="xxf:instance('event-instance')"/>
                 </xf:dispatch>
             </xf:action>
-            
+
             <!-- Application defined action to show patientEventsList  -->
             <xf:action ev:event="patientEventsList">
                 <!-- Display the html instance -->
                 <xf:dispatch name="display-formatted-xml" target="pageNavigation-model">
                     <xxf:context name="title" select="''"/>
-                    <xxf:context name="displayXML" select="xxf:instance('patientEventsList-instance')"/>
+                    <xxf:context name="displayXML"
+                        select="xxf:instance('patientEventsList-instance')"/>
                 </xf:dispatch>
             </xf:action>
 
@@ -778,7 +879,7 @@
             <xf:action ev:event="print">
 
                 <xf:dispatch name="print-html" target="pageNavigation-model">
-                    <xxf:context name="externalIdType" select="'patient'"/>                   
+                    <xxf:context name="externalIdType" select="'patient'"/>
                 </xf:dispatch>
 
             </xf:action>
@@ -834,7 +935,7 @@
 
                 <xxf:variable name="transformationXSL"
                     select="xxf:instance('system-parameters-instance')/staticParameters/cdaTransformation/transform[@format=$exportFormat]/@transformationXSL"/>
-                
+
                 <!-- Export the event-instance via the xmlCache -->
                 <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
                     <xxf:context name="export-instance" select="xxf:instance('event-instance')"/>
@@ -846,6 +947,16 @@
                 </xf:dispatch>
 
             </xf:action>
+
+
+            <!-- Actions when model is created -->
+            <xf:action ev:event="xforms-model-construct-done">
+                <!-- Set the initial useFederatedRecord control -->
+                <xf:setvalue
+                    ref="xxf:instance('viewControls-input-instance')/input[@id='useFederatedRecord']"
+                    value="xxf:instance('control-instance')/useFederatedRecord"/>
+            </xf:action>
+
 
         </xf:model>
 
@@ -869,7 +980,8 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -1523,9 +1635,23 @@
                     </xhtml:p>
                     -->
 
-                    <xhtml:p>Event List: 
-                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patientEventsList-instance'), 'data')/*, 'html')" mediatype="text/html"/>
-                    </xhtml:p>   
+                    <!--
+                    <xhtml:p>blockchain: <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('blockchain-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+
+                    <xhtml:p>Event List: <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patientEventsList-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+
+                    <xhtml:p>virtualEventsList: <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('virtualEventsList-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+
+-->
 
                     <!--
                     <xhtml:p>Alert query: 
@@ -1558,12 +1684,13 @@
                         <xhtml:br/> Event id: <xf:output ref="xxf:instance('control-instance')/currentEvent/handle"/>
                         </xhtml:p>
                     -->
-                    <!--
+
+<!--
                     <xf:output
                         ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/compositionSet, 'data')/*, 'html')"
                         mediatype="text/html"/>
--->
 
+-->
                     <!-- For debugging the stored annotations -->
                     <!--
                     <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('stored-annotations-instance'), 'data')/*, 'html')" mediatype="text/html"/>

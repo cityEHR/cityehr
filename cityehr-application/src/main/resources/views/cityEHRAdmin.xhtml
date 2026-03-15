@@ -7,7 +7,20 @@
     Administration tasks for the cityEHR.
    
     Tasks are specified in application-parameters/adminTaskList
+    Tasks are listed in the ehrNavigation div
     Each task has a corresponding element in the control-instance which holds its parameters.
+    Selection of the task invokes set-adminTask, which in turn invokes set-nextAdminTask
+    
+    The controls for the selected task are displayed in the viewControls div
+    Controls are specified in the application-parameters/adminTaskList/task/taskControls
+    The tasks controls are transfered to control-instance/adminTask/taskControls by set-nextAdminTask
+    The controls are displayed by the included cityEHRAdminTaskControls.xhtml
+    Selecting a control invokes the action [task]-[controlId] which is defined in the main-model
+    ***Note that this way of handling tasks/actions was introduced in 2025-10 and requires refactoring of historic tasks
+       In the meantime, many tasks have controls directly implemented in the viewControls div ***
+       
+    Iformation for the selected task is displayed in the viewDisplay div
+    
     
     Parameters for the managed application are held in managedApplication
     When the page loads, set-managedApplication sets up the current application (as specified in session-parameters/view-parameters) to be managed.
@@ -443,6 +456,18 @@
                         <setCompositionId/>
                         <recordFormat>msAccess | xml | database | invalid </recordFormat>
                         <recordImportMap>Gets replaced by template or stored map</recordImportMap>
+                        <applicationInformation>
+                            <applicationIRI/>
+                            <specialtyIRI/>
+                            <patientId/>
+                            <compositionTypeIRI>#CityEHR:Form</compositionTypeIRI>
+                            <compositionDisplayNameTerm>Telemedicine
+                                Data</compositionDisplayNameTerm>
+                            <compositionIRI>#CityEHR:Form:TelemedicineData</compositionIRI>
+                            <compositionId>CityEHR:Form-TelemedicineData</compositionId>
+                            <effectiveTime/>
+                            <handleId/>
+                        </applicationInformation>
                     </importRecords>
 
                     <manageRecords>
@@ -3144,6 +3169,13 @@
                 <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
                     origin="xxf:instance('control-instance')/statusMessage/entry"/>
 
+                <!-- Set variables for adminTask and importXMLRoot -->
+                <xxf:variable name="adminTask"
+                    select="xxf:instance('control-instance')/adminTask/adminTask"/>
+                <xxf:variable name="importXMLRoot"
+                    select="xxf:instance('control-instance')/importXMLRoot"/>
+
+
                 <!-- Returned a list of files from a zip -->
                 <xf:action if="xxf:instance('control-instance')/importXMLRoot='files'">
                     <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
@@ -3549,25 +3581,60 @@
 
                 </xf:action>
 
-                <!-- Check format of file for importRecords.
+                <!-- Check format of file for importRecords. ***jc
                      Must have a root document containing a set of cda:ClinicalDocument
                      or a root of iso-13606:EHR_Extract containing iso-13606:Composition
                      or be XML exported from MS Access
                      or be cityEHR database format, transformed from a spreadsheet 
                      <recordFormat>msAccess | xml | database | invalid </recordFormat>
                 -->
-                <xf:action if="xxf:instance('control-instance')/adminTask/adminTask='importRecords'">
+                <xf:action if="$adminTask='importRecords'">
                     <xf:setvalue ref="xxf:instance('control-instance')/importRecords/recordFormat"
                         value="if (exists(xxf:instance('import-instance')[name(.)='dataroot'])) then 'msAccess' 
                         else if (exists(xxf:instance('import-instance')/descendant-or-self::cda:ClinicalDocument)) then 'cda'
                         else if (exists(xxf:instance('import-instance')//iso-13606:Composition)) then 'iso-13606'
                         else if (exists(xxf:instance('import-instance')[name(.)='database']/table)) then 'database'
+                        else if (exists(xxf:instance('import-instance')[name(.)='observation']/analyses)) then 'telemedicine'
                         else 'invalid'"/>
 
                     <!-- For msAccess and xml, the status is 'ready' to import (so display the Import button).
                          For database or invalid, then the import-instance is 'loaded' but not ready to import -->
                     <xf:setvalue ref="xxf:instance('control-instance')/importStatus"
-                        value="if (xxf:instance('control-instance')/importRecords/recordFormat=('msAccess','cda')) then 'ready' else 'loaded'"/>
+                        value="if (xxf:instance('control-instance')/importRecords/recordFormat=('msAccess','cda','telemedicine')) then 'ready' else 'loaded'"/>
+
+                    <!-- For telemedicine data (IDIS2GO) , the patient must already exist in the xmlstore. -->
+                    <xf:action
+                        if="xxf:instance('control-instance')/importRecords/recordFormat='telemedicine'">
+
+                        <xxf:variable name="applicationId"
+                            select="xxf:instance('control-instance')/managedApplication/applicationId"/>
+                        <!-- Get patientId from import-instance -->
+                        <xxf:variable name="patientId"
+                            select="xxf:instance('import-instance')//patient[1]/@patientId"/>
+                        <!-- Record location for this patient -->
+                        <xxf:variable name="patientRecordLocation"
+                            select="concat('/xmlstore/applications/',$applicationId,'/records/',$patientId)"/>
+
+                        <!-- Check to see if anything already exists at the location for the patient record -->
+                        <xf:dispatch name="collection-exists" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="storageLocation" select="$patientRecordLocation"/>
+                            <xxf:context name="result"
+                                select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+
+                        <!-- Reset importStatus -->
+                        <xf:setvalue ref="xxf:instance('control-instance')/importStatus"
+                            value="if (xxf:instance('control-instance')/status='true') then 'ready' else 'loaded'"/>
+
+                        <!-- Debugging only - when import is diabled -->
+                        <!--
+                        <xf:dispatch name="import-telemedicineData" target="main-model"/>
+                        -->
+                    </xf:action>
+
+
+
 
                     <!-- Set up for database.
                          Note that details of the database sheets, records and fields are recorded in inspectSpreadsheet -->
@@ -3745,6 +3812,7 @@
                 Information used for viewing and navigating the spreadsheet is stored in control-instance/inspectSpreadsheet
                 === -->
 
+
             <!-- Application defined action to set the sheet information for a spreadsheet.
                  The spreadsheet is in import-instance and has already been checked that it is the correct database format
                  Set information for each sheet, in the form:
@@ -3791,6 +3859,132 @@
                 (Which also uses some data and actions from inspectSpreadsheet)
                 === -->
 
+            <xf:action ev:event="import-uploadedRecordSet">
+
+                <!-- If imported record set is an export from MS Access -->
+                <xf:action
+                    if="xxf:instance('control-instance')/importRecords/recordFormat='msAccess'">
+                    <!-- Set message to describe the action -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                        value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='recordSetIsMSAccess']"/>
+                    <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                        origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                    <!-- Convert the MS Access XML to a set of HL7 CDA documents.
+                                                     The conversion is specific to each cityEHR application and MS Access table.
+                                                     So therefore look for the XSLT in the resources folder of the current application -->
+                    <xxf:variable name="accessTableName"
+                        select="xxf:instance('import-instance')/*[1]/name(.)"/>
+                    <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                        value="concat('MS Access - table name is:',$accessTableName)"/>
+                    <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                        origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+                        value="concat(xxf:instance('view-parameters-instance')/appPath,'/resources/configuration/',xxf:instance('view-parameters-instance')/applicationId,'/xslt/',$accessTableName,'.xsl')"/>
+                    <xxf:variable name="xsltPipeline"
+                        select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRTransformXMLInstance.xpl')"/>
+                    <xf:insert nodeset="xxf:instance('import-instance')"
+                        origin="xxf:call-xpl($xsltPipeline, ('parameters','instance'), (xxf:instance('view-parameters-instance'),xxf:instance('import-instance')), 'data')"/>
+                    <!-- Set message to describe the action -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                        value="concat('Converted record set contains:',count(xxf:instance('import-instance')/cda:ClinicalDocument),' records')"/>
+                    <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                        origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                </xf:action>
+
+                <!-- If imported record set is an extract of CDA documents (as created in a record export) -->
+                <xf:action if="xxf:instance('control-instance')/importRecords/recordFormat='cda'">
+                    <!-- Set message to describe the action -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                        value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='recordSetIsCDA']"/>
+                    <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                        origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                    <!-- Import the record set - Iterate through HL7 CDA compositions.
+                                             User has selected setCompositionId as 'preserve' (default) or 'generate' -->
+                    <xf:dispatch name="import-RecordSet" target="recordImport-model">
+                        <xxf:context name="record-set" select="xxf:instance('import-instance')"/>
+                        <xxf:context name="identifierPrefix" select="''"/>
+                        <xxf:context name="setCompositionId"
+                            select="xxf:instance('control-instance')/importRecords/setCompositionId"/>
+                        <xxf:context name="status"
+                            select="xxf:instance('control-instance')/importRecords/status"/>
+                    </xf:dispatch>
+                </xf:action>
+
+                <!-- If imported record set is a cityEHR database format (as created from a spreadsheet) -->
+                <xf:action
+                    if="xxf:instance('control-instance')/importRecords/recordFormat='database'">
+                    <!-- Set message to describe the action -->
+                    <xf:setvalue ref="xxf:instance('control-instance')/statusMessage/entry"
+                        value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='recordSetIsSpreadsheet']"/>
+                    <xf:insert context="xxf:instance('control-instance')/statusMessage/entryList"
+                        origin="xxf:instance('control-instance')/statusMessage/entry"/>
+                    <!-- Import the record set -->
+                    <xf:dispatch name="import-RecordSetFromDatabase" target="recordImport-model"/>
+                </xf:action>
+
+
+                <!-- If imported record set is telemedicine data from IDIS2GO -->
+                <xf:action
+                    if="xxf:instance('control-instance')/importRecords/recordFormat='telemedicine'">
+
+                    <xf:dispatch name="import-telemedicineData" target="main-model"/>
+
+                </xf:action>
+
+
+            </xf:action>
+
+
+            <!-- Import telemedicine data from IDIS2GO
+                  Invoked from import-uploadedRecordSet
+                -->
+            <xf:action ev:event="import-telemedicineData">
+                <!-- Set application information and insert into imported telemedicine data -->
+                <xxf:variable name="applicationInformation"
+                    select="xxf:instance('control-instance')/importRecords/applicationInformation"/>
+
+                <xf:setvalue ref="$applicationInformation/applicationIRI"
+                    value="xxf:instance('control-instance')/managedApplication/applicationIRI"/>
+                <xf:setvalue ref="$applicationInformation/specialtyIRI"
+                    value="xxf:instance('session-parameters-instance')/specialtyIRI"/>
+                <xf:setvalue ref="$applicationInformation/patientId"
+                    value="xxf:instance('import-instance')//patient[1]/@patientId"/>
+
+                <!-- Timestamp format replaces ':' and '+' in standard time format with - and * -->
+                <xxf:variable name="effectiveTime" select="current-dateTime()"/>
+                <xxf:variable name="timeStamp"
+                    select="replace(replace(string($effectiveTime),':','-'),'\+','*')"/>
+
+                <xf:setvalue ref="$applicationInformation/effectiveTime" value="$effectiveTime"/>
+                <xf:setvalue ref="$applicationInformation/timeStamp" value="$timeStamp"/>
+                <xf:setvalue ref="$applicationInformation/handleId"
+                    value="concat($timeStamp,xxf:instance('view-parameters-instance')/idSeparator,$applicationInformation/compositionId,xxf:instance('view-parameters-instance')/idSeparator,xxf:instance('view-parameters-instance')/userId)"/>
+
+
+                <xf:insert context="xxf:instance('import-instance')"
+                    origin="$applicationInformation"/>
+
+                <!-- Transform telemedicine data to HL7 CDA composition.
+                         Replace import-instance with the generated CDA -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+                    value="'telemedicine2Composition.xsl'"/>
+
+                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                    <xxf:context name="pipeline" select="'cityEHRTransformXMLInstance.xpl'"/>
+                    <xxf:context name="input-instance" select="xxf:instance('import-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('import-instance')"/>
+                </xf:dispatch>
+
+                <!-- Import composition to the xmlstore -->
+                <xf:dispatch name="import-RecordSet" target="recordImport-model">
+                    <xxf:context name="record-set" select="xxf:instance('import-instance')"/>
+                    <xxf:context name="identifierPrefix" select="''"/>
+                    <xxf:context name="setCompositionId" select="'true'"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('control-instance')/importRecords/status"/>
+                </xf:dispatch>
+
+            </xf:action>
 
 
 
@@ -3910,14 +4104,26 @@
 
 
             <!-- ===
-                 Blockchain of tokens for a paitent
+                 Blockchain of tokens for a patient
                  blockChain
                  ====== -->
+
+            <xf:instance id="selectedBlockchain-instance">
+                <blockChain/>
+            </xf:instance>
+
 
             <!-- Input the patient Id 
                  blockchain is then set from the patient ledger -->
             <xf:action ev:event="blockChain-patientId">
-                <xf:message ref="xxf:instance('control-instance')/blockChain/patientId"/>
+                <xf:dispatch name="get-patientBlockchain" target="valkyrie-model">
+                    <xxf:context name="applicationIRI"
+                        select="xxf:instance('control-instance')/managedApplication/applicationIRI"/>
+                    <xxf:context name="patientId"
+                        select="xxf:instance('control-instance')/blockChain/patientId"/>
+                    <xxf:context name="patientBlockchain"
+                        select="xxf:instance('selectedBlockchain-instance')"/>
+                </xf:dispatch>
             </xf:action>
 
             <!-- Navigation in  blockChain - first (genesis) -->
@@ -15338,85 +15544,12 @@
                                 </xf:action>
                                 <!-- End import of knowledge map -->
                                 <!-- ====
-                                     Importing records - method depends on the recordFormat.
+                                     Importing records - method depends on the recordFormat. ***jc
                                      
                                      ==== -->
                                 <xf:action ev:event="DOMActivate" if="$adminTask='importRecords'">
-                                    <!-- If imported record set is an export from MS Access -->
-                                    <xf:action
-                                        if="xxf:instance('control-instance')/importRecords/recordFormat='msAccess'">
-                                        <!-- Set message to describe the action -->
-                                        <xf:setvalue
-                                            ref="xxf:instance('control-instance')/statusMessage/entry"
-                                            value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='recordSetIsMSAccess']"/>
-                                        <xf:insert
-                                            context="xxf:instance('control-instance')/statusMessage/entryList"
-                                            origin="xxf:instance('control-instance')/statusMessage/entry"/>
-                                        <!-- Convert the MS Access XML to a set of HL7 CDA documents.
-                                                     The conversion is specific to each cityEHR application and MS Access table.
-                                                     So therefore look for the XSLT in the resources folder of the current application -->
-                                        <xxf:variable name="accessTableName"
-                                            select="xxf:instance('import-instance')/*[1]/name(.)"/>
-                                        <xf:setvalue
-                                            ref="xxf:instance('control-instance')/statusMessage/entry"
-                                            value="concat('MS Access - table name is:',$accessTableName)"/>
-                                        <xf:insert
-                                            context="xxf:instance('control-instance')/statusMessage/entryList"
-                                            origin="xxf:instance('control-instance')/statusMessage/entry"/>
-                                        <xf:setvalue
-                                            ref="xxf:instance('view-parameters-instance')/transformationXSL"
-                                            value="concat(xxf:instance('view-parameters-instance')/appPath,'/resources/configuration/',xxf:instance('view-parameters-instance')/applicationId,'/xslt/',$accessTableName,'.xsl')"/>
-                                        <xxf:variable name="xsltPipeline"
-                                            select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRTransformXMLInstance.xpl')"/>
-                                        <xf:insert nodeset="xxf:instance('import-instance')"
-                                            origin="xxf:call-xpl($xsltPipeline, ('parameters','instance'), (xxf:instance('view-parameters-instance'),xxf:instance('import-instance')), 'data')"/>
-                                        <!-- Set message to describe the action -->
-                                        <xf:setvalue
-                                            ref="xxf:instance('control-instance')/statusMessage/entry"
-                                            value="concat('Converted record set contains:',count(xxf:instance('import-instance')/cda:ClinicalDocument),' records')"/>
-                                        <xf:insert
-                                            context="xxf:instance('control-instance')/statusMessage/entryList"
-                                            origin="xxf:instance('control-instance')/statusMessage/entry"
-                                        />
-                                    </xf:action>
-                                    <!-- If imported record set is an extract of CDA documents (as created in a record export) -->
-                                    <xf:action
-                                        if="xxf:instance('control-instance')/importRecords/recordFormat='cda'">
-                                        <!-- Set message to describe the action -->
-                                        <xf:setvalue
-                                            ref="xxf:instance('control-instance')/statusMessage/entry"
-                                            value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='recordSetIsCDA']"/>
-                                        <xf:insert
-                                            context="xxf:instance('control-instance')/statusMessage/entryList"
-                                            origin="xxf:instance('control-instance')/statusMessage/entry"/>
-                                        <!-- Import the record set - Iterate through HL7 CDA compositions.
-                                             User has selected setCompositionId as 'preserve' (default) or 'generate' -->
-                                        <xf:dispatch name="import-RecordSet"
-                                            target="recordImport-model">
-                                            <xxf:context name="record-set"
-                                                select="xxf:instance('import-instance')"/>
-                                            <xxf:context name="identifierPrefix" select="''"/>
-                                            <xxf:context name="setCompositionId"
-                                                select="xxf:instance('control-instance')/importRecords/setCompositionId"/>
-                                            <xxf:context name="status"
-                                                select="xxf:instance('control-instance')/importRecords/status"
-                                            />
-                                        </xf:dispatch>
-                                    </xf:action>
-                                    <!-- If imported record set is a cityEHR database format (as created from a spreadsheet) -->
-                                    <xf:action
-                                        if="xxf:instance('control-instance')/importRecords/recordFormat='database'">
-                                        <!-- Set message to describe the action -->
-                                        <xf:setvalue
-                                            ref="xxf:instance('control-instance')/statusMessage/entry"
-                                            value="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/statusMessage/message[@processingProgress='recordSetIsSpreadsheet']"/>
-                                        <xf:insert
-                                            context="xxf:instance('control-instance')/statusMessage/entryList"
-                                            origin="xxf:instance('control-instance')/statusMessage/entry"/>
-                                        <!-- Import the record set -->
-                                        <xf:dispatch name="import-RecordSetFromDatabase"
-                                            target="recordImport-model"/>
-                                    </xf:action>
+                                    <xf:dispatch name="import-uploadedRecordSet" target="main-model"
+                                    />
                                 </xf:action>
                                 <!-- End import of records -->
                                 <!-- ====
@@ -16583,7 +16716,7 @@
 
 
                 <!-- ======================================================================
-                     viewDisplay has data displays and some interaction with lists 
+                     viewDisplay has data displays for the selected task and some interaction with lists 
                      
                      ====================================================================== -->
 
@@ -17579,13 +17712,27 @@
                     <!-- === Patient Ledger                        
                         ================================================== -->
                     <xhtml:div class="{if ($adminTask='patientLedger') then '' else 'hidden'}">
-                        <xhtml:p>control-instance:<xhtml:br />
+                        <xhtml:p>control-instance - patientLedger:<xhtml:br />
                             <xf:output
                                 ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/adminTask, 'data')/*, 'html')"
                                 mediatype="text/html"/>
                         </xhtml:p>
 
                     </xhtml:div>
+
+
+                    <!-- === Blockchain                        
+                        ================================================== -->
+                    <xhtml:div class="{if ($adminTask='blockChain') then '' else 'hidden'}">
+                        <xhtml:p>selectedBlockchain-instance:<xhtml:br />
+                            <xf:output
+                                ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('selectedBlockchain-instance'), 'data')/*, 'html')"
+                                mediatype="text/html"/>
+                        </xhtml:p>
+
+                    </xhtml:div>
+
+
 
                     <!-- === Merge ontologies                        
                         ================================================== -->
@@ -19281,6 +19428,7 @@
                             </xhtml:tr>
                         </xhtml:tbody>
                     </xhtml:table>
+
                     <!-- Debugging - have a look at patient-instance or patientDemographics-instance -->
                     <!--
                     <xf:output
@@ -19367,8 +19515,8 @@
                     </xhtml:div>
 
 
-                    <!-- === Inspect Spreadsheet or Import Records === 
-                         inspectSpreadsheet
+                    <!-- === Inspect Spreadsheet or Import Records (database) === 
+                         inspectSpreadsheet / importRecords
                          Also used to display the spreadsheet in importRecords
                          Display the selected table in the spreadsheet that has been loaded to import-instance
                          =========================== -->
@@ -19515,6 +19663,32 @@
                     </xhtml:div>
 
 
+                    <!-- === Import Records (telemedicine data - IDIS2GO) === 
+                         inspectSpreadsheet
+                         Also used to display the spreadsheet in importRecords
+                         Display the selected table in the spreadsheet that has been loaded to import-instance
+                         =========================== -->
+                    <xhtml:div
+                        class="{if ($adminTask='importRecords' and xxf:instance('control-instance')/importRecords/recordFormat='telemedicine' and xxf:instance('control-instance')/importStatus=('loaded','ready-for-degugging')) then 'ScrollingContainerx' else 'hidden'}">
+
+                        <xf:output
+                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importRecords/telemedicine/sourceMessage"/>
+
+                        <xf:output class="error"
+                            ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importRecords/telemedicine/noPatientMessage"/>
+
+                        <xhtml:p class="message">Import instance:<xhtml:br />
+                            <xf:output
+                                ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('import-instance'), 'data')/*, 'html')"
+                                mediatype="text/html"/>
+                        </xhtml:p>
+
+
+                    </xhtml:div>
+
+
+
+
                     <!-- ===Check patient list  === 
                          =========================== -->
                     <xhtml:table
@@ -19571,6 +19745,7 @@
                             </xhtml:tr>
                         </xhtml:tbody>
                     </xhtml:table>
+
                     <!-- Debugging - hasRecordPatientList -->
                     <!--
                     <xf:output

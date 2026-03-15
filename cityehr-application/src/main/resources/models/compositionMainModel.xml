@@ -763,16 +763,31 @@
             <xf:dispatch name="check-triggers" target="main-model"/>
         </xf:action>
 
-        <!-- Export the composition if configured -->
+        <!-- Export the composition if configured.
+             -->
         <xf:action
             if="xxf:instance('application-parameters-instance')/importExport/exportPipeline/exportOnCommit/@value='true'">
+            <!--
             <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
                 <xxf:context name="export-instance" select="xxf:instance('form-instance')"/>
                 <xxf:context name="exportType" select="'PatientComposition'"/>
                 <xxf:context name="transformationXSL" select="'CDA2ValkyrieToken'"/>
                 <xxf:context name="exportDelivery" select="'fileSystem'"/>
             </xf:dispatch>
+            -->
         </xf:action>
+        
+        <!-- Export Valkyrie token, if configured -->
+        <xxf:variable name="valkyrieParameters" select="xxf:instance('application-parameters-instance')/valkyrie"/>
+        <xf:action
+            if="$valkyrieParameters/valkyrieSystem/@value='true' or $valkyrieParameters/valkyrieSource/@value='true'">
+            <xf:dispatch name="export-valkyrieToken" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="xxf:instance('session-parameters-instance')/applicationIRI"/>
+                <xxf:context name="composition" select="xxf:instance('form-instance')"/>
+            </xf:dispatch>
+        </xf:action>       
+        
+        
 
     </xf:action>
     <!-- End of publish-cda-composition -->

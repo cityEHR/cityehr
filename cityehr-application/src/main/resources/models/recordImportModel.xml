@@ -4,7 +4,7 @@
     cityEHR
     recordImportModel.xml
     
-    Xforms model containing stuff for importing record to the xmlstore
+    Xforms model containing stuff for importing records to the xmlstore
     Just used in cityEHRAdmin (and in testData-model)
     
     Copyright (C) 2013-2021 John Chelsom.
@@ -149,7 +149,7 @@
 
 
     <!-- Application defined action to import record set as cityEHR database.
-                 The database was generated from a spreadsheet and is now in import-instance.
+         The database was generated from a spreadsheet and is now in import-instance.
             
                  The database is of the form:
                  

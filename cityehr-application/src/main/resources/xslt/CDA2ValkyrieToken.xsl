@@ -40,13 +40,15 @@
     </xsl:template>
 
     <xsl:template match="cda:ClinicalDocument">
+        <!-- Extract information from the CDA -->
         <xsl:variable name="compositionId" select="cda:id[1]/@extension"/>
         <xsl:variable name="typeId" select="cda:typeId[1]/@extension"/>
         <xsl:variable name="displayName" select="cda:code[1]/@displayName"/>
         <xsl:variable name="effectiveTime" select="cda:effectiveTime[1]/@value"/>
         <xsl:variable name="patientId"
             select="cda:recordTarget[1]/cda:patientRole/cda:id/@extension"/>
-
+        <xsl:variable name="system" select="cda:author/cda:assignedAuthor/cda:id/@root"/>
+        <xsl:variable name="author" select="cda:author/cda:assignedAuthor/cda:id/@extension"/>
 
         <encryptedToken id="{$timeStamp}" linkId="" securityDomain="patientDomain">
             <patientId>
@@ -54,15 +56,15 @@
             </patientId>
             <sessionParameters userId="" sessionId=""/>
             <eventLocator securityDomain="ehrGatewayDomain">
-                <eventDomain>198.192.56.18</eventDomain>
-                <eventAddress securityDomain="sourceEHR"> ehr/access/38388383 </eventAddress>
+                <eventDomain><xsl:value-of select="$system"/></eventDomain>
+                <eventAddress securityDomain="{$system}"><xsl:value-of select="concat($patientId,'/',$compositionId)"/></eventAddress>
             </eventLocator>
             <eventMetadata securityDomain="virtualRecordDomain">
                 <effectiveTime>
                     <xsl:value-of select="$effectiveTime"/>
                 </effectiveTime>
                 <eventType id="{$typeId}" displayName="{$displayName}"/>
-                <provenance organisation="" assignedPerson=""/>
+                <provenance organisation="{$system}" assignedPerson="{$author}"/>
             </eventMetadata>
             <clinicalCoding securityDomain="contentDomain">
                 <xsl:apply-templates/>

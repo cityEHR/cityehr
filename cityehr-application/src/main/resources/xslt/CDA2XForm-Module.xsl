@@ -59,8 +59,9 @@
                 else
                     ''"/>
 
-        <!-- This div contains the whole CDA document -->
-        <xhtml:div class="ISO13606-Composition {{$xformsShowStructureClass}}"
+        <!-- This div contains the whole CDA document
+             Composition contents are always Ranked -->
+        <xhtml:div class="ISO13606-Composition Ranked {{$xformsShowStructureClass}}"
             cache="{$view-parameters/formCache}">
 
             <!-- Show compositionID is selected for debugging -->

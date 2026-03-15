@@ -20,19 +20,26 @@
 <p:pipeline xmlns:p="http://www.orbeon.com/oxf/pipeline" xmlns:oxf="http://www.orbeon.com/oxf/processors" xmlns:xf="http://www.w3.org/2002/xforms" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
     <!-- Input to pipeline is view-parameters.xml and the instance to be transformed -->
-    <p:param name="parameters" type="input"/>
+    <p:param name="view-parameters" type="input"/>
     <p:param name="instance" type="input"/>
 
     <!-- Standard pipeline output -->
     <p:param name="data" type="output"/>
+      
+    <!-- Run the getPipelineParameters pipeline.
+         Returns the combined application-parameters, session-parameters, system-parameters, database-parameters,  view-parameters -->
+    <p:processor name="oxf:pipeline">
+        <p:input name="config" href="getPipelineParameters.xpl"/>               
+        <p:input name="instance" href="#view-parameters"/>
+        <p:output name="parameters" id="parameters"/>
+    </p:processor>
 
     <!-- Get the XSLT for the transformation
          The location of the XSLT is set in the transformationXSL parameter -->
     <p:processor name="oxf:url-generator">
         <p:input name="config" transform="oxf:xslt" href="#parameters">
             <config xsl:version="2.0">
-                <url>
-                    <xsl:value-of select="parameters/transformationXSL"/>
+                <url> ../xslt/<xsl:value-of select="//parameters[@type='session']/transformationXSL"/>
                 </url>
                 <content-type>application/xml</content-type>
             </config>

@@ -321,26 +321,31 @@
                 <!-- Publish the composition as the first event for this patient -->
                 <xf:dispatch name="publish-cda-composition" target="main-model"/>
 
-                <!-- Action on successful publish - Valkyrie
+                <!-- Action on successful publish - Valkyrie 
+                    
+                     *** Note publish-cda-composition also makes call to export the Valkyrie token.
+                         This doesn't do anything when patient doesn't have an entry in the ledger
+                         But could be refactored so that this additional call isn't needed                   
+                    
                      Successfully published and this is a Valkyrie federated record system.
+                     Either a valkyrieSystem or a valkyrieSource
                      create-patientBlockchain
                         Check patient ledger
                         Create valkyrie token (genesis block)
                         Add entry to the patient ledger
                         Store the token (as the genesis block for the blockchan of this patient -->
+                <xxf:variable name="valkyrieParameters" select="xxf:instance('application-parameters-instance')/valkyrie"/>
                 <xf:action
-                    if="xxf:instance('control-instance')/status='' and xxf:instance('application-parameters-instance')/valkyrie/valkyrieSystem/@value='true'">
+                    if="xxf:instance('control-instance')/status='' and ($valkyrieParameters/valkyrieSystem/@value='true' or $valkyrieParameters/valkyrieSource/@value='true')">
                     <xf:dispatch name="create-patientBlockchain" target="valkyrie-model">
                         <xxf:context name="applicationIRI" select="xxf:instance('session-parameters-instance')/applicationIRI"/>
                         <xxf:context name="composition" select="xxf:instance('form-instance')"/>
                     </xf:dispatch>
-
                 </xf:action>
-
 
                 <!-- Action on successful publish -->
                 <xf:action if="xxf:instance('control-instance')/status=''">
-                    <xf:dispatch name="close-composition-viewX" target="main-model">
+                    <xf:dispatch name="close-composition-view" target="main-model">
                         <xxf:context name="newCompositionIRI" select="$newCompositionIRI"/>
                     </xf:dispatch>
                 </xf:action>
@@ -556,6 +561,15 @@
                             mediatype="text/html"/>
                     </xhtml:p>
                            -->
+                    
+                    <!--
+                    <xhtml:p>encryptedToken-instance:<xhtml:br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('encryptedToken-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </xhtml:p>
+                    -->
+                    
 
                     <!-- Include filler so that sections at foot of form can scroll to the top -->
                     <xi:include href="cityEHRFormFootPadding.xhtml"/>

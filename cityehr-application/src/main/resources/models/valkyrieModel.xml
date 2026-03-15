@@ -42,12 +42,13 @@
         <control xmlns="">
             <status/>
 
-            <patientLedgerLocation>valkyrie/patientLedger</patientLedgerLocation>
-            <tokenStoreLocation>valkyrie/tokenStore</tokenStoreLocation>
+            <patientLedgerLocation>/valkyrie/patientLedger/</patientLedgerLocation>
+            <tokenStoreLocation>/valkyrie/tokenStore</tokenStoreLocation>
 
             <tokenTemplateLocation>/templates/encryptedToken.xml</tokenTemplateLocation>
 
-            <patientLedgerEntry patientId="" genesisBlockHashId=""/>
+            <patientLedgerEntry/>
+            <hashId/>
         </control>
     </xf:instance>
 
@@ -58,28 +59,31 @@
         
          Within this collection, entries are individual resources of the form:
          
-        <patientLedgerEntry patientId="" genesisBlockHashId=""/>
-        
+         <patientLedgerEntry patientId="" genesisBlockHashId="" currentBlockHashId=""/>        
          ======================================================================= -->
 
-
-    <xf:instance id="patientLedgerEntry-instance">
-        <patientLedgerEntry patientId="" genesisBlockHashId=""/>
+    <xf:instance id="patientLedgerEntryTemplate-instance" xmlns="">
+        <patientLedgerEntry patientId="" genesisBlockHashId="" currentBlockHashId=""/>
+    </xf:instance>
+    <xf:instance id="patientLedgerEntry-instance" xmlns="">
+        <patientLedgerEntry/>
     </xf:instance>
 
 
     <!-- Get entry for a patient from the patient ledger for an application
          patientId is passed as parameter
          returns the matching patientLedgerEntry -->
-    <xf:action ev:event="get-patientFromLedger">
+    <xf:action ev:event="get-patientLedgerEntry">
         <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
         <xxf:variable name="patientId" select="event('patientId')"/>
         <xxf:variable name="patientLedgerEntry" select="event('patientLedgerEntry')"/>
         <xxf:variable name="status" select="event('status')"/>
-        
+
         <xxf:variable name="applicationId"
             select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
-        
+
+        <xxf:variable name="patientLedgerEntryLocation"
+            select="concat('/xmlstore/applications/',$applicationId,xxf:instance('valkyrieControl-instance')/patientLedgerLocation,$patientId)"/>
 
         <!-- Read the patient ledger entry from the xmlstore -->
         <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
@@ -89,17 +93,16 @@
             <xxf:context name="status" select="$status"/>
         </xf:dispatch>
 
-
     </xf:action>
 
 
     <!-- Save a new entry to the patient ledger
          Invoked from create-patientBlockchain
          The hashId passed as a parameter is the hashId of the genesis block
-         That bloack must be created in the token store so that the blockchain is found
+         That block must be created in the token store so that the blockchain is found
          (That is done by create-patientBlockchain)
           -->
-    <xf:action ev:event="save-patientToLedger">
+    <xf:action ev:event="create-patientLedger">
         <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
         <xxf:variable name="patientId" select="event('patientId')"/>
         <xxf:variable name="hashId" select="event('hashId')"/>
@@ -107,7 +110,65 @@
         <xxf:variable name="applicationId"
             select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
 
+        <!-- Set up patient ledger entry -->
+        <xf:insert nodeset="xxf:instance('patientLedgerEntry-instance')"
+            origin="xxf:instance('patientLedgerEntryTemplate-instance')"/>
+        <xf:setvalue ref="xxf:instance('patientLedgerEntry-instance')/@patientId" value="$patientId"/>
+        <xf:setvalue ref="xxf:instance('patientLedgerEntry-instance')/@genesisBlockHashId"
+            value="$hashId"/>
+        <xf:setvalue ref="xxf:instance('patientLedgerEntry-instance')/@currentBlockHashId"
+            value="$hashId"/>
+
+        <xxf:variable name="patientLedgerEntryLocation"
+            select="concat('/xmlstore/applications/',$applicationId,xxf:instance('valkyrieControl-instance')/patientLedgerLocation,$patientId)"/>
+
+        <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$patientLedgerEntryLocation"/>
+            <xxf:context name="resource" select="xxf:instance('patientLedgerEntry-instance')"/>
+            <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"/>
+        </xf:dispatch>
+
     </xf:action>
+
+    <!-- Update an entry in the patient ledger
+         Invoked from update-patientBlockchain
+         The hashId passed as a parameter is the hashId of the (new) current block
+         That block must be created in the token store so that the blockchain is consistent
+         (That is done by update-patientBlockchain)
+          -->
+    <xf:action ev:event="update-patientLedger">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="patientLedgerEntry" select="event('patientLedgerEntry')"/>
+        <xxf:variable name="hashId" select="event('hashId')"/>
+
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+        <!-- Only if patient is found in the patientLedgerEntry -->
+        <xxf:variable name="patientId" select="$patientLedgerEntry/@patientId"/>
+        <xf:action if="$patientId!=''">
+
+            <!-- Update the patient ledger entry -->
+            <xf:setvalue ref="$patientLedgerEntry/@currentBlockHashId" value="$hashId"/>
+
+            <!-- Overwrite the ledger with the updated entry -->
+            <xxf:variable name="patientLedgerEntryLocation"
+                select="concat('/xmlstore/applications/',$applicationId,xxf:instance('valkyrieControl-instance')/patientLedgerLocation,$patientId)"/>
+
+            <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="$patientLedgerEntryLocation"/>
+                <xxf:context name="resource" select="$patientLedgerEntry"/>
+                <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"
+                />
+            </xf:dispatch>
+
+        </xf:action>
+
+    </xf:action>
+
+
 
 
 
@@ -128,8 +189,7 @@
         <encryptedToken/>
     </xf:instance>
 
-
-    <xf:instance id="blockChain-instance">
+    <xf:instance id="patientBlockchain-instance">
         <blockChain/>
     </xf:instance>
 
@@ -167,50 +227,333 @@
         <xxf:variable name="patientId"
             select="$composition//cda:recordTarget/cda:patientRole/cda:id/@extension"/>
 
-        <!-- Check patient ledger -->
-
-
-        <!-- Create valkyrie token (genesis block) -->
-
-
-        <!-- Save patient to the ledger -->
-        <xf:dispatch name="save-patientToLedger" target="valkyrie-model">
+        <!-- Check patient ledger - status is returned blank if the patient is already in the ledger -->
+        <xf:dispatch name="get-patientLedgerEntry" target="valkyrie-model">
             <xxf:context name="applicationIRI" select="$applicationIRI"/>
             <xxf:context name="patientId" select="$patientId"/>
-            <xxf:context name="hashId" select="$hashId"/>
+            <xxf:context name="patientLedgerEntry"
+                select="xxf:instance('patientLedgerEntry-instance')"/>
+            <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"/>
         </xf:dispatch>
 
+        <!-- Only if patient is not in the ledger -->
+        <xf:action if="not(xxf:instance('valkyrieControl-instance')/status='')">
+            <!-- Create valkyrie token (genesis block) -->
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+                value="'CDA2ValkyrieToken.xsl'"/>
+            <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                <xxf:context name="pipeline" select="'cityEHRTransformXMLInstance.xpl'"/>
+                <xxf:context name="input-instance" select="$composition"/>
+                <xxf:context name="return-instance" select="xxf:instance('encryptedToken-instance')"
+                />
+            </xf:dispatch>
 
+            <!-- Get the hashId for the token -->
+            <xf:dispatch name="generate-hashId" target="valkyrie-model">
+                <xxf:context name="patientId" select="$patientId"/>
+                <xxf:context name="hashId" select="xxf:instance('valkyrieControl-instance')/hashId"
+                />
+            </xf:dispatch>
 
-        <!-- Store the token (as the genesis block for the blockchan of this patient) -->
+            <!-- Set token parameters.
+                 The encryptedToken is contained in a ValkyrieTokenSet wrapper -->
+            <xxf:variable name="encryptedToken"
+                select="xxf:instance('encryptedToken-instance')//encryptedToken[1]"/>
+            <xf:setvalue ref="$encryptedToken/@id"
+                value="xxf:instance('valkyrieControl-instance')/hashId"/>
 
+            <!-- Store the token (as the genesis block for the blockchan of this patient) -->
+            <xf:dispatch name="store-block" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="encryptedToken" select="$encryptedToken"/>
+            </xf:dispatch>
 
-
+            <!-- Create a new entry for the patient in the ledger -->
+            <xf:dispatch name="create-patientLedger" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="patientId" select="$patientId"/>
+                <xxf:context name="hashId" select="xxf:instance('valkyrieControl-instance')/hashId"
+                />
+            </xf:dispatch>
+        </xf:action>
 
 
         <!-- Debugging -->
+        <!--
         <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-            value="$applicationId"/>
+            value="xxf:instance('valkyrieControl-instance')/hashId"/>
+        -->
 
     </xf:action>
 
 
+    <!-- Application defined action to update the patient blockchain
+         Invoked from monitor of import folder for Valkyrie tokens
+         
+         For the first prototype it is invoked from export-valkyrieToken
+         
+         Check patient ledger, then if the patient is found
+            Create valkyrie token (current block)
+            Store the token (as the current block for the blockchan of this patient)
+            Update the patient ledger to record the current block
+             -->
+    <xf:action ev:event="update-patientBlockchain">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="composition" select="event('composition')"/>
+
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+        <!-- patientId is found from the CDA header -->
+        <xxf:variable name="patientId"
+            select="$composition//cda:recordTarget/cda:patientRole/cda:id/@extension"/>
+
+        <!-- Check patient ledger - status is returned blank if the patient is already in the ledger -->
+        <xf:dispatch name="get-patientLedgerEntry" target="valkyrie-model">
+            <xxf:context name="applicationIRI" select="$applicationIRI"/>
+            <xxf:context name="patientId" select="$patientId"/>
+            <xxf:context name="patientLedgerEntry"
+                select="xxf:instance('patientLedgerEntry-instance')"/>
+            <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Only if patient is already in the ledger -->
+        <xf:action if="xxf:instance('valkyrieControl-instance')/status=''">
+            <!-- Create valkyrie token (current block) -->
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
+                value="'CDA2ValkyrieToken.xsl'"/>
+            <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+                <xxf:context name="pipeline" select="'cityEHRTransformXMLInstance.xpl'"/>
+                <xxf:context name="input-instance" select="$composition"/>
+                <xxf:context name="return-instance" select="xxf:instance('encryptedToken-instance')"
+                />
+            </xf:dispatch>
+
+            <!-- Get the hashId for the current token -->
+            <xxf:variable name="currentBlockHashId"
+                select="xxf:instance('patientLedgerEntry-instance')/@currentBlockHashId"/>
+
+            <!-- Generate the hashId for the next (new) current token -->
+            <xf:dispatch name="generate-hashId" target="valkyrie-model">
+                <xxf:context name="patientId" select="$patientId"/>
+                <xxf:context name="hashId" select="xxf:instance('valkyrieControl-instance')/hashId"
+                />
+            </xf:dispatch>
+
+            <!-- Set token parameters.
+                 The encryptedToken is contained in a ValkyrieTokenSet wrapper -->
+            <xxf:variable name="encryptedToken"
+                select="xxf:instance('encryptedToken-instance')//encryptedToken[1]"/>
+            <xf:setvalue ref="$encryptedToken/@id"
+                value="xxf:instance('valkyrieControl-instance')/hashId"/>
+            <xf:setvalue ref="$encryptedToken/@linkId" value="$currentBlockHashId"/>
+
+            <!-- Store the token (as the current block for the blockchan of this patient) -->
+            <xf:dispatch name="store-block" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="encryptedToken" select="$encryptedToken"/>
+            </xf:dispatch>
+
+            <!-- Update the patient ledger -->
+            <xf:dispatch name="update-patientLedger" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="patientLedgerEntry"
+                    select="xxf:instance('patientLedgerEntry-instance')"/>
+                <xxf:context name="hashId" select="xxf:instance('valkyrieControl-instance')/hashId"
+                />
+            </xf:dispatch>
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to export a Valkyrie token
+         Invoked from publish-cda-composition in compositionMainModel.xml 
+         When a new composition is published a designated Valkyrie system
+         This is when valkyrieSystem or valkyrieSource @value is true in the application-parameters
+         
+         For final version will just export the token, to be imported to the valkyrieSystem
+         
+         For first prototype, the system and all sources are applications in a single cityEHR system.
+         So can store the token directly (in the application designated in view-parameters
+         Check patient ledger, then if the patient is registered
+            Create valkyrie token
+            Update patient in the ledger (gets the currentBlock)
+            Store the token (as the new current block for the blockchan of this patient) -->
+    <xf:action ev:event="export-valkyrieToken">
+        <xxf:variable name="composition" select="event('composition')"/>
+
+        <!--
+            <xf:dispatch name="export-xmlCache" target="pageNavigation-model">
+                <xxf:context name="export-instance" select="$composition"/>
+                <xxf:context name="exportType" select="'PatientComposition'"/>
+                <xxf:context name="transformationXSL" select="'CDA2ValkyrieToken'"/>
+                <xxf:context name="exportDelivery" select="'fileSystem'"/>
+            </xf:dispatch>
+            -->
+
+        <!-- Debugging -->
+        <!--
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
+            value="current-dateTime()"/>
+            -->
+
+        <!-- For the first prototype just update the patient Blockchain directly -->
+        <xf:dispatch name="update-patientBlockchain" target="valkyrie-model">
+            <xxf:context name="applicationIRI"
+                select="xxf:instance('view-parameters-instance')/valkyrieApplicationIRI"/>
+            <xxf:context name="composition" select="$composition"/>
+        </xf:dispatch>
+
+    </xf:action>
+
 
     <!-- Application defined action to get the full blockchain of tokens for a patient
-         Invoked with the genesis block hash
-         The invokes get-block until the current block is reached
-         Returns the complete set of tokens in blockchain order, starting with the genesis block-->
-    <xf:action ev:event="get-patientBlockchain"> </xf:action>
+         Invoked with the patientId
+         Gets the genesis block and then
+         Then invokes get-block until the current block is reached
+         Returns the complete set of tokens in blockchain order, starting with the genesis block
+         The blockchain is built in patientBlockchain-instance -->
+    <xf:action ev:event="get-patientBlockchain">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="patientId" select="event('patientId')"/>
+        <xxf:variable name="patientBlockchain" select="event('patientBlockchain')"/>
+
+        <!-- Check patient ledger - status is returned blank if the patient is already in the ledger -->
+        <xf:dispatch name="get-patientLedgerEntry" target="valkyrie-model">
+            <xxf:context name="applicationIRI" select="$applicationIRI"/>
+            <xxf:context name="patientId" select="$patientId"/>
+            <xxf:context name="patientLedgerEntry"
+                select="xxf:instance('patientLedgerEntry-instance')"/>
+            <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Get the hashId for the current token -->
+        <xxf:variable name="currentBlockHashId"
+            select="xxf:instance('patientLedgerEntry-instance')/@currentBlockHashId"/>
+        
+        <!-- Clear the blockchain -->
+        <xf:delete nodeset="xxf:instance('patientBlockchain-instance')/*"/>
+
+        <!-- Only if patient is found in the ledger
+             Biuld blockchain in patientBlockchain-instance-->
+        <xf:action
+            if="xxf:instance('valkyrieControl-instance')/status='' and $currentBlockHashId!=''">
+
+            <xf:dispatch name="build-blockChain" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="hashId" select="$currentBlockHashId"/>
+                <xxf:context name="blockchain" select="xxf:instance('patientBlockchain-instance')"/>
+            </xf:dispatch>
+
+            <!-- Set return parameter $patientBlockchain -->
+            <xf:insert nodeset="$patientBlockchain"
+                origin="xxf:instance('patientBlockchain-instance')"/>
+        </xf:action>
+
+    </xf:action>
+
+    <!-- Application defined action to iteratively build a blockchain
+         Gets the block (encryptedToken) from the token store for the specified hashId
+         Adds the block to the patientBlockchain
+         Recursively invoke build-blockChain for the next linked block (using linkId) 
+         Stops when linkId is blank (the genesis block has been found) -->
+    <xf:action ev:event="build-blockChain">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="hashId" select="event('hashId')"/>
+        <xxf:variable name="blockchain" select="event('blockchain')"/>
+
+        <!-- hashId exists -->
+        <xf:action if="$hashId != ''">
+
+            <!-- Get the block -->
+            <xf:dispatch name="get-block" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="hashId" select="$hashId"/>
+                <xxf:context name="encryptedToken" select="xxf:instance('encryptedToken-instance')"
+                />
+            </xf:dispatch>
+
+            <!-- Add block to blockchain -->
+            <xf:insert context="$blockchain" nodeset="*"
+                origin="xxf:instance('encryptedToken-instance')" at="last()" position="after"/>
+
+            <!-- Get linkId for next block -->
+            <xxf:variable name="linkId" select="xxf:instance('encryptedToken-instance')/@linkId"/>
+
+            <!-- Recursive invocation to build the blockchain -->
+            <xf:dispatch name="build-blockChain" target="valkyrie-model">
+                <xxf:context name="applicationIRI" select="$applicationIRI"/>
+                <xxf:context name="hashId" select="$linkId"/>
+                <xxf:context name="blockchain" select="$blockchain"/>
+            </xf:dispatch>
+
+        </xf:action>
+
+    </xf:action>
 
 
     <!-- Application defined action to get a block, given its hashId
-         Searches for the block in the token store -->
-    <xf:action ev:event="get-blockFromHashId"> </xf:action>
+         Reads the block (encryptedToken) from the token store, where it is stored by hashId -->
+    <xf:action ev:event="get-block">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="hashId" select="event('hashId')"/>
+        <xxf:variable name="encryptedToken" select="event('encryptedToken')"/>
+
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+        <!-- hashId must be set -->
+        <xf:action if="$hashId != ''">
+            <!-- Read the encryptedToken from the token store -->
+            <xxf:variable name="tokenStoreLocation"
+                select="concat('/xmlstore/applications/',$applicationId,xxf:instance('valkyrieControl-instance')/tokenStoreLocation,'/',$hashId)"/>
+            <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="$tokenStoreLocation"/>
+                <xxf:context name="resource" select="$encryptedToken"/>
+                <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"
+                />
+            </xf:dispatch>
+
+        </xf:action>
+
+    </xf:action>
+
+
+    <!-- Application defined action to store a block
+         The encryptedToken for the block must already be set up. with its link to the current block.
+         Stored for the application using the hashId of the encryptedToken
+         No furter checks are made here - it the token is not properly linked then id will be an orphan in the token store -->
+    <xf:action ev:event="store-block">
+        <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
+        <xxf:variable name="encryptedToken" select="event('encryptedToken')"/>
+
+        <xxf:variable name="applicationId"
+            select="if (exists($applicationIRI)) then replace(substring($applicationIRI,2),':','-') else ''"/>
+
+        <!-- Hash id must be set -->
+        <xxf:variable name="hashId" select="$encryptedToken/@id"/>
+        <xf:action if="$hashId != ''">
+            <!-- Write the encryptedToken to the token store -->
+            <xxf:variable name="tokenStoreLocation"
+                select="concat('/xmlstore/applications/',$applicationId,xxf:instance('valkyrieControl-instance')/tokenStoreLocation,'/',$hashId)"/>
+            <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="$tokenStoreLocation"/>
+                <xxf:context name="resource" select="$encryptedToken"/>
+                <xxf:context name="status" select="xxf:instance('valkyrieControl-instance')/status"
+                />
+            </xf:dispatch>
+
+        </xf:action>
+
+    </xf:action>
 
 
     <!-- Application defined action to generate a hashId from a patientId
          Takes the input parameter patientId
-         Sets the paraemter hashId
+         Sets the output parameter hashId
          Uses the seedkey defined in the application parameters
           -->
     <xf:action ev:event="generate-hashId">
@@ -225,7 +568,7 @@
         <xxf:variable name="clearTextId" select="concat($timeStamp,$patientId)"/>
 
         <xxf:variable name="seedKey"
-            select="xxf:instance('application-parameters-instance')/valkyrie/seedkey/@value"/>
+            select="xxf:instance('application-parameters-instance')/valkyrie/seedKey/@value"/>
 
         <xf:setvalue ref="$hashId"
             value="if ($seedKey!= '') then hmac($seedKey,$clearTextId, 'MD5', 'hex') else $clearTextId"

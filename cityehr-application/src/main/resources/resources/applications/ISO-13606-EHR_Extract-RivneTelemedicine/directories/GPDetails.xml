@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    GPDetails.xml
+    
+    Sample entry directory for GP Details
+    Used with the default cityEHR application
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<EHR_Extract cityEHR:applicationIRI="#ISO-13606:EHR_Extract:cityEHR" cityEHR:specialtyIRI="#ISO-13606:Folder:cityEHRBase" cityEHR:type="entry" cityEHR:root="#ISO-13606:Entry:GPDetails" cityEHR:key="#ISO-13606:Element:GPLookUpKey" cityEHR:languageCode="en-GB" xmlns="http://www.iso.org/iso-13606"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cda="urn:hl7-org:v3"
+    xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:cityEHR="http://openhealthinformatics.org/ehr"
+    xmlns:cityEHRFunction="http://openhealthinformatics.org/ehr/functions">
+    <entryCollection>
+        <entry>
+            <cda:component>
+                <cda:observation>
+                    <cda:typeid extension="Type:Observation" root="cityEHR"/>
+                    <cda:id extension="#ISO-13606:Entry:GPDetails" root="#ISO-13606:Entry:GPDetails"/>
+                    <cda:code code="" codeSystem="" displayName="GP Details"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPLookUpKey" root="#ISO-13606:Element:GPLookUpKey" xsi:type="xs:string"
+                        units="" value="101 Oxford"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPCode" root="#ISO-13606:Element:GPCode" xsi:type="xs:string"
+                        units="" value="101"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPName" root="#ISO-13606:Element:GPName" xsi:type="xs:string"
+                        units="" value="Smithson"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPPractice" root="cityEHR"
+                        xsi:type="xs:string" units="" value="The Varsity Clinic"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:StreetAddress" root="cityEHR" xsi:type="xs:string"
+                        units="" value="19 St John's Street"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:TownCity" root="cityEHR" xsi:type="xs:string"
+                        units="" value="Oxford"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:PostCode" root="cityEHR" xsi:type="xs:string"
+                        units="" value="OX1 3AA"/>
+                </cda:observation>
+            </cda:component>
+        </entry>
+        <entry>
+            <cda:component>
+                <cda:observation>
+                    <cda:typeid extension="Type:Observation" root="cityEHR"/>
+                    <cda:id extension="#ISO-13606:Entry:GPDetails" root="#ISO-13606:Entry:GPDetails"/>
+                    <cda:code code="" codeSystem="" displayName="GP Details"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPLookUpKey" root="#ISO-13606:Element:GPLookUpKey" xsi:type="xs:string"
+                        units="" value="102 Oxford"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPCode" root="#ISO-13606:Element:GPCode" xsi:type="xs:string"
+                        units="" value="102"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPName" root="#ISO-13606:Element:GPName" xsi:type="xs:string"
+                        units="" value="Wright"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:GPPractice" root="cityEHR"
+                        xsi:type="xs:string" units="" value="Jericho Health Centre"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:StreetAddress" root="cityEHR" xsi:type="xs:string"
+                        units="" value="79 Walton Street"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:TownCity" root="cityEHR" xsi:type="xs:string"
+                        units="" value="Oxford"/>
+                    <cda:value code="" codeSystem="" displayName=""
+                        cityEHR:elementType="#CityEHR:ElementProperty:simpleType"
+                        extension="#ISO-13606:Element:PostCode" root="cityEHR" xsi:type="xs:string"
+                        units="" value="OX2 9GD"/>
+                </cda:observation>
+            </cda:component>
+        </entry>
+    
+    </entryCollection>
+</EHR_Extract>

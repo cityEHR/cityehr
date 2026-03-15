@@ -52,7 +52,8 @@
     The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
     **********************************************************************************************************
 -->
-<parameters type="system" cityEHR:edit="replace" date="" version="" databaseChecksum=""
+<!-- To force the whole configuration to be replaced in the xmlstore when updated, set cityEHR:edit="replace" -->
+<parameters type="system" cityEHR:edit="update" date="" version="" databaseChecksum=""
     baseLanguageCode="en-GB" languageCode="en-GB" xmlns=""
     xmlns:iso-13606="http://www.iso.org/iso-13606"
     xmlns:cityEHR="http://openhealthinformatics.org/ehr" xmlns:xs="http://www.w3.org/2001/XMLSchema"
