@@ -16,6 +16,7 @@ LABEL org.label-schema.build-date=${maven.build.timestamp} \
       org.label-schema.vcs-ref=${build-commit-abbrev} \
       org.label-schema.vcs-url="${project.scm.url}" \
       org.label-schema.vendor="cityEHR" \
+      org.opencontainers.image.source="https://github.com/cityEHR/cityehr" \
       name="cityEHR ${project.version}" \
       vendor="Seven Informatics Ltd"
 
