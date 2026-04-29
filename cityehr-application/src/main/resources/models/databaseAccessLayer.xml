@@ -4,20 +4,27 @@
     cityEHR
     databaseAccessLayer.xml
     
-    Generic read, write, query and delete for the xmlstore, and configuration of the Beowulf cluster
+    Generic read, write, query and delete for the database, and configuration of the Beowulf cluster
     This model is loaded for every page (including cityEHRSignOn)
     
     DAL is for Data Access Layer, or Deborah Aleyne Lapeyre, the queen of XML.
     BTU is for Beowulf Transaction Unit, or B Tommie Usdin, the other queen of XML
     
-    DAL actions are defined for read, write, delete and query of the XML database.
+    Each system (currently ehr or patientstore) has a single logical database which is deployed on one or more physical databases
+    Deployment on multiple databases provides reslience.
+    Each physical database can be deployed on a single physical node or on a cluster of multiple nodes, which provides scalability
+    
+    The simplest (default) configuration is a single physical database with a single node.
+    
+    
+    DAL actions are defined for read, write, delete and query of the logical XML database.
     
     The XML database is accessed through a URL which is composed as follows:
     
     [databaseURL][physicalDatabaseLocation][logicalDatabaseLocation][databaseLocation]
     
     A logical database is defined as a set of BTUs (in system-parameters) that is deployed on a cluster of one or more physical database nodes. .
-    There are four types of BTU: kernel, empi, records, auditlog
+    There are four types of BTU: kernel, empi, patient, auditlog
     The BTUs are stored at [physicalDatabaseLocation][logicalDatabaseLocation] which is refered to as [btuLocation]
     So the URL for access can be composed as:
     
@@ -324,11 +331,12 @@
                     (Note that the same physical database may be used for multiple logical databases.
                     The physical cluster is deployed separately for each logical database that references it.
                     So a single physical cluster may have multiple logical databases deployed on it, each at a different logicalDatabaseLocation)
-                 Create physicalCluster in deployedDatabases.
-                 Set the id of the deployed cluster, by concatenating the physical and logical database ids
-                 Set the system (ehr or patientstore) for the deployed cluster
-                 Set the btuLocation - this is [physicalDatabaseLocation][logicalDatabaseLocation] and is fixed for the deployed cluster
-                 Then iterate through nodeset(s) to create nodes in the deployed physical cluster. -->
+                 
+                    Create physicalCluster in deployedDatabases.
+                    Set the id of the deployed cluster, by concatenating the physical and logical database ids
+                    Set the system (ehr or patientstore) for the deployed cluster
+                    Set the btuLocation - this is [physicalDatabaseLocation][logicalDatabaseLocation] and is fixed for the deployed cluster
+                    Then iterate through nodeset(s) to create nodes in the deployed physical cluster. -->
             <xf:action xxf:iterate="$logicalDatabase/deployedDatabases/physicalCluster">
                 <xxf:variable name="clusterId" select="./@clusterId"/>
                 <xxf:variable name="primary" select="./@primary"/>
@@ -919,6 +927,64 @@
     </xf:action>
 
 
+    <!-- Application defined action to read a static resource file
+         Always returns binary content - from XML file, zip or spreadsheet
+         Reads resource at specified staticResourceLocation and returns it in resource.
+         Uses the cityEHRGetUploadedData pipeline which extracts XML content from office documents and zip files
+         staticResourceLocation must start with / and is the path relative to the resources directory of the distribution
+         -->
+    <xf:action ev:event="dal-readStaticResourceAsBinary">
+        <xxf:variable name="staticResourceLocation" select="event('staticResourceLocation')"/>
+        <xxf:variable name="resource" select="event('resource')"/>
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Clear out the dalStaticFile-instance, in case the read fails -->
+        <xf:insert nodeset="xxf:instance('dalStaticFile-instance')"
+            origin="xxf:instance('dalEmpty-instance')"/>
+
+        <!-- Get the resource as Binary.
+             This is done by calling the cityEHRGetUploadedBinary pipeline -->
+        <xf:action if="starts-with($staticResourceLocation,'/')">
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
+                value="concat(xxf:instance('view-parameters-instance')/appPath,xxf:instance('view-parameters-instance')/staticFileLocation,$staticResourceLocation)"/>
+            <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType"
+                value="./@default"/>
+            <xxf:variable name="pipeline"
+                select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedBinary.xpl')"/>
+            <xf:insert nodeset="xxf:instance('dalStaticFile-instance')"
+                origin="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
+
+            <!-- If binary data was found then set the dalStaticFile-instance and reset the status.
+                     The binary data is returned in the form                     
+                         <document xsi:type="xs:base64Binary" content-type="image/jpeg">
+                            /9j/4AAQSkZJRgABAQEBygHKAAD/2wBDAAQDAwQDAwQEBAQFBQQFBwsHBwYGBw4KCggLEA4R
+                            KKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q==
+                         </document>
+                     -->
+            <xf:action
+                if="xxf:instance('dalStaticFile-instance')/name()='document' and xxf:instance('dalStaticFile-instance') castable as xs:base64Binary">
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
+            </xf:action>
+            <xf:action
+                if="not(xxf:instance('dalStaticFile-instance')/name()='document' and xxf:instance('dalStaticFile-instance') castable as xs:base64Binary)">
+                <xf:setvalue ref="xxf:instance('databaseControl-instance')/status"
+                    value="'staticFile-not-read'"/>
+            </xf:action>
+        </xf:action>
+
+        <!-- Problem with the staticResourceLocation -->
+        <xf:action if="not(starts-with($staticResourceLocation,'/'))">
+            <xf:setvalue ref="$status" value="'staticResourceLocation-not-set'"/>
+        </xf:action>
+
+        <!-- Return rhe resource usign setvalue -->
+        <xf:setvalue ref="$resource" value="xxf:instance('dalStaticFile-instance')"/>
+
+    </xf:action>
+
+
+
+
     <!-- Application defined action to get the listing of contents a static resource directory.
          Scans directory at specified staticResourceLocation and returns list of resource found there (files and directories).
          staticResourceLocation must start with / and is the path relative to the resources directory of the distribution
@@ -1085,19 +1151,24 @@
                         </image-metadata>
                     </file>
               -->
+        <!-- This one works - the invoke-pipeline may not -->
+        <!--
         <xxf:variable name="resourceList"
             select="xxf:call-xpl($pipeline, 'instance', xxf:instance('session-parameters-instance') , 'data')"/>
         <xf:insert nodeset="$resourceList-instance" origin="$resourceList"/>
+        -->
 
         <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
             <xxf:context name="pipeline" select="'listStaticResources.xpl'"/>
-            <xxf:context name="input-instance" select="xxf:instance('view-parameters-instance')"/>
+            <xxf:context name="input-instance" select="xxf:instance('session-parameters-instance')"/>
+            <xxf:context name="return-instance" select="$resourceList-instance"/>
         </xf:dispatch>
 
         <xf:setvalue ref="$status"
             value="if ($resourceList/name()='directory') then '' else 'directory-not-found'"/>
 
     </xf:action>
+
 
 
     <!-- === Get database version  
@@ -1575,11 +1646,12 @@
 
     <!-- === DAL Database Nodes, Location and Query text === 
          =================================================== -->
-
+ 
     <!-- Application defined action to set the full set of databaseURLs for use in DAL actions.
          The system, databaseOperation and databaseLocation determine the physicalCluster(s) 
          The databaseURLs are then determined from the physicalCluster(s) and databaseLocation 
          
+         The system is passed as a parameter - either ebr or patientstore
          The storageLocation is passed as a parameter and will be one of:
 
             A databaseURL, starting with the URL of the database (eg. http://)
@@ -1598,13 +1670,12 @@
                 and for information about the patient 
                 /xmlstore/applications/[applicationId]/records/[patientId]
                 /xmlstore/applications/[applicationId]/data/[patientId]
-                
-         
-         
+                  
          -->
     <xf:action ev:event="set-databaseURLSet">
         <xxf:variable name="system" select="event('system')"/>
         <xxf:variable name="storageLocation" select="event('storageLocation')"/>
+        <xxf:variable name="databaseOperation" select="event('databaseOperation')"/>
         <xxf:variable name="status" select="event('status')"/>
 
         <xf:setvalue ref="xxf:instance('databaseControl-instance')/status" value="''"/>
@@ -1659,21 +1730,23 @@
             <!-- Multiple nodes deployed in the primaryPhysicalCluster -->
             <xf:action if="count($primaryPhysicalCluster/node) gt 1">
 
-                <!-- query operation.
+                <xf:action if="exists($databaseOperation) and $databaseOperation!=''">
+                    <!-- query operation.
                      Use databaseURL for all relevant BTUs in the (one) primary physicalCluster -->
-                <xf:action if="$databaseOperation='query'"> </xf:action>
+                    <xf:action if="$databaseOperation='query'"> </xf:action>
 
-                <!-- read operation.
+                    <!-- read operation.
                      Use databaseURL for the (one) relevant BTU in the (one) primary physicalCluster -->
-                <xf:action if="$databaseOperation='read'"> </xf:action>
+                    <xf:action if="$databaseOperation='read'"> </xf:action>
 
-                <!-- write operation.
+                    <!-- write operation.
                      Use databaseURL for the (one) relevant BTU across all physicalClusters -->
-                <xf:action if="$databaseOperation='write'"> </xf:action>
+                    <xf:action if="$databaseOperation='write'"> </xf:action>
 
-                <!-- delete operation.
+                    <!-- delete operation.
                      Use databaseURL for the (one) relevant BTU across all physicalClusters -->
-                <xf:action if="$databaseOperation='delete'"> </xf:action>
+                    <xf:action if="$databaseOperation='delete'"> </xf:action>
+                </xf:action>
 
             </xf:action>
 

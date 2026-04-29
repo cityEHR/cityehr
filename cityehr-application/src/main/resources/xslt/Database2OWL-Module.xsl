@@ -67,7 +67,6 @@
     <xsl:variable name="applicationId" select="$configurationSheet/record[field[1] = 'ApplicationId']/field[2]"/>
     <xsl:variable name="modelOwner" select="$configurationSheet/record[field[1] = 'ModelOwner']/field[2]"/>
 
-
     <!-- Set the Specialty for this Information Model -->
     <xsl:variable name="specialtyId" select="$configurationSheet/record[field[1] = 'SpecialtyId']/field[2]"/>
     <xsl:variable name="specialtyDisplayName" select="$configurationSheet/record[field[1] = 'SpecialtyDisplayName']/field[2]"/>

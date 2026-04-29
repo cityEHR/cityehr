@@ -326,10 +326,18 @@
     <!-- Application defined action to run a pipeline
          Invoke the specified pipeline and return results in the instance.
          Saves the session parameters before invoking the pipeline, so that they can be used in the processing.
-         If pipelineInputs is used then it must be a seqeunce of input names that matches the sequence in input-instance
+         
+         The pipeline specified by the $pipeline parameter is invoked with inpus:
+         
+         no input - () - if $input-instance is empty
+         an input called 'instance' if $input-instance is a single instance
+         a set of inputs defined by $pipelineInputs if $input-instance is a sequence of instances
+         
+         If $pipelineInputs is used then there must be a seqeunce of input names that matches the sequence in $input-instance
            e,g, ('master','merge') and ($master-instance,$merge-instance)
-         Otherwise, the inputs to the pipline are input-instance (as the instance input) if it exists
-         and the view-paraemters instance (as the view-parameters input) 
+           
+         If the $return-instance is specified then the pipeline is invoked with 'data' output
+         Otherwise the pipeline is invoked with no output - () 
          -->
     <xf:action ev:event="invoke-pipeline">
         <xxf:variable name="pipeline" select="event('pipeline')"/>
@@ -364,12 +372,12 @@
 
             <!-- Input to pipeline
                  If the pipelineInputs is passed and matches the number of input instances, then use them directly to invoke the pipeline
-                 Else if the input-instance exists then invoke the pipeline with the instance and view-parameters as inputs
-                 Otherwise invoke the pipeline with just view-parameters as inout -->
+                 Else if the input-instance exists then invoke the pipeline with the instance as the single input 'instance'
+                 Otherwise invoke the pipeline with no input -->
             <xxf:variable name="pipelineInput"
-                select="if ($pipelineInputInstanceCount gt 0) then $pipelineInputs else if (exists($input-instance)) then ('instance','view-parameters') else 'instance'"/>
+                select="if ($pipelineInputInstanceCount gt 0) then $pipelineInputs else if (exists($input-instance)) then 'instance' else ()"/>
             <xxf:variable name="pipelineInputInstances"
-                select="if ($pipelineInputInstanceCount gt 0) then $input-instance else if (exists($input-instance)) then ($input-instance,xxf:instance('view-parameters-instance')) else xxf:instance('view-parameters-instance')"/>
+                select="if ($pipelineInputInstanceCount gt 0) then $input-instance else if (exists($input-instance)) then $input-instance else ()"/>
 
             <!-- Debugging -->
             <!--
@@ -378,7 +386,7 @@
             </xf:action>
             -->
 
-            <!-- Output tom pipeline
+            <!-- Output from pipeline
                  If the return-instance exists then the pipeline must return a data output
                  Otherwise invoke the pipeline with no output -->
             <xxf:variable name="pipelineOutput"
@@ -400,24 +408,6 @@
                 <xf:insert nodeset="$return-instance" origin="$pipelineReturn"/>
             </xf:action>
 
-
-
-            <!-- The old way 2024-11-008 -->
-            <!--
-            <xf:action if="exists($input-instance)">
-                <xf:insert nodeset="$return-instance"
-                    origin="xxf:call-xpl($pipelinePath, ('instance','view-parameters'),  ($input-instance,xxf:instance('view-parameters-instance')) , $pipelineOutput)"
-                />
-            </xf:action>
-
-  
-            <xf:action if="not(exists($input-instance))">
-                <xf:insert nodeset="$return-instance"
-                    origin="xxf:call-xpl($pipelinePath, 'instance',  xxf:instance('view-parameters-instance') , $pipelineOutput)"
-                />
-            </xf:action>
-            -->
-
         </xf:action>
 
     </xf:action>
@@ -431,26 +421,6 @@
         <xxf:variable name="pipeline" select="event('pipeline')"/>
         <xxf:variable name="input-instance" select="event('input-instance')"/>
 
-    </xf:action>
-
-
-    <!-- Application defined action to start and stop the scheduler
-         Sets the command and then invokes the pipeline.
-         -->
-    <xf:action ev:event="invoke-pipelineScheduler">
-        <xxf:variable name="command" select="event('command')"/>
-        <xxf:variable name="pipeline" select="event('pipeline')"/>
-        <xxf:variable name="return-instance" select="event('return-instance')"/>
-
-        <!-- Set the command in view-parameters -->
-        <xf:setvalue ref="xxf:instance('view-parameters-instance')/schedulerCommand"
-            value="$command"/>
-
-        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
-            <xxf:context name="pipeline" select="$pipeline"/>
-            <xxf:context name="input-instance" select="xxf:instance('view-parameters-instance')"/>
-            <xxf:context name="return-instance" select="$return-instance"/>
-        </xf:dispatch>
     </xf:action>
 
 
@@ -840,7 +810,36 @@
             <xxf:context name="status"
                 select="xxf:instance('pageNavigationControl-instance')/status"/>
         </xf:dispatch>
-
+    </xf:action>
+    
+    
+    <!-- Application defined action to export a document through the binary cache.
+         The binary cache is located for the current user
+         Stores the binaryFileContent in the cache
+         Then invokes the cityEHRExportCachedBinary pipeline to return directly to browser
+         -->
+    <xf:action ev:event="export-binaryCache">
+        <xxf:variable name="binaryFileContent" select="event('binaryFileContent')"/>
+        <xxf:variable name="fileName" select="event('fileName')"/>
+        
+        <!-- Store the binary cache.
+             Sets binaryCacheHandle for use in cityEHRExportCachedBinary pipeline -->
+        <xf:dispatch name="store-binaryCache" target="pageNavigation-model">
+            <xxf:context name="binaryFileContent" select="$binaryFileContent"/>
+        </xf:dispatch>
+        
+        <!-- Set the externalId -->
+        <xf:setvalue ref="xxf:instance('view-parameters-instance')/externalId" value="$fileName"/>
+        
+        <!-- Call pipeline through page-flow.
+             This uses binaryCacheHandle to retrieve the binary cache
+             Then returns directly to browser with the specified fileName (externalId)
+             -->
+        <xf:dispatch name="load-cityEHR-page" target="pageNavigation-model">
+            <xxf:context name="page" select="'cityEHRExportCachedBinary'"/>
+            <xxf:context name="show" select="'new'"/>
+            <xxf:context name="checkEdits" select="false()"/>
+        </xf:dispatch>
     </xf:action>
 
 

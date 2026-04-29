@@ -779,7 +779,9 @@
                 <!-- Create HTML -->
                 <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                     <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
-                    <xxf:context name="input-instance" select="xxf:instance('view-instance')"/>
+                    <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                    <xxf:context name="input-instance"
+                        select="(xxf:instance('view-instance'),xxf:instance('view-parameters-instance'))"/>
                     <xxf:context name="return-instance" select="xxf:instance('view-html-instance')"
                     />
                 </xf:dispatch>
@@ -793,10 +795,14 @@
                 <!-- Create HTML -->
                 <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                     <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
-                    <xxf:context name="input-instance" select="xxf:instance('patientSet-instance')"/>
+                    <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                    <xxf:context name="input-instance"
+                        select="(xxf:instance('patientSet-instance'),xxf:instance('view-parameters-instance'))"/>
                     <xxf:context name="return-instance"
                         select="xxf:instance('report-html-instance')"/>
                 </xf:dispatch>
+
+
             </xf:action>
 
 

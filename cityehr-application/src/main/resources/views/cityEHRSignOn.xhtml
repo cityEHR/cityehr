@@ -159,10 +159,13 @@
     <!-- Standard cityEHR page head with title, favicon and stylesheets -->
     <xi:include href="cityEHRPageHead.xhtml"/>
 
-
     <!-- This second head contains page-specific content, including the XForms models.
          Although not allowed in the HTML standard, browsers will merge the contents of multiple head elements -->
     <xhtml:head>
+        <!-- This reference is needed because the relative path to the stylesheet is different for the home page,
+             (The default reference in cityEHRPageHead.xhtml is invakid here) -->
+        <xhtml:link rel="stylesheet" type="text/css" href="resources/styles/cityEHRSkin.css"
+            media="screen" />
 
         <!-- ========= System Parameters ===================================================== 
              ================================================================================= -->
@@ -215,8 +218,15 @@
             ================================================================================== -->
         <xi:include href="../models/ontologyModel.xml" xxi:omit-xml-base="true"/>
 
-        <!-- === Generate test data     === -->
+        <!-- ========= Test data =====================================================
+             Required for generating test data (for testing only)
+            ================================================================================== -->
         <xi:include href="../models/testDataModel.xml" xxi:omit-xml-base="true"/>
+
+        <!-- ========= Scheduler =====================================================
+            Required for update of scheduler parameters
+            ================================================================================== -->
+        <xi:include href="../models/schedulerModel.xml" xxi:omit-xml-base="true"/>
 
 
         <!-- ========= Main model for cityEHRSignOn view =====================================
@@ -337,24 +347,31 @@
                 </xf:dispatch>
                 -->
 
-                <!--            
+                <!--
                 <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
                     <xxf:context name="system" select="'ehr'"/>
-                    <xxf:context name="storageLocation" select="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/systemConfiguration/schedulerLog/importWatchedResorces')"/>
+                    <xxf:context name="storageLocation"
+                        select="concat('/xmlstore/applications/',xxf:instance('view-parameters-instance')/applicationId,'/systemConfiguration/schedulerLog/importWatchedResorces')"/>
                     <xxf:context name="dalReadURL"
                         select="xxf:instance('view-parameters-instance')/resourceHandle"/>
                 </xf:dispatch>
-                
-                <xf:setvalue ref="xxf:instance('view-parameters-instance')/externalId" value="'exportTest.xml'"/>
-                
+
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/externalId"
+                    value="'exportTest.xml'"/>
+
                 <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                     <xxf:context name="pipeline" select="'exportResourceToFolder.xpl'"/>
-                    <xxf:context name="return-instance" select="xxf:instance('test-instance')"/>
+                    <xxf:context name="pipelineInputs" select="'instance'"/>
+                    <xxf:context name="input-instance"
+                        select="xxf:instance('view-parameters-instance')"/>
+                    <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
                 </xf:dispatch>
-                
-                <xf:message ref="xxf:instance('application-parameters-instance')[@type='application']/importExport/exportPipeline/exportDirectory"/>
-                
-                -->
+
+
+                <xf:message
+                    ref="xxf:instance('application-parameters-instance')[@type='application']/importExport/exportPipeline/exportDirectory"/>
+
+-->
 
                 <!--
                 <xxf:show dialog="testDialog"/>
@@ -1874,6 +1891,28 @@
                         </xf:dispatch>
                     </xf:action>
 
+                    <!-- Load the scheduler-parameters and log status -->
+                    <xf:dispatch name="load-scheduler-parameters" target="scheduler-model">
+                        <xxf:context name="status" select="xxf:instance('control-instance')/status"
+                        />
+                    </xf:dispatch>
+
+                    <!-- Check the scheduler-parameters to see if an update is needed.
+                         But not if mode has been set to 'disabled')
+                         Updates the scheduler-parameters if the version number of the installation (in view-parameters) has changed. -->
+                    <xf:action
+                        if="xxf:instance('control-instance')/mode != 'disabled' and xxf:instance('scheduler-parameters-instance')/@version != xxf:instance('view-parameters-instance')/versionNumber/@version">
+                        <xf:dispatch name="update-scheduler-parameters" target="scheduler-model">
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/status"/>
+                        </xf:dispatch>
+                        <!-- If there was a problem updating system-parameters, then we can't continue -->
+                        <xf:dispatch name="set-mode" target="main-model">
+                            <xxf:context name="mode" select="'disabled'"/>
+                            <xxf:context name="context" select="'update-scheduler-parameters'"/>
+                        </xf:dispatch>
+                    </xf:action>
+
                     <!-- Load the stylesheets to stylesheetList-instance
                          and set the system stylesheet in session-parameters -->
                     <xf:dispatch name="load-system-stylesheets" target="manageParameters-model"/>
@@ -2257,16 +2296,29 @@
                         </xhtml:div>
 
                         <!-- Progress messages - from processExecutionLog in process-model -->
+                        <xxf:variable name="processExecutionLog"
+                            select="xxf:instance('processExecutionLog-instance')"/>
                         <xxf:variable name="processExecutionStatus"
-                            select="xxf:instance('processExecutionLog-instance')/@status"/>
+                            select="$processExecutionLog/@status"/>
                         <xxf:variable name="progressMessage"
-                            select="normalize-space(xxf:instance('processExecutionLog-instance')/@progressDisplay)"/>
+                            select="normalize-space($processExecutionLog/@progressDisplay)"/>
                         <xxf:variable name="progressMessageDisplay"
                             select="if ($processExecutionStatus= ('waiting','completed')) then 'hidden' else 'signOnMessageContainer'"/>
                         <xxf:variable name="progressMessageClass"
                             select="if ($processExecutionStatus = 'aborted') then 'error' else 'alert'"/>
+                        <xxf:variable name="progressBarDisplay"
+                            select="if ($processExecutionStatus= ('waiting','completed')) then 'hidden' else 'progressBar'"/>
+                        <!-- Show progress messgaes and progress bar -->
                         <xhtml:div class="{$progressMessageDisplay}">
                             <xf:output class="{$progressMessageClass}" ref="$progressMessage"/>
+
+                            <xhtml:div class="{$progressBarDisplay}">
+                                <xhtml:div class="progressComplete"
+                                    style="width:{$processExecutionLog/@progressComplete}px"></xhtml:div>
+                                <xhtml:div class="progressToDo"
+                                    style="width:{$processExecutionLog/@progressToDo}px"
+                                ></xhtml:div>
+                            </xhtml:div>
                         </xhtml:div>
 
                     </xhtml:div>

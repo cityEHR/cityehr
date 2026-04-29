@@ -453,7 +453,9 @@
                 <xf:action if="exists(xxf:instance('event-instance')/*)">
                     <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                         <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
-                        <xxf:context name="input-instance" select="xxf:instance('event-instance')"/>
+                        <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                        <xxf:context name="input-instance"
+                            select="(xxf:instance('event-instance'),xxf:instance('view-parameters-instance'))"/>
                         <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
                     </xf:dispatch>
                 </xf:action>
@@ -1685,7 +1687,7 @@
                         </xhtml:p>
                     -->
 
-<!--
+                    <!--
                     <xf:output
                         ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('control-instance')/compositionSet, 'data')/*, 'html')"
                         mediatype="text/html"/>

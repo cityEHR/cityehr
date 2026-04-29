@@ -37,7 +37,7 @@
 
     <!-- Standard cityEHR page head with title, favicon and stylesheets -->
     <xi:include href="cityEHRPageHead.xhtml"/>
-    
+
     <!-- This second head contains page-specific content, including the XForms models -->
     <xhtml:head>
 
@@ -119,10 +119,10 @@
 
         <!-- ===  Manage image maps   === -->
         <xi:include href="../models/imageMapModel.xml" xxi:omit-xml-base="true"/>
-        
+
         <!-- === Valkyrie federated health records     === -->
         <xi:include href="../models/valkyrieModel.xml" xxi:omit-xml-base="true"/>
-        
+
 
         <!-- ========= View Controls actions model contains actions for view control ========= 
             These actions are specific to this page, so the model is implemented directly.           
@@ -356,13 +356,15 @@
                      Also saves the session-parameters -->
                 <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                     <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
-                    <xxf:context name="input-instance" select="xxf:instance('form-instance')"/>
+                    <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                    <xxf:context name="input-instance"
+                        select="(xxf:instance('form-instance'),xxf:instance('view-parameters-instance'))"/>
                     <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
                 </xf:dispatch>
 
                 <!-- Invoke action to generate PDF for HTML -->
                 <xf:dispatch name="print-html" target="pageNavigation-model">
-                    <xxf:context name="externalIdType" select="'patient'"/>                   
+                    <xxf:context name="externalIdType" select="'patient'"/>
                 </xf:dispatch>
             </xf:action>
 
@@ -465,7 +467,8 @@
             </xhtml:div>
             <!-- Logo Pane -->
             <xhtml:div id="logo">
-                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo" mediatype="image/*"/>
+                <xf:output ref="xxf:instance('session-parameters-instance')/applicationLogo"
+                    mediatype="image/*"/>
             </xhtml:div>
         </xhtml:div>
         <!-- === Level 2 /3 =================================== 
@@ -609,7 +612,7 @@
                     <!-- Include filler so that sections at foot of form can scroll to the top -->
                     <xi:include href="cityEHRFormFootPadding.xhtml"/>
 
-                    
+
                     <!--
                     <xhtml:p class="message">
                         getLatestEntrySetXQuery-instance: <xf:output

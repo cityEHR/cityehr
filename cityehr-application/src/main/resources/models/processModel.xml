@@ -53,7 +53,7 @@
 
     <xf:instance id="processExecutionLog-instance">
         <!-- status is waiting | running | aborted | completed -->
-        <processExecutionLog status="waiting" progressDisplay="" errorCode="" actionCount=""
+        <processExecutionLog status="waiting" progressDisplay="" progressPercent="" progressBar="360" progressComplete="" progressToDo="" errorCode="" actionCount=""
             startTime="" endTime="" elapsedTime=""/>
     </xf:instance>
 
@@ -80,6 +80,9 @@
         <xf:delete nodeset="xxf:instance('processExecutionLog-instance')/*"/>
         <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@actionCount" value="''"/>
         <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressDisplay" value="''"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressPercent" value="'0'"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressComplete" value="'0'"/>
+        <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressToDo" value="'0'"/>
         <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@errorCode" value="''"/>
         <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@startTime" value="''"/>
         <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@endTime" value="''"/>
@@ -381,6 +384,13 @@
             <xxf:variable name="actionName" select="$action/@actionName"/>
             <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressDisplay"
                 value="concat($processName,' (',$actionNumber,'/',$actionCount,') ',$actionName)"/>
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressPercent"
+                value="round-half-to-even( ($actionNumber div $actionCount)*100 )"/>
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressComplete"
+                value="round-half-to-even( xxf:instance('processExecutionLog-instance')/@progressBar * (xxf:instance('processExecutionLog-instance')/@progressPercent div 100) )"/>
+            <xf:setvalue ref="xxf:instance('processExecutionLog-instance')/@progressToDo"
+                value="round-half-to-even( xxf:instance('processExecutionLog-instance')/@progressBar - xxf:instance('processExecutionLog-instance')/@progressComplete)"/>
+            
         </xf:action>
 
         <!-- Log the end of the process.

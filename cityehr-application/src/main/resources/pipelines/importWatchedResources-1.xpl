@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    importWatchedResources.xpl
+    
+    Pipeline to import patient records from the server directory specified in parameters/watchedDirectory
+    
+    Since this pipeline is run by the scheduler it can't take a normal input (e.g. view-parameters)
+    Instead the parameters are stored at a fixed location in the built-in database
+    These parameters contain
+        watchedDirectory, processedDirectory and errorDirectory
+    
+    Get the list of files in the directory
+    Iterate through the files
+    Iterate through records in the file
+    Import each record if patientId is specified
+    Write the file to the processedDirectory or errorDirectory
+    Delete the file
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<p:pipeline xmlns:p="http://www.orbeon.com/oxf/pipeline"
+    xmlns:oxf="http://www.orbeon.com/oxf/processors" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:saxon="http://saxon.sf.net/" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:f="http://orbeon.org/oxf/xml/formatting" xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:cda="urn:hl7-org:v3" xmlns:exist="http://exist.sourceforge.net/NS/exist"
+    xmlns:xdb="http://orbeon.org/oxf/xml/xmldb">
+
+    <!-- There is no input or output for this pipeline.
+         But create a dummy instance for the oxf:xforms-submission -->
+    <p:processor name="oxf:identity">
+        <p:input name="data">
+            <dummy/>
+        </p:input>
+        <p:output name="data" id="dummyRequest"/>
+    </p:processor>
+
+    <!-- Get the scheduler-parameters.
+         These are located in the built-in database at the location specified in the view-parameters -->
+    <p:processor name="oxf:xforms-submission">
+        <p:input name="submission">
+            <xf:submission serialization="none" method="get" action="/exist/rest/db/cityEHR/configuration/scheduler-parameters"/>
+        </p:input>
+        <p:input name="request" href="#dummyRequest"/>
+        <p:output name="response" id="schedulerParametersReturned"/>
+    </p:processor>
+    
+    <!-- The exception catcher behaves like the identity processor if there is no exception -->
+    <p:processor name="oxf:exception-catcher">
+        <p:input name="data" href="#schedulerParametersReturned"/>
+        <p:output name="data" id="schedulerParameters"/>
+    </p:processor>
+
+    <!-- Get list of files/folders in watchedDirectory folder.
+       <directory name="address-book" path="c:\Documents and Settings\John Doe\OPS\src\examples\web\examples\address-book">
+            <file last-modified-ms="1120343217984" last-modified-date="2005-07-03T00:26:57.984" size="961130" path="image0001.jpg" name="image0001.jpg"/>
+        </directory>    
+         -->
+    <p:processor name="oxf:directory-scanner">
+        <p:input name="config" transform="oxf:xslt" href="#schedulerParameters">
+            <config xsl:version="2.0">
+                <base-directory>
+                    <xsl:value-of
+                        select="concat('file://',//parameters/watchedDirectory)"/>
+                </base-directory>
+                <include> *.* </include>
+                <include> */*.* </include>
+                <case-sensitive>false</case-sensitive>
+            </config>
+        </p:input>
+        <p:output name="data" id="directoryListing"/>
+    </p:processor>
+
+    <!-- The exception catcher behaves like the identity processor if there is no exception -->
+    <p:processor name="oxf:exception-catcher">
+        <p:input name="data" href="#directoryListing"/>
+        <p:output name="data" id="directoryListingChecked"/>
+    </p:processor>
+
+    <!-- Iterate through the directoryListing
+         Read each file which is defined bt
+         
+            <file last-modified-ms="1719915616000" last-modified-date="2024-07-02T11:20:16.000" size="23" path="test.xml" name="test.xml"/>      
+         -->
+    <p:for-each href="#directoryListingChecked" select="//file" root="filesProcessed"
+        id="filesProcessed">
+
+        <!-- Read file -->
+        <p:processor name="oxf:url-generator">
+            <p:input name="config" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#schedulerParameters)">
+                <config xsl:version="2.0">
+                    <url>
+                        <xsl:value-of
+                            select="concat('file://',//parameters/watchedDirectory,'/',configuration/file/@name)"
+                        />
+                    </url>
+                    <content-type>application/xml</content-type>
+                </config>
+            </p:input>
+            <p:output name="data" id="fileContent"/>
+        </p:processor>
+
+        <!-- Exception catcher - reading file content -->
+        <p:processor name="oxf:exception-catcher">
+            <p:input name="data" href="#fileContent"/>
+            <p:output name="data" id="fileContentChecked"/>
+        </p:processor>
+
+
+        <!-- Get patientId - only works for valid CDA -->
+        <!--
+        <p:processor name="oxf:identity">
+            <p:input name="data" transform="oxf:xslt" href="#fileContentChecked">
+                <xsl:foreach select="cda:ClinicalDocument">
+                    <patientId xsl:version="2.0">
+                        <xsl:value-of select="cda:recordTarget/cda:patientRole/cda:id/@extension"/>
+                    </patientId>
+                </xsl:foreach>
+            </p:input>
+            <p:output name="data" id="documentsProcessed"/>
+        </p:processor>
+-->
+
+        <!-- Iterate through the cda:ClinicalDocument elements found in each file -->
+        <p:for-each href="#fileContentChecked" select="//cda:ClinicalDocument"
+            root="documentsProcessed" id="documentsProcessed">
+
+            <!-- Get patientId - only works for valid CDA -->
+            <p:processor name="oxf:identity">
+                <p:input name="data" transform="oxf:xslt" href="current()">
+                    <patientId xsl:version="2.0">
+                        <xsl:value-of
+                            select="cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:id/@extension"
+                        />
+                    </patientId>
+                </p:input>
+                <p:output name="data" id="ClinicalDocument"/>
+            </p:processor>
+
+            <!-- Check that this patient exists in the cityEHR record store -->
+
+            <!-- If patient record exists then import ClinicalDocument-->
+
+            <!-- Write  the cityEHR record store -->
+
+            <!-- Otherwise report that the patient record does not exost -->
+
+            <!-- Report recordsProcessed -->
+            <p:processor name="oxf:identity">
+                <p:input name="data" href="#ClinicalDocument"/>
+                <p:output name="data" ref="documentsProcessed"/>
+            </p:processor>
+
+        </p:for-each>
+        <!-- End or iteration through cda:ClinicalDocument elements -->
+
+
+        <!-- Convert the XML instance to serialized XML -->
+        <p:processor name="oxf:text-serializer">
+            <p:input name="config">
+                <config>
+                    <encoding>utf-8</encoding>
+                </config>
+            </p:input>
+            <p:input name="data" href="#fileContentChecked"/>
+            <p:output name="data" id="serializedFile"/>
+        </p:processor>
+
+        <p:processor name="oxf:exception-catcher">
+            <p:input name="data" href="#serializedFile"/>
+            <p:output name="data" id="serializedFileChecked"/>
+        </p:processor>
+
+
+        <!-- Write file -->
+        <p:processor name="oxf:file-serializer">
+            <p:input name="config" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#schedulerParameters)">
+                <config xsl:version="2.0">
+                    <directory>
+                        <xsl:value-of select="//parameters/processedDirectory"/>
+                    </directory>
+                    <file>
+                        <xsl:value-of select="configuration/file/@name"/>
+                    </file>
+                    <make-directories>true</make-directories>
+                    <append>false</append>
+                </config>
+            </p:input>
+            <p:input name="data" href="#serializedFileChecked"/>
+        </p:processor>
+
+
+        <!-- Exception catcher - writing file -->
+        <p:processor name="oxf:exception-catcher">
+            <p:input name="data" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#schedulerParameters)">
+                <fileWrite xsl:version="2.0">
+                    <xsl:value-of select="configuration/file/@name"/>
+                </fileWrite>
+            </p:input>
+            <p:output name="data" id="fileWritehecked"/>
+        </p:processor>
+
+
+        <!-- Delete the file from the watchedDirectory -->
+        <p:processor name="oxf:file">
+            <p:input name="config" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#schedulerParameters)">
+                <config xsl:version="2.0">
+                    <delete>
+                        <directory>
+                            <xsl:value-of select="//parameters/watchedDirectory"/>
+                        </directory>
+                        <file>
+                            <xsl:value-of select="configuration/file/@name"/>
+                        </file>
+                    </delete>
+                </config>
+            </p:input>
+        </p:processor>
+
+        <!-- Exception catcher - deleting file -->
+        <p:processor name="oxf:exception-catcher">
+            <p:input name="data" transform="oxf:xslt"
+                href="aggregate('configuration',current(),#schedulerParameters)">
+                <fileDelete xsl:version="2.0">
+                    <xsl:value-of select="configuration/file/@name"/>
+                </fileDelete>
+            </p:input>
+            <p:output name="data" id="fileDeleteChecked"/>
+        </p:processor>
+
+
+        <!-- Report filesProcessed -->
+        <p:processor name="oxf:identity">
+            <p:input name="data"
+                href="aggregate('processedFile',#fileWritehecked,#fileDeleteChecked,#documentsProcessed)"/>
+            <p:output name="data" ref="filesProcessed"/>
+        </p:processor>
+
+    </p:for-each>
+    <!-- End or iteration through files -->
+
+
+    <!-- REST submission to record audit information.
+         Write filesProcessed to the database each time the pipeline is run -->
+    <p:processor name="oxf:xforms-submission">
+        <p:input name="submission" transform="oxf:xslt" href="#schedulerParameters">
+            <xf:submission xsl:version="2.0" action="/exist/rest/db/cityEHR/configuration/schedulerLog"
+                validate="false" method="put" replace="none" includenamespacesprefixes=""/>
+        </p:input>
+        <p:input name="request" transform="oxf:xslt" href="#filesProcessed">
+            <schedulerLog xsl:version="2.0">
+                <timeStamp>
+                    <xsl:value-of select="current-dateTime()"/>
+                </timeStamp>
+                <xsl:copy-of select="filesProcessed"/>
+            </schedulerLog>
+        </p:input>
+        <p:output name="response" id="saveResponse"/>
+    </p:processor>
+
+    <!-- Exception catcher - audit information -->
+    <p:processor name="oxf:exception-catcher">
+        <p:input name="data" href="saveResponse"/>
+        <p:output name="data" id="saveResponseChecked"/>
+    </p:processor>
+    
+    <!-- Just consume the saveResponseChecked -->
+    <p:processor name="oxf:null-serializer">
+        <p:input name="data" href="#saveResponseChecked"/>
+    </p:processor>
+
+</p:pipeline>

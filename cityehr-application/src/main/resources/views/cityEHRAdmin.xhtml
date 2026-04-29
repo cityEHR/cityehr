@@ -153,6 +153,10 @@
         <!-- ===   Manage parameters (system and application parameters)  === -->
         <xi:include href="../models/manageParametersModel.xml" xxi:omit-xml-base="true"/>
 
+        <!-- ===   Automated pipeline scheduler  === -->
+        <xi:include href="../models/schedulerModel.xml" xxi:omit-xml-base="true"/>
+
+
         <!-- ========= Processes =====================================================
             Set up and run multi-action processes
             ================================================================================== -->
@@ -372,6 +376,7 @@
                     </importCohortSearch>
 
                     <manageUsers>
+                        <status/>
                         <showPassword>false</showPassword>
                         <applicationIRI/>
                         <managedUserId/>
@@ -435,7 +440,7 @@
                     </managedParameters>
 
                     <newApplicationWizard>
-                        <!-- status is waiting | applicationExists | application-parameters-built | creating-application | completed-create-application -->
+                        <!-- status is waiting | applicationExists | application-parameters-built | creating-application | createApplication-completed -->
                         <status>waiting</status>
                         <applicationIdBase/>
                         <applicationIRI/>
@@ -449,6 +454,12 @@
                         </spreadsheetInfo>
                         <tableInfo id="" recordCount="" fieldCount="" headerRecordCount="0"/>
                     </inspectSpreadsheet>
+
+                    <importExportCompositions>
+                        <status/>
+                        <schedulerStatus>running | stopped</schedulerStatus>
+                        <schedulerCommand>start</schedulerCommand>
+                    </importExportCompositions>
 
                     <importRecords>
                         <status/>
@@ -1870,7 +1881,7 @@
 
 
             <!-- Application defined action to load an information model.
-                 Invoked when user selects a new model for manageInformationModel or afte ra new model is imported
+                 Invoked when user selects a new model for manageInformationModel or (indirectly) after a new model is imported
                  informationModel is an element from the informationModelList-instance 
                  informationModelHandle
                  specialtyIRI, modelIRI and informationModelType are set from informationModel
@@ -1879,7 +1890,7 @@
                  The specialtyIRI and classIRI must match the specialtyIRI, modelIRI and informationModelType already set
                  And the language must be the baseLanguage for the applcation
             -->
-            <xf:action ev:event="load-informationModel">
+            <xf:action ev:event="load-managedInformationModel">
                 <xxf:variable name="informationModelHandle" select="event('informationModelHandle')"/>
 
                 <!-- Only load the information model if the informationModelHandle was specified -->
@@ -2081,13 +2092,17 @@
             <!-- Application defined action to export an information model.
                  The format is passed as a parameter.
                  The information model must already be set in manageInformationModel/modelIRI
-                 and loaded to the resource-instance and ISO-13606-instance
+                 and loaded to the resource-instance (OWL/XML) and ISO-13606-instance
             -->
             <xf:action ev:event="export-informationModel">
                 <xxf:variable name="exportExtractIRI" select="event('exportExtractIRI')"/>
                 <xxf:variable name="exportFormat" select="event('exportFormat')"/>
 
-                <!-- Export uses modelId -->
+                <!-- Export uses applicationId, specialtyId and modelId -->
+                <xxf:variable name="applicationId"
+                    select="xxf:instance('control-instance')/managedApplication/applicationId"/>
+                <xxf:variable name="specialtyId"
+                    select="xxf:instance('control-instance')/manageInformationModel/specialtyId"/>
                 <xxf:variable name="modelId"
                     select="replace(substring(xxf:instance('control-instance')/manageInformationModel/modelIRI,2),':','-')"/>
 
@@ -2145,6 +2160,37 @@
                             <xxf:context name="transformationXSL" select="'OWL2MindMap'"/>
                         </xf:dispatch>
                     </xf:action>
+
+                    <!-- Export original source file for the information model
+                         importSource
+                    -->
+                    <xf:action if="$exportFormat='sourceFormat'">
+                        <xxf:variable name="importedFromFile"
+                            select="xxf:instance('resource-instance')/owl:Annotation[owl:AnnotationProperty/@abbreviatedIRI='rdfs:importedFromFile']/owl:Literal"/>
+
+                        <!-- Load the binary source information model.-->
+                        <xxf:variable name="modelSourceLocation"
+                            select="if (($applicationId,$specialtyId,$modelId) = '') then '' else concat('/xmlstore/applications/',$applicationId,'/informationModelSource/',$specialtyId,'/',$modelId)"/>
+
+                        <!-- Read the model source from the database -->
+                        <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                            <xxf:context name="system" select="'ehr'"/>
+                            <xxf:context name="storageLocation" select="$modelSourceLocation"/>
+                            <xxf:context name="resource" select="xxf:instance('resource-instance')"/>
+                            <xxf:context name="status"
+                                select="xxf:instance('control-instance')/manageInformationModel/status"
+                            />
+                        </xf:dispatch>
+
+                        <!-- Export through the binary cache.-->
+                        <xf:dispatch name="export-binaryCache" target="pageNavigation-model">
+                            <xxf:context name="binaryFileContent"
+                                select="xxf:instance('resource-instance')"/>
+                            <xxf:context name="fileName" select="$importedFromFile"/>
+                        </xf:dispatch>
+
+                    </xf:action>
+
 
                     <!-- Export Spreadsheet.
                      The information model OWL/XML is already loaded to resource-instance 
@@ -3050,6 +3096,11 @@
             <xf:instance id="import-instance">
                 <import xmlns=""/>
             </xf:instance>
+            <!-- Instance to hold imported source (any format) -->
+            <xf:instance id="importSource-instance">
+                <document/>
+            </xf:instance>
+            <xf:bind nodeset="xxf:instance('importSource-instance')" type="xs:base64Binary"/>
             <!-- Instance to hold XML for storage -->
             <xf:instance id="storage-instance">
                 <store/>
@@ -3106,24 +3157,30 @@
                  Three spreadsheet formats - ODF .ods, MS .xslx and MS 2003 XML are transformed to standard cityEHR database XML in the pipeline.              
             -->
             <xf:action ev:event="import-uploaded-file">
-                <!-- Run pipeline to get the uploaded XML -->
+                <!-- Set the sourceHandle used in pipelines -->
                 <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceHandle"
                     value="xxf:instance('file-instance')/file/content"/>
+
+                <!-- Run pipeline to get the uploaded source file (binary format, including if it is XML) -->
+                <xf:setvalue ref="xxf:instance('view-parameters-instance')/sourceType"
+                    value="./@default"/>
+                <xxf:variable name="getUploadedBinaryPipeline"
+                    select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedBinary.xpl')"/>
+                <xf:insert nodeset="xxf:instance('importSource-instance')"
+                    origin="xxf:call-xpl($getUploadedBinaryPipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
+
+                <!-- Run pipeline to get the uploaded XML -->
                 <xxf:variable name="pipeline"
                     select="concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/cityEHRGetUploadedData.xpl')"/>
-
                 <xf:insert nodeset="xxf:instance('import-instance')"
                     origin="xxf:call-xpl($pipeline, 'parameters', xxf:instance('view-parameters-instance'), 'data')"/>
 
-                <!--
-                <xf:insert nodeset="xxf:instance('import-instance')"
-                    origin="xxf:call-xpl($pipeline, ('instance','view-parameters'), (xxf:instance('view-parameters-instance'),xxf:instance('view-parameters-instance')), 'data')"/>               
--->
                 <!-- This pipeline always returns XML - of the form exceptions/exception if there is an exception (or error)
-                     Found a recognised XML input file in the data, so can be further processed -->
+                      Found a recognised XML input file in the data, so can be further processed -->
                 <xf:action if="exists(xxf:instance('import-instance')[name(.)!='exceptions'])">
                     <xf:dispatch name="validate-import-instance" target="main-model"/>
                 </xf:action>
+
                 <!-- No recognised XML input file in the data.
                      Includes the case where this wasn't a zip file or an XML file, so the processor threw an exception.
                      Look up the exception message in view-parameters or just display directly if it doesn't have an entry there -->
@@ -3851,6 +3908,35 @@
             </xf:action>
 
 
+            <!-- ===
+                importExportCompositions 
+                Actions invoked from taskControls in application-parameters
+                === -->
+
+            <!-- Invoke pipeline to get the status of the scheduler from the schedulerLog
+                 An action invoked from taskControls in application-parameters -->
+            <xf:action ev:event="importExportCompositions-query">
+                <xf:dispatch name="get-scheduler-status" target="scheduler-model"/>
+            </xf:action>
+
+            <!-- Invoke pipeline to import from watched folder
+                 As invoked by the scheduler but this runs in manually 
+                 An action invoked from taskControls in application-parameters -->
+            <xf:action ev:event="importExportCompositions-import">
+                <xf:dispatch name="invoke-importWatchedResources" target="scheduler-model"/>
+            </xf:action>
+
+            <!-- Invoke pipeline to start/stop the scheduler 
+                 An action invoked from taskControls in application-parameters -->
+            <xf:action ev:event="importExportCompositions-toggle">
+                <xxf:variable name="command"
+                    select="xxf:instance('control-instance')/importExportCompositions/schedulerCommand"/>
+
+                <xf:dispatch name="invoke-pipelineScheduler" target="scheduler-model">
+                    <xxf:context name="command" select="$command"/>
+                </xf:dispatch>
+            </xf:action>
+
 
             <!-- ===
                 importRecords 
@@ -3971,7 +4057,9 @@
 
                 <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                     <xxf:context name="pipeline" select="'cityEHRTransformXMLInstance.xpl'"/>
-                    <xxf:context name="input-instance" select="xxf:instance('import-instance')"/>
+                    <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                    <xxf:context name="input-instance"
+                        select="(xxf:instance('import-instance'),xxf:instance('view-parameters-instance'))"/>
                     <xxf:context name="return-instance" select="xxf:instance('import-instance')"/>
                 </xf:dispatch>
 
@@ -4401,7 +4489,6 @@
                         />
                     </xf:dispatch>
 
-
                     <!-- Store in xmlCache for debugging -->
                     <xf:dispatch name="store-xmlCache" target="pageNavigation-model">
                         <xxf:context name="xml-instance" select="xxf:instance('import-instance')"/>
@@ -4477,6 +4564,7 @@
                     <xf:setvalue ref="xxf:instance('control-instance')/importXMLRoot"
                         value="xxf:instance('import-instance')/name(.)"/>
                 </xf:action>
+
             </xf:action>
 
 
@@ -4520,11 +4608,10 @@
             </xf:action>
 
 
-
-            <!-- Application defined action invoked after completion of the import-informationModel process. 
+            <!-- Application defined action invoked after completion of the importInformationModel process. 
                  If the import was successful then reset adminTask to manageInformationModel 
                  Otherwise display an error message -->
-            <xf:action ev:event="import-informationModelComplete">
+            <xf:action ev:event="importInformationModel-completed">
                 <xxf:variable name="applicationId"
                     select="xxf:instance('control-instance')/managedApplication/applicationId"/>
 
@@ -4547,6 +4634,21 @@
                     <xf:setvalue
                         ref="xxf:instance('control-instance')/importInformationModel/editStatus"
                         value="''"/>
+
+                    <!-- Reload the specialtyList -->
+                    <xf:dispatch name="get-specialtyList" target="application-model">
+                        <xxf:context name="applicationId" select="$applicationId"/>
+                        <xxf:context name="status"
+                            select="xxf:instance('control-instance')/importInformationModel/status"
+                        />
+                    </xf:dispatch>
+
+                    <!-- Set access to the specialty model in the user profile -->
+                    <xf:dispatch name="set-specialty-access" target="main-model">
+                        <xxf:context name="specialtyIRI"
+                            select="xxf:instance('control-instance')/importInformationModel/specialtyIRI"
+                        />
+                    </xf:dispatch>
 
                     <!-- Set new adminTask to manageInformationModel -->
                     <xf:dispatch name="set-adminTask" target="main-model">
@@ -5813,17 +5915,17 @@
                     <xxf:context name="applicationIRI"
                         select="xxf:instance('control-instance')/newApplicationWizard/applicationIRI"/>
                     <xxf:context name="completionActionModel" select="'main-model'"/>
-                    <xxf:context name="completionActionName" select="'completed-create-application'"
+                    <xxf:context name="completionActionName" select="'createApplication-completed'"
                     />
                 </xf:dispatch>
 
             </xf:action>
 
             <!-- Application defined action invoked when proecss to create a new application has completed -->
-            <xf:action ev:event="completed-create-application">
+            <xf:action ev:event="createApplication-completed">
                 <!-- Reset the status -->
                 <xf:setvalue ref="xxf:instance('control-instance')/newApplicationWizard/status"
-                    value="'completed-create-application'"/>
+                    value="'createApplication-completed'"/>
             </xf:action>
 
 
@@ -5921,7 +6023,7 @@
             <xf:action ev:event="newAppWizard-setUserPermissions">
                 <!-- Load managedUser - this is the same as the current user in user-instance -->
                 <xf:dispatch name="get-current-user" target="main-model"/>
-                <xf:dispatch name="load-managed-user" target="main-model"/>
+                <xf:dispatch name="load-managedUser" target="main-model"/>
 
                 <!-- Set the new application for the current user.
                     But only if it isn't already on the list (Very unlikely, but could happen if an application was removed) -->
@@ -5938,7 +6040,7 @@
                         value="$applicationIRI"/>
 
                     <!-- Save the (managed) user -->
-                    <xf:send submission="save-managedUser-details-submission" target="main-model"/>
+                    <xf:dispatch name="save-managedUser" target="main-model"/>
                 </xf:action>
 
             </xf:action>
@@ -8505,8 +8607,10 @@
             <xf:instance id="userList-instance">
                 <exist:result>Will get replaced by the list of users</exist:result>
             </xf:instance>
+
             <!-- Load the queries from file -->
             <xf:instance id="userListXQuery-instance" src="oxf:/apps/ehr/xquery/userListXQuery.xml"/>
+
             <!-- Query instance - text is set from userListXQuery-instance.
                  Note that the number of hits is unlimited - may want to change this depending on performance with many users -->
             <xf:instance id="userList-query-instance">
@@ -8545,6 +8649,7 @@
                 <xf:send submission="userList-submission"/>
             </xf:action>
 
+
             <!-- Submission to get list of users for this application -->
             <xf:submission id="userList-submission" ref="xxf:instance('userList-query-instance')"
                 action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('view-parameters-instance')/storageLocation}/users"
@@ -8576,6 +8681,7 @@
             <xf:action ev:event="delete-managed-user">
                 <xxf:variable name="userId"
                     select="xxf:instance('managedUser-instance')/credentials/userId"/>
+
                 <!-- Not the logged on user -->
                 <xf:action if="$userId != xxf:instance('user-instance')/credentials/userId">
                     <!-- Set the storage object for the user 
@@ -8619,8 +8725,7 @@
                 </xf:action>
             </xf:submission>
 
-            <!-- Application defined action to clear the managedUser
-                 -->
+            <!-- Application defined action to clear the managedUser-->
             <xf:action ev:event="clear-managed-user">
                 <xf:setvalue ref="xxf:instance('control-instance')/manageUsers/managedUserId"
                     value="''"/>
@@ -8659,17 +8764,68 @@
                 <xf:setvalue ref="xxf:instance('passwordControl-instance')/password2" value="''"/>
             </xf:action>
 
+
+            <!-- Application defined action to add specialty for the current user. ***JC-rivne
+                 Load the managedUser for the current user
+                 Add the specified specialty from the specialty-list
+                 Save the user profile
+            
+                 The structure in the user-instance is
+                 
+                 <applications>
+                    <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:cityEHR">
+                        <iso-13606:Folder id="#ISO-13606:Folder:cityEHRBase" displayName="cityEHR Base (Common) Model"/>
+                        ...
+                    </iso-13606:EHR_Extract>
+                 </applications>
+            -->
+            <xf:action ev:event="set-specialty-access">
+                <xxf:variable name="specialtyIRI" select="event('specialtyIRI')"/>
+                <xxf:variable name="applicationIRI"
+                    select="xxf:instance('control-instance')/managedApplication/applicationIRI"/>
+
+                <xxf:variable name="specialtyList"
+                    select="xxf:instance('specialtyList-instance')/iso-13606:Folder"/>
+
+                <!-- Specialty from the specialtyList -->
+                <xxf:variable name="specialty" select="$specialtyList[@id=$specialtyIRI]"/>
+
+                <!-- Remove specialty from the profile for the current user, in case it already exists -->
+                <xf:delete
+                    nodeset="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract[@id=$applicationIRI]/iso-13606:Folder[@id = $specialtyIRI]"/>
+
+                <!-- Insert the specialty into the profile for the current user -->
+                <xf:insert
+                    context="xxf:instance('user-instance')/applications/iso-13606:EHR_Extract[@id=$applicationIRI]"
+                    nodeset="iso-13606:Specialty" origin="$specialty" at="last()" position="after"/>
+
+                <!-- Save the current user -->
+                <xf:dispatch name="save-user-details" target="session-model"/>
+
+            </xf:action>
+
+
+
+
             <!-- Application defined action to load the current managedUser -->
-            <xf:action ev:event="load-managed-user">
+            <xf:action ev:event="load-managedUser">
                 <xf:action>
                     <!-- Set the database handle -->
                     <xxf:variable name="selectedUser"
                         select="xxf:instance('userList-instance')/user[credentials/userId=xxf:instance('control-instance')/manageUsers/managedUserId]"/>
+                    <xxf:variable name="managedUserHandle" select="$selectedUser/@handle"/>
                     <xf:setvalue
                         ref="xxf:instance('control-instance')/manageUsers/managedUserHandle"
-                        value="$selectedUser/@handle"/>
-                    <!-- Load the managed user from xmlstore -->
-                    <xf:send submission="load-managedUser-details-submission"/>
+                        value="$managedUserHandle"/>
+
+                    <xf:dispatch name="dal-read" target="databaseAccessLayer-model">
+                        <xxf:context name="system" select="'ehr'"/>
+                        <xxf:context name="storageLocation" select="$managedUserHandle"/>
+                        <xxf:context name="resource" select="xxf:instance('managedUser-instance')"/>
+                        <xxf:context name="status"
+                            select="xxf:instance('control-instance')/manageUsers/status"/>
+                    </xf:dispatch>
+
                     <!-- Legacy user credentials had role@id in place of role@value in rbac until 2015-06-25 -->
                     <xf:action if="exists(xxf:instance('managedUser-instance')/rbac/role[@id])">
                         <xf:action xxf:iterate="xxf:instance('managedUser-instance')/rbac/role[@id]">
@@ -8686,30 +8842,31 @@
                             <xf:insert context="xxf:instance('managedUser-instance')/rbac"
                                 origin="$fixedRole"/>
                         </xf:action>
-                        <xf:send submission="save-managedUser-details-submission"
-                            target="main-model"/>
+                        <xf:dispatch name="save-managedUser" target="main-model"/>
                     </xf:action>
+
                     <!-- Legacy user credentials had no restrictPatientAccess element in rbac until 2015-10-12 -->
                     <xf:action
                         if="not(exists(xxf:instance('managedUser-instance')/rbac/restrictPatientAccess))">
                         <!-- Insert new restrictPatientAccess element -->
                         <xf:insert context="xxf:instance('managedUser-instance')/rbac"
                             origin="xxf:instance('control-instance')/manageUsers/legacyFixes/restrictPatientAccess"/>
-                        <xf:send submission="save-managedUser-details-submission"
-                            target="main-model"/>
+                        <xf:dispatch name="save-managedUser" target="main-model"/>
                     </xf:action>
+
                     <!-- Legacy user credentials had no logonAlias until 2016-07-15 -->
                     <xf:action
                         if="not(exists(xxf:instance('managedUser-instance')/credentials/logonAlias))">
                         <!-- Insert new logonAlias element -->
                         <xf:insert context="xxf:instance('managedUser-instance')/credentials"
                             origin="xxf:instance('control-instance')/manageUsers/legacyFixes/logonAlias"/>
-                        <xf:send submission="save-managedUser-details-submission"
-                            target="main-model"/>
+                        <xf:dispatch name="save-managedUser" target="main-model"/>
                     </xf:action>
+
                     <!-- Reset the managed user -->
                     <xf:dispatch name="reset-managed-user" target="main-model"/>
                 </xf:action>
+
                 <!-- Set task status -->
                 <xf:action>
                     <xf:setvalue ref="xxf:instance('control-instance')/manageUsers/editAccount"
@@ -8721,35 +8878,35 @@
                 </xf:action>
             </xf:action>
 
-            <!-- Submission to load managedUser from xmlstore -->
-            <xf:submission id="load-managedUser-details-submission" serialization="none"
-                action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('control-instance')/manageUsers/managedUserHandle}"
-                validate="false" method="get" replace="instance" instance="managedUser-instance"
-                f:url-type="resource">
-                <!-- Done - check that the correct user credentials were found -->
-                <xf:action ev:event="xforms-submit-done">
-                    <xf:action
-                        if="xxf:instance('control-instance')/manageUsers/managedUserId != xxf:instance('managedUser-instance')/credentials/userId">
-                        <!-- TBD -->
-                    </xf:action>
-                </xf:action>
-                <!-- Error -->
-                <xf:action ev:event="xforms-submit-error">
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                        value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedLoadingUserInstance']"
-                    />
-                </xf:action>
-            </xf:submission>
 
-            <!-- Submission to load new managedUser from template -->
-            <xf:submission id="load-managedUser-template-submission"
-                resource="{xxf:instance('view-parameters-instance')/staticFileURL}/templates/user.xml"
-                method="get" validate="false" replace="instance" instance="managedUser-instance"
-                serialization="none">
-                <xf:action ev:event="xforms-submit-done">
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('control-instance')/error"/>
-                    <!-- Set up the template with the current application -->
+            <!-- Application defined action to save the current managedUser -->
+            <xf:action ev:event="save-managedUser">
+                <xxf:variable name="storageLocation"
+                    select="concat('/xmlstore/users/',xxf:instance('control-instance')/manageUsers/managedUserId,'/credentials')"/>
+
+                <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                    <xxf:context name="system" select="'ehr'"/>
+                    <xxf:context name="storageLocation" select="$storageLocation"/>
+                    <xxf:context name="resource" select="xxf:instance('managedUser-instance')"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('control-instance')/manageUsers/status"/>
+                </xf:dispatch>
+            </xf:action>
+
+
+            <!-- Application defined action to load template for managedUser-instance -->
+            <xf:action ev:event="load-managedUser-template">
+                <xxf:variable name="userTemplateLocation" select="'/templates/user.xml'"/>
+                <xf:dispatch name="dal-readStaticResource" target="databaseAccessLayer-model">
+                    <xxf:context name="staticResourceLocation" select="$userTemplateLocation"/>
+                    <xxf:context name="resource" select="xxf:instance('managedUser-instance')"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('control-instance')/manageUsers/status"/>
+                </xf:dispatch>
+
+                <!-- Set up the template, if loaded -->
+                <xf:action if="xxf:instance('control-instance')/manageUsers/status=''">
+                    <!-- Set the current application -->
                     <xf:setvalue
                         ref="xxf:instance('managedUser-instance')/applications/iso-13606:EHR_Extract[1]/@id"
                         value="xxf:instance('view-parameters-instance')/applicationIRI"/>
@@ -8763,31 +8920,8 @@
                     <xf:setvalue ref="xxf:instance('control-instance')/manageUsers/editAccount"
                         value="'true'"/>
                 </xf:action>
-                <xf:action ev:event="xforms-submit-error">
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                        value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedLoadingUserTemplate']"
-                    />
-                </xf:action>
-            </xf:submission>
+            </xf:action>
 
-            <!-- Submission to save managedUser to xmlstore -->
-            <xf:submission id="save-managedUser-details-submission"
-                ref="xxf:instance('managedUser-instance')"
-                action="{xxf:instance('view-parameters-instance')/databaseLocation}{xxf:instance('view-parameters-instance')/storageLocation}/users/{xxf:instance('control-instance')/manageUsers/managedUserId}/credentials"
-                method="put" replace="none" f:url-type="resource" includenamespacesprefixes="">
-                <xf:action ev:event="xforms-submit-done">
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">success</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                        value="''"/>
-                </xf:action>
-                <xf:action ev:event="xforms-submit-error">
-                    <xf:setvalue ref="xxf:instance('control-instance')/status">failed</xf:setvalue>
-                    <xf:setvalue ref="xxf:instance('view-parameters-instance')/systemError"
-                        value="xxf:instance('view-parameters-instance')/systemErrorList/systemError[@type='failedSaveUser']"
-                    />
-                </xf:action>
-            </xf:submission>
 
             <!-- ===
                 Managing Cohort Searches
@@ -8983,7 +9117,10 @@
 
             <!-- Application defined action to set up the next admin task.
                  This is invoked from set-adminTask, which sets  nextAdminTask
-                 Either invoked directly or after user has confirmed (discarding edits made in the cirrent task) -->
+                 Either invoked directly or after user has confirmed (discarding edits made in the cirrent task)
+            
+                 *** This should be refactored to just invoke initialize-[adminTaks]
+                     Then define each such action in the relevant set of actionc for the task -->
             <xf:action ev:event="set-nextAdminTask">
                 <xxf:variable name="adminTask"
                     select="xxf:instance('control-instance')/adminTask/nextAdminTask"/>
@@ -9578,7 +9715,6 @@
                         value="xxf:instance('user-instance')/@id"/>
                 </xf:action>
 
-
                 <!-- Manage cohort searches -->
                 <xf:action if="$adminTask='manageCohortSearch'">
                     <!-- Get list of all users for the application.
@@ -9645,7 +9781,8 @@
                 <xf:action if="$adminTask='manageUserAccount'">
                     <!-- Load managedUser - this is the same as the current user in user-instance -->
                     <xf:dispatch name="get-current-user" target="main-model"/>
-                    <xf:dispatch name="load-managed-user" target="main-model"/>
+                    <xf:dispatch name="load-managedUser" target="main-model"/>
+
                     <!-- Set task status -->
                     <xf:setvalue ref="xxf:instance('control-instance')/manageUsers/lifecycleStatus"
                         value="'myAccount'"/>
@@ -9720,6 +9857,17 @@
                         value="if (exists(xxf:instance('application-parameters-instance')/webServices/service)) then xxf:instance('application-parameters-instance')/webServices/service[1]/@entryIRI else ''"
                     />
                 </xf:action>
+
+                <!-- Test web services -->
+                <xf:action if="$adminTask='importExportCompositions'">
+                    <!-- Load the scheduler parameters from database. -->
+                    <xf:dispatch name="load-scheduler-parameters" target="scheduler-model">
+                        <xxf:context name="status"
+                            select="xxf:instance('control-instance')/importExportCompositions/status"
+                        />
+                    </xf:dispatch>
+                </xf:action>
+
 
             </xf:action>
             <!-- End of set-adminTask action -->
@@ -10052,7 +10200,7 @@
                         select="xxf:instance('control-instance')/adminTask/adminTask"/>
 
 
-                    <!-- === Standard controls, defined in the applcayion-parameters ======= 
+                    <!-- === Standard controls, defined in the applcation-parameters ======= 
                          These controls in adminTaskList/task/taskControls have been 
                          transfered to the control-instance when the task was selected (set-adminTask)
                          =================================================================== -->
@@ -12899,15 +13047,14 @@
                                                 <!-- Reload selected user (or current user if this is myAccount)-->
                                                 <xf:action
                                                   if="xxf:instance('control-instance')/manageUsers/lifecycleStatus=('selected','myAccount')">
-                                                  <xf:dispatch name="load-managed-user"
+                                                  <xf:dispatch name="load-managedUser"
                                                   target="main-model"/>
                                                 </xf:action>
                                                 <!-- Reload template for new user -->
                                                 <xf:action
                                                   if="xxf:instance('control-instance')/manageUsers/lifecycleStatus='new'">
-                                                  <xf:send
-                                                  submission="load-managedUser-template-submission"
-                                                  />
+                                                  <xf:dispatch name="load-managedUser-template"
+                                                  target="main-model"/>
                                                 </xf:action>
                                                 <!-- Make sure editStatus is set -->
                                                 <xf:action>
@@ -12939,7 +13086,7 @@
                                         </xf:label>
                                         <xf:hint ref="$label"/>
                                         <!-- Save credentials.
-                                         But only if valid password and userId/logonAlias are valid -->
+                                             But only if valid password and userId/logonAlias are valid -->
                                         <xf:action ev:event="DOMActivate">
                                             <!-- Check userId - only for new users -->
                                             <xf:action
@@ -12982,8 +13129,7 @@
                                             <!-- If userId is OK then save the details -->
                                             <xf:action
                                                 if="xxf:instance('control-instance')/manageUsers/validUserId='true'">
-                                                <xf:send
-                                                  submission="save-managedUser-details-submission"
+                                                <xf:dispatch name="save-managedUser"
                                                   target="main-model"/>
                                                 <xf:setvalue
                                                   ref="xxf:instance('control-instance')/manageUsers/editStatus"
@@ -13038,8 +13184,8 @@
                                         <xf:hint ref="$label"/>
                                         <!-- Add new user -->
                                         <xf:action ev:event="DOMActivate">
-                                            <xf:send
-                                                submission="load-managedUser-template-submission"/>
+                                            <xf:dispatch name="load-managedUser-template"
+                                                target="main-model"/>
                                         </xf:action>
                                     </xf:trigger>
                                 </xhtml:span>
@@ -13195,6 +13341,7 @@
                                                   ref="xxf:instance('managedUser-instance')/@id"/>
                                                   </xhtml:td>
                                                 </xhtml:tr>
+
                                                 <!-- Logon alias can be edited if editAccount is true -->
                                                 <xhtml:tr>
                                                   <xhtml:td>
@@ -13273,6 +13420,7 @@
                                                   </xhtml:td>
                                                   </xhtml:tr>
                                                 </xf:repeat>
+
                                                 <!-- Select restrictPatientAccess.
                                                  But only if adminTask is manageUsers. not manageUserAccount -->
                                                 <xhtml:tr>
@@ -13313,6 +13461,7 @@
                                                 </xhtml:tr>
                                             </xhtml:table>
                                         </xhtml:td>
+
                                         <!-- Applications - only for manageUsers -->
                                         <xhtml:td
                                             class="{if ($adminTask='manageUsers') then '' else 'hidden'}">
@@ -13353,30 +13502,14 @@
                                                   </xf:action>
                                                 </xf:action>
                                             </xf:select>
-                                            <!-- Display the applications set for this user.
-                                            2016-04-26 No longer needed - select now has full appearance -->
-                                            <!--
-                                        <xhtml:ul>
-                                            <xf:repeat
-                                                nodeset="xxf:instance('managedUser-instance')/applications/iso-13606:EHR_Extract">
-                                                <xxf:variable name="application" select="."/>
-                                                <xxf:variable name="applicationDisplayName"
-                                                  select="$applicationList[@id=$application/@id]/@displayName"/>
-                                                <xhtml:li>
-                                                  <xf:output
-                                                  ref="if (exists($applicationDisplayName)) then $applicationDisplayName else $application/@id"
-                                                  />
-                                                </xhtml:li>
-                                            </xf:repeat>
-                                        </xhtml:ul>
-                                        -->
                                         </xhtml:td>
-                                        <!-- Specialties - only for manageUsers -->
+
+                                        <!-- Specialties - only for manageUsers ***JC -->
                                         <xhtml:td
                                             class="{if ($adminTask='manageUsers') then '' else 'hidden'}">
                                             <xxf:variable name="specialtyList"
                                                 select="xxf:instance('specialtyList-instance')/iso-13606:Folder"/>
-                                            <!-- Can only select specialties if editing -->
+                                            <!-- Can only select specialties if editing ***JC-rivne-->
                                             <xf:select
                                                 ref="xxf:instance('control-instance')/manageUsers/managedUserSpecialties"
                                                 appearance="full"
@@ -13402,24 +13535,8 @@
                                                   at="last()" position="after"/>
                                                 </xf:action>
                                             </xf:select>
-                                            <!-- Display the specialties set for this user.
-                                             2016-04-26 No longer needed - select now has full appearance -->
-                                            <!--
-                                        <xhtml:ul>
-                                            <xf:repeat
-                                                nodeset="xxf:instance('managedUser-instance')/applications/iso-13606:EHR_Extract[@id=xxf:instance('view-parameters-instance')/applicationIRI]/iso-13606:Folder">
-                                                <xxf:variable name="specialty" select="."/>
-                                                <xxf:variable name="specialtyDisplayName"
-                                                  select="$specialtyList[@id=$specialty/@id]/@displayName"/>
-                                                <xhtml:li>
-                                                  <xf:output
-                                                  ref="if (exists($specialtyDisplayName)) then $specialtyDisplayName else $specialty/@id"
-                                                  />
-                                                </xhtml:li>
-                                            </xf:repeat>
-                                        </xhtml:ul>
-                                        -->
                                         </xhtml:td>
+
                                         <!-- Roles - only for manageUsers -->
                                         <xhtml:td
                                             class="{if ($adminTask='manageUsers') then '' else 'hidden'}">
@@ -13470,6 +13587,7 @@
                                         </xhtml:ul>
                                         -->
                                         </xhtml:td>
+
                                     </xhtml:tr>
                                 </xhtml:tbody>
                             </xhtml:table>
@@ -13565,7 +13683,7 @@
                                                 <xxf:variable name="selectedModel"
                                                   select="$modelSet[handle=xxf:instance('control-instance')/manageInformationModel/informationModelHandle]"/>
                                                 <!-- Load the model (also sets the specialty for the slected model)-->
-                                                <xf:dispatch name="load-informationModel"
+                                                <xf:dispatch name="load-managedInformationModel"
                                                   target="main-model">
                                                   <xxf:context name="informationModelHandle"
                                                   select="xxf:instance('control-instance')/manageInformationModel/informationModelHandle"
@@ -15107,7 +15225,8 @@
                                     </xf:action>
                                 </xf:trigger>
                             </xhtml:span>
-                            <!-- Start new application wizard - after user has confirmed -->
+                            <!-- Start new application wizard - after user has confirmed
+                                 Invokes create-application on confirmation -->
                             <xhtml:span
                                 class="{if ($wizardControl/status='application-parameters-built') then 'viewControl' else 'hidden'}">
                                 <xxf:variable name="type" select="'action'"/>
@@ -15758,11 +15877,13 @@
                                     <xxf:variable name="specialtyIRI"
                                         select="if (exists(xxf:instance('import-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#ISO-13606:Folder']/owl:Class[1]/@IRI)) then xxf:instance('informationModel-instance')/owl:SubClassOf[owl:Class[2]/@IRI='#ISO-13606:Folder']/owl:Class[1]/@IRI[1] else ''"/>
                                     <!-- Invoke process to import-informationModel.
-                                         This invokves import-informationModelComplete on completion. -->
+                                         This invokves importInformationModel-completed on completion. -->
                                     <xf:dispatch name="import-informationModel"
                                         target="application-model">
                                         <xxf:context name="informationModel-instance"
                                             select="xxf:instance('import-instance')"/>
+                                        <xxf:context name="informationModelSource-instance"
+                                            select="xxf:instance('importSource-instance')"/>
                                         <xxf:context name="applicationIRI"
                                             select="xxf:instance('control-instance')/managedApplication/applicationIRI"/>
                                         <xxf:context name="baseLanguageCode"
@@ -15792,6 +15913,15 @@
                              === -->
                         <xhtml:li
                             class="{if (xxf:instance('control-instance')/importStatus=('loaded','imported','ready')) then 'viewControlsDisplay' else 'hidden'}">
+                            <!-- Nothing needed here -->
+                        </xhtml:li>
+
+
+                        <!-- === Other user input for the tasks with an uploaded file
+                                 Displayed on RHS when importStatus is waiting (i.e. when no file is uploaded)
+                             === -->
+                        <xhtml:li
+                            class="{if (xxf:instance('control-instance')/importStatus=('waiting')) then 'viewControlsActions' else 'hidden'}">
                             <!-- Nothing needed here -->
                         </xhtml:li>
 
@@ -16534,6 +16664,8 @@
                                             target="application-model">
                                             <xxf:context name="informationModel-instance"
                                                 select="xxf:instance('import-instance')"/>
+                                            <xxf:context name="informationModelSource-instance"
+                                                select="xxf:instance('importSource-instance')"/>
                                             <xxf:context name="applicationIRI"
                                                 select="xxf:instance('control-instance')/managedApplication/applicationIRI"/>
                                             <xxf:context name="baseLanguageCode"
@@ -16803,6 +16935,18 @@
                             <!-- Show progress (most recent action) -->
                             <xhtml:li>
                                 <xf:output ref="$processExecutionLog/@progressDisplay"/>
+                                <xf:output ref="$processExecutionLog/@progressPercent"/>
+                            </xhtml:li>
+
+                            <!-- Show progress bar -->
+                            <xhtml:li>
+                                <xhtml:div class="progressBar">
+                                    <xhtml:div class="progressComplete"
+                                        style="width:{$processExecutionLog/@progressComplete}px"></xhtml:div>
+                                    <xhtml:div class="progressToDo"
+                                        style="width:{$processExecutionLog/@progressToDo}px"
+                                    ></xhtml:div>
+                                </xhtml:div>
                             </xhtml:li>
 
                             <!-- Show status and error code (if there is one)-->
@@ -18060,7 +18204,8 @@
                                                 </xhtml:div>
                                             </xhtml:td>
                                         </xf:repeat>
-                                        <!-- Last logged in -->
+                                        <!-- Last logged in. This information from the session-parameters for each user
+                                             ***JC-->
                                         <xhtml:td>
                                             <xhtml:div>
                                                 <xf:trigger appearance="minimal" xxf:modal="true"
@@ -18081,8 +18226,8 @@
                                             <xf:setvalue
                                                 ref="xxf:instance('control-instance')/manageUsers/managedUserId"
                                                 value="$credentials/userId"/>
-                                            <xf:dispatch name="load-managed-user"
-                                                target="main-model"/>
+                                            <xf:dispatch name="load-managedUser" target="main-model"
+                                            />
                                         </xf:action>
 
                                     </xhtml:tr>
@@ -18091,28 +18236,6 @@
                         </xhtml:table>
                     </xhtml:div>
                     <!-- End of display list of users -->
-                    <!-- Debugging -->
-                    <!--
-                    <p>User instance:<br/>
-                        <xf:output
-                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('user-instance'), 'data')/*, 'html')"
-                            mediatype="text/html"/>
-                    </p>
-                    -->
-                    <!--
-                    <p>Managed User instance:<br/>
-                        <xf:output
-                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('managedUser-instance'), 'data')/*, 'html')"
-                            mediatype="text/html"/>
-                    </p>
-                    -->
-                    <!--
-                    <p>Export Data Set instance:<br/>
-                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('exportDataSet-instance'), 'data')/*, 'html')" mediatype="text/html"/>
-                    </p>
-
-                    -->
-
 
                     <!-- ===Display of information on management of information models === 
                          ================================================================== -->
@@ -19080,7 +19203,8 @@
                     </xhtml:div>
 
 
-                    <!-- === Archive, Unarchive, Merge or Unmerge - depends on control-instance manageRecords/operation being archive|unarchive|merge|unmerge 
+                    <!-- === manageRecords
+                             Archive, Unarchive, Merge or Unmerge - depends on control-instance manageRecords/operation being archive|unarchive|merge|unmerge 
                              manageRecords/status is either verified, unverified or processed
                              manageRecords/source/status and manageRecords/target/status are either waiting, loaded or notFound
                          ============================================================== -->
@@ -19435,10 +19559,65 @@
                         ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('patientDemographics-instance'), 'data')/*, 'html')"
                         mediatype="text/html"/>
 -->
-                    <!-- End of merge patient records -->
+                    <!-- End of manageRecords -->
 
 
-                    <!-- === Import records (from cityEHR database format only)
+                    <!-- === 
+                         importExportCompositions
+                         
+                         Configure the automated pipeline scheduler
+                         
+                         Show scheduler-parameters-instance, schedulerReturn-instance, schedulerLog-instance
+                         These are defined in schedulerModel.xml
+                         =========================== -->
+
+                    <xhtml:div
+                        class="{if ($adminTask='importExportCompositions') then '' else 'hidden'}">
+
+                        <xhtml:table>
+                            <xf:repeat nodeset="xxf:instance('scheduler-parameters-instance')/*">
+                                <xxf:variable name="parameter" select="."/>
+                                <xhtml:tr>
+                                    <xhtml:td>
+                                        <xf:output
+                                            ref="concat($parameter/@cityEHR:displayName,': ')"/>
+                                    </xhtml:td>
+                                    <xhtml:td>
+                                        <xf:output ref="$parameter/name()"/>
+                                    </xhtml:td>
+                                    <xhtml:td>
+                                        <xf:output ref="$parameter[@cityEHR:edit='readOnly']"/>
+                                        <xf:input ref="$parameter[not(@cityEHR:edit)]" xxf:size="50"
+                                        />
+                                    </xhtml:td>
+                                </xhtml:tr>
+                            </xf:repeat>
+                        </xhtml:table>
+
+                        <xhtml:div class="scrollingContainer">
+                            <!--
+                            <xf:output
+                                ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',xxf:instance('schedulerReturn-instance'), 'data')/*, 'html')"
+                                mediatype="text/html"/>
+                                -->
+
+                            <xf:output
+                                ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',xxf:instance('schedulerLog-instance'), 'data')/*, 'html')"
+                                mediatype="text/html"/>
+
+                            <!--
+                            <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data',xxf:instance('scheduler-parameters-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                            -->
+
+                        </xhtml:div>
+                    </xhtml:div>
+
+
+                    <!-- === 
+                         importRecords
+                         Import records (from cityEHR database format only)
                          Spreadsheet has been loaded in cityEHR database format:
                          
                          <database>
@@ -19664,9 +19843,8 @@
 
 
                     <!-- === Import Records (telemedicine data - IDIS2GO) === 
-                         inspectSpreadsheet
-                         Also used to display the spreadsheet in importRecords
-                         Display the selected table in the spreadsheet that has been loaded to import-instance
+                         mportRecords
+                         Display messages
                          =========================== -->
                     <xhtml:div
                         class="{if ($adminTask='importRecords' and xxf:instance('control-instance')/importRecords/recordFormat='telemedicine' and xxf:instance('control-instance')/importStatus=('loaded','ready-for-degugging')) then 'ScrollingContainerx' else 'hidden'}">
@@ -19677,13 +19855,13 @@
                         <xf:output class="error"
                             ref="xxf:instance('view-parameters-instance')/staticParameters/cityEHRAdmin/importRecords/telemedicine/noPatientMessage"/>
 
-<!--
+                        <!--
                         <xhtml:p class="message">Import instance:<xhtml:br />
                             <xf:output
                                 ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('import-instance'), 'data')/*, 'html')"
                                 mediatype="text/html"/>
                         </xhtml:p>
--->
+                        -->
 
                     </xhtml:div>
 
@@ -21023,12 +21201,12 @@
                     </xhtml:p>                   
                     -->
                     <!--
-                    <xhtml:p>User list:<xhtml:br/>
+                    <xhtml:p>User list:<xhtml:br />
                         <xf:output
                             ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('userList-instance'), 'data')/*, 'html')"
                             mediatype="text/html"/>
                     </xhtml:p>
-                    -->
+-->
                     <!--
                     <xf:output ref="
                         xxf:instance('view-parameters-instance')/viewDisplayLayout"/>
@@ -21276,6 +21454,27 @@
                             mediatype="text/html"/>
                     </xhtml:p>
 -->
+
+                    <!--
+                    <p>User instance:<br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('user-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </p>
+                    -->
+                    <!--
+                    <p>Managed User instance:<br/>
+                        <xf:output
+                            ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('managedUser-instance'), 'data')/*, 'html')"
+                            mediatype="text/html"/>
+                    </p>
+-->
+                    <!--
+                    <p>Export Data Set instance:<br/>
+                        <xf:output ref="xxf:serialize(xxf:call-xpl('oxf:/ops/utils/formatting/format.xpl', 'data', xxf:instance('exportDataSet-instance'), 'data')/*, 'html')" mediatype="text/html"/>
+                    </p>
+
+                    -->
 
                 </xhtml:div>
                 <!-- End of viewDisplay -->

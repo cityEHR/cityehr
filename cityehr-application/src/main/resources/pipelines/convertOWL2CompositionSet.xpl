@@ -19,7 +19,7 @@
 <p:pipeline xmlns:p="http://www.orbeon.com/oxf/pipeline"
     xmlns:oxf="http://www.orbeon.com/oxf/processors" xmlns:xf="http://www.w3.org/2002/xforms">
 
-    <!-- Input to pipeline is OWL/XML instance and a importControl-instance with parameters  -->
+    <!-- Input to pipeline is OWL/XML instance and the view-parameters-instance with parameters  -->
     <p:param name="instance" type="input"/>
     <p:param name="view-parameters" type="input"/>
 

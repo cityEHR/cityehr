@@ -70,8 +70,10 @@
         </cityEHR:edit>
 
         <!-- The application id (fixed - actually an IRI), language and default models -->
-        <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:RivneTelemedicine" displayName="Rivne Telemedicine Integration"
-            baseLanguageCode="en-GB" commonModel="#ISO-13606:Folder:RivneTelemedicine" defaultSpecialty="#ISO-13606:Folder:RivneTelemedicine"/>
+        <iso-13606:EHR_Extract id="#ISO-13606:EHR_Extract:RivneTelemedicine"
+            displayName="Rivne Telemedicine Integration" baseLanguageCode="en-GB"
+            commonModel="#ISO-13606:Folder:RivneTelemedicine"
+            defaultSpecialty="#ISO-13606:Folder:RivneTelemedicine"/>
 
         <!-- The application stylesheet -->
         <applicationStylesheet cityEHR:displayName="Application Stylesheet" value="cityEHRSkin.css"/>
@@ -100,7 +102,8 @@
             <welcomeLogo cityEHR:displayName="Splash page header logo"
                 hint="Recommended width is 720px" value=""/>
             <welcomeSplash-1 cityEHR:displayName="Splash page image, left"
-                hint="Recommended width 360px or 180px" value="/applications/ISO-13606-EHR_Extract-RivneTelemedicine/images/RivneTelemedicineLogo.png"/>
+                hint="Recommended width 360px or 180px"
+                value="/applications/ISO-13606-EHR_Extract-RivneTelemedicine/images/RivneTelemedicineLogo.png"/>
             <welcomeSplash-2 cityEHR:displayName="Splash page image, right"
                 hint="Recommended width 360px or 180px" value=""/>
         </images>
@@ -112,10 +115,10 @@
             <valkyrieSystem value="" xsi:type="xs:boolean"/>
             <valkyrieSource value="" xsi:type="xs:boolean"/>
         </cityEHR:type>
-        
-        <valkyrieSystem cityEHR:displayName="Valkyrie Federated Health Record" value="true"/> 
+
+        <valkyrieSystem cityEHR:displayName="Valkyrie Federated Health Record" value="true"/>
         <valkyrieSource cityEHR:displayName="Valkyrie Source System" value="false"/>
-        <seedKey cityEHR:displayName="Hash key seed" value="h32y24765jreje"/>      
+        <seedKey cityEHR:displayName="Hash key seed" value="h32y24765jreje"/>
     </valkyrie>
 
     <!-- Supported Languages.
@@ -670,7 +673,8 @@
                 <adminTaskLoadFile/>
                 <taskControls display="">
                     <controlGroup>
-                        <input id="patientId" displayName="Patient Id;" type="xs:string" display="show"/>
+                        <input id="patientId" displayName="Patient Id;" type="xs:string"
+                            display="show"/>
                         <action id="first" displayName="Genesis" display="show"/>
                         <action id="previous" displayName="Back" display="show"/>
                         <label id="block" displayName="Block 1 of 1" display="show"/>
@@ -719,6 +723,20 @@
                 <adminTaskLoadFile/>
             </task>
             <task display="">
+                <adminTask>importExportConfiguration</adminTask>
+                <adminTaskTitle>Import/Export Configuration</adminTaskTitle>
+                <adminTaskLoadFile/>
+                <taskControls display="">
+                    <controlGroup/>  
+                    <controlGroup>
+                        <action id="import" displayName="Import" hint="Import from watched folder"
+                            display="show"/>
+                        <action id="toggle" displayName="Import" hint="Start/Stop Scheduler"
+                            display="show"/>
+                    </controlGroup>
+                </taskControls>
+            </task>
+            <task display="">
                 <adminTask>importRecords</adminTask>
                 <adminTaskTitle>Import Record Set</adminTaskTitle>
                 <adminTaskLoadFile importActionMessage="Import record set">Record set for
@@ -732,6 +750,7 @@
                     <line>Records exported from cityEHR may be imported directly using this
                         utility.</line>
                 </adminTaskInstructions>
+                <action id="import" displayName="Import from watched folder" display="show"/>
             </task>
             <task display="">
                 <adminTask>generateImportTemplate</adminTask>
@@ -1539,8 +1558,12 @@
         -->
     <importExport cityEHR:displayName="Import and Export">
 
-        <!-- Import pipeline.
-          -->
+        <!-- Import pipeline.-->
+        <importScheduler>
+            <interval>10000</interval>
+        </importScheduler>
+
+        <!-- Import pipeline -->
         <importPipeline>
             <importDirectory cityEHR:type="text"
                 >/home/john/Desktop/watchedFolder/import</importDirectory>
@@ -1635,8 +1658,8 @@
                 <option value="get"/>
             </controlItem>
         </cityEHR:selection>
-        
-        
+
+
         <service entryIRI="#ISO-13606:Entry:webService" url="/ehr/webService/" method="post">
             <parameter name="searchkey" value="web service test" elementIRI=""/>
             <parameter name="token" value="5D701296-7CB8-4D40-B4E4-F024C88427E6" elementIRI=""/>
@@ -1648,7 +1671,8 @@
                 <process elementIRI="#ISO-13606:Element:TownCity"
                     sourceExpression="if (.='' and  ../../cda:value[@extension='#ISO-13606:Element:StreetAddress']/@value castable as xs:string) then substring-after(../../cda:value[@extension='#ISO-13606:Element:StreetAddress']/@value,',') else ."
                     transformation="titlecase"/>
-                <process elementIRI="#ISO-13606:Element:StreetAddress" sourceExpression="if (contains(.,',')) then substring-before(.,',') else ."
+                <process elementIRI="#ISO-13606:Element:StreetAddress"
+                    sourceExpression="if (contains(.,',')) then substring-before(.,',') else ."
                     transformation="titlecase"/>
                 <process elementIRI="#ISO-13606:Element:PostCode" transformation="uppercase"/>
                 <process elementIRI="#ISO-13606:Element:DateOfBirth" transformation="yyyymmdd"/>

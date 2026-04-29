@@ -289,9 +289,11 @@
 
                 <!-- Convert form to HTML.
                      Also saves the session-parameters -->
-                <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+               <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                     <xxf:context name="pipeline" select="'getEventDisplay.xpl'"/>
-                    <xxf:context name="input-instance" select="xxf:instance('form-instance')"/>
+                    <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                    <xxf:context name="input-instance"
+                        select="(xxf:instance('form-instance'),xxf:instance('view-parameters-instance'))"/>
                     <xxf:context name="return-instance" select="xxf:instance('html-instance')"/>
                 </xf:dispatch>
 

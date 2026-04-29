@@ -57,6 +57,7 @@
                 <specialtyId/>
                 <classId/>
                 <modelId/>
+                <importedFromFile/>
                 <commonModelName/>
                 <commonModelIRI/>
                 <commonModelId/>
@@ -2546,10 +2547,16 @@
         <directory/>
     </xf:instance>
 
-    <!-- Instances for information models in OWL/XML - informationModel, storedInformationModel -->
+    <!-- Instances for information models in OWL/XML - informationModel, informationModelSource, storedInformationModel -->
     <xf:instance id="informationModel-instance">
         <owl:Ontology/>
     </xf:instance>
+
+    <xf:instance id="informationModelSource-instance">
+        <document/>
+    </xf:instance>
+    <xf:bind nodeset="xxf:instance('informationModelSource-instance')" type="xs:base64Binary"/>
+
     <xf:instance id="storedInformationModel-instance">
         <owl:Ontology/>
     </xf:instance>
@@ -2674,7 +2681,8 @@
     <!-- Application defined action to load an information model from disk.
          Loads an information model from cityEHR resources on disk, given the applicationIRI and fileName.
          The model is loaded from a spreadsheet to uploadedInformationModel-instance.
-         Then converted to OWL/XML and returned in informationModel-instance.
+         Then converted to OWL/XML and set in informationModel-instance.
+         The source file is set in informationModelSource-instance
          Sets status to an error code if the file cannot be read, it cannot be converted to OWL/XML or the application in the model does not match.        
          -->
 
@@ -2691,7 +2699,7 @@
             <xxf:variable name="staticResourceLocation"
                 select="concat('/applications/',$applicationId,'/informationModel/',$fileName)"/>
 
-            <!-- Load the model from disk -->
+            <!-- Load the model from disk as XML -->
             <xf:dispatch name="dal-readStaticResourceAsXML" target="databaseAccessLayer-model">
                 <xxf:context name="staticResourceLocation" select="$staticResourceLocation"/>
                 <xxf:context name="resource"
@@ -2702,7 +2710,7 @@
 
             <!-- If the model was loaded successfully-->
             <xf:action if="xxf:instance('applicationControl-instance')/status = ''">
-                <!-- resourceRoot should be Workbook or database -->
+                <!-- resourceRoot should be Workbook or database or mindmap or graphML -->
                 <xxf:variable name="resourceRoot"
                     select="xxf:instance('uploadedInformationModel-instance')/name()"/>
 
@@ -2713,13 +2721,6 @@
                     select="if ($resourceRoot='Workbook') then 'convertSpreadsheet2OWL.xpl' else 'convertDatabase2OWL.xpl'"/>
 
                 <!-- Set the informationModel-instance by invoking the pipeline -->
-                <!--
-                <xxf:variable name="xsltPipeline"
-                    select="if ($resourceRoot='Workbook') then concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/convertSpreadsheet2OWL.xpl') else concat(xxf:instance('view-parameters-instance')/appPath,'/pipelines/convertDatabase2OWL.xpl')"/>
-
-                <xf:insert nodeset="xxf:instance('informationModel-instance')"
-                    origin="xxf:call-xpl($xsltPipeline, 'instance', xxf:instance('uploadedInformationModel-instance'), 'data')"/>
-                    -->
                 <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                     <xxf:context name="pipeline" select="$xsltPipeline"/>
                     <xxf:context name="input-instance"
@@ -2731,7 +2732,18 @@
                 <!-- Set importedFromFile annotation in the ontology -->
                 <xf:setvalue
                     ref="xxf:instance('informationModel-instance')/owl:Annotation[owl:AnnotationProperty/@abbreviatedIRI='rdfs:importedFromFile']/owl:Literal"
-                    value="$staticResourceLocation"/>
+                    value="$fileName"/>
+
+                <!-- Finally import the source file to informationModelSource-instance -->
+                <xf:dispatch name="dal-readStaticResourceAsBinary"
+                    target="databaseAccessLayer-model">
+                    <xxf:context name="staticResourceLocation" select="$staticResourceLocation"/>
+                    <xxf:context name="resource"
+                        select="xxf:instance('informationModelSource-instance')"/>
+                    <xxf:context name="status"
+                        select="xxf:instance('applicationControl-instance')/status"/>
+                </xf:dispatch>
+
             </xf:action>
         </xf:action>
 
@@ -3313,6 +3325,8 @@
          Or if checkExpressions is set to 'true' then invokes the check-expressions process (does not import) -->
     <xf:action ev:event="import-informationModel">
         <xxf:variable name="informationModel-instance" select="event('informationModel-instance')"/>
+        <xxf:variable name="informationModelSource-instance"
+            select="event('informationModelSource-instance')"/>
         <xxf:variable name="applicationIRI" select="event('applicationIRI')"/>
         <xxf:variable name="baseLanguageCode" select="event('baseLanguageCode')"/>
         <xxf:variable name="commonModelIRI" select="event('commonModelIRI')"/>
@@ -3327,6 +3341,10 @@
         <!-- Set the informationModel-instance -->
         <xf:insert nodeset="xxf:instance('informationModel-instance')"
             origin="$informationModel-instance"/>
+
+        <!-- Set the informationModelSource-instance - done with setvalue since this is binary content -->
+        <xf:setvalue ref="xxf:instance('informationModelSource-instance')"
+            value="$informationModelSource-instance"/>
 
         <!-- Set parameters to be used in the import-informationModel process -->
         <xf:setvalue
@@ -3355,13 +3373,13 @@
             value="$rebuildDirectories"/>
 
         <!-- Run the process to import the model, if checkExpressions is false
-             import-informationModelComplete is defined in the main-model of cityEHRAdmin -->
+             importInformationModel-completed is defined in the main-model of cityEHRAdmin -->
         <xf:action if="$checkExpressions != true()">
             <xf:dispatch name="run-process" target="process-model">
                 <xxf:context name="processName" select="'import-informationModel'"/>
                 <xxf:context name="contextSet" select="()"/>
                 <xxf:context name="completionActionModel" select="'main-model'"/>
-                <xxf:context name="completionActionName" select="'import-informationModelComplete'"
+                <xxf:context name="completionActionName" select="'importInformationModel-completed'"
                 />
             </xf:dispatch>
         </xf:action>
@@ -3379,8 +3397,10 @@
     </xf:action>
 
 
+
     <!-- Application defined action to verify the information model loaded in informationModel-instance.
-         An action in the import-InformationModel process.
+         An action in the 'import-informationModel' process.
+         The information model is in informationModel-instance
          If there is a problem with the model, then abort the import process
          -->
     <xf:action ev:event="importInformationModel-verify">
@@ -3409,6 +3429,10 @@
         <xxf:variable name="modelIRI" select="if ($classIRI!='') then $classIRI else $specialtyIRI"/>
         <xxf:variable name="modelId" select="replace(substring($modelIRI,2),':','-')"/>
         <xf:setvalue ref="$importModelParameters/modelId" value="$modelId"/>
+
+        <xxf:variable name="importedFromFile"
+            select="xxf:instance('informationModel-instance')/owl:Annotation[owl:AnnotationProperty/@abbreviatedIRI='rdfs:importedFromFile']/owl:Literal"/>
+        <xf:setvalue ref="$importModelParameters/importedFromFile" value="$importedFromFile"/>
 
         <xxf:variable name="badSpecialtyIRI"
             select="if ($specialtyIRI ='') then 'bad-specialtyIRI-in-model' else ''"/>
@@ -3441,7 +3465,7 @@
 
 
     <!-- Application defined action to merge the information model with the common model or the existing model.
-         An action in the import-InformationModel process.
+         An action in the 'import-informationModel' process.
          The information model is in informationModel-instance
          Either merges the common model or the existing model - these are loaded to stored-model.
          Note that the information model being imported is the master - any assertions in it take precedence over the existing model
@@ -3468,7 +3492,7 @@
         <xxf:variable name="commonModelIRI" select="$importModelParameters/commonModelIRI"/>
         <xxf:variable name="mergeCommonModel" select="$importModelParameters/@mergeCommonModel"/>
         <xxf:variable name="mergeExistingModel" select="$importModelParameters/@mergeExistingModel"/>
-                 
+
         <!-- Only need to merge the base language model
              (Language variant models are generated from the base language, which will already have been merged) -->
         <xf:action
@@ -3572,6 +3596,8 @@
          An action in the import-informationModel process.
          The informationModel-instance is written to the modelLocation
          which is constructed from applicationId, specialtyId and modelId
+         The informationModel-instance is written to the modelSourceLocation
+ 
          -->
     <xf:action ev:event="importInformationModel-save">
         <xxf:variable name="importModelParameters"
@@ -3579,12 +3605,15 @@
         <xxf:variable name="applicationId" select="$importModelParameters/applicationId"/>
         <xxf:variable name="specialtyId" select="$importModelParameters/specialtyId"/>
         <xxf:variable name="modelId" select="$importModelParameters/modelId"/>
+        <!--
+        <xxf:variable name="importedFromFile" select="$importModelParameters/importedFromFile"/>
+-->
 
         <!-- Set the language variant location (if model is not for the base language) -->
         <xxf:variable name="languageVariantLocation"
             select="if ($importModelParameters/languageCode != $importModelParameters/baseLanguageCode) then concat('/variants/',$importModelParameters/languageCode) else ''"/>
 
-        <!-- Set the storgage location for the information model -->
+        <!-- Set the storage location for the information model -->
         <xxf:variable name="modelLocation"
             select="if (($applicationId,$specialtyId,$modelId) = '') then '' else concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/informationModel/',$specialtyId,'/',$modelId)"/>
 
@@ -3595,6 +3624,27 @@
             <xxf:context name="resource" select="xxf:instance('informationModel-instance')"/>
             <xxf:context name="status" select="xxf:instance('applicationControl-instance')/status"/>
         </xf:dispatch>
+
+        <!-- Model saved OK - now save the source file -->
+        <xf:action if="xxf:instance('applicationControl-instance')/status = ''">
+            <!-- Set the storage location for the information model source -->
+            <xxf:variable name="modelSourceLocation"
+                select="if (($applicationId,$specialtyId,$modelId) = '') then '' else concat('/xmlstore/applications/',$applicationId,$languageVariantLocation,'/informationModelSource/',$specialtyId,'/',$modelId)"/>
+
+            <!--
+            <xf:setvalue ref="xxf:instance('applicationControl-instance')/status" value="concat('Source: ',string-length(xxf:instance('informationModelSource-instance')))"/>
+-->
+            <!-- Save the model source to the database -->
+            <xf:dispatch name="dal-write" target="databaseAccessLayer-model">
+                <xxf:context name="system" select="'ehr'"/>
+                <xxf:context name="storageLocation" select="$modelSourceLocation"/>
+                <xxf:context name="resource"
+                    select="xxf:instance('informationModelSource-instance')"/>
+                <xxf:context name="status"
+                    select="xxf:instance('applicationControl-instance')/status"/>
+            </xf:dispatch>
+        </xf:action>
+
 
         <!-- Update the specialtyList if the model was saved successfully-->
         <xf:action if="xxf:instance('applicationControl-instance')/status = ''">
@@ -3728,8 +3778,10 @@
             <!-- Call pipleline to generate composition set -->
             <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                 <xxf:context name="pipeline" select="'convertOWL2CompositionSet.xpl'"/>
+                <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
                 <xxf:context name="input-instance"
-                    select="xxf:instance('informationModel-instance')"/>
+                    select="(xxf:instance('informationModel-instance'),xxf:instance('view-parameters-instance'))"/>
+
                 <xxf:context name="return-instance" select="xxf:instance('compositionSet-instance')"
                 />
             </xf:dispatch>

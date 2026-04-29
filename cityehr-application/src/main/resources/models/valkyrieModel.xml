@@ -243,7 +243,9 @@
                 value="'CDA2ValkyrieToken.xsl'"/>
             <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                 <xxf:context name="pipeline" select="'cityEHRTransformXMLInstance.xpl'"/>
-                <xxf:context name="input-instance" select="$composition"/>
+                <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                <xxf:context name="input-instance"
+                    select="($composition,xxf:instance('view-parameters-instance'))"/>
                 <xxf:context name="return-instance" select="xxf:instance('encryptedToken-instance')"
                 />
             </xf:dispatch>
@@ -322,9 +324,12 @@
             <!-- Create valkyrie token (current block) -->
             <xf:setvalue ref="xxf:instance('view-parameters-instance')/transformationXSL"
                 value="'CDA2ValkyrieToken.xsl'"/>
+          
             <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
                 <xxf:context name="pipeline" select="'cityEHRTransformXMLInstance.xpl'"/>
-                <xxf:context name="input-instance" select="$composition"/>
+                <xxf:context name="pipelineInputs" select="('instance','view-parameters')"/>
+                <xxf:context name="input-instance"
+                    select="($composition,xxf:instance('view-parameters-instance'))"/>
                 <xxf:context name="return-instance" select="xxf:instance('encryptedToken-instance')"
                 />
             </xf:dispatch>
@@ -431,7 +436,7 @@
         <!-- Get the hashId for the current token -->
         <xxf:variable name="currentBlockHashId"
             select="xxf:instance('patientLedgerEntry-instance')/@currentBlockHashId"/>
-        
+
         <!-- Clear the blockchain -->
         <xf:delete nodeset="xxf:instance('patientBlockchain-instance')/*"/>
 

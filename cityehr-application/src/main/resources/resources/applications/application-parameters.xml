@@ -106,18 +106,6 @@
         </images>
     </application>
 
-    <!-- Valkyrie Federated Health Record -->
-    <valkyrie cityEHR:displayName="Valkyrie Federated Health Record">
-        <cityEHR:type>
-            <valkyrieSystem value="" xsi:type="xs:boolean"/>
-            <valkyrieSource value="" xsi:type="xs:boolean"/>
-        </cityEHR:type>
-        
-        <valkyrieSystem cityEHR:displayName="Valkyrie Federated Health Record" value=""/> 
-        <valkyrieSource cityEHR:displayName="Valkyrie Source System" value=""/>
-        <seedKey cityEHR:displayName="Hash key seed" value="h32y24765jreje"/>      
-    </valkyrie>
-
     <!-- Supported Languages.
          Use language codes from IETF RFC 5646 -->
     <languagePacks cityEHR:displayName="Language Packs"
@@ -232,6 +220,7 @@
             <birthTime entry="" cityEHR:selection="cityEHR:entry"/>
             <birthTime element="" cityEHR:selection="cityEHR:element"/>
         </cityEHR:selection>
+        
         <registrationEvent composition="#CityEHR:Form:BaseRegistration"/>
 
         <!-- These entries must exist in the registrationEvent -->
@@ -732,6 +721,7 @@
                     <line>Records exported from cityEHR may be imported directly using this
                         utility.</line>
                 </adminTaskInstructions>
+                <action id="import" displayName="Import from watched folder" display="show"/>
             </task>
             <task display="">
                 <adminTask>generateImportTemplate</adminTask>
@@ -843,12 +833,23 @@
         </task>
         <task display="">
             <adminTask>manageInterfaces</adminTask>
-            <adminTaskTitle>Manage Interfaces</adminTaskTitle>
+            <adminTaskTitle>Manage Interfaces</adminTaskTitle>                     
             <task display="">
                 <adminTask>importExportCompositions</adminTask>
                 <adminTaskTitle>Import/Export Compositions</adminTaskTitle>
                 <adminTaskLoadFile/>
-            </task>
+                <taskControls display="">
+                    <controlGroup/>  
+                    <controlGroup>
+                        <action id="query" displayName="Get scheduler status"
+                            display="show"/>
+                        <action id="import" displayName="Import from watched folder"
+                            display="show"/>
+                        <action id="toggle" displayName="Start/Stop Scheduler"
+                            display="show"/>
+                    </controlGroup>
+                </taskControls>
+            </task>          
             <task display="">
                 <adminTask>testWebService</adminTask>
                 <adminTaskTitle>Test Web Service</adminTaskTitle>
@@ -1047,6 +1048,18 @@
         </anonymiseElements>
     </anonymisation>
 
+
+    <!-- Valkyrie Federated Health Record -->
+    <valkyrie cityEHR:displayName="Valkyrie Federated Health Record">
+        <cityEHR:type>
+            <valkyrieSystem value="" xsi:type="xs:boolean"/>
+            <valkyrieSource value="" xsi:type="xs:boolean"/>
+        </cityEHR:type>
+        
+        <valkyrieSystem cityEHR:displayName="Valkyrie Federated Health Record" value=""/> 
+        <valkyrieSource cityEHR:displayName="Valkyrie Source System" value=""/>
+        <seedKey cityEHR:displayName="Hash key seed" value="h32y24765jreje"/>      
+    </valkyrie>
 
     <!-- Clinic list parameters.
          Can have multiple clinicBookingEvent to cater for new appointments, cancelled, modified, etc-->

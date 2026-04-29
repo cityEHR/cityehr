@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    schedulerModel.xml
+    
+    Xforms model containing stuff for handling of the automated task scheduler.
+    This model is loaded for the cityEHRAdmin page
+    
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+
+<xf:model id="scheduler-model" xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+    xmlns:exforms="http://www.exforms.org/exf/1-0" xmlns:widget="http://orbeon.org/oxf/xml/widget"
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner" xmlns:f="http://orbeon.org/oxf/xml/formatting"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:exist="http://exist.sourceforge.net/NS/exist" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xxi="http://orbeon.org/oxf/xml/xinclude" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:math="http://exslt.org/math" xmlns:cda="urn:hl7-org:v3"
+    xmlns:iso-13606="http://www.iso.org/iso-13606"
+    xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+
+
+    <!-- Control of the scheduler -->
+    <xf:instance id="schedulerControl-instance">
+        <control xmlns="">
+            <status/>
+        </control>
+    </xf:instance>
+
+
+    <!-- === Scheduler parameters and log instances
+         ========================================================================================= -->
+
+    <xf:instance id="scheduler-parameters-instance">
+        <parameters xmlns=""/>
+    </xf:instance>
+
+    <xf:instance id="default-scheduler-parameters-instance">
+        <parameters xmlns=""/>
+    </xf:instance>
+
+
+    <xf:instance id="schedulerLog-instance">
+        <schedulerLog xmlns=""/>
+    </xf:instance>
+
+    <xf:instance id="schedulerReturn-instance">
+        <schedulerReturn xmlns=""/>
+    </xf:instance>
+
+
+    <!-- === Load scheduler parameters shipped with the installation.
+         These are saved to the local database when the scheduler is started.
+         ============================================================ -->
+
+    <!-- Application defined action to load the scheduler parameters from disk. -->
+    <xf:action ev:event="load-default-scheduler-parameters">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <xf:dispatch name="dal-readStaticFile" target="databaseAccessLayer-model">
+            <xxf:context name="staticFileLocation" select="'/scheduler-parameters.xml'"/>
+            <xxf:context name="resource"
+                select="xxf:instance('default-scheduler-parameters-instance')"/>
+            <xxf:context name="status" select="xxf:instance('schedulerControl-instance')/status"/>
+        </xf:dispatch>
+
+        <xf:setvalue ref="$status"
+            value="if (xxf:instance('schedulerControl-instance')/status='') then '' else'failedLoadDefaultSchedulerParameters'"/>
+
+    </xf:action>
+
+
+    <!-- === Load and save parameters and log instances
+         These use the actions defined in systemParameters-model 
+         Those actions directly use submissions but could use the DAL
+         ** Refactor so that DAL can read/write to direct system locations ^^
+         
+         Note that there is no save-schedulerLog because this is only written by the scheduler piplelines
+         ========================================================================================= -->
+
+    <!-- Application defined action to save the scheduler parameters -->
+    <xf:action ev:event="save-scheduler-parameters">
+        <xf:dispatch name="save-systemResource" target="systemParameters-model">
+            <xxf:context name="systemResource-instance"
+                select="xxf:instance('scheduler-parameters-instance')"/>
+            <xxf:context name="systemResourceName" select="'scheduler-parameters'"/>
+            <xxf:context name="status" select="xxf:instance('schedulerControl-instance')/status"/>
+        </xf:dispatch>
+    </xf:action>
+
+    <!-- Application defined action to load the scheduler parameters -->
+    <xf:action ev:event="load-scheduler-parameters">
+        <xf:dispatch name="load-systemResource" target="systemParameters-model">
+            <xxf:context name="systemResource-instance"
+                select="xxf:instance('scheduler-parameters-instance')"/>
+            <xxf:context name="systemResourceName" select="'scheduler-parameters'"/>
+            <xxf:context name="status" select="xxf:instance('schedulerControl-instance')/status"/>
+        </xf:dispatch>
+    </xf:action>
+
+    <!-- Application defined action to update the scheduler parameters -->
+    <xf:action ev:event="update-scheduler-parameters">
+        <xxf:variable name="status" select="event('status')"/>
+
+        <!-- Load the scheduler parameters from database.
+             This will fail if there are no parameters stored, but that's OK -->
+        <xf:dispatch name="load-scheduler-parameters" target="scheduler-model">
+            <xxf:context name="status" select="xxf:instance('schedulerControl-instance')/status"/>
+        </xf:dispatch>
+
+        <!-- Load the default scheduler parameters.
+             If this one fails then can't continue -->
+        <xf:dispatch name="load-default-scheduler-parameters" target="scheduler-model">
+            <xxf:context name="status" select="xxf:instance('schedulerControl-instance')/status"/>
+        </xf:dispatch>
+
+        <xf:action if="xxf:instance('schedulerControl-instance')/status = ''">
+
+            <!-- Iterate through default-scheduler-parameters.
+             If there is an existing value in scheduler-parameters then set it -->
+            <xf:action if="xxf:instance('schedulerControl-instance')/status = ''"
+                xxf:iterate="xxf:instance('default-scheduler-parameters-instance')/*">
+
+                <xxf:variable name="defaultParameter" select="."/>
+                <xxf:variable name="parameter"
+                    select="xxf:instance('scheduler-parameters-instance')/*[name()=$defaultParameter/name()]"/>
+
+                <!-- Set value in default-parameters if there is an existing balue -->
+                <xf:setvalue ref="$defaultParameter"
+                    value="if (exists($parameter)) then $parameter else ."/>
+
+            </xf:action>
+
+            <!-- Replace scheduler-parameters with the updated default-scheduler-parameters -->
+            <xf:insert nodeset="xxf:instance('scheduler-parameters-instance')"
+                origin="xxf:instance('default-scheduler-parameters-instance')"/>
+            
+            <!-- Set the current version of cityEHR -->
+            <xf:setvalue ref="xxf:instance('scheduler-parameters-instance')/@version"
+                value="xxf:instance('view-parameters-instance')/versionNumber/@version"/>
+            
+            <!-- Save the Scheduler parameters -->
+            <xf:dispatch name="save-scheduler-parameters" target="scheduler-model"/>
+
+        </xf:action>
+
+        <!-- Return the status -->
+        <xf:setvalue ref="$status" value="xxf:instance('schedulerControl-instance')/status"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to load the scheduler log -->
+    <xf:action ev:event="load-schedulerLog">
+        <xf:dispatch name="load-systemResource" target="systemParameters-model">
+            <xxf:context name="systemResource-instance"
+                select="xxf:instance('schedulerLog-instance')"/>
+            <xxf:context name="systemResourceName" select="'schedulerLog'"/>
+            <xxf:context name="status" select="xxf:instance('schedulerControl-instance')/status"/>
+        </xf:dispatch>
+    </xf:action>
+
+
+    <!-- === Application defined actions.
+         ========================================================================================= -->
+
+
+    <!-- Application defined action to get teh scheduler status
+         Gets the schedulerLog and checks whether it has been updated within the sceduled time interval
+         If so then the scheduler must be running.
+-->
+    <xf:action ev:event="get-scheduler-status">
+        <!-- Load the Scheduler log (should contain log of the importWatchedResources pipeline -->
+        <xf:dispatch name="load-schedulerLog" target="scheduler-model"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to manually run the importWatchedResources pipeline
+         Saves the scheduler-parameters-instance
+         Then invokes the pipeline
+         -->
+    <xf:action ev:event="invoke-importWatchedResources">
+        <!-- Set the scheduler parameters -->
+        <xxf:variable name="applicationId"
+            select="xxf:instance('session-parameters-instance')/applicationId"/>
+        <xf:setvalue ref="xxf:instance('scheduler-parameters-instance')/applicationId"
+            value="$applicationId"/>
+
+        <!-- Set the patientRecordsDatabaseURL
+             **TBD for a clustered database this needs to get the full URL set
+               So currently the importWatchedResources will only work on single node databases -->
+        <xxf:variable name="storageLocation"
+            select="concat('/xmlstore/applications/',$applicationId,'/records/')"/>
+        <xf:dispatch name="set-dalReadURL" target="databaseAccessLayer-model">
+            <xxf:context name="system" select="'ehr'"/>
+            <xxf:context name="storageLocation" select="$storageLocation"/>
+            <xxf:context name="dalReadURL"
+                select="xxf:instance('scheduler-parameters-instance')/patientRecordsDatabaseURL"/>
+        </xf:dispatch>
+
+        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+            <xxf:context name="pipeline" select="'importWatchedResources.xpl'"/>
+        </xf:dispatch>
+       
+        <!-- This works - is set up to cater for no input -->
+        <!--
+        <xxf:variable name="xsltPipeline"
+            select="concat(xxf:instance('view-parameters-instance')/appPath, '/pipelines/importWatchedResources.xpl')"/>
+        <xxf:variable name="pipelineReturn" select="xxf:call-xpl($xsltPipeline, (), (), ())"/>
+        -->
+
+        <!-- Set the results of the importWatchedResources pipeline -->
+        <!-- But there isn't any -->
+        <!--
+        <xf:insert nodeset="xxf:instance('schedulerReturn-instance')" origin="$pipelineReturn"/>
+        -->
+
+        <!-- Load the Scheduler log (should contain log of the importWatchedResources pipeline -->
+        <xf:dispatch name="load-schedulerLog" target="scheduler-model"/>
+
+    </xf:action>
+
+
+    <!-- Application defined action to start and stop the scheduler
+         Sets the command and then invokes the pipeline.
+         Command of 'start' will start tje scheduler - anything else stops it
+         -->
+    <xf:action ev:event="invoke-pipelineScheduler">
+        <xxf:variable name="command" select="event('command')"/>
+
+        <!-- Set the command in scheduler-parameters -->
+        <xf:setvalue ref="xxf:instance('scheduler-parameters-instance')/schedulerCommand"
+            value="$command"/>
+        
+        <!-- Set the schedulerLogURL in scheduler-parameters -->
+        <xf:setvalue ref="xxf:instance('scheduler-parameters-instance')/schedulerLogURL"
+            value="xxf:instance('view-parameters-instance')/schedulerLogURL/@databaseLocation"/>
+        
+        <!-- Save the Scheduler parameters -->
+        <xf:dispatch name="save-scheduler-parameters" target="scheduler-model"/>
+        
+        <!-- Invoke the importScheduler pipeline -->
+        <xf:dispatch name="invoke-pipeline" target="pageNavigation-model">
+            <xxf:context name="pipeline" select="'importScheduler.xpl'"/>
+            <xxf:context name="input-instance" select="xxf:instance('scheduler-parameters-instance')"/>
+            <xxf:context name="return-instance" select="xxf:instance('schedulerReturn-instance')"/>
+        </xf:dispatch>
+
+        <!-- Load the Scheduler log (should contain log of the importScheduler pipeline -->
+        <xf:dispatch name="load-schedulerLog" target="scheduler-model"/>
+
+    </xf:action>
+
+
+
+    <!-- ========= Set up when first loaded ========= 
+         ============================================ -->
+    <xf:action ev:event="xforms-model-construct-done">
+        <!-- Not doing anything here -->
+    </xf:action>
+
+
+</xf:model>

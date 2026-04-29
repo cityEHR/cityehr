@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+    *********************************************************************************************************
+    cityEHR
+    scheduler-parameters.xml
+    
+    Parameters for managing the automated pipeline scheduler.
+    Copyright (C) 2013-2021 John Chelsom.
+    
+    This program is free software; you can redistribute it and/or modify it under the terms of the
+    GNU Lesser General Public License as published by the Free Software Foundation; either version
+    2.1 of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU Lesser General Public License for more details.
+    
+    The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+    **********************************************************************************************************
+-->
+<!-- @version is set during update-scheduler-parameters -->
+<parameters version="" xmlns:cityEHR="http://openhealthinformatics.org/ehr">
+    <schedulerCommand cityEHR:displayName="Scheduler Command" cityEHR:edit="readOnly"/>
+    <schedulerLogURL cityEHR:displayName="Scheduler Log URL" cityEHR:edit="readOnly"/>
+    <pollingInterval cityEHR:displayName="Polling Interval (ms)">10000</pollingInterval>
+    <patientRecordsDatabaseURL cityEHR:displayName="Database Location" cityEHR:edit="readOnly"/>
+    <applicationId cityEHR:displayName="Application Id" cityEHR:edit="readOnly"/>
+    <watchedDirectory cityEHR:displayName="Watched Directory Location">/home/john/Desktop/integrationDirectories/watchedDirectory</watchedDirectory>
+    <processedDirectory cityEHR:displayName="Processed Directory Location">/home/john/Desktop/integrationDirectories/processedDirectory</processedDirectory>
+    <errorDirectory cityEHR:displayName="Error Directory Location">/home/john/Desktop/integrationDirectories/errorDirectory</errorDirectory>
+</parameters>
