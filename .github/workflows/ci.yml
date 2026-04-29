@@ -11,19 +11,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.jdk }}
           distribution: 'temurin'
-      - name: Validate
-        run: mvn -B validate
-      - name: Compile
-        run: mvn -B compile
+          cache: maven
+      - name: Compile and Package
+        run: mvn -V -B package -DskipTests
+      - name: Install Package
+        run: mvn -V -B install -DskipTests
       - name: Test
-        run: mvn -B test
-      - name: Package
-        run: mvn -B package
-      - name: Verify
-        run: mvn -B verify
+        run: mvn -V -B test
