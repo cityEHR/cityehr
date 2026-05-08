@@ -68,6 +68,7 @@
     <dynamicParameters cityEHR:displayName="Dynamic Parameters">
         <cityEHR:type>
             <debug value="" xsi:type="xs:boolean"/>
+            <openAccess value="" xsi:type="xs:boolean"/>
             <auditLogRecording value="" xsi:type="xs:boolean"/>
             <useFormCache value="" xsi:type="xs:boolean"/>
             <enableAPI value="" xsi:type="xs:boolean"/>
@@ -87,6 +88,9 @@
 
         <!-- Debug value = true | false -->
         <debug cityEHR:displayName="Debugging Mode" value="false"/>
+        
+        <!-- Open Access = true | false -->
+        <openAccess cityEHR:displayName="Alloe Open Access" value="false"/>
 
         <!-- Switch to set whether to record the audit log.
             true | false (in fact if not true then is assumed that no auditLog is recorded) -->

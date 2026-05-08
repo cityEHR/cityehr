@@ -123,7 +123,7 @@
                 <config xsl:version="2.0">
                     <url>
                         <xsl:value-of
-                            select="concat('file://',//watchedDirectory,'/',configuration/file/@name)"
+                            select="concat('file://',//watchedDirectory,'/',//file/@name)"
                         />
                     </url>
                     <content-type>application/xml</content-type>
@@ -132,33 +132,43 @@
             <p:output name="data" id="fileContent"/>
         </p:processor>
 
-        <!-- Exception catcher - reading file content -->
+        <!-- Exception catcher - reading file content.
+             Set up with count of each cda:ClinicalDocument -->
         <p:processor name="oxf:exception-catcher">
-            <p:input name="data" href="#fileContent"/>
+            <p:input name="data" transform="oxf:xslt" href="#fileContent">
+                <documentCollection xsl:version="2.0">
+                    <xsl:for-each select="//cda:ClinicalDocument">
+                        <xsl:variable name="ClinicalDocument" select="."/>
+                        <document>
+                            <count>
+                                <xsl:value-of
+                                    select="count($ClinicalDocument/preceding-sibling::*) +1"/>
+                            </count>
+                            <xsl:copy-of select="$ClinicalDocument"/>
+                        </document>
+                    </xsl:for-each>
+                </documentCollection>
+            </p:input>
             <p:output name="data" id="fileContentChecked"/>
         </p:processor>
 
 
         <!-- Iterate through the cda:ClinicalDocument elements found in each file -->
-        <p:for-each href="#fileContentChecked" select="//cda:ClinicalDocument"
-            root="documentsProcessed" id="documentsProcessed">
+        <p:for-each href="#fileContentChecked" select="//document" root="documentsProcessed"
+            id="documentsProcessed">
 
-            <!-- Set up ClinicalDocument for processing -->
+            <!-- Current document for processing -->
             <p:processor name="oxf:identity">
-                <p:input name="data" transform="oxf:xslt" href="current()">
-                    <ClinicalDocumentFromSource xsl:version="2.0">
-                        <xsl:copy-of select="cda:ClinicalDocument" copy-namespaces="no"/>
-                    </ClinicalDocumentFromSource>
-                </p:input>
-                <p:output name="data" id="ClinicalDocumentFromSource"/>
+                <p:input name="data" href="current()"/>
+                <p:output name="data" id="document"/>
             </p:processor>
 
             <!-- Get patientId - only works for valid CDA -->
             <p:processor name="oxf:identity">
-                <p:input name="data" transform="oxf:xslt" href="#ClinicalDocumentFromSource">
+                <p:input name="data" transform="oxf:xslt" href="#document">
                     <patientId xsl:version="2.0">
                         <xsl:value-of
-                            select="cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:id/@extension"
+                            select="//cda:ClinicalDocument/cda:recordTarget/cda:patientRole/cda:id/@extension"
                         />
                     </patientId>
                 </p:input>
@@ -215,53 +225,72 @@
                         <!-- There's a patientId so process the document -->
                         <p:when test="//result = 'true'">
 
-                            <!-- Set the typeId, id and effectiveTime for the cdaHeader
+                            <!-- Set the typeId, id and effectiveTime for the CDA Header
+                                
                                  Must sanitize the file name using translate() in case it contains characters that can't be used as resource names 
-                                 {current-dateTime()}-CityEHR-Message-ImportWatchedResources-{translate(normalize-space(file/@name),'# &#09;&#10;','')}
+                                 CityEHR-Message-ImportWatchedResources-sanitizedFilename-$documentNumber-checkSum
+                                 
+                                 Also set the databaseHandle used for import
                                  -->
                             <p:processor name="oxf:identity">
                                 <p:input name="data" transform="oxf:xslt"
-                                    href="aggregate('document',#ClinicalDocumentFromSource,#file)">
-                                    
-                                    <cdaHeader xsl:version="2.0">
-                                        <xsl:variable name="documentNumber"
-                                            select="string-length(//cda:ClinicalDocument)"/>
+                                    href="aggregate('document',#schedulerParameters,#file,#patientId,#document)">
+
+                                    <cda-parameters xsl:version="2.0">
+                                        <xsl:variable name="documentNumber" select="//count"/>
                                         <xsl:variable name="checkSum"
                                             select="string-length(//cda:ClinicalDocument)"/>
                                         <xsl:variable name="sanitizedFilename"
-                                            select="translate(normalize-space(//file/@name),'# &#09;&#10;','')"/>
+                                            select="translate(normalize-space(//file/@name),'# &#46;&#09;&#10;','')"/>
                                         <xsl:variable name="documentId"
-                                            select="concat(current-dateTime(),'-CityEHR-Message-ImportWatchedResources-',$sanitizedFilename,'-',$documentNumber,'-',$checkSum)"/>
+                                            select="concat('CityEHR-Message-ImportWatchedResources-',$sanitizedFilename,'-',$documentNumber,'-',$checkSum)"/>
                                         <typeId xmlns="urn:hl7-org:v3" root="#CityEHR:Message"
                                             extension="#CityEHR:Message:ImportWatchedResources"/>
                                         <id xmlns="urn:hl7-org:v3" root="cityEHR"
                                             extension="{$documentId}"/>
                                         <effectiveTime xmlns="urn:hl7-org:v3"
                                             value="{current-dateTime()}"/>
-                                    </cdaHeader>
+                                        <databaseHandle>
+                                            <xsl:value-of
+                                                select="concat(//patientRecordsDatabaseURL,'/',//patientId,'/',$id)"
+                                            />
+                                        </databaseHandle>
+                                    </cda-parameters>
                                 </p:input>
-                                <p:output name="data" id="cdaHeader"/>
+                                <p:output name="data" id="cda-parameters"/>
                             </p:processor>
 
 
                             <!-- Replace the typeId, id and effectiveTime in the ClinicalDocument.
-                                 Uses the XSLT procesor and identity transform -->
+                                 Uses the XSLT procesor and identity transform.
+                                 The aggregated input is:
+                                    <document>
+                                       <document>
+                                          <count>
+                                          <cda:ClinicalDocument>
+                                       </document>
+                                       <cda-parameters>
+                                    </document>    
+                            -->
                             <p:processor name="oxf:xslt">
                                 <p:input name="config">
                                     <xsl:stylesheet version="2.0">
-                                        <!-- Get cdaHeader elements for replacement -->
-                                        <xsl:variable name="typeId" select="//cdaHeader/cda:typeId"/>
-                                        <xsl:variable name="id" select="//cdaHeader/cda:id"/>
+                                        <!-- Get CDA Header elements for replacement -->
+                                        <xsl:variable name="typeId" select="//cda-parameters/cda:typeId"/>
+                                        <xsl:variable name="id" select="//cda-parameters/cda:id"/>
                                         <xsl:variable name="effectiveTime"
-                                            select="//cdaHeader/cda:effectiveTime"/>
+                                            select="//cda-parameters/cda:effectiveTime"/>
 
                                         <!-- Start with document children -->
                                         <xsl:template match="document">
                                             <xsl:apply-templates/>
                                         </xsl:template>
 
-                                        <!-- Don't output the cdaHeader -->
-                                        <xsl:template match="cdaHeader"/>
+                                        <!-- Don't output the count -->
+                                        <xsl:template match="count"/>
+
+                                        <!-- Don't output the cda-parameters -->
+                                        <xsl:template match="cda-parameters"/>
 
                                         <!-- Replace typeId -->
                                         <xsl:template match="cda:ClinicalDocument/cda:typeId">
@@ -291,17 +320,16 @@
 
                                 </p:input>
                                 <p:input name="data"
-                                    href="aggregate('document',#ClinicalDocument,#cdaHeader)"/>
+                                    href="aggregate('document',#document,#cda-parameters)"/>
                                 <p:output name="data" id="ClinicalDocumentForImport"/>
                             </p:processor>
-
 
                             <!-- Write ClinicalDocument to the cityEHR record store -->
                             <p:processor name="oxf:xforms-submission">
                                 <p:input name="submission" transform="oxf:xslt"
-                                    href="aggregate('configuration',#schedulerParameters,#patientId,#cdaHeader)">
+                                    href="#cda-parameters">
                                     <xf:submission xsl:version="2.0"
-                                        action="{//patientRecordsDatabaseURL}{//patientId}/{//cda:id}"
+                                        action="{//databaseHandle}"
                                         validate="false" method="put" replace="none"
                                         includenamespacesprefixes=""/>
                                 </p:input>
@@ -311,9 +339,12 @@
 
                             <!-- Exception catcher - importing ClinicalDocument -->
                             <p:processor name="oxf:exception-catcher">
+                                <!--
+                                <p:input name="data" href="#importResponse"/>
+-->
                                 <p:input name="data" transform="oxf:xslt" href="#importResponse">
                                     <cdaImport xsl:version="2.0">
-                                        <xsl:value-of select="name()"/>
+                                        <xsl:value-of select="//cda:ClinicalDocument/name()"/>
                                     </cdaImport>
                                 </p:input>
                                 <p:output name="data" id="importResponseChecked"/>
@@ -322,10 +353,10 @@
                             <!-- Report the ClinicalDocument was processed -->
                             <p:processor name="oxf:identity">
                                 <p:input name="data" transform="oxf:xslt"
-                                    href="aggregate('configuration',#patientId,#cdaHeader,#importResponseChecked)">
+                                    href="aggregate('configuration',#patientId,#cda-parameters,#importResponseChecked)">
                                     <processed xsl:version="2.0" patientId="{//patientId}"
                                         result="patientIdRegistered">
-                                        <xsl:copy-of select="//cdaHeader"/>
+                                        <xsl:copy-of select="//cda-parameters"/>
                                         <xsl:copy-of select="//cdaImport"/>
                                     </processed>
                                 </p:input>
@@ -334,7 +365,7 @@
                         </p:when>
 
 
-                        <!-- Otherwise report that the patient record does not exost in database -->
+                        <!-- Otherwise report that the patient record does not exist in database -->
                         <p:otherwise>
                             <p:processor name="oxf:identity">
                                 <p:input name="data" transform="oxf:xslt" href="#patientId">
@@ -385,7 +416,6 @@
             <p:output name="data" id="serializedFileChecked"/>
         </p:processor>
 
-
         <!-- Write file -->
         <p:processor name="oxf:file-serializer">
             <p:input name="config" transform="oxf:xslt"
@@ -395,12 +425,13 @@
                         <xsl:value-of select="//processedDirectory"/>
                     </directory>
                     <file>
-                        <xsl:value-of select="//configuration/file/@name"/>
+                        <xsl:value-of select="//file/@name"/>
                     </file>
                     <make-directories>true</make-directories>
                     <append>false</append>
                 </config>
             </p:input>
+            
             <p:input name="data" href="#serializedFileChecked"/>
         </p:processor>
 
@@ -410,7 +441,7 @@
             <p:input name="data" transform="oxf:xslt"
                 href="aggregate('configuration',#file,#schedulerParameters)">
                 <fileWrite xsl:version="2.0">
-                    <xsl:value-of select="//configuration/file/@name"/>
+                    <xsl:value-of select="//file/@name"/>
                 </fileWrite>
             </p:input>
             <p:output name="data" id="fileWritehecked"/>
@@ -439,7 +470,7 @@
             <p:input name="data" transform="oxf:xslt"
                 href="aggregate('configuration',#file,#schedulerParameters)">
                 <fileDelete xsl:version="2.0">
-                    <xsl:value-of select="//configuration/file/@name"/>
+                    <xsl:value-of select="//file/@name"/>
                 </fileDelete>
             </p:input>
             <p:output name="data" id="fileDeleteChecked"/>
