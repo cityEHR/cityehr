@@ -122,7 +122,8 @@
                 href="aggregate('configuration',#file,#schedulerParameters)">
                 <config xsl:version="2.0">
                     <url>
-                        <xsl:value-of select="concat('file://',//watchedDirectory,'/',//file/@name)"
+                        <xsl:value-of
+                            select="concat('file://',//watchedDirectory,'/',//file/@name)"
                         />
                     </url>
                     <content-type>application/xml</content-type>
@@ -251,7 +252,7 @@
                                             value="{current-dateTime()}"/>
                                         <databaseHandle>
                                             <xsl:value-of
-                                                select="concat(//patientRecordsDatabaseURL,'/',//patientId,'/',$documentId)"
+                                                select="concat(//patientRecordsDatabaseURL,'/',//patientId,'/',$id)"
                                             />
                                         </databaseHandle>
                                     </cda-parameters>
@@ -259,13 +260,6 @@
                                 <p:output name="data" id="cda-parameters"/>
                             </p:processor>
 
-                            <!-- For debugging -->
-                            <!--
-                            <p:processor name="oxf:exception-catcher">
-                                <p:input name="data" href="#cda-parameters"/>
-                                <p:output name="data" ref="documentsProcessed"/>
-                            </p:processor>
--->
 
                             <!-- Replace the typeId, id and effectiveTime in the ClinicalDocument.
                                  Uses the XSLT procesor and identity transform.
@@ -282,8 +276,7 @@
                                 <p:input name="config">
                                     <xsl:stylesheet version="2.0">
                                         <!-- Get CDA Header elements for replacement -->
-                                        <xsl:variable name="typeId"
-                                            select="//cda-parameters/cda:typeId"/>
+                                        <xsl:variable name="typeId" select="//cda-parameters/cda:typeId"/>
                                         <xsl:variable name="id" select="//cda-parameters/cda:id"/>
                                         <xsl:variable name="effectiveTime"
                                             select="//cda-parameters/cda:effectiveTime"/>
@@ -335,7 +328,8 @@
                             <p:processor name="oxf:xforms-submission">
                                 <p:input name="submission" transform="oxf:xslt"
                                     href="#cda-parameters">
-                                    <xf:submission xsl:version="2.0" action="{//databaseHandle}"
+                                    <xf:submission xsl:version="2.0"
+                                        action="{//databaseHandle}"
                                         validate="false" method="put" replace="none"
                                         includenamespacesprefixes=""/>
                                 </p:input>
@@ -345,6 +339,9 @@
 
                             <!-- Exception catcher - importing ClinicalDocument -->
                             <p:processor name="oxf:exception-catcher">
+                                <!--
+                                <p:input name="data" href="#importResponse"/>
+-->
                                 <p:input name="data" transform="oxf:xslt" href="#importResponse">
                                     <cdaImport xsl:version="2.0">
                                         <xsl:value-of select="//cda:ClinicalDocument/name()"/>
@@ -365,9 +362,6 @@
                                 </p:input>
                                 <p:output name="data" ref="documentsProcessed"/>
                             </p:processor>
-
-
-
                         </p:when>
 
 
@@ -437,7 +431,7 @@
                     <append>false</append>
                 </config>
             </p:input>
-
+            
             <p:input name="data" href="#serializedFileChecked"/>
         </p:processor>
 

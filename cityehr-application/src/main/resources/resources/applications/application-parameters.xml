@@ -841,6 +841,11 @@
                 <taskControls display="">
                     <controlGroup/>  
                     <controlGroup>
+                        <select id="schedulerCommand" displayName="Scheduler command"
+                            display="show">
+                            <option displayName="Start Scheduler" value="start"/>
+                            <option displayName="Stop Scheduler" value="stop"/>
+                        </select>
                         <action id="query" displayName="Get scheduler status"
                             display="show"/>
                         <action id="import" displayName="Import from watched folder"

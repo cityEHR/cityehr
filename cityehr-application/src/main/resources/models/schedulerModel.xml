@@ -242,7 +242,7 @@
          -->
     <xf:action ev:event="invoke-pipelineScheduler">
         <xxf:variable name="command" select="event('command')"/>
-
+        
         <!-- Set the command in scheduler-parameters -->
         <xf:setvalue ref="xxf:instance('scheduler-parameters-instance')/schedulerCommand"
             value="$command"/>

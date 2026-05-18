@@ -112,6 +112,7 @@
                 <command>
                     <xsl:value-of select="//schedulerCommand"/>
                 </command>
+                <interval><xsl:value-of select="//pollingInterval"/></interval>
             </schedulerLog>
         </p:input>
         <p:output name="response" id="saveResponse"/>

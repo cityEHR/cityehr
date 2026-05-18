@@ -458,7 +458,11 @@
                     <importExportCompositions>
                         <status/>
                         <schedulerStatus>running | stopped</schedulerStatus>
-                        <schedulerCommand>start</schedulerCommand>
+                        <schedulerCommand value="start">
+                            <!-- These get replaced by the options in application-parameters -->
+                            <option displayName="Start Scheduler" value="start"/>
+                            <option displayName="Stop Scheduler" value="stop"/>
+                        </schedulerCommand>
                     </importExportCompositions>
 
                     <importRecords>
@@ -3913,6 +3917,12 @@
                 Actions invoked from taskControls in application-parameters
                 === -->
 
+            <!-- Select the scheduler command (start/stop) -->
+            <xf:action ev:event="importExportCompositions-schedulerCommand">
+                <!-- TBD -->
+            </xf:action>
+
+
             <!-- Invoke pipeline to get the status of the scheduler from the schedulerLog
                  An action invoked from taskControls in application-parameters -->
             <xf:action ev:event="importExportCompositions-query">
@@ -3930,7 +3940,7 @@
                  An action invoked from taskControls in application-parameters -->
             <xf:action ev:event="importExportCompositions-toggle">
                 <xxf:variable name="command"
-                    select="xxf:instance('control-instance')/importExportCompositions/schedulerCommand"/>
+                    select="xxf:instance('control-instance')/importExportCompositions/schedulerCommand/@value"/>
 
                 <xf:dispatch name="invoke-pipelineScheduler" target="scheduler-model">
                     <xxf:context name="command" select="$command"/>
@@ -9866,8 +9876,17 @@
                             select="xxf:instance('control-instance')/importExportCompositions/status"
                         />
                     </xf:dispatch>
+                    <!-- Set the selection for schedulerCommand from options in application-parameters -->
+                    <xxf:variable name="schedulerCommandSelect"
+                        select="$task/taskControls//select[@id='schedulerCommand']"/>
+                    <xxf:variable name="schedulerCommand"
+                        select="xxf:instance('control-instance')/importExportCompositions/schedulerCommand"/>
+                    <xf:delete nodeset="$schedulerCommand/*"/>
+                    <xf:action xxf:iterate="$schedulerCommandSelect/*">
+                        <xxf:variable name="option" select="."/>
+                        <xf:insert context="$schedulerCommand" origin="$option"/>
+                    </xf:action>
                 </xf:action>
-
 
             </xf:action>
             <!-- End of set-adminTask action -->
@@ -19573,7 +19592,7 @@
 
                     <xhtml:div
                         class="{if ($adminTask='importExportCompositions') then '' else 'hidden'}">
-
+                                              
                         <xhtml:table>
                             <xf:repeat nodeset="xxf:instance('scheduler-parameters-instance')/*">
                                 <xxf:variable name="parameter" select="."/>

@@ -7,6 +7,26 @@
     Standard generation of controls for tasks in cityEHRadmin page.
     The controls invoke actions in the main-,odel of cityEHRadmin
     
+    The controls are defined in application-parameters of the form:
+    
+                <taskControls display="">
+                    <controlGroup/>  
+                    <controlGroup>
+                        <input id="inPatients" displayName="Inpatients Only" type="xs:boolean" display="show"/>
+                        <select id="schedulerCommand" displayName="Scheduler command"
+                            display="show">
+                            <option displayName="Start Scheduler" value="start"/>
+                            <option displayName="Stop Scheduler" value="stop"/>
+                        </select>
+                        <action id="query" displayName="Get scheduler status"
+                            display="show"/>
+                    </controlGroup>
+                </taskControls>
+                
+    The controls for input and select set the values of elements in the control-instance: 
+         [taskId]/[ControlId]/@value for selection 
+         [taskId]/[ControlId] for inout 
+    
     This file is similar to cityEHRViewControlsActions.xhtml - could consider refactoring
 
     
@@ -119,7 +139,7 @@
                  The items in the list must have a @displayName and @value, but can have any element name (hence the use of * to get the itemset)
                  -->
                 <xhtml:span class="{$showSelect}">
-                    <xf:select1 ref="xxf:instance('control-instance')/*[name()=$adminTask]/*[name()=$controlId]">
+                    <xf:select1 ref="xxf:instance('control-instance')/*[name()=$adminTask]/*[name()=$controlId]/@value">
                         <xf:label ref="$displayName" class="label"/>
                         <xf:itemset nodeset="../*">
                             <xf:label ref="./@displayName"/>
